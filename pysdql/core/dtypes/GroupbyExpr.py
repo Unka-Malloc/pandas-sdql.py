@@ -4,6 +4,7 @@ from pysdql.core.dtypes.ColumnExpr import ColExpr
 from pysdql.core.dtypes.ColumnUnit import ColUnit
 from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.HavUnit import HavUnit
 from pysdql.core.dtypes.IterationExpr import IterExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
@@ -184,3 +185,6 @@ class GroupbyExpr:
 
         from pysdql import Relation
         return Relation('agg_r')
+
+    def filter(self, func):
+        func(HavUnit(self.iter_expr.val))

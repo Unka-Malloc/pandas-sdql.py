@@ -48,10 +48,10 @@ if __name__ == '__main__':
     region = pysdql.Relation(name='region', cols=pysdql.REGION_COLS)
 
     aggr_val = pysdql.merge(partsupp, supplier, nation, region,
-                            on=(part['p_partkey'] == partsupp['ps_partkey']
-                                & supplier['s_suppkey'] == partsupp['ps_suppkey']
-                                & supplier['s_nationkey'] == nation['n_nationkey']
-                                & nation['n_regionkey'] == region['r_regionkey'])
+                            on=(part['p_partkey'] == partsupp['ps_partkey'])
+                                & (supplier['s_suppkey'] == partsupp['ps_suppkey'])
+                                & (supplier['s_nationkey'] == nation['n_nationkey'])
+                                & (nation['n_regionkey'] == region['r_regionkey'])
                             )[region['r_name'] == ':3'].aggr({'ps_supplycost', 'min'})
 
     r = pysdql.merge(part, supplier, partsupp, nation, region,
