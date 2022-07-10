@@ -18,6 +18,9 @@ class ColExpr:
 
         return f'({u1_str} {self.op} {u2_str})'
 
+    def sum(self):
+        pass
+
     @property
     def expr(self):
         return f'({self.unit1} {self.op} {self.unit2})'
@@ -48,6 +51,8 @@ class ColExpr:
 
     def __rdiv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self)
+
+
 
 
 
