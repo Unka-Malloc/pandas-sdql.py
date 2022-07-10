@@ -138,7 +138,15 @@ class GroupbyExpr:
         aggr_tuple_name = self.gen_tmp_name()
         aggr_tuple_iter_expr = IterExpr(aggr_tuple_name)
 
-        for c in self.groupby_cols:
+        tmp_cols = []
+        tmp_cols += self.groupby_cols
+
+        for k in aggr_dict.keys():
+            v = aggr_dict[k]
+            if type(v) == ColUnit:
+                tmp_cols.remove(v.name)
+
+        for c in tmp_cols:
             result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
 
         aggr_tmp_iter_key = 'g_k'
@@ -148,6 +156,8 @@ class GroupbyExpr:
         aggr_tuple_dict = {}
         for aggr_key in aggr_dict.keys():
             aggr_val = aggr_dict[aggr_key]
+            if type(aggr_val) == ColUnit:
+                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{aggr_dict[aggr_key].name}'
             if type(aggr_val) == tuple:
                 if type(aggr_dict[aggr_key][0]) == ColUnit or type(aggr_dict[aggr_key][0]) == ColExpr:
                     aggr_calc = aggr_dict[aggr_key][0].new_expr(f'{aggr_tmp_iter_key}')
@@ -163,8 +173,7 @@ class GroupbyExpr:
                 if aggr_flag == 'avg':
                     aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {aggr_tmp_iter_val}'
                     aggr_tuple_dict[f'{aggr_key}_count'] = f'{aggr_tmp_iter_val}'
-                    result_dict[
-                        aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
+                    result_dict[aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
 
         print(
             f'let {aggr_tuple_name} = {self.iter_expr} {aggr_tmp_iter_expr} {{ {RecExpr(self.cols_in_rec())} -> {RecExpr(aggr_tuple_dict)} }}')
@@ -172,3 +181,6 @@ class GroupbyExpr:
         self.history_name += [aggr_tuple_name]
 
         print(f'{aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }}')
+
+        from pysdql import Relation
+        return Relation('agg_r')

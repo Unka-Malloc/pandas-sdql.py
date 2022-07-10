@@ -118,10 +118,13 @@ class ColUnit:
     def __rmul__(self, other):
         return ColExpr(unit1=other, operator='*', unit2=self)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         return ColExpr(unit1=self, operator='/', unit2=other)
 
-    def __rdiv__(self, other):
+    def __floordiv__(self, other):
+        return ColExpr(unit1=self, operator='/', unit2=other)
+
+    def __rfloordiv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self)
 
     def isin(self, vals):

@@ -25,6 +25,7 @@ class Relation:
 
     def rename(self, name):
         self.name = name
+        return self
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -202,13 +203,7 @@ class Relation:
             if dict_val == 'avg':
                 pass
 
-        tmp_r = Relation(name=self.gen_tmp_name(),
-                         cols=self.cols,
-                         constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                                any_expr=SetExpr(RecExpr(kv_pair=tmp_dict))),
-                         inherit_from=self)
-        tmp_r.show()
-        return tmp_r
+        pass
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
 

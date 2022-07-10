@@ -39,4 +39,4 @@ if __name__ == '__main__':
                      )
     r = r[(nation['n_name'] == ':1')]
 
-    r = r.groupby(['ps_partkey']).aggr(value=(partsupp['ps_supplycost']*partsupp['ps_availqty'], 'sum'))
+    r = r.groupby(['ps_partkey']).aggr(value=(partsupp['ps_supplycost'] * partsupp['ps_availqty'], 'sum'))
