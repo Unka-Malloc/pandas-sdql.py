@@ -1,0 +1,63 @@
+import string
+
+from pysdql.core.dtypes.IterationElement import IterEl
+
+
+class IterExpr:
+    def __init__(self, r_name):
+        self.r_name = r_name
+
+    @property
+    def n_e_dict(self):
+        d = {"tmp": "t", "tmpa": "ta", "tmpb": "tb", "tmpc": "tc", "tmpd": "td", "tmpe": "te", "tmpf": "tf",
+                         "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
+                         "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
+                         "tmps": "ts", "tmpt": "tt", "tmpu": "tu", "tmpv": "tv", "tmpw": "tw", "tmpx": "tx",
+                         "tmpy": "ty", "tmpz": "tz"}
+        return d
+
+    @staticmethod
+    def hard_code_n_e_dict():
+        tmp_list = []
+        for i in list(string.ascii_lowercase):
+            tmp_list.append(f'"tmp{i}": "t{i}"')
+        tmp_str = ', '.join(tmp_list)
+        print(f'{{ {tmp_str} }}')
+
+    @property
+    def element(self):
+        return self.gen_iter_el()
+
+    @property
+    def name(self):
+        return self.element.name
+
+    @property
+    def key(self):
+        return self.element.key
+
+    @property
+    def val(self):
+        return self.element.val
+
+    @property
+    def kv_pair(self):
+        return f'<{self.key}, {self.val}>'
+
+    def gen_iter_el(self) -> IterEl:
+        if self.r_name in self.n_e_dict.keys():
+            tmp_name = self.n_e_dict[self.r_name]
+        else:
+            tmp_name = str(self.r_name[0]).lower()
+
+        return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
+
+    @property
+    def expr(self):
+        return f'sum ({self.element.expr} in {self.r_name})'
+
+    def __repr__(self):
+        return self.expr
+
+    def merge(self, other):
+        return f'{self} {other}'
