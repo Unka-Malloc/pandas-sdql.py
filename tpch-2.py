@@ -37,11 +37,6 @@ where
 			and n_regionkey = r_regionkey
 			and r_name = ':3'
 	)
-order by
-	s_acctbal desc,
-	n_name,
-	s_name,
-	p_partkey
 """
 import pysdql
 
@@ -52,3 +47,25 @@ if __name__ == '__main__':
     nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
     region = pysdql.Relation(name='region', cols=pysdql.REGION_COLS)
 
+    aggr_val = pysdql.merge(partsupp, supplier, nation, region,
+                            on=(part['p_partkey'] == partsupp['ps_partkey']
+                                & supplier['s_suppkey'] == partsupp['ps_suppkey']
+                                & supplier['s_nationkey'] == nation['n_nationkey']
+                                & nation['n_regionkey'] == region['r_regionkey'])
+                            )[region['r_name'] == ':3'].aggr({'ps_supplycost', 'min'})
+
+    r = pysdql.merge(part, supplier, partsupp, nation, region,
+                     on=(part['p_partkey'] == partsupp['ps_partkey'])
+                        & (supplier['s_suppkey'] == partsupp['ps_suppkey'])
+                        & (supplier['s_nationkey'] == nation['n_nationkey'])
+                        & (nation['n_regionkey'] == region['r_regionkey'])
+                     )[(part['p_size'] == 1)
+                       & (region['r_name'] == ':3')
+                       & (partsupp['ps_supplycost'] == aggr_val)][['s_acctbal',
+                                                                   's_name',
+                                                                   'n_name',
+                                                                   'p_partkey',
+                                                                   'p_mfgr',
+                                                                   's_address',
+                                                                   's_phone',
+                                                                   's_comment']]
