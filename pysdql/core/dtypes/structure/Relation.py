@@ -1,5 +1,7 @@
 import string
 
+from pysdql.core.dtypes.ArrayExpr import ArrayExpr
+from pysdql.core.dtypes.ColumnExpr import ColExpr
 from pysdql.core.dtypes.IterationExpr import IterExpr
 from pysdql.core.dtypes.ColumnUnit import ColUnit
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
@@ -8,10 +10,18 @@ from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
 
 
 class Relation:
     def __init__(self, name, cols=None, constr_expr=None, inherit_from=None):
+        """
+        If you need an optimizer, give it to relation and pass to all classes
+        :param name:
+        :param cols:
+        :param constr_expr:
+        :param inherit_from:
+        """
         self.name = name
         self.cols = cols
         self.constr_expr = constr_expr
@@ -193,17 +203,34 @@ class Relation:
             print('Aggregation Count')
 
     def aggr_dict_parse(self, aggr_func: dict):
-        tmp_dict = {}
-        for aggr_key in aggr_func.keys():
-            dict_val = aggr_func[aggr_key]
-            if dict_val == 'sum':
-                tmp_dict[aggr_key] = f'{self.iter_expr.key}.{aggr_key} * {self.iter_expr.val}'
-            if dict_val == 'count':
-                pass
-            if dict_val == 'avg':
-                pass
+        """
+        This function produce an Array of values.
+        :param aggr_func:
+        :return:
+        """
+        new_name = self.gen_tmp_name()
 
-        pass
+        tmp_dict = {}
+        avg_n = 1
+        for aggr_key in aggr_func.keys():
+            aggr_val = aggr_func[aggr_key]
+            aggr_calc = aggr_key
+            if type(aggr_calc) == ColUnit or type(aggr_calc) == ColExpr:
+                aggr_calc = aggr_calc.new_expr(f'{self.iter_expr.key}')
+            if aggr_val == 'sum':
+                tmp_dict[aggr_key] = f'{aggr_calc} * {self.iter_expr.val}'
+            if aggr_val == 'count':
+                tmp_dict[aggr_key] = f'{self.iter_expr.val}'
+            if aggr_val == 'avg':
+                print(f'let sc_{avg_n} = <s=({aggr_calc} * {self.iter_expr.val}), c={self.iter_expr.val}>')
+                tmp_dict[aggr_key] = f'(sc_{avg_n}.s / sc_{avg_n}.c)'
+                avg_n += 1
+
+        aggr_array = ', '.join(tmp_dict.values())
+
+        print(f'let {new_name} = {self.iter_expr} [| {aggr_array} |]')
+
+        return ArrayExpr(new_name, list(tmp_dict.values()))
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
 

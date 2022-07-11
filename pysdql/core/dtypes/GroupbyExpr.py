@@ -187,4 +187,6 @@ class GroupbyExpr:
         return Relation('agg_r')
 
     def filter(self, func):
-        func(HavUnit(self.iter_expr.val))
+        func(HavUnit(iter_expr=self.iter_expr, groupby_cols=self.groupby_cols))
+        from pysdql.core.dtypes.structure.Relation import Relation
+        return Relation(name='hvR')

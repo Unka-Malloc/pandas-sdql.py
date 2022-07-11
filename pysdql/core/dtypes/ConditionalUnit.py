@@ -59,7 +59,17 @@ class CondUnit:
                         operator='&&',
                         unit2=other)
 
+    def __rand__(self, other):
+        return CondUnit(unit1=other,
+                        operator='&&',
+                        unit2=self)
+
     def __or__(self, other):
         return CondUnit(unit1=self,
                         operator='||',
                         unit2=other)
+
+    def __ror__(self, other):
+        return CondUnit(unit1=other,
+                        operator='||',
+                        unit2=self)
