@@ -22,7 +22,7 @@ if __name__ == '__main__':
         .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \
         .rename('part_agg')
 
-    r = pysdql.merge(lineitem, part,
+    r = pysdql.merge(lineitem, part, part_agg,
                      on=((part['p_partkey'] == lineitem['l_partkey'])
                          & (part_agg['agg_partkey'] == lineitem['l_partkey']))
                      )
