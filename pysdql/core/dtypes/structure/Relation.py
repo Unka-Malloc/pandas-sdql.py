@@ -35,8 +35,7 @@ class Relation:
 
     def rename(self, name):
         print(f'let part_agg = {self.name}')
-        self.name = name
-        return self
+        return Relation(name=name)
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -95,7 +94,8 @@ class Relation:
         :param value:
         :return:
         """
-        self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
+        # self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
+        print(key)
 
     def keep_cols(self):
         tmp_dict = {}
@@ -316,3 +316,7 @@ class Relation:
 
     def exists(self):
         return f'({self.iter_expr} {self.iter_expr.val}) > 0'
+
+    def case(self, when, then_case, else_case):
+        print(f'{self.iter_expr} if ({when}) then {{ concat({self.iter_expr.key}, <high_line_priority={then_case}>) }} '
+              f'else {{ concat({self.iter_expr.key}, <high_line_priority={else_case}>) }}')

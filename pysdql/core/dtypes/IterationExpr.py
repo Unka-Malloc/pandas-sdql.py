@@ -47,9 +47,18 @@ class IterExpr:
     def gen_iter_el(self) -> IterEl:
         if self.r_name in self.n_e_dict.keys():
             tmp_name = self.n_e_dict[self.r_name]
-        else:
-            tmp_name = str(self.r_name[0]).lower()
+            return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
 
+        special_char = '_'
+        tmp_name = ''
+        for i in special_char:
+            if i in self.r_name:
+                tmp_list = str(self.r_name).split('_')
+                for j in tmp_list:
+                    tmp_name += j[0]
+                return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
+
+        tmp_name = str(self.r_name[0]).lower()
         return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
 
     @property
