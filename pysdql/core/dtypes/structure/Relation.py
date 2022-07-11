@@ -34,6 +34,7 @@ class Relation:
         self.iter_expr = IterExpr(self.name)
 
     def rename(self, name):
+        print(f'let part_agg = {self.name}')
         self.name = name
         return self
 

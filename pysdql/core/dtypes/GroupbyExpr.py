@@ -86,7 +86,6 @@ class GroupbyExpr:
             pass
         if aggr_kwargs:
             return self.aggr_kwargs_parse(aggr_kwargs)
-        print(print(aggr_kwargs))
 
     def __getitem__(self, item):
         return self.groupby_from[item]
@@ -181,7 +180,7 @@ class GroupbyExpr:
 
         self.history_name += [aggr_tuple_name]
 
-        print(f'{aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }}')
+        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }}')
 
         from pysdql import Relation
         return Relation('agg_r')
