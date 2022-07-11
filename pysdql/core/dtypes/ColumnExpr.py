@@ -1,3 +1,6 @@
+from pysdql.core.dtypes.VarExpr import VarExpr
+
+
 class ColExpr:
     def __init__(self, unit1, operator: str, unit2):
         self.unit1 = unit1
@@ -19,7 +22,9 @@ class ColExpr:
         return f'({u1_str} {self.op} {u2_str})'
 
     def sum(self):
-        pass
+        tmp_name = f'agg_val'
+        print(f'let {tmp_name} = sum(k, v) {self.new_expr("k")} * v in')
+        return VarExpr(tmp_name)
 
     @property
     def expr(self):
@@ -51,9 +56,3 @@ class ColExpr:
 
     def __rdiv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self)
-
-
-
-
-
-

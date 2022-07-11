@@ -14,7 +14,10 @@ from pysdql.const import (
 )
 
 
-def merge(*args, on=None, optimize=False):
+def merge(*args, on=None, name=None, optimize=False):
+    if name is None:
+        name = 'R'
+
     ie_list = []
     ik_list = []
     iv_list = []
@@ -29,9 +32,9 @@ def merge(*args, on=None, optimize=False):
 
     con_str = f'if({on})\n  {{ {concat(ik_list)} -> {iv_str} }}'
 
-    print(f'let R = {ie_str} {con_str} in')
+    print(f'let {name} = {ie_str} {con_str} in')
 
-    return Relation('R')
+    return Relation(name)
 
 
 def concat(keys: list) -> str:
