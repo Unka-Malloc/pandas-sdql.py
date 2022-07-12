@@ -43,9 +43,9 @@ if __name__ == '__main__':
 
     r['high_line_priority'] = r.case((r['o_orderpriority'] == '1-URGENT') | (r['o_orderpriority'] == '2-HIGH'), 1, 0)
 
-    # r['low_line_priority'] = r.case((r['o_orderpriority'] != '1-URGENT') | (r['o_orderpriority'] != '2-HIGH'), 1, 0)
+    r['low_line_priority'] = r.case((r['o_orderpriority'] != '1-URGENT') | (r['o_orderpriority'] != '2-HIGH'), 1, 0)
 
-    # r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
-    #                                    low_line_count=(r['low_line_priority'], 'sum'))
+    r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
+                                       low_line_count=(r['low_line_priority'], 'sum')).show()
 
 

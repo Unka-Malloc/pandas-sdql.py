@@ -114,23 +114,48 @@ class GroupbyExpr:
 
     def aggr_dict_parse(self, aggr_func: dict):
         tmp_dict = {}
+        result_dict = {}
+
+        aggr_tuple_name = self.gen_tmp_name()
+        aggr_tuple_iter_expr = IterExpr(aggr_tuple_name)
+
+        for c in self.groupby_cols:
+            result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
+
+        aggr_tmp_iter_key = 'g_k'
+        aggr_tmp_iter_val = 'g_v'
+        aggr_tmp_iter_expr = f'sum (<{aggr_tmp_iter_key}, {aggr_tmp_iter_val}> in {self.iter_expr.key}.group)'
+
         for aggr_key in aggr_func.keys():
             dict_val = aggr_func[aggr_key]
+            aggr_calc = aggr_key
+            if type(aggr_key) == ColUnit or type(aggr_key) == ColExpr:
+                aggr_calc = f'{aggr_key.name}'
             if dict_val == 'sum':
-                tmp_dict[aggr_key] = f'{self.iter_expr.key}.{aggr_key} * {self.iter_expr.val}'
+                tmp_dict[aggr_calc] = f'{aggr_tmp_iter_key}.{aggr_calc} * {self.iter_expr.val}'
+                result_dict[aggr_calc] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}'
             if dict_val == 'count':
                 pass
             if dict_val == 'avg':
                 pass
 
+        print(
+            f'let {aggr_tuple_name} = {self.iter_expr} {aggr_tmp_iter_expr} '
+            f'{{ {RecExpr(self.cols_in_rec())} -> {RecExpr(tmp_dict)} }} in')
+
+        self.history_name += [aggr_tuple_name]
+
+        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
+
+        # from pysdql import Relation
+        # tmp_r = Relation(name=self.gen_tmp_name(),
+        #                  cols=self.groupby_from.cols,
+        #                  constr_expr=ConstrExpr(iter_expr=self.iter_expr,
+        #                                         any_expr=SetExpr(RecExpr(kv_pair=tmp_dict))),
+        #                  inherit_from=self.groupby_from)
+        # print(tmp_r)
         from pysdql import Relation
-        tmp_r = Relation(name=self.gen_tmp_name(),
-                         cols=self.groupby_from.cols,
-                         constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                                any_expr=SetExpr(RecExpr(kv_pair=tmp_dict))),
-                         inherit_from=self.groupby_from)
-        tmp_r.show()
-        return tmp_r
+        return Relation('agg_r')
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
         result_dict = {}
@@ -180,12 +205,13 @@ class GroupbyExpr:
 
         self.history_name += [aggr_tuple_name]
 
-        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }}')
+        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
 
         from pysdql import Relation
         return Relation('agg_r')
 
     def filter(self, func):
         func(HavUnit(iter_expr=self.iter_expr, groupby_cols=self.groupby_cols))
+
         from pysdql.core.dtypes.structure.Relation import Relation
         return Relation(name='hvR')

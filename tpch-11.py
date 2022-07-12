@@ -33,9 +33,9 @@ if __name__ == '__main__':
     nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
 
     # agg_val = pysdql.merge(partsupp, supplier, nation,
-    #                    on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
-    #                       & (supplier['s_nationkey'] == nation['n_nationkey'])
-    #                    )[(nation['n_name'] == ':1')] \
+    #                        on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
+    #                           & (supplier['s_nationkey'] == nation['n_nationkey'])
+    #                        )[(nation['n_name'] == ':1')] \
     #     .aggr({(partsupp['ps_supplycost'] * partsupp['ps_availqty'] * ':2'): 'sum'})[0]
 
     s = pysdql.merge(partsupp, supplier, nation,

@@ -31,13 +31,15 @@ class CondUnit:
         Conditional Expression without 'if'
         :return:
         """
-        if self.op in ['==', '>', '>=', '<', '<=', '!=']:
+        if self.op in ['==', '>', '>=', '<', '<=']:
             return f'{self.unit1} {self.op} {self.unit2}'
+        if self.op == '!=':
+            return f'not ({self.unit1} == {self.unit2})'
         if self.op == '&&':
             return f'{self.unit1} {self.op} {self.unit2}'
         if self.op == '||':
             return f'({self.unit1}) {self.op} ({self.unit2})'
-        return ''
+        return f'{self.unit1} {self.op} {self.unit2}'
 
     @property
     def expr_with_if(self):

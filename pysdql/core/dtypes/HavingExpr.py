@@ -1,5 +1,4 @@
 from pysdql.core.dtypes.RecordExpr import RecExpr
-from pysdql.core.dtypes.structure.Relation import Relation
 
 
 class HavExpr:

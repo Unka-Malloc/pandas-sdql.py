@@ -10,10 +10,10 @@ class IterExpr:
     @property
     def n_e_dict(self):
         d = {"tmp": "t", "tmpa": "ta", "tmpb": "tb", "tmpc": "tc", "tmpd": "td", "tmpe": "te", "tmpf": "tf",
-                         "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
-                         "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
-                         "tmps": "ts", "tmpt": "tt", "tmpu": "tu", "tmpv": "tv", "tmpw": "tw", "tmpx": "tx",
-                         "tmpy": "ty", "tmpz": "tz"}
+             "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
+             "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
+             "tmps": "ts", "tmpt": "tt", "tmpu": "tu", "tmpv": "tv", "tmpw": "tw", "tmpx": "tx",
+             "tmpy": "ty", "tmpz": "tz"}
         return d
 
     @staticmethod
@@ -45,9 +45,16 @@ class IterExpr:
         return f'<{self.key}, {self.val}>'
 
     def gen_iter_el(self) -> IterEl:
+
         if self.r_name in self.n_e_dict.keys():
             tmp_name = self.n_e_dict[self.r_name]
             return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
+
+        if any(c.isdigit() for c in self.r_name):
+            tmp_name = str(self.r_name[0]).lower()
+            for i in self.r_name:
+                if i.isdigit():
+                    return IterEl((f'{tmp_name}{i}_k', f'{tmp_name}{i}_v'))
 
         special_char = '_'
         tmp_name = ''
