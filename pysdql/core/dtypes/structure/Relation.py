@@ -1,7 +1,9 @@
 import string
 
 from pysdql.core.dtypes.ArrayExpr import ArrayExpr
+from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColumnExpr import ColExpr
+from pysdql.core.dtypes.IsinExpr import IsinExpr
 from pysdql.core.dtypes.IterationExpr import IterExpr
 from pysdql.core.dtypes.ColumnUnit import ColUnit
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
@@ -34,7 +36,7 @@ class Relation:
         self.iter_expr = IterExpr(self.name)
 
     def rename(self, name):
-        print(f'let part_agg = {self.name}')
+        print(f'let {name} = {self.name} in')
         return Relation(name=name)
 
     def gen_tmp_name(self, noname=None):
@@ -69,11 +71,21 @@ class Relation:
                           constr_expr=ConstrExpr(iter_expr=self.iter_expr, any_expr=SetExpr(RecExpr(tmp_d))),
                           inherit_from=self
                           )
-        print(result.constr_expr)
+        print(result)
         return result
 
     def get_col(self, col_name):
         return ColUnit(self, col_name)
+
+    def select_isin(self, isin_expr: IsinExpr):
+        u1 = isin_expr.unit1
+        u2 = isin_expr.unit2
+        new_name = self.gen_tmp_name()
+        print(f'let {new_name} = {self.iter_expr} {u2.relation.iter_expr} '
+              f'if ({self.iter_expr.key}.{u1.name} == {u2.relation.iter_expr.key}.{u2.name}) '
+              f'then {{ {self.iter_expr.key} }} else {{ }} in')
+
+        return Relation(name=new_name, inherit_from=self)
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -86,6 +98,8 @@ class Relation:
             return self.get_col(col_name=item)
         if type(item) == list:
             return self.projection(item)
+        if type(item) == IsinExpr:
+            return self.select_isin(item)
 
     def __setitem__(self, key, value):
         """
@@ -94,8 +108,13 @@ class Relation:
         :param value:
         :return:
         """
-        # self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
-        print(key)
+        if type(value) == CaseExpr:
+            self.name = self.gen_tmp_name()
+            value.set(key, self.name, self.iter_expr)
+            self.iter_expr = IterExpr(self.name)
+            return
+        if type(value) == ColUnit or type(value) == ColExpr:
+            return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
 
     def keep_cols(self):
         tmp_dict = {}
@@ -123,7 +142,7 @@ class Relation:
                                                  ),
                           inherit_from=self)
 
-        result.show()
+        print(result)
 
         self.update_from_relation(result)
         return result
@@ -139,7 +158,7 @@ class Relation:
         return self.expr
 
     def show(self):
-        print(self.constr_expr)
+        print(self.name)
 
     def update_from_relation(self, r):
         """
@@ -255,7 +274,7 @@ class Relation:
                          constr_expr=ConstrExpr(iter_expr=self.iter_expr,
                                                 any_expr=RecExpr(kv_pair=tmp_dict)),
                          inherit_from=self)
-        tmp_r.show()
+        print(tmp_r)
         return tmp_r
 
     def aggr_on_col(self, col_name: str, aggr_func=None, *args, **kwargs):
@@ -268,7 +287,7 @@ class Relation:
         :return: pysdql.Relation
         """
         new_r = self.from_cols(col_list=[col_name])
-        new_r.show()
+        print(new_r)
         return new_r.aggr(aggr_func, *args, **kwargs)
 
     def access(self):
@@ -317,6 +336,10 @@ class Relation:
     def exists(self):
         return f'({self.iter_expr} {self.iter_expr.val}) > 0'
 
-    def case(self, when, then_case, else_case):
-        print(f'{self.iter_expr} if ({when}) then {{ concat({self.iter_expr.key}, <high_line_priority={then_case}>) }} '
-              f'else {{ concat({self.iter_expr.key}, <high_line_priority={else_case}>) }}')
+    def not_exists(self):
+        return f'({self.iter_expr} {self.iter_expr.val}) == 0'
+
+    @staticmethod
+    def case(when, then_case, else_case):
+        return CaseExpr(when, then_case, else_case)
+
