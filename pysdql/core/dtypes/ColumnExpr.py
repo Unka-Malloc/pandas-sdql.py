@@ -24,7 +24,7 @@ class ColExpr:
     def sum(self):
         tmp_name = f'agg_val'
         print(f'let {tmp_name} = sum(k, v) {self.new_expr("k")} * v in')
-        return VarExpr(tmp_name)
+        return tmp_name
 
     @property
     def expr(self):

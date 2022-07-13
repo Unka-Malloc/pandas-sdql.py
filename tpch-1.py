@@ -24,7 +24,7 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
 
     lineitem = lineitem[lineitem['l_shipdate'] <= ':date']
 
@@ -36,3 +36,4 @@ if __name__ == '__main__':
                                                             avg_price=(lineitem['l_extendedprice'], 'avg'),
                                                             avg_disc=(lineitem['l_discount'], 'avg'),
                                                             count_order=(lineitem['*'], 'count'))
+

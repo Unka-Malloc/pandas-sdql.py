@@ -1,3 +1,4 @@
+import os
 import string
 
 from pysdql.core.dtypes.ArrayExpr import ArrayExpr
@@ -10,12 +11,14 @@ from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ConditionalExpr import CondExpr
 from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
 
 
-class Relation:
-    def __init__(self, name, cols=None, constr_expr=None, inherit_from=None):
+class relation:
+    def __init__(self, name, cols=None, data=None, constr_expr=None, inherit_from=None):
         """
         If you need an optimizer, give it to relation and pass to all classes
         :param name:
@@ -25,9 +28,14 @@ class Relation:
         """
         self.name = name
         self.cols = cols
+        self.data = data
         self.constr_expr = constr_expr
 
         self.history_name = []
+        self.operations = []
+
+        if self.data:
+            self.operations.append(OpExpr('data', VarExpr(self.name, self.data)))
 
         if inherit_from:
             self.inherit(inherit_from)
@@ -36,7 +44,7 @@ class Relation:
 
     def rename(self, name):
         print(f'let {name} = {self.name} in')
-        return Relation(name=name)
+        return relation(name=name)
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -53,7 +61,7 @@ class Relation:
 
     def selection(self, item: CondUnit):
         cond_expr = CondExpr(conditions=item, then_case=SetExpr(self.iter_expr.key), new_iter=self.iter_expr.key)
-        result = Relation(name=self.gen_tmp_name(),
+        result = relation(name=self.gen_tmp_name(),
                           cols=self.cols,
                           constr_expr=ConstrExpr(iter_expr=self.iter_expr, any_expr=cond_expr),
                           inherit_from=self)
@@ -65,7 +73,7 @@ class Relation:
         tmp_d = {}
         for i in cols:
             tmp_d[i] = f'{self.iter_expr.key}.{i}'
-        result = Relation(name=self.gen_tmp_name(),
+        result = relation(name=self.gen_tmp_name(),
                           cols=cols,
                           constr_expr=ConstrExpr(iter_expr=self.iter_expr, any_expr=SetExpr(RecExpr(tmp_d))),
                           inherit_from=self
@@ -84,7 +92,7 @@ class Relation:
               f'if ({self.iter_expr.key}.{u1.name} == {u2.relation.iter_expr.key}.{u2.name}) '
               f'then {{ {self.iter_expr.key} }} else {{ }} in')
 
-        return Relation(name=new_name, inherit_from=self)
+        return relation(name=new_name, inherit_from=self)
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -134,7 +142,7 @@ class Relation:
         new_name = self.gen_tmp_name()
         # new_history_name = [new_name]
         # new_history_name = new_history_name + self.history_name
-        result = Relation(name=new_name,
+        result = relation(name=new_name,
                           cols=self.cols,
                           constr_expr=ConstrExpr(iter_expr=self.iter_expr,
                                                  any_expr=SetExpr(RecExpr(kv_pair=rename_dict))
@@ -157,6 +165,8 @@ class Relation:
         return self.expr
 
     def show(self):
+        if self.data:
+            print(f'let {self.name} = {self.data}')
         print(self.name)
 
     def update_from_relation(self, r):
@@ -180,7 +190,7 @@ class Relation:
         for col in col_list:
             tmp_dict[col] = f'{self.iter_expr.key}.{col}'
 
-        return Relation(name=self.gen_tmp_name(),
+        return relation(name=self.gen_tmp_name(),
                         cols=self.cols,
                         constr_expr=ConstrExpr(iter_expr=self.iter_expr,
                                                any_expr=SetExpr(RecExpr(tmp_dict))
@@ -268,7 +278,7 @@ class Relation:
                 if aggr_flag == 'avg':
                     pass
 
-        tmp_r = Relation(name=self.gen_tmp_name(),
+        tmp_r = relation(name=self.gen_tmp_name(),
                          cols=self.cols,
                          constr_expr=ConstrExpr(iter_expr=self.iter_expr,
                                                 any_expr=RecExpr(kv_pair=tmp_dict)),
@@ -296,10 +306,10 @@ class Relation:
         pass
 
     def optimized_merge(self, other, on):
-        if not type(other) == Relation:
+        if not type(other) == relation:
             raise TypeError()
         tmp_d = DictExpr({on.get_1st(): DictExpr({self.iter_expr.key: self.iter_expr.val})})
-        tmp_r = Relation(name=f'part_{self.name}',
+        tmp_r = relation(name=f'part_{self.name}',
                          constr_expr=ConstrExpr(iter_expr=self.iter_expr,
                                                 any_expr=tmp_d),
                          inherit_from=self
@@ -308,7 +318,7 @@ class Relation:
 
         result_d = DictExpr(
             {f'concat({other.iter_expr.key}, {tmp_r.iter_expr.key})': f'{other.iter_expr.val} * {tmp_r.iter_expr.val}'})
-        result_r = Relation(name=self.gen_tmp_name(),
+        result_r = relation(name=self.gen_tmp_name(),
                             constr_expr=ConstrExpr(
                                 iter_expr=f'{other.iter_expr} sum( {tmp_r.iter_expr.kv_pair} in {tmp_r.name}({on.get_2nd()}) )',
                                 any_expr=result_d),
@@ -324,7 +334,7 @@ class Relation:
         return result_r
 
     def inherit(self, other):
-        if not type(other) == Relation:
+        if not type(other) == relation:
             raise TypeError('Only inherit from pysdql.Relation')
 
         if other.history_name:
@@ -341,3 +351,9 @@ class Relation:
     @staticmethod
     def case(when, then_case, else_case):
         return CaseExpr(when, then_case, else_case)
+
+    @property
+    def sdql_expr(self):
+        expr_str = f'\n'.join([f'{i}' for i in self.operations])
+        expr_str += f'\n{self.name}'
+        return expr_str

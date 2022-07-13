@@ -38,14 +38,14 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    part = pysdql.Relation(name='part', cols=pysdql.PART_COLS)
-    supplier = pysdql.Relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    orders = pysdql.Relation(name='orders', cols=pysdql.ORDERS_COLS)
-    customer = pysdql.Relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    n1 = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
-    n2 = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
-    region = pysdql.Relation(name='region', cols=pysdql.REGION_COLS)
+    part = pysdql.relation(name='part', cols=pysdql.PART_COLS)
+    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
+    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
+    n1 = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
+    n2 = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
+    region = pysdql.relation(name='region', cols=pysdql.REGION_COLS)
 
     r = pysdql.merge(part, supplier, lineitem, orders, customer, n1, n2, region,
                      on=((part['p_partkey'] == lineitem['l_partkey'])

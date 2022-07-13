@@ -3,5 +3,7 @@ from pysdql.core.dtypes.ColumnUnit import ColUnit
 from pysdql.core.dtypes.ColumnExpr import ColExpr
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ConditionalExpr import CondExpr
-from pysdql.core.dtypes.structure.Relation import Relation
+from pysdql.core.dtypes.structure.relation import relation
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
+from pysdql.core.dtypes.semi_ring_dict import sdict
+from pysdql.core.dtypes.semi_ring_record import srecord

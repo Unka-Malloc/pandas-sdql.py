@@ -29,8 +29,8 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    orders = pysdql.Relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
 
     r = pysdql.merge(orders, lineitem, on=(orders['o_orderkey'] == lineitem['l_orderkey']))
 

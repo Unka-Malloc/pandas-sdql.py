@@ -154,8 +154,8 @@ class GroupbyExpr:
         #                                         any_expr=SetExpr(RecExpr(kv_pair=tmp_dict))),
         #                  inherit_from=self.groupby_from)
         # print(tmp_r)
-        from pysdql import Relation
-        return Relation('agg_r')
+        from pysdql import relation
+        return relation('agg_r')
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
         result_dict = {}
@@ -207,11 +207,11 @@ class GroupbyExpr:
 
         print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
 
-        from pysdql import Relation
-        return Relation('agg_r')
+        from pysdql import relation
+        return relation('agg_r')
 
     def filter(self, func):
         func(HavUnit(iter_expr=self.iter_expr, groupby_cols=self.groupby_cols))
 
-        from pysdql.core.dtypes.structure.Relation import Relation
-        return Relation(name='hvR')
+        from pysdql.core.dtypes.structure.relation import relation
+        return relation(name='hvR')

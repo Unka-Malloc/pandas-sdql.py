@@ -1,6 +1,12 @@
 from pysdql.core.api import (
-    Relation,
-    ConcatExpr
+    # db_driver
+    driver,
+
+    # dtypes
+    relation,
+
+    # data_loader
+    read_tbl,
 )
 from pysdql.const import (
     PART_COLS,
@@ -34,7 +40,7 @@ def merge(*args, on=None, name=None, optimize=False):
 
     print(f'let {name} = {ie_str} {con_str} in')
 
-    return Relation(name)
+    return relation(name)
 
 
 def concat(keys: list) -> str:

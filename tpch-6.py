@@ -13,7 +13,7 @@ where
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
 
     lineitem = lineitem[(lineitem.l_shipdate >= ':1')
                         & (lineitem.l_shipdate < ':1 + 1 year')

@@ -1,12 +1,12 @@
 import unittest
-from pysdql import Relation
+from pysdql import relation
 from pysdql.core.dtypes.ColumnUnit import ColUnit
 
 
 class MyTestCase(unittest.TestCase):
     @property
     def relation(self):
-        return Relation('R')
+        return relation('R')
 
     def test_selection(self):
         a = self.relation['A']
