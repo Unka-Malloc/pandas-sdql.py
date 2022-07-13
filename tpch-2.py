@@ -41,11 +41,11 @@ where
 import pysdql
 
 if __name__ == '__main__':
-    part = pysdql.Relation(name='part', cols=pysdql.PART_COLS)
-    supplier = pysdql.Relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    partsupp = pysdql.Relation(name='partsupp', cols=pysdql.PARTSUPP_COLS)
-    nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
-    region = pysdql.Relation(name='region', cols=pysdql.REGION_COLS)
+    part = pysdql.relation(name='part', cols=pysdql.PART_COLS)
+    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
+    partsupp = pysdql.relation(name='partsupp', cols=pysdql.PARTSUPP_COLS)
+    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
+    region = pysdql.relation(name='region', cols=pysdql.REGION_COLS)
 
     aggr_val = pysdql.merge(partsupp, supplier, nation, region,
                             on=(part['p_partkey'] == partsupp['ps_partkey'])

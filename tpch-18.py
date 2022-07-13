@@ -32,9 +32,9 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    customer = pysdql.Relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    orders = pysdql.Relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
+    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
 
     r = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > ':1')[['l_orderkey']]
 

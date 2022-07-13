@@ -28,9 +28,9 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    partsupp = pysdql.Relation(name='partsupp', cols=pysdql.PARTSUPP_COLS)
-    supplier = pysdql.Relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
+    partsupp = pysdql.relation(name='partsupp', cols=pysdql.PARTSUPP_COLS)
+    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
+    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
 
     # agg_val = pysdql.merge(partsupp, supplier, nation,
     #                        on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])

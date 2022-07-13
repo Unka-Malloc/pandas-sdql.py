@@ -39,10 +39,10 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    supplier = pysdql.Relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    orders = pysdql.Relation(name='orders', cols=pysdql.ORDERS_COLS)
-    nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
+    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
+    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
 
     r1 = lineitem[(lineitem['l_orderkey'] == lineitem['l_orderkey'])
                   & (lineitem['l_suppkey'] != lineitem['l_suppkey'])].rename('r1')

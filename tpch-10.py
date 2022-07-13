@@ -34,10 +34,10 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    customer = pysdql.Relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    orders = pysdql.Relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    nation = pysdql.Relation(name='nation', cols=pysdql.NATION_COLS)
+    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
+    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
 
     r = pysdql.merge(customer, orders, lineitem, nation,
                      on=(customer['c_custkey'] == orders['o_custkey'])

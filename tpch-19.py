@@ -38,8 +38,8 @@ where
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    part = pysdql.Relation(name='part', cols=pysdql.PART_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    part = pysdql.relation(name='part', cols=pysdql.PART_COLS)
 
     c1 = (part['p_brand'] == ':1') \
          & (part['p_container'].isin(('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG'))) \

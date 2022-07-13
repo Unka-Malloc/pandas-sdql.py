@@ -15,8 +15,8 @@ where
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.Relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    part = pysdql.Relation(name='part', cols=pysdql.PART_COLS)
+    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    part = pysdql.relation(name='part', cols=pysdql.PART_COLS)
 
     part_agg = lineitem.groupby(['l_partkey']) \
         .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \

@@ -8,6 +8,8 @@ class VarExpr:
 
     @property
     def expr(self) -> str:
+        if self.data:
+            return f'let {self.name} = {self.data}'
         return self.name
 
     def __repr__(self):
