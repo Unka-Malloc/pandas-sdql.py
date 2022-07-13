@@ -39,6 +39,8 @@ class CondUnit:
             return f'{self.unit1} {self.op} {self.unit2}'
         if self.op == '||':
             return f'({self.unit1}) {self.op} ({self.unit2})'
+        if self.op == '~':
+            return f'not ({self.unit1})'
         return f'{self.unit1} {self.op} {self.unit2}'
 
     @property
@@ -66,6 +68,11 @@ class CondUnit:
                         operator='&&',
                         unit2=self)
 
+    def __iand__(self, other):
+        return CondUnit(unit1=other,
+                        operator='&&',
+                        unit2=self)
+
     def __or__(self, other):
         return CondUnit(unit1=self,
                         operator='||',
@@ -74,4 +81,14 @@ class CondUnit:
     def __ror__(self, other):
         return CondUnit(unit1=other,
                         operator='||',
+                        unit2=self)
+
+    def __ior__(self, other):
+        return CondUnit(unit1=self,
+                        operator='||',
+                        unit2=other)
+
+    def __invert__(self):
+        return CondUnit(unit1=self,
+                        operator='~',
                         unit2=self)

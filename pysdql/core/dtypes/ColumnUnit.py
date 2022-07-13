@@ -125,21 +125,30 @@ class ColUnit:
     def __truediv__(self, other):
         return ColExpr(unit1=self, operator='/', unit2=other)
 
-    def __floordiv__(self, other):
-        return ColExpr(unit1=self, operator='/', unit2=other)
-
-    def __rfloordiv__(self, other):
+    def __rtruediv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self)
 
-    def isin(self, vals):
+    def isin(self, vals, *args):
         if type(vals) == ColUnit:
             return IsinExpr(self, vals)
 
         if type(vals) == list or type(vals) == tuple:
-            column = f'{self.relation.iter_expr.key}.{self.name}'
+            if len(vals) == 0:
+                raise ValueError()
+            if len(vals) == 1:
+                return vals[0]
 
             tmp_list = []
             for i in vals:
-                tmp_list.append(f'{column} == "{i}"')
+                if type(i) == str:
+                    i = f'"{i}"'
+                tmp_list.append(CondUnit(unit1=self, operator='==', unit2=i))
 
-            return f"({' || '.join(tmp_list)})"
+            while True:
+                a = tmp_list.pop()
+                b = tmp_list.pop()
+                tmp_cond = a | b
+                if tmp_list:
+                    tmp_cond |= tmp_cond
+                else:
+                    return tmp_cond

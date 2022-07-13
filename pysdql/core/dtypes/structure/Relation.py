@@ -12,7 +12,6 @@ from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
-from pysdql.core.dtypes.VarExpr import VarExpr
 
 
 class Relation:
@@ -334,12 +333,11 @@ class Relation:
             self.history_name += [other.name]
 
     def exists(self):
-        return f'({self.iter_expr} {self.iter_expr.val}) > 0'
+        return CondUnit(f'({self.iter_expr} {self.iter_expr.val})', '>', 0)
 
     def not_exists(self):
-        return f'({self.iter_expr} {self.iter_expr.val}) == 0'
+        return CondUnit(f'({self.iter_expr} {self.iter_expr.val})', '==', 0)
 
     @staticmethod
     def case(when, then_case, else_case):
         return CaseExpr(when, then_case, else_case)
-
