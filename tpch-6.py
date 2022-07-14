@@ -13,12 +13,16 @@ where
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    lineitem = lineitem[(lineitem.l_shipdate >= ':1')
-                        & (lineitem.l_shipdate < ':1 + 1 year')
-                        & (lineitem.l_discount > ':2 - 0.01')
-                        & (lineitem.l_discount < ':2 + 0.01')
-                        & (lineitem.l_quantity > ':3')]
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    lineitem.aggr(revenue=(lineitem['l_extendedprice'] * lineitem['l_discount'], 'sum'))
+    r = lineitem[(lineitem.l_shipdate >= 19960301)
+                 & (lineitem.l_shipdate < 19970301)
+                 & (lineitem.l_discount > 0.09)
+                 & (lineitem.l_discount < 1.01)
+                 & (lineitem.l_quantity > 20)]
+
+    r = r.aggr(revenue=(lineitem['l_extendedprice'] * lineitem['l_discount'], 'sum'))
+
+    db_driver.run(r)

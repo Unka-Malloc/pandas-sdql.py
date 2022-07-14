@@ -14,10 +14,7 @@ class CondUnit:
             u2_str = self.unit2.new_expr(new_str)
         else:
             u2_str = str(self.unit2)
-        return f'{u1_str} {self.op} {u2_str}'
-
-    def new_expr_with_if(self, new_str) -> str:
-        return f'if ({self.new_expr(new_str)})'
+        return f'({u1_str} {self.op} {u2_str})'
 
     def get_1st(self):
         return str(self.unit1)
@@ -26,34 +23,18 @@ class CondUnit:
         return str(self.unit2)
 
     @property
-    def expr_without_if(self) -> str:
-        """
-        Conditional Expression without 'if'
-        :return:
-        """
-        if self.op in ['==', '>', '>=', '<', '<=']:
-            return f'{self.unit1} {self.op} {self.unit2}'
+    def expr(self):
+        if self.op in ['>', '>=', '==', '<=', '<']:
+            return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '!=':
             return f'not ({self.unit1} == {self.unit2})'
         if self.op == '&&':
-            return f'{self.unit1} {self.op} {self.unit2}'
+            return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '||':
             return f'({self.unit1}) {self.op} ({self.unit2})'
         if self.op == '~':
             return f'not ({self.unit1})'
-        return f'{self.unit1} {self.op} {self.unit2}'
-
-    @property
-    def expr_with_if(self):
-        """
-        Conditional Expression with 'if'
-        :return:
-        """
-        return f'if ({self.expr_without_if})'
-
-    @property
-    def expr(self):
-        return self.expr_without_if
+        return f'({self.unit1} {self.op} {self.unit2})'
 
     def __repr__(self):
         return self.expr

@@ -4,6 +4,12 @@ from pysdql.core.api import (
 
     # dtypes
     relation,
+    CompoExpr,
+    CondExpr,
+    DictExpr,
+    VarExpr,
+    OpExpr,
+    ConcatExpr,
 
     # data_loader
     read_tbl,
@@ -27,20 +33,21 @@ def merge(*args, on=None, name=None, optimize=False):
     ie_list = []
     ik_list = []
     iv_list = []
+    op_list = []
+
     for r in args:
         ie_list.append(str(r.iter_expr))
         ik_list.append(str(r.iter_expr.key))
         iv_list.append(str(r.iter_expr.val))
+        op_list += r.operations
 
     iv_str = " * ".join(iv_list)
 
-    ie_str = ' '.join(ie_list)
+    result = VarExpr(name, CompoExpr(ie_list, CondExpr(on, DictExpr({concat(ik_list): iv_str}), DictExpr({}))))
+    op_list.append(OpExpr('pysdql_merge', result))
 
-    con_str = f'if({on})\n  {{ {concat(ik_list)} -> {iv_str} }}'
-
-    print(f'let {name} = {ie_str} {con_str} in')
-
-    return relation(name)
+    return relation(name=name,
+                    operations=op_list)
 
 
 def concat(keys: list) -> str:

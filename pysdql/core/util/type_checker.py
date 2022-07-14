@@ -1,8 +1,8 @@
 import re
 
 
-def has_neg(data: str):
-    if '-' in data:
+def is_neg_int(data: str):
+    if data[0] == '-':
         return True
 
     return False
@@ -26,10 +26,9 @@ def rmv_dot(data: str):
 def is_date(data):
     if type(data) == str:
         data = str(data)
-        if has_neg(data):
-            pattern = re.compile(r'(\d{4}-\d{2}-\d{2})')
-            if pattern.findall(data):
-                return True
+        pattern = re.compile(r'(\d{4}-\d{2}-\d{2})')
+        if pattern.findall(data.strip()):
+            return True
     return False
 
 
@@ -43,7 +42,7 @@ def is_int(data):
         if is_date(data):
             return False
 
-        if has_neg(data):
+        if is_neg_int(data):
             data = rmv_neg(data)
         if data.isdigit():
             return True
@@ -61,7 +60,7 @@ def is_float(data):
         if is_int(data):
             return False
 
-        if has_neg(data):
+        if is_neg_int(data):
             data = rmv_neg(data)
         if has_dot(data):
             data = rmv_dot(data)

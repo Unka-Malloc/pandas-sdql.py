@@ -7,7 +7,16 @@ class OpExpr:
 
     @property
     def op_ref_dict(self):
-        return {'data': 0}
+        return {'relation_data': 0,
+                'relation_selection': 1,
+                'groupby_nested_dict': 2,
+                'groupby_result': 3,
+                'groupby_aggr_parse_nested_dict': 4,
+                'groupby_aggr_result': 5,
+                'relation_aggr_kwargs_aggr_tuple': 6,
+                'relation_aggr_kwargs_aggr_result': 7,
+                'pysdql_merge': 8,
+                }
 
     @property
     def expr(self):

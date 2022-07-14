@@ -24,16 +24,20 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    lineitem = lineitem[lineitem['l_shipdate'] <= ':date']
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    lineitem.groupby(['l_returnflag', 'l_linestatus']).aggr(sum_qty=(lineitem['l_quantity'], 'sum'),
-                                                            sum_base_price=(lineitem['l_extendedprice'], 'sum'),
-                                                            sum_disc_price=(lineitem['l_extendedprice'] * (1 - lineitem['l_discount']),'sum'),
-                                                            sum_charge=(lineitem['l_extendedprice'] * (1 - lineitem['l_discount']) * (1 + lineitem['l_tax']), 'sum'),
-                                                            avg_qty=(lineitem['l_quantity'], 'avg'),
-                                                            avg_price=(lineitem['l_extendedprice'], 'avg'),
-                                                            avg_disc=(lineitem['l_discount'], 'avg'),
-                                                            count_order=(lineitem['*'], 'count'))
+    r = lineitem[lineitem['l_shipdate'] <= 19960313]
 
+    r = r.groupby(['l_returnflag', 'l_linestatus'])
+    r = r.aggr(sum_qty=(lineitem['l_quantity'], 'sum'),
+               sum_base_price=(lineitem['l_extendedprice'], 'sum'),
+               sum_disc_price=(lineitem['l_extendedprice'] * (1 - lineitem['l_discount']), 'sum'),
+               sum_charge=(lineitem['l_extendedprice'] * (1 - lineitem['l_discount']) * (1 + lineitem['l_tax']), 'sum'),
+               avg_qty=(lineitem['l_quantity'], 'avg'),
+               avg_price=(lineitem['l_extendedprice'], 'avg'),
+               avg_disc=(lineitem['l_discount'], 'avg'),
+               count_order=(lineitem['*'], 'count'))
+
+    db_driver.run(r)

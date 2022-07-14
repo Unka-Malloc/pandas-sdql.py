@@ -1,7 +1,6 @@
 class DictExpr:
-    def __init__(self, data: dict, name=None):
+    def __init__(self, data: dict):
         self.data = data
-        self.name = name
 
     @property
     def expr(self) -> str:
@@ -12,7 +11,4 @@ class DictExpr:
 
     def __repr__(self):
         return self.expr
-
-    def __getitem__(self, item):
-        return f'{self.name}({item})'
 

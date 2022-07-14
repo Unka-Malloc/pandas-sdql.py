@@ -9,38 +9,58 @@ from pysdql.core.dtypes.IterationExpr import IterExpr
 from pysdql.core.dtypes.ColumnUnit import ColUnit
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ConditionalExpr import CondExpr
-from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
+from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
 
 
 class relation:
-    def __init__(self, name, cols=None, data=None, constr_expr=None, inherit_from=None):
+    def __init__(self, name, data=None, cols=None, inherit_from=None, operations=None):
         """
         If you need an optimizer, give it to relation and pass to all classes
         :param name:
         :param cols:
-        :param constr_expr:
+        :param compo_expr:
         :param inherit_from:
         """
+        if cols is None:
+            cols = []
+
         self.name = name
         self.cols = cols
         self.data = data
-        self.constr_expr = constr_expr
 
         self.history_name = []
         self.operations = []
 
+        if operations:
+            self.operations += operations
+
         if self.data:
-            self.operations.append(OpExpr('data', VarExpr(self.name, self.data)))
+            self.operations.append(OpExpr('relation_data', VarExpr(self.name, self.data)))
 
         if inherit_from:
             self.inherit(inherit_from)
 
         self.iter_expr = IterExpr(self.name)
+
+    @property
+    def key(self):
+        return self.iter_expr.key
+
+    @property
+    def val(self):
+        return self.iter_expr.val
+
+    @property
+    def last_operation(self):
+        if self.operations:
+            return self.operations[-1]
+        return ''
 
     def rename(self, name):
         print(f'let {name} = {self.name} in')
@@ -60,13 +80,22 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
-        cond_expr = CondExpr(conditions=item, then_case=SetExpr(self.iter_expr.key), new_iter=self.iter_expr.key)
-        result = relation(name=self.gen_tmp_name(),
-                          cols=self.cols,
-                          constr_expr=ConstrExpr(iter_expr=self.iter_expr, any_expr=cond_expr),
+        cond_expr = CondExpr(conditions=item,
+                             then_case=DictExpr({self.iter_expr.key: 1}),
+                             else_case=DictExpr({}),
+                             new_iter=self.iter_expr.key)
+        compo_expr = CompoExpr(iter_expr=self.iter_expr,
+                               any_expr=cond_expr)
+
+        var_name = self.gen_tmp_name()
+
+        result = relation(name=var_name,
+                          # data=self.data,
+                          # cols=self.cols,
+                          # compo_expr=compo_expr,
                           inherit_from=self)
 
-        print(result.expr)
+        self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
         return result
 
     def projection(self, cols):
@@ -74,8 +103,6 @@ class relation:
         for i in cols:
             tmp_d[i] = f'{self.iter_expr.key}.{i}'
         result = relation(name=self.gen_tmp_name(),
-                          cols=cols,
-                          constr_expr=ConstrExpr(iter_expr=self.iter_expr, any_expr=SetExpr(RecExpr(tmp_d))),
                           inherit_from=self
                           )
         print(result)
@@ -144,9 +171,9 @@ class relation:
         # new_history_name = new_history_name + self.history_name
         result = relation(name=new_name,
                           cols=self.cols,
-                          constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                                 any_expr=SetExpr(RecExpr(kv_pair=rename_dict))
-                                                 ),
+                          compo_expr=CompoExpr(iter_expr=self.iter_expr,
+                                               any_expr=SetExpr(RecExpr(kv_pair=rename_dict))
+                                               ),
                           inherit_from=self)
 
         print(result)
@@ -156,10 +183,7 @@ class relation:
 
     @property
     def expr(self) -> str:
-        if self.constr_expr:
-            return f'let {self.name} = {self.constr_expr} in'
-        else:
-            return f'{self.name}'
+        return f'{self.name}'
 
     def __repr__(self):
         return self.expr
@@ -177,7 +201,6 @@ class relation:
         """
         self.name = r.name
         self.cols = r.cols
-        self.constr_expr = r.constr_expr
         self.history_name = r.history_name
 
     def from_cols(self, col_list: list):
@@ -192,9 +215,9 @@ class relation:
 
         return relation(name=self.gen_tmp_name(),
                         cols=self.cols,
-                        constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                               any_expr=SetExpr(RecExpr(tmp_dict))
-                                               ),
+                        compo_expr=CompoExpr(iter_expr=self.iter_expr,
+                                             any_expr=SetExpr(RecExpr(tmp_dict))
+                                             ),
                         inherit_from=self
                         )
 
@@ -203,11 +226,10 @@ class relation:
         let tmp = sum (<l_k, l_v> in lineitem) { <l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus> -> {l_k -> l_v} }
         in let tmpa = sum(<t_k, t_v> in tmp) { <l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus, group=t_v> }
         """
-        from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
-        return GroupbyExpr(name=self.gen_tmp_name(),
-                           groupby_from=self,
-                           groupby_cols=cols,
-                           )
+        var_name = self.gen_tmp_name()
+        return GroupbyExpr(name=var_name,
+                              groupby_from=self,
+                              groupby_cols=cols)
 
     def aggr(self, aggr_func=None, *aggr_args, **aggr_kwargs):
         """
@@ -262,29 +284,49 @@ class relation:
         return ArrayExpr(new_name, list(tmp_dict.values()))
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
+        result_dict = {}
+
+        aggr_record = self.gen_tmp_name()
+
+        tmp_name = self.gen_tmp_name()
+        tmp_iter_expr = IterExpr(tmp_name)
 
         tmp_dict = {}
         for aggr_key in aggr_dict.keys():
             aggr_val = aggr_dict[aggr_key]
             if type(aggr_val) == ColUnit:
-                tmp_dict[aggr_key] = f'{self.iter_expr.key}.{aggr_val.name}'
+                result_dict[aggr_key] = f'{aggr_record}.{aggr_dict[aggr_key].name}'
             if type(aggr_val) == tuple:
-                aggr_calc = aggr_dict[aggr_key][0]
+                if type(aggr_dict[aggr_key][0]) == ColUnit or type(aggr_dict[aggr_key][0]) == ColExpr:
+                    aggr_calc = aggr_dict[aggr_key][0].new_expr(f'{self.iter_expr.key}')
+                else:
+                    aggr_calc = aggr_dict[aggr_key][0]
                 aggr_flag = aggr_dict[aggr_key][1]
                 if aggr_flag == 'sum':
                     tmp_dict[aggr_key] = f'{aggr_calc} * {self.iter_expr.val}'
+                    result_dict[aggr_key] = f'{aggr_record}.{aggr_key}'
                 if aggr_flag == 'count':
                     tmp_dict[aggr_key] = f'{self.iter_expr.val}'
+                    result_dict[aggr_key] = f'{aggr_record}.{aggr_key}'
                 if aggr_flag == 'avg':
-                    pass
+                    tmp_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {self.iter_expr.val}'
+                    tmp_dict[f'{aggr_key}_count'] = f'{self.iter_expr.val}'
+                    result_dict[aggr_key] = f'({aggr_record}.{aggr_key}_sum' \
+                                            f' / ' \
+                                            f'{aggr_record}.{aggr_key}_count)'
 
-        tmp_r = relation(name=self.gen_tmp_name(),
-                         cols=self.cols,
-                         constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                                any_expr=RecExpr(kv_pair=tmp_dict)),
-                         inherit_from=self)
-        print(tmp_r)
-        return tmp_r
+        aggr_record = VarExpr(tmp_name, CompoExpr(self.iter_expr, RecExpr(tmp_dict)))
+        self.history_name.append(tmp_name)
+        self.operations.append(OpExpr('relation_aggr_kwargs_aggr_record', aggr_record))
+
+        new_name = self.gen_tmp_name()
+
+        aggr_result = VarExpr(new_name, DictExpr({RecExpr(result_dict): 1}))
+        self.history_name.append(new_name)
+        self.operations.append(OpExpr('relation_aggr_kwargs_aggr_result', aggr_result))
+
+        return relation(name=tmp_name,
+                        inherit_from=self)
 
     def aggr_on_col(self, col_name: str, aggr_func=None, *args, **kwargs):
         """
@@ -310,8 +352,6 @@ class relation:
             raise TypeError()
         tmp_d = DictExpr({on.get_1st(): DictExpr({self.iter_expr.key: self.iter_expr.val})})
         tmp_r = relation(name=f'part_{self.name}',
-                         constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-                                                any_expr=tmp_d),
                          inherit_from=self
                          )
         print(tmp_r)
@@ -319,9 +359,6 @@ class relation:
         result_d = DictExpr(
             {f'concat({other.iter_expr.key}, {tmp_r.iter_expr.key})': f'{other.iter_expr.val} * {tmp_r.iter_expr.val}'})
         result_r = relation(name=self.gen_tmp_name(),
-                            constr_expr=ConstrExpr(
-                                iter_expr=f'{other.iter_expr} sum( {tmp_r.iter_expr.kv_pair} in {tmp_r.name}({on.get_2nd()}) )',
-                                any_expr=result_d),
                             inherit_from=tmp_r)
         print(result_r)
 
@@ -334,16 +371,22 @@ class relation:
         return result_r
 
     def inherit(self, other):
-        if not type(other) == relation:
-            raise TypeError('Only inherit from pysdql.Relation')
+        """
 
-        if other.history_name:
-            self.history_name += [other.name] + other.history_name
-        else:
-            self.history_name += [other.name]
+        pysdql.relation :param other:
+        :return:
+        """
+        if not (type(other) == relation or type(other) == GroupbyExpr):
+            raise TypeError('Only inherit from pysdql.Relation or GroupbyExpr')
+
+        # Inherit variable names
+        self.history_name += [other.name] + other.history_name
+
+        # Inherit operations
+        self.operations = other.operations
 
     def exists(self):
-        return CondUnit(f'({self.iter_expr} {self.iter_expr.val})', '>', 0)
+        return CondUnit(0, '<', f'({self.iter_expr} {self.iter_expr.val})')
 
     def not_exists(self):
         return CondUnit(f'({self.iter_expr} {self.iter_expr.val})', '==', 0)
@@ -357,6 +400,3 @@ class relation:
         expr_str = f'\n'.join([f'{i}' for i in self.operations])
         expr_str += f'\n{self.name}'
         return expr_str
-
-
-
