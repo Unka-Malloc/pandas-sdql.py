@@ -2,34 +2,53 @@ import string
 
 from pysdql.core.dtypes.ColumnExpr import ColExpr
 from pysdql.core.dtypes.ColumnUnit import ColUnit
-from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
+from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.HavUnit import HavUnit
 from pysdql.core.dtypes.IterationExpr import IterExpr
+from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
 
 
 class GroupbyExpr:
     def __init__(self, name, groupby_from, groupby_cols):
+        """
+
+        :param name: str
+        :param groupby_from: pysdql.relation
+        :param groupby_cols: list
+        """
         self.name = name
         self.groupby_from = groupby_from
         self.groupby_cols = groupby_cols
 
         self.history_name = []
+        self.operations = []
+        self.operations += groupby_from.operations
 
         self.iter_expr = IterExpr(self.name)
         self.last_iter = self.groupby_from.iter_expr
-        self.tmp_name = self.gen_tmp_name()
-        self.tmp_iter_expr = IterExpr(self.tmp_name)
+        self.nested_dict_name = self.gen_tmp_name()
+        self.nested_dict_iter_expr = IterExpr(self.nested_dict_name)
 
-        self.show_tmp()
-        self.show()
+        # let tmpa = sum (<l_k, l_v> in lmp) { < l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus > -> { l_k -> l_v } }
+        self.groupby_nested_dict = self.get_nested_dict()
+        # let tmp = sum (<ta_k, ta_v> in tmpa) { < l_returnflag=ta_k.l_returnflag, l_linestatus=ta_k.l_linestatus, group=ta_v > }
+        self.groupby_result = self.get_result()
 
-    def cols_in_rec(self) -> dict:
+        # let tmpb = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus > -> < sum_qty=g_k.l_quantity * g_v, sum_base_price=g_k.l_extendedprice * g_v, sum_disc_price=(g_k.l_extendedprice * (1 - g_k.l_discount)) * g_v, sum_charge=((g_k.l_extendedprice * (1 - g_k.l_discount)) * (1 + g_k.l_tax)) * g_v, avg_qty_sum=g_k.l_quantity * g_v, avg_qty_count=g_v, avg_price_sum=g_k.l_extendedprice * g_v, avg_price_count=g_v, avg_disc_sum=g_k.l_discount * g_v, avg_disc_count=g_v, count_order=g_v > }
+        self.groupby_aggr_parse_nested_dict = None
+        # let agg_r = sum (<tb_k, tb_v> in tmpb) { < l_returnflag=tb_k.l_returnflag, l_linestatus=tb_k.l_linestatus, sum_qty=tb_v.sum_qty, sum_base_price=tb_v.sum_base_price, sum_disc_price=tb_v.sum_disc_price, sum_charge=tb_v.sum_charge, avg_qty=(tb_v.avg_qty_sum / tb_v.avg_qty_count), avg_price=(tb_v.avg_price_sum / tb_v.avg_price_count), avg_disc=(tb_v.avg_disc_sum / tb_v.avg_disc_count), count_order=tb_v.count_order > } in
+        self.groupby_aggr_result = None
+
+    def cols_in_rec(self, key=None) -> dict:
+        if key is None:
+            key = self.iter_expr.key
         tmp_d = {}
         for c in self.groupby_cols:
-            tmp_d[c] = f'{self.iter_expr.key}.{c}'
+            tmp_d[c] = f'{key}.{c}'
         return tmp_d
 
     def gen_tmp_name(self, noname=None):
@@ -45,29 +64,37 @@ class GroupbyExpr:
             if tmp_name not in dup_list:
                 return tmp_name
 
-    def show_tmp(self):
+    def get_nested_dict(self):
         # let tmp = sum (<l_k, l_v> in lineitem) { <l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus> -> {l_k -> l_v} } in
         tmp_dict = {}
         for c in self.groupby_cols:
             tmp_dict[c] = f'{self.last_iter.key}.{c}'
+
         tmp_key = RecExpr(tmp_dict)
         tmp_val = DictExpr({self.last_iter.key: self.last_iter.val})
-        print(f'let {self.tmp_name} = {self.last_iter} {DictExpr({tmp_key: tmp_val})} in')
 
-        self.history_name += [self.name]
+        nested_dict = VarExpr(name=self.nested_dict_name,
+                              data=CompoExpr(self.last_iter, DictExpr({tmp_key: tmp_val})))
 
-    def show(self):
+        self.history_name.append(self.nested_dict_name)
+        self.operations.append(OpExpr('groupby_nested_dict', nested_dict))
+
+        return nested_dict
+
+    def get_result(self):
         #  sum(<t_k, t_v> in tmp) { <l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus, group=t_v> }
-        new_d = {}
+        tmp_dict = {}
         for c in self.groupby_cols:
-            new_d[c] = f'{self.tmp_iter_expr.key}.{c}'
-        new_d['group'] = f'{self.tmp_iter_expr.val}'
+            tmp_dict[c] = f'{self.nested_dict_iter_expr.key}.{c}'
+        tmp_dict['group'] = f'{self.nested_dict_iter_expr.val}'
 
-        self.history_name += [self.tmp_name]
+        result = VarExpr(name=self.name,
+                         data=CompoExpr(self.nested_dict_iter_expr, DictExpr({RecExpr(tmp_dict): 1})))
 
-        print(f'let {self.name} = {self.tmp_iter_expr} {SetExpr(RecExpr(new_d))} in')
+        self.history_name.append(self.name)
+        self.operations.append(OpExpr('groupby_result', result))
 
-        self.iter_expr = IterExpr(self.name)
+        return result
 
     def aggr(self, aggr_func=None, *aggr_args, **aggr_kwargs):
         """
@@ -147,13 +174,6 @@ class GroupbyExpr:
 
         print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
 
-        # from pysdql import Relation
-        # tmp_r = Relation(name=self.gen_tmp_name(),
-        #                  cols=self.groupby_from.cols,
-        #                  constr_expr=ConstrExpr(iter_expr=self.iter_expr,
-        #                                         any_expr=SetExpr(RecExpr(kv_pair=tmp_dict))),
-        #                  inherit_from=self.groupby_from)
-        # print(tmp_r)
         from pysdql import relation
         return relation('agg_r')
 
@@ -198,20 +218,48 @@ class GroupbyExpr:
                 if aggr_flag == 'avg':
                     aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {aggr_tmp_iter_val}'
                     aggr_tuple_dict[f'{aggr_key}_count'] = f'{aggr_tmp_iter_val}'
-                    result_dict[aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
+                    result_dict[
+                        aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
 
-        print(
-            f'let {aggr_tuple_name} = {self.iter_expr} {aggr_tmp_iter_expr} {{ {RecExpr(self.cols_in_rec())} -> {RecExpr(aggr_tuple_dict)} }}')
+        parse_nested_dict = VarExpr(name=aggr_tuple_name,
+                                data=CompoExpr([self.iter_expr, aggr_tmp_iter_expr],
+                                               DictExpr(
+                                                   {RecExpr(self.cols_in_rec()):
+                                                        RecExpr(aggr_tuple_dict)})
+                                               )
+                                )
 
-        self.history_name += [aggr_tuple_name]
+        self.groupby_aggr_parse_nested_dict = parse_nested_dict
+        self.history_name.append(aggr_tuple_name)
+        self.operations.append(OpExpr('groupby_aggr_parse_nested_dict', parse_nested_dict))
 
-        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
+        next_name = f'aggr_{self.groupby_from.name}'
+
+        result = VarExpr(name=next_name,
+                         data=CompoExpr(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+        self.groupby_aggr_result = result
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('groupby_aggr_result', result))
 
         from pysdql import relation
-        return relation('agg_r')
+        return relation(name=next_name,
+                        inherit_from=self)
 
     def filter(self, func):
         func(HavUnit(iter_expr=self.iter_expr, groupby_cols=self.groupby_cols))
 
-        from pysdql.core.dtypes.structure.relation import relation
+        from pysdql import relation
         return relation(name='hvR')
+
+    @property
+    def sdql_expr(self):
+        expr_str = f'\n'.join([f'{i}' for i in self.operations])
+        expr_str += f'\n{self.name}'
+        return expr_str
+
+    @property
+    def expr(self):
+        return self.name
+
+    def __repr__(self):
+        return self.expr

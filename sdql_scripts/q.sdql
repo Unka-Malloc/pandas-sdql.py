@@ -1,0 +1,4 @@
+let customer = { < c_custkey = 1, c_name = "Customer#000000001", c_address = "IVhzIApeRb ot,c,E", c_nationkey = 15, c_phone = "25-989-741-2988", c_acctbal = 711.56, c_mktsegment = "BUILDING", c_comment = "to the even, regular platelets. regular, ironic epitaphs nag e" > -> 1 }
+let orders = { < o_orderkey = 1, o_custkey = 1, o_orderstatus = "O", o_totalprice = 124828.11, o_orderdate = 19960102, o_orderpriority = "5-LOW", o_clerk = "Clerk#000000951", o_shippriority = 0, o_comment = "nstructions sleep furiously among " > -> 1 }
+let R = sum (<c_k, c_v> in customer) sum (<o_k, o_v> in orders) if ((c_k.c_custkey == o_k.o_custkey)) then { concat(c_k, o_k) -> c_v * o_v } else {  }
+R

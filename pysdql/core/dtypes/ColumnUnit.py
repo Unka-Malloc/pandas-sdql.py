@@ -1,6 +1,6 @@
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ColumnExpr import ColExpr
-from pysdql.core.dtypes.ConstructionExpr import ConstrExpr
+from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.IsinExpr import IsinExpr
 from pysdql.core.dtypes.IterationExpr import IterExpr
 
@@ -68,7 +68,7 @@ class ColUnit:
         """
         if type(other) == str:
             other = f'"{other}"'
-        return CondUnit(unit1=self, operator='>', unit2=other)
+        return CondUnit(unit1=other, operator='<', unit2=self)
         # return f'{self.column} > {other}'
 
     def __ge__(self, other) -> CondUnit:
@@ -79,7 +79,7 @@ class ColUnit:
         """
         if type(other) == str:
             other = f'"{other}"'
-        return CondUnit(unit1=self, operator='>=', unit2=other)
+        return CondUnit(unit1=other, operator='<=', unit2=self)
         # return f'{self.column} >= {other}'
 
     def __eq__(self, other) -> CondUnit:

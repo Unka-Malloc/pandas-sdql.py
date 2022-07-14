@@ -63,4 +63,4 @@ if __name__ == '__main__':
 
     s = s.groupby(['s_name']).aggr(numwait=('*', 'count'))
 
-    s.show()
+    s.get_result()

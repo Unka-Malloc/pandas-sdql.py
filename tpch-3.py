@@ -25,15 +25,22 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    r = pysdql.merge(customer, orders, lineitem,
-                     on=((customer['c_custkey'] == orders['o_custkey'])
-                         & (orders['o_orderkey'] == lineitem['l_orderkey'])))
+    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = r[(customer['c_mktsegment'] == ':1') & (orders['o_orderdate'] < ':2') & (lineitem['o_orderdate'] > ':2')]
+    r = pysdql.merge(customer, orders,
+                     on=(customer['c_custkey'] == orders['o_custkey']))
 
-    r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
-        .aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
+    # r = pysdql.merge(customer, orders, lineitem,
+    #                  on=((customer['c_custkey'] == orders['o_custkey'])
+    #                      & (orders['o_orderkey'] == lineitem['l_orderkey'])))
+
+    # r = r[(customer['c_mktsegment'] == ':1') & (orders['o_orderdate'] < ':2') & (lineitem['o_orderdate'] > ':2')]
+    #
+    # r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
+    #     .aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
+
+    db_driver.run(r)

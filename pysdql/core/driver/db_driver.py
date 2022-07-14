@@ -1,6 +1,7 @@
 import os
 import subprocess
 
+from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
 from pysdql.core.dtypes.structure.relation import relation
 
 
@@ -18,9 +19,9 @@ class driver:
         self.script_file_path = (self.script_path + os.sep + self.script_file_name).replace('\\', '/')
 
     def write_script(self, sdql_expr):
-
         with open(self.script_file_path, 'w') as script:
             script.write(sdql_expr)
+            script.close()
 
     def excute_script(self):
         process = self.start('sbt')
@@ -52,6 +53,8 @@ class driver:
 
             if '[success] Total time:' in line:
                 break
+            if '[error] Total time:' in line:
+                break
 
             if get_output:
                 output.append(line)
@@ -74,7 +77,21 @@ class driver:
         process.kill()
         process.wait(timeout=0.2)
 
-    def get(self, r: relation):
-        self.write_script(r.sdql_expr)
+    def run(self, query, show=True, block=False):
+        if not (type(query) == relation
+                or type(query) == GroupbyExpr):
+            raise TypeError()
+        query = query.sdql_expr
+
+        if show:
+            print('========================================================')
+            print(query)
+            print('========================================================')
+
+        if block:
+            return self
+
+        self.write_script(query)
         output = self.excute_script()
+
         return self

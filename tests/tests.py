@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     r = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    db_driver.get(r)
+    db_driver.run(r)
 
 
 

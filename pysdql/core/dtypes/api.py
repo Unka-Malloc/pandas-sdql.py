@@ -5,5 +5,9 @@ from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ConditionalExpr import CondExpr
 from pysdql.core.dtypes.structure.relation import relation
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
-from pysdql.core.dtypes.SRDict import sdict
-from pysdql.core.dtypes.SRRecord import srecord
+from pysdql.core.dtypes.SDict import sdict
+from pysdql.core.dtypes.SRecord import srecord
+from pysdql.core.dtypes.CompositionExpr import CompoExpr
+from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.OpExpr import OpExpr

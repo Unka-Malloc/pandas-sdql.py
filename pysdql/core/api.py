@@ -4,6 +4,15 @@ from pysdql.core.driver.api import (
 
 from pysdql.core.dtypes.api import (
     relation,
+
+    DictExpr,
+    CondExpr,
+    CompoExpr,
+    VarExpr,
+    OpExpr,
+
+    ConcatExpr,
+
     sdict,
     srecord
 )

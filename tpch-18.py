@@ -46,4 +46,4 @@ if __name__ == '__main__':
     s = s[(s['o_orderkey'].isin(r['l_orderkey']))]
     s = s.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
         .aggr({s['l_quantity']: 'sum'})
-    s.show()
+    s.get_result()
