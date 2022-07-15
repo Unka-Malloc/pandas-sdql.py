@@ -31,8 +31,7 @@ if __name__ == '__main__':
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = pysdql.merge(customer, orders,
-                     on=(customer['c_custkey'] == orders['o_custkey']))
+    r = pysdql.merge(customer, orders)
 
     # r = pysdql.merge(customer, orders, lineitem,
     #                  on=((customer['c_custkey'] == orders['o_custkey'])
@@ -43,4 +42,4 @@ if __name__ == '__main__':
     # r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
     #     .aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
 
-    db_driver.run(r)
+    db_driver.run(r, block=False)

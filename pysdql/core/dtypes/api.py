@@ -11,3 +11,4 @@ from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
+from pysdql.core.dtypes.RecordExpr import RecExpr
