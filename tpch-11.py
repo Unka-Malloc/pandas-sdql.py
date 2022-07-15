@@ -61,6 +61,6 @@ if __name__ == '__main__':
     r = r.groupby(['ps_partkey']).filter(lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val)
 
     # SELECT GROUPBY AGGREGATION
-    # r = r.groupby(['ps_partkey']).aggr(value=(r['val'], 'sum'))
+    r = r.groupby(['ps_partkey']).aggr(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
 
-    db_driver.run(s, block=True)
+    db_driver.run(r)

@@ -29,4 +29,18 @@ let nation = { < n_nationkey = 0, n_name = "ALGERIA", n_regionkey = 0, n_comment
 < n_nationkey = 23, n_name = "UNITED KINGDOM", n_regionkey = 3, n_comment = "eans boost carefully special requests. accounts are. carefull" > -> 1, 
 < n_nationkey = 24, n_name = "UNITED STATES", n_regionkey = 1, n_comment = "y final packages. slow foxes cajole quickly. quickly silent platelets breach ironic accounts. unusual pinto be" > -> 1 }
 let S = sum (<p_k, p_v> in partsupp) sum (<s_k, s_v> in supplier) sum (<n_k, n_v> in nation) if (((p_k.ps_suppkey == s_k.s_suppkey) && (s_k.s_nationkey == n_k.n_nationkey))) then { < ps_partkey=p_k.ps_partkey, ps_suppkey=p_k.ps_suppkey, ps_availqty=p_k.ps_availqty, ps_supplycost=p_k.ps_supplycost, ps_comment=p_k.ps_comment, s_suppkey=s_k.s_suppkey, s_name=s_k.s_name, s_address=s_k.s_address, s_nationkey=s_k.s_nationkey, s_phone=s_k.s_phone, s_acctbal=s_k.s_acctbal, s_comment=s_k.s_comment, n_nationkey=n_k.n_nationkey, n_name=n_k.n_name, n_regionkey=n_k.n_regionkey, n_comment=n_k.n_comment > -> 1 } else {  }
-S
+let smp = sum (<s_k, s_v> in S) if ((s_k.n_name == "MOROCCO")) then { s_k -> 1 } else {  }
+let agg_val = sum (<s_k, s_v> in smp) s_v
+let supplier = { < s_suppkey = 1, s_name = "Supplier#000000001", s_address = " N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", s_nationkey = 15, s_phone = "27-918-335-1736", s_acctbal = 5755.94, s_comment = "each slyly above the careful" > -> 1 }
+let R = sum (<p_k, p_v> in partsupp) sum (<s_k, s_v> in supplier) sum (<n_k, n_v> in nation) if (((p_k.ps_suppkey == s_k.s_suppkey) && (s_k.s_nationkey == n_k.n_nationkey))) then { < ps_partkey=p_k.ps_partkey, ps_suppkey=p_k.ps_suppkey, ps_availqty=p_k.ps_availqty, ps_supplycost=p_k.ps_supplycost, ps_comment=p_k.ps_comment, s_suppkey=s_k.s_suppkey, s_name=s_k.s_name, s_address=s_k.s_address, s_nationkey=s_k.s_nationkey, s_phone=s_k.s_phone, s_acctbal=s_k.s_acctbal, s_comment=s_k.s_comment, n_nationkey=n_k.n_nationkey, n_name=n_k.n_name, n_regionkey=n_k.n_regionkey, n_comment=n_k.n_comment > -> 1 } else {  }
+let rmp = sum (<r_k, r_v> in R) if ((r_k.n_name == "MOROCCO")) then { r_k -> 1 } else {  }
+let tmpa = sum (<r_k, r_v> in rmp) { < ps_partkey=r_k.ps_partkey > -> { r_k -> r_v } }
+let tmp = sum (<ta_k, ta_v> in tmpa) { < ps_partkey=ta_k.ps_partkey, group=ta_v > -> 1 }
+let hvmp = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < ps_partkey=t_k.ps_partkey > -> < val=((g_k.ps_supplycost * g_k.ps_availqty) * g_v) > }
+let hvR = sum (<hv_k, hv_v> in hvmp) if ((agg_val < hv_v.val)) then { < ps_partkey=hv_k.ps_partkey > -> 1 } else {  }
+let fhrmp = sum (<r_k, r_v> in rmp) sum (<h_k, h_v> in hvR) if ((h_k.ps_partkey == r_k.ps_partkey)) then { r_k -> 1 } else {  }
+let tmpb = sum (<f_k, f_v> in fhrmp) { < ps_partkey=f_k.ps_partkey > -> { f_k -> f_v } }
+let fmp = sum (<tb_k, tb_v> in tmpb) { < ps_partkey=tb_k.ps_partkey, group=tb_v > -> 1 }
+let tmpc = sum (<f_k, f_v> in fmp) sum (<g_k, g_v> in f_k.group) { < ps_partkey=f_k.ps_partkey > -> < value=(g_k.ps_supplycost * g_k.ps_availqty) * g_v > }
+let aggr_fhrmp = sum (<tc_k, tc_v> in tmpc) { < ps_partkey=tc_k.ps_partkey, value=tc_v.value > -> 1 }
+aggr_fhrmp

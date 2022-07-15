@@ -247,14 +247,10 @@ class GroupbyExpr:
                         inherit_from=self)
 
     def filter(self, func):
-        compo_expr = func(HavUnit(iter_expr=self.iter_expr, groupby_expr=self))
-        output_name = 'hvR'
-        output = VarExpr(output_name, compo_expr)
-        self.history_name.append(output_name)
-        self.operations.append(OpExpr('grouby_filter_output', output))
+        output = func(HavUnit(iter_expr=self.iter_expr, groupby_expr=self))
 
         from pysdql import relation
-        return relation(name=output_name,
+        return relation(name=output.name,
                         inherit_from=self)
 
     @property
@@ -269,3 +265,25 @@ class GroupbyExpr:
 
     def __repr__(self):
         return self.expr
+
+    def inherit(self, other):
+        """
+
+        pysdql.relation :param other:
+        :return:
+        """
+        from pysdql import relation
+        if not (type(other) == relation or type(other) == GroupbyExpr):
+            raise TypeError('Only inherit from pysdql.Relation or GroupbyExpr')
+
+        # Inherit variable names
+        self.history_name += [other.name] + other.history_name
+
+        # Inherit operations
+        if not self.operations:
+            self.operations = other.operations
+        else:
+            for i in self.operations:
+                if i in other.operations:
+                    self.operations.remove(i)
+            self.operations = other.operations + self.operations

@@ -30,7 +30,7 @@ class ColExpr:
             result = VarExpr(tmp_name, CompoExpr(self.inherit_from.iter_expr, self.inherit_from.iter_expr.val))
             self.inherit_from.history_name.append(tmp_name)
             self.inherit_from.operations.append(OpExpr('colexpr_aggr_sum', result))
-        return VarExpr(tmp_name)
+        return VarExpr(tmp_name, inherit_from=self.inherit_from)
 
     def inherit(self, other):
         if self.inherit_from:

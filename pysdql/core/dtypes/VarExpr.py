@@ -1,7 +1,8 @@
 class VarExpr:
-    def __init__(self, name, data=None):
+    def __init__(self, name, data=None, inherit_from=None):
         self.name = name
         self.data = data
+        self.inherit_from = inherit_from
 
     def rename(self, new_name):
         self.name = new_name

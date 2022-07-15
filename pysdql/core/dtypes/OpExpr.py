@@ -20,7 +20,10 @@ class OpExpr:
                 'relation_exists': 10,
                 'relation_not_exists': 11,
                 'colexpr_aggr_sum': 12,
-                'grouby_filter_output': 13
+                'grouby_filter_output': 13,
+                'havepxr_hvmp': 14,
+                'havexpr_hvr': 15,
+                'havexpr_fhvr': 16,
                 }
 
     @property
