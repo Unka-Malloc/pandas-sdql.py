@@ -99,5 +99,14 @@ class driver:
 
         return self
 
+    def export(self, data=None, file_name='query'):
+        file_path = (self.script_path + os.sep + file_name + '.sdql').replace('\\', '/')
+        if type(data) == relation or type(data) == GroupbyExpr:
+            with open(file_path, 'w') as f:
+                f.write(data.sdql_expr)
+        print(f'export sdql script {file_name}.sdql to {file_path} \n'
+              f'excute by: \n'
+              f'run interpret {file_path}')
+
     def __repr__(self):
         return ''.join(self.output)

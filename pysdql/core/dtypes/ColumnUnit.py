@@ -105,30 +105,30 @@ class ColUnit:
         # return f'not ({self.column} == {other})'
 
     def __add__(self, other):
-        return ColExpr(unit1=self, operator='+', unit2=other)
+        return ColExpr(unit1=self, operator='+', unit2=other, inherit_from=self.relation)
 
     def __radd__(self, other):
-        return ColExpr(unit1=other, operator='+', unit2=self)
+        return ColExpr(unit1=other, operator='+', unit2=self, inherit_from=self.relation)
 
     def __sub__(self, other):
-        return ColExpr(unit1=self, operator='-', unit2=other)
+        return ColExpr(unit1=self, operator='-', unit2=other, inherit_from=self.relation)
 
     def __rsub__(self, other):
-        return ColExpr(unit1=other, operator='-', unit2=self)
+        return ColExpr(unit1=other, operator='-', unit2=self, inherit_from=self.relation)
 
     def __mul__(self, other):
-        return ColExpr(unit1=self, operator='*', unit2=other)
+        return ColExpr(unit1=self, operator='*', unit2=other, inherit_from=self.relation)
 
     def __rmul__(self, other):
-        return ColExpr(unit1=other, operator='*', unit2=self)
+        return ColExpr(unit1=other, operator='*', unit2=self, inherit_from=self.relation)
 
     def __truediv__(self, other):
-        return ColExpr(unit1=self, operator='/', unit2=other)
+        return ColExpr(unit1=self, operator='/', unit2=other, inherit_from=self.relation)
 
     def __rtruediv__(self, other):
-        return ColExpr(unit1=other, operator='/', unit2=self)
+        return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.relation)
 
-    def isin(self, vals, *args):
+    def isin(self, vals):
         if type(vals) == ColUnit:
             return IsinExpr(self, vals)
 

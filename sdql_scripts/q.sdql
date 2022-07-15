@@ -1,4 +1,32 @@
-let customer = { < c_custkey = 1, c_name = "Customer#000000001", c_address = "IVhzIApeRb ot,c,E", c_nationkey = 15, c_phone = "25-989-741-2988", c_acctbal = 711.56, c_mktsegment = "BUILDING", c_comment = "to the even, regular platelets. regular, ironic epitaphs nag e" > -> 1 }
-let orders = { < o_orderkey = 1, o_custkey = 1, o_orderstatus = "O", o_totalprice = 124828.11, o_orderdate = 19960102, o_orderpriority = "5-LOW", o_clerk = "Clerk#000000951", o_shippriority = 0, o_comment = "nstructions sleep furiously among " > -> 1 }
-let R = sum (<c_k, c_v> in customer) sum (<o_k, o_v> in orders) { < c_custkey=c_k.c_custkey, c_name=c_k.c_name, c_address=c_k.c_address, c_nationkey=c_k.c_nationkey, c_phone=c_k.c_phone, c_acctbal=c_k.c_acctbal, c_mktsegment=c_k.c_mktsegment, c_comment=c_k.c_comment, o_orderkey=o_k.o_orderkey, o_custkey=o_k.o_custkey, o_orderstatus=o_k.o_orderstatus, o_totalprice=o_k.o_totalprice, o_orderdate=o_k.o_orderdate, o_orderpriority=o_k.o_orderpriority, o_clerk=o_k.o_clerk, o_shippriority=o_k.o_shippriority, o_comment=o_k.o_comment > -> 1 }
-R
+let partsupp = { < ps_partkey = 1, ps_suppkey = 1, ps_availqty = 3325, ps_supplycost = 771.64, ps_comment = ", even theodolites. regular, final theodolites eat after the carefully pending foxes. furiously regular deposits sleep slyly. carefully bold realms above the ironic dependencies haggle careful" > -> 1, 
+< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 8076, ps_supplycost = 993.49, ps_comment = "ven ideas. quickly even packages print. pending multipliers must have to are fluff" > -> 1, 
+< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 3956, ps_supplycost = 337.09, ps_comment = "after the fluffily ironic deposits? blithely special dependencies integrate furiously even excuses. blithely silent theodolites could have to haggle pending, express requests; fu" > -> 1, 
+< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 4069, ps_supplycost = 357.84, ps_comment = "al, regular dependencies serve carefully after the quickly final pinto beans. furiously even deposits sleep quickly final, silent pinto beans. fluffily reg" > -> 1 }
+let supplier = { < s_suppkey = 1, s_name = "Supplier#000000001", s_address = " N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", s_nationkey = 15, s_phone = "27-918-335-1736", s_acctbal = 5755.94, s_comment = "each slyly above the careful" > -> 1 }
+let nation = { < n_nationkey = 0, n_name = "ALGERIA", n_regionkey = 0, n_comment = " haggle. carefully final deposits detect slyly agai" > -> 1, 
+< n_nationkey = 1, n_name = "ARGENTINA", n_regionkey = 1, n_comment = "al foxes promise slyly according to the regular accounts. bold requests alon" > -> 1, 
+< n_nationkey = 2, n_name = "BRAZIL", n_regionkey = 1, n_comment = "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special " > -> 1, 
+< n_nationkey = 3, n_name = "CANADA", n_regionkey = 1, n_comment = "eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold" > -> 1, 
+< n_nationkey = 4, n_name = "EGYPT", n_regionkey = 4, n_comment = "y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d" > -> 1, 
+< n_nationkey = 5, n_name = "ETHIOPIA", n_regionkey = 0, n_comment = "ven packages wake quickly. regu" > -> 1, 
+< n_nationkey = 6, n_name = "FRANCE", n_regionkey = 3, n_comment = "refully final requests. regular, ironi" > -> 1, 
+< n_nationkey = 7, n_name = "GERMANY", n_regionkey = 3, n_comment = "l platelets. regular accounts x-ray: unusual, regular acco" > -> 1, 
+< n_nationkey = 8, n_name = "INDIA", n_regionkey = 2, n_comment = "ss excuses cajole slyly across the packages. deposits print aroun" > -> 1, 
+< n_nationkey = 9, n_name = "INDONESIA", n_regionkey = 2, n_comment = " slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull" > -> 1, 
+< n_nationkey = 10, n_name = "IRAN", n_regionkey = 4, n_comment = "efully alongside of the slyly final dependencies. " > -> 1, 
+< n_nationkey = 11, n_name = "IRAQ", n_regionkey = 4, n_comment = "nic deposits boost atop the quickly final requests? quickly regula" > -> 1, 
+< n_nationkey = 12, n_name = "JAPAN", n_regionkey = 2, n_comment = "ously. final, express gifts cajole a" > -> 1, 
+< n_nationkey = 13, n_name = "JORDAN", n_regionkey = 4, n_comment = "ic deposits are blithely about the carefully regular pa" > -> 1, 
+< n_nationkey = 14, n_name = "KENYA", n_regionkey = 0, n_comment = " pending excuses haggle furiously deposits. pending, express pinto beans wake fluffily past t" > -> 1, 
+< n_nationkey = 15, n_name = "MOROCCO", n_regionkey = 0, n_comment = "rns. blithely bold courts among the closely regular packages use furiously bold platelets?" > -> 1, 
+< n_nationkey = 16, n_name = "MOZAMBIQUE", n_regionkey = 0, n_comment = "s. ironic, unusual asymptotes wake blithely r" > -> 1, 
+< n_nationkey = 17, n_name = "PERU", n_regionkey = 1, n_comment = "platelets. blithely pending dependencies use fluffily across the even pinto beans. carefully silent accoun" > -> 1, 
+< n_nationkey = 18, n_name = "CHINA", n_regionkey = 2, n_comment = "c dependencies. furiously express notornis sleep slyly regular accounts. ideas sleep. depos" > -> 1, 
+< n_nationkey = 19, n_name = "ROMANIA", n_regionkey = 3, n_comment = "ular asymptotes are about the furious multipliers. express dependencies nag above the ironically ironic account" > -> 1, 
+< n_nationkey = 20, n_name = "SAUDI ARABIA", n_regionkey = 4, n_comment = "ts. silent requests haggle. closely express packages sleep across the blithely" > -> 1, 
+< n_nationkey = 21, n_name = "VIETNAM", n_regionkey = 2, n_comment = "hely enticingly express accounts. even, final " > -> 1, 
+< n_nationkey = 22, n_name = "RUSSIA", n_regionkey = 3, n_comment = " requests against the platelets use never according to the quickly regular pint" > -> 1, 
+< n_nationkey = 23, n_name = "UNITED KINGDOM", n_regionkey = 3, n_comment = "eans boost carefully special requests. accounts are. carefull" > -> 1, 
+< n_nationkey = 24, n_name = "UNITED STATES", n_regionkey = 1, n_comment = "y final packages. slow foxes cajole quickly. quickly silent platelets breach ironic accounts. unusual pinto be" > -> 1 }
+let S = sum (<p_k, p_v> in partsupp) sum (<s_k, s_v> in supplier) sum (<n_k, n_v> in nation) if (((p_k.ps_suppkey == s_k.s_suppkey) && (s_k.s_nationkey == n_k.n_nationkey))) then { < ps_partkey=p_k.ps_partkey, ps_suppkey=p_k.ps_suppkey, ps_availqty=p_k.ps_availqty, ps_supplycost=p_k.ps_supplycost, ps_comment=p_k.ps_comment, s_suppkey=s_k.s_suppkey, s_name=s_k.s_name, s_address=s_k.s_address, s_nationkey=s_k.s_nationkey, s_phone=s_k.s_phone, s_acctbal=s_k.s_acctbal, s_comment=s_k.s_comment, n_nationkey=n_k.n_nationkey, n_name=n_k.n_name, n_regionkey=n_k.n_regionkey, n_comment=n_k.n_comment > -> 1 } else {  }
+S

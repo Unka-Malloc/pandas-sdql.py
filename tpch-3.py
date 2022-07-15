@@ -31,15 +31,13 @@ if __name__ == '__main__':
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = pysdql.merge(customer, orders)
+    r = pysdql.merge(customer, orders, lineitem,
+                     on=((customer['c_custkey'] == orders['o_custkey'])
+                         & (orders['o_orderkey'] == lineitem['l_orderkey'])))
 
-    # r = pysdql.merge(customer, orders, lineitem,
-    #                  on=((customer['c_custkey'] == orders['o_custkey'])
-    #                      & (orders['o_orderkey'] == lineitem['l_orderkey'])))
+    r = r[(customer['c_mktsegment'] == 'BUILDING') & (orders['o_orderdate'] < 19960301) & (lineitem['l_shipdate'] > 19960301)]
 
-    # r = r[(customer['c_mktsegment'] == ':1') & (orders['o_orderdate'] < ':2') & (lineitem['o_orderdate'] > ':2')]
-    #
-    # r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
-    #     .aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
+    r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
+        .aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
 
-    db_driver.run(r, block=False)
+    db_driver.run(r)

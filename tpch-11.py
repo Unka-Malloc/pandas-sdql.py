@@ -28,9 +28,11 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    partsupp = pysdql.relation(name='partsupp', cols=pysdql.PARTSUPP_COLS)
-    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
+    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
+    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
+    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
     # agg_val = pysdql.merge(partsupp, supplier, nation,
     #                        on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
@@ -42,8 +44,9 @@ if __name__ == '__main__':
                      on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
                         & (supplier['s_nationkey'] == nation['n_nationkey']),
                      name='S'
-                     )[(nation['n_name'] == ':1')]
-    agg_val = (s['ps_supplycost'] * s['ps_availqty'] * ':2').sum()
+                     )
+    s = s[(nation['n_name'] == 'MOROCCO')]
+    agg_val = (s['ps_supplycost'] * s['ps_availqty'] * 1).sum()
 
     # FROM
     r = pysdql.merge(partsupp, supplier, nation,
@@ -52,10 +55,12 @@ if __name__ == '__main__':
                      name='R'
                      )
     # WHERE
-    r = r[(nation['n_name'] == ':1')]
+    r = r[(nation['n_name'] == 'MOROCCO')]
 
     # GOURPBY HAVING
     r = r.groupby(['ps_partkey']).filter(lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val)
 
     # SELECT GROUPBY AGGREGATION
-    r = r.groupby(['ps_partkey']).aggr(value=(r['val'], 'sum'))
+    # r = r.groupby(['ps_partkey']).aggr(value=(r['val'], 'sum'))
+
+    db_driver.run(s, block=True)

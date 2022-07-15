@@ -32,6 +32,8 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
     customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
     orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
     lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
@@ -46,4 +48,3 @@ if __name__ == '__main__':
     s = s[(s['o_orderkey'].isin(r['l_orderkey']))]
     s = s.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
         .aggr({s['l_quantity']: 'sum'})
-    s.get_result()

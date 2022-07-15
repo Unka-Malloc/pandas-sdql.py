@@ -22,12 +22,16 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    orders = pysdql.relation(name='orders', cols=pysdql.LINEITEM_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
 
     r = pysdql.merge(lineitem, orders,
                      on=(lineitem['l_orderkey'] == orders['o_orderkey'])
-                     )[lineitem['l_commitdate'] < lineitem['l_receiptdate']]
+                     )[(lineitem['l_commitdate'] < lineitem['l_receiptdate'])]
 
-    orders = orders[(orders['o_orderdate'] >= ':1') & (orders['o_orderdate'] < ':1 + 3 month') & r.exists()]
-    orders.groupby(['o_orderpriority']).aggr(order_count=('*', 'count'))
+    s = orders[(orders['o_orderdate'] >= 19960101) & (orders['o_orderdate'] < 19960401) & r.exists()]
+    s = s.groupby(['o_orderpriority']).aggr(order_count=('*', 'count'))
+
+    db_driver.run(s)

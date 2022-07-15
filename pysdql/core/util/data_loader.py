@@ -18,24 +18,25 @@ def read_tbl(path: str, header: list, name=None, sep='|'):
 
     with open(path, 'r') as tbl:
         line = tbl.readline()
-
+        count = 0
         while line:
+            count += 1
             # operation start
 
             # remove '\n'
-            line = line.split(sep)
+            line_list = line.split(sep)
 
             if line[-1] == '\n':
-                del line[-1]
+                del line_list[-1]
 
-            # len(header) == len(line)
-            if not len(header) == len(line):
+            if not len(header) == len(line_list):
                 raise ValueError(f'Incorrect number of columns: \n'
                                  f'length of header = {len(header)} \n'
-                                 f'length of data = {len(line)}')
+                                 f'length of data = {len(line_list)} \n'
+                                 f'in line {count}: {line}')
 
             # create a dictionary
-            rec = srecord(dict(zip(header, line)))
+            rec = srecord(dict(zip(header, line_list)))
             data[rec] = 1
 
             # operation end

@@ -27,22 +27,28 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
-    region = pysdql.relation(name='region', cols=pysdql.REGION_COLS)
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
+    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
+    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
+    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
+    region = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/region.tbl', header=pysdql.REGION_COLS)
 
     r = pysdql.merge(customer, orders, lineitem, supplier, nation, region,
-                     on=(lineitem['l_orderkey'] == orders['o_orderkey'])
+                     on=(customer['c_custkey'] == orders['o_custkey'])
+                        & (lineitem['l_orderkey'] == orders['o_orderkey'])
                         & (lineitem['l_suppkey'] == supplier['s_suppkey'])
                         & (customer['c_nationkey'] == supplier['s_nationkey'])
                         & (supplier['s_nationkey'] == nation['n_nationkey'])
-                        & (nation['n_regionkey'] == region['r_regionkey']))
+                        & (nation['n_regionkey'] == region['r_regionkey'])
+                     )
 
-    r = r[(region['r_name'] == ':1')
-          & (orders['o_orderdate'] >= ':2')
-          & (orders['o_orderdate'] >= ':2 + 1 year')]
+    r = r[(region['r_name'] == 'AFRICA')
+          & (orders['o_orderdate'] >= 19960101)
+          & (orders['o_orderdate'] < 19970101)]
 
     r = r.groupby(['n_name']).aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
+
+    db_driver.run(r)

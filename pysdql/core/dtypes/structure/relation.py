@@ -84,6 +84,9 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
+        if item.inherit_from:
+            self.inherit(item.inherit_from)
+        item = item.new_cond(self.iter_expr.key)
         cond_expr = CondExpr(conditions=item,
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}),
@@ -387,13 +390,25 @@ class relation:
         self.history_name += [other.name] + other.history_name
 
         # Inherit operations
-        self.operations = other.operations
+        if not self.operations:
+            self.operations = other.operations
+        else:
+            for i in self.operations:
+                if i in other.operations:
+                    self.operations.remove(i)
+            self.operations = other.operations + self.operations
 
     def exists(self):
-        return CondUnit(0, '<', f'({self.iter_expr} {self.iter_expr.val})')
+        count_name = f'count_{self.name}'
+        result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        self.operations.append(OpExpr('relation_exists', result))
+        return CondUnit(count_name, '>', 0, inherit_from=self)
 
     def not_exists(self):
-        return CondUnit(f'({self.iter_expr} {self.iter_expr.val})', '==', 0)
+        count_name = f'count_{self.name}'
+        result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        self.operations.append(OpExpr('relation_exists', result))
+        return CondUnit(count_name, '==', 0, inherit_from=self)
 
     @staticmethod
     def case(when, then_case, else_case):
