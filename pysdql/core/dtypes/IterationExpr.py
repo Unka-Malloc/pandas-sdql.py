@@ -4,8 +4,10 @@ from pysdql.core.dtypes.IterationElement import IterEl
 
 
 class IterExpr:
-    def __init__(self, r_name):
+    def __init__(self, r_name, key=None, val=None):
         self.r_name = r_name
+        self.given_key = key
+        self.given_val = val
 
     @property
     def n_e_dict(self):
@@ -34,14 +36,20 @@ class IterExpr:
 
     @property
     def key(self):
+        if self.given_key:
+            return self.given_key
         return self.element.key
 
     @property
     def val(self):
+        if self.given_val:
+            return self.given_val
         return self.element.val
 
     @property
     def kv_pair(self):
+        if self.given_key and self.given_val:
+            return f'<{self.given_key}, {self.given_val}>'
         return f'<{self.key}, {self.val}>'
 
     def gen_iter_el(self) -> IterEl:
@@ -70,6 +78,8 @@ class IterExpr:
 
     @property
     def expr(self):
+        if self.given_key and self.given_val:
+            return f'sum (<{self.given_key}, {self.given_val}> in {self.r_name})'
         return f'sum ({self.element.expr} in {self.r_name})'
 
     def __repr__(self):
