@@ -29,6 +29,8 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
     orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
     lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
 
@@ -46,6 +48,6 @@ if __name__ == '__main__':
     r['low_line_priority'] = r.case((r['o_orderpriority'] != '1-URGENT') | (r['o_orderpriority'] != '2-HIGH'), 1, 0)
 
     r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
-                                       low_line_count=(r['low_line_priority'], 'sum')).get_result()
+                                       low_line_count=(r['low_line_priority'], 'sum'))
 
 

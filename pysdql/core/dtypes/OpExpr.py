@@ -17,6 +17,10 @@ class OpExpr:
                 'relation_aggr_kwargs_aggr_result': 7,
                 'pysdql_merge': 8,
                 'pysdql_merge_on': 9,
+                'relation_exists': 10,
+                'relation_not_exists': 11,
+                'colexpr_aggr_sum': 12,
+                'grouby_filter_output': 13
                 }
 
     @property
@@ -25,3 +29,12 @@ class OpExpr:
 
     def __repr__(self):
         return self.expr
+
+    def __hash__(self):
+        return hash((self.op_str, self.op_obj))
+
+    def __eq__(self, other):
+        if type(other) == OpExpr:
+            if (self.op_str, self.op_obj) == (other.op_str, other.op_obj):
+                return True
+        return False

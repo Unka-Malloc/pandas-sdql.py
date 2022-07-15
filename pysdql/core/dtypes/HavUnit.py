@@ -1,9 +1,14 @@
 from pysdql.core.dtypes.RecordExpr import RecExpr
+from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.CompositionExpr import CompoExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.OpExpr import OpExpr
 
 
 class HavUnit:
-    def __init__(self, iter_expr, col_name=None, groupby_cols=None):
-        self.groupby_cols = groupby_cols
+    def __init__(self, iter_expr, col_name=None, groupby_expr=None):
+        self.grouby_expr = groupby_expr
+        self.groupby_cols = self.grouby_expr.groupby_cols
         self.iter_expr = iter_expr
         self.col_name = col_name
 

@@ -10,6 +10,7 @@ from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.ConditionalExpr import CondExpr
 
 
 class GroupbyExpr:
@@ -222,12 +223,12 @@ class GroupbyExpr:
                         aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
 
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
-                                data=CompoExpr([self.iter_expr, aggr_tmp_iter_expr],
-                                               DictExpr(
-                                                   {RecExpr(self.cols_in_rec()):
-                                                        RecExpr(aggr_tuple_dict)})
-                                               )
-                                )
+                                    data=CompoExpr([self.iter_expr, aggr_tmp_iter_expr],
+                                                   DictExpr(
+                                                       {RecExpr(self.cols_in_rec()):
+                                                            RecExpr(aggr_tuple_dict)})
+                                                   )
+                                    )
 
         self.groupby_aggr_parse_nested_dict = parse_nested_dict
         self.history_name.append(aggr_tuple_name)
@@ -246,10 +247,15 @@ class GroupbyExpr:
                         inherit_from=self)
 
     def filter(self, func):
-        func(HavUnit(iter_expr=self.iter_expr, groupby_cols=self.groupby_cols))
+        compo_expr = func(HavUnit(iter_expr=self.iter_expr, groupby_expr=self))
+        output_name = 'hvR'
+        output = VarExpr(output_name, compo_expr)
+        self.history_name.append(output_name)
+        self.operations.append(OpExpr('grouby_filter_output', output))
 
         from pysdql import relation
-        return relation(name='hvR')
+        return relation(name=output_name,
+                        inherit_from=self)
 
     @property
     def sdql_expr(self):

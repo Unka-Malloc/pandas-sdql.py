@@ -39,6 +39,8 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    db_driver = pysdql.driver(db_path=r'T:/sdql')
+
     supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
     lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
     orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
