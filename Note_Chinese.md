@@ -22,7 +22,7 @@
 
 Task manager (relation) 根据子元素的固有属性来进行管理
 
-# run interpret progs/test.sdql
+[comment]: <> (run interpret progs/test.sdql)
 
 
 

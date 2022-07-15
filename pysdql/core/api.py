@@ -5,6 +5,7 @@ from pysdql.core.driver.api import (
 from pysdql.core.dtypes.api import (
     relation,
 
+    RecExpr,
     DictExpr,
     CondExpr,
     CompoExpr,

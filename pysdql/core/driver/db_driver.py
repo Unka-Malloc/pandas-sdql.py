@@ -18,18 +18,7 @@ class driver:
         self.script_file_name = 'q.sdql'
         self.script_file_path = (self.script_path + os.sep + self.script_file_name).replace('\\', '/')
 
-    def write_script(self, sdql_expr):
-        with open(self.script_file_path, 'w') as script:
-            script.write(sdql_expr)
-            script.close()
-
-    def excute_script(self):
-        process = self.start('sbt')
-        self.write(process, f"run interpret {self.script_file_path}")
-        output = self.read(process)
-        self.write(process, "exit")
-        self.terminate(process)
-        return output
+        self.output = ''
 
     def start(self, cmd):
         return subprocess.Popen(
@@ -77,11 +66,25 @@ class driver:
         process.kill()
         process.wait(timeout=0.2)
 
+    def write_script(self, sdql_expr):
+        with open(self.script_file_path, 'w') as script:
+            script.write(sdql_expr)
+            script.close()
+
+    def excute_script(self):
+        process = self.start('sbt')
+        self.write(process, f"run interpret {self.script_file_path}")
+        output = self.read(process)
+        self.write(process, "exit")
+        self.terminate(process)
+        print('========================================================')
+        return output
+
     def run(self, query, show=True, block=False):
-        if not (type(query) == relation
-                or type(query) == GroupbyExpr):
-            raise TypeError()
-        query = query.sdql_expr
+        if type(query) == relation or type(query) == GroupbyExpr:
+            query = query.sdql_expr
+        elif type(query) == str:
+            query = query
 
         if show:
             print('========================================================')
@@ -92,6 +95,9 @@ class driver:
             return self
 
         self.write_script(query)
-        output = self.excute_script()
+        self.output = self.excute_script()
 
         return self
+
+    def __repr__(self):
+        return ''.join(self.output)

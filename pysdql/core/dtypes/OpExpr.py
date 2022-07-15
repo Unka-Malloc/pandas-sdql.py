@@ -16,6 +16,7 @@ class OpExpr:
                 'relation_aggr_kwargs_aggr_tuple': 6,
                 'relation_aggr_kwargs_aggr_result': 7,
                 'pysdql_merge': 8,
+                'pysdql_merge_on': 9,
                 }
 
     @property

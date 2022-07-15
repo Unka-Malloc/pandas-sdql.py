@@ -13,6 +13,7 @@ from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.DictionaryExpr import DictExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
+from pysdql.core.dtypes.SDict import sdict
 from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
@@ -41,7 +42,10 @@ class relation:
             self.operations += operations
 
         if self.data:
-            self.operations.append(OpExpr('relation_data', VarExpr(self.name, self.data)))
+            if type(data) == sdict:
+                self.operations.append(OpExpr('relation_data', VarExpr(self.name, self.data)))
+            if type(data) == list:
+                self.operations.append(OpExpr('relation_merge_data', VarExpr(self.name, self.data)))
 
         if inherit_from:
             self.inherit(inherit_from)
@@ -325,7 +329,7 @@ class relation:
         self.history_name.append(new_name)
         self.operations.append(OpExpr('relation_aggr_kwargs_aggr_result', aggr_result))
 
-        return relation(name=tmp_name,
+        return relation(name=new_name,
                         inherit_from=self)
 
     def aggr_on_col(self, col_name: str, aggr_func=None, *args, **kwargs):
