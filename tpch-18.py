@@ -34,9 +34,9 @@ import pysdql
 if __name__ == '__main__':
     db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    customer = pysdql.relation(name='customer', cols=pysdql.CUSTOMER_COLS)
-    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
     r = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > ':1')[['l_orderkey']]
 
@@ -45,6 +45,10 @@ if __name__ == '__main__':
                         & (orders['o_orderkey'] == lineitem['l_orderkey']),
                      name='S'
                      )
+
     s = s[(s['o_orderkey'].isin(r['l_orderkey']))]
+
     s = s.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
         .aggr({s['l_quantity']: 'sum'})
+
+    db_driver.run(s)

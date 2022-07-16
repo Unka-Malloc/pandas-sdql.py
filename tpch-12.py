@@ -31,8 +31,8 @@ import pysdql
 if __name__ == '__main__':
     db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
     r = pysdql.merge(orders, lineitem, on=(orders['o_orderkey'] == lineitem['l_orderkey']))
 
@@ -50,4 +50,4 @@ if __name__ == '__main__':
     r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
                                        low_line_count=(r['low_line_priority'], 'sum'))
 
-
+    db_driver.run(r)

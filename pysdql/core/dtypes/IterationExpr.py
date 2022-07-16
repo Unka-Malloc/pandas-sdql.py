@@ -73,6 +73,11 @@ class IterExpr:
                     tmp_name += j[0]
                 return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
 
+        for i in self.r_name:
+            if i.isdigit():
+                tmp_name = str(self.r_name[0]).lower()
+                return IterEl((f'{tmp_name}{i}_k', f'{tmp_name}{i}_v'))
+
         tmp_name = str(self.r_name[0]).lower()
         return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
 
