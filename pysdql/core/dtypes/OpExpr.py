@@ -24,6 +24,7 @@ class OpExpr:
                 'havepxr_hvmp': 14,
                 'havexpr_hvr': 15,
                 'havexpr_fhvr': 16,
+                'relation_rename': 17
                 }
 
     @property

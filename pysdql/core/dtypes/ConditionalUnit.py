@@ -45,13 +45,13 @@ class CondUnit:
         if self.op == '>=':
             return f'({u2_str} <= {u1_str})'
         if self.op == '!=':
-            return f'not ({u1_str} == {u2_str})'
+            return f'({u1_str} != {u2_str})'
         if self.op == '&&':
             return f'({u1_str} {self.op} {u2_str})'
         if self.op == '||':
             return f'({u1_str}) {self.op} ({u2_str})'
         if self.op == '~':
-            return f'not ({u1_str})'
+            return f'(not ({u1_str}))'
         return f'({u1_str} {self.op} {u2_str})'
 
     def get_1st(self):
@@ -78,13 +78,13 @@ class CondUnit:
         if self.op == '>=':
             return f'({self.unit2} <= {self.unit1})'
         if self.op == '!=':
-            return f'not ({self.unit1} == {self.unit2})'
+            return f'({self.unit1} != {self.unit2})'
         if self.op == '&&':
             return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '||':
             return f'({self.unit1}) {self.op} ({self.unit2})'
         if self.op == '~':
-            return f'not ({self.unit1})'
+            return f'(not ({self.unit1}))'
         return f'({self.unit1} {self.op} {self.unit2})'
 
     def __repr__(self):

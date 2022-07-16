@@ -41,28 +41,37 @@ import pysdql
 if __name__ == '__main__':
     db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    supplier = pysdql.relation(name='supplier', cols=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    orders = pysdql.relation(name='orders', cols=pysdql.ORDERS_COLS)
-    nation = pysdql.relation(name='nation', cols=pysdql.NATION_COLS)
+    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
+    l1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
+    l2 = l1.rename('l2')
+    l3 = l1.rename('l3')
+    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
-    r1 = lineitem[(lineitem['l_orderkey'] == lineitem['l_orderkey'])
-                  & (lineitem['l_suppkey'] != lineitem['l_suppkey'])].rename('r1')
+    r1 = pysdql.merge(l1, l2,
+                      on=((l2['l_orderkey'] == l1['l_orderkey'])
+                          & (l2['l_suppkey'] != l1['l_suppkey']))
+                      ).rename('r1')
 
-    r2 = lineitem[(lineitem['l_orderkey'] == lineitem['l_orderkey'])
-                  & (lineitem['l_suppkey'] != lineitem['l_suppkey'])
-                  & (lineitem['l_receiptdate'] > lineitem['l_commitdate'])].rename('r2')
+    r2 = pysdql.merge(l1, l3,
+                      on=((l3['l_orderkey'] == l1['l_orderkey'])
+                          & (l3['l_suppkey'] != l1['l_suppkey'])
+                          & (l3['l_receiptdate'] > l3['l_commitdate']))
+                      ).rename('r2')
 
-    s = pysdql.merge(supplier, lineitem, orders, nation,
-                     on=(supplier['s_suppkey'] == lineitem['l_suppkey'])
-                        & (orders['o_orderkey'] == lineitem['l_orderkey'])
+    s = pysdql.merge(supplier, l1, orders, nation,
+                     on=(supplier['s_suppkey'] == l1['l_suppkey'])
+                        & (orders['o_orderkey'] == l1['l_orderkey'])
                         & (supplier['s_nationkey'] == nation['n_nationkey'])
-                     )[(orders['o_orderstatus'] == 'F')
-                       & (lineitem['l_receiptdate'] > lineitem['l_commitdate'])
-                       & (nation['n_name'] == ':1')
-                       & r1.exists()
-                       & r2.not_exists()]
+                     )
+
+    s = s[(orders['o_orderstatus'] == 'F')
+          # & (l1['l_receiptdate'] > l1['l_commitdate'])
+          # & (nation['n_name'] == 'MOROCCO')
+          # & r1.exists()
+          # & r2.not_exists()
+          ]
 
     s = s.groupby(['s_name']).aggr(numwait=('*', 'count'))
 
-    s.get_result()
+    db_driver.run(s, block=True)

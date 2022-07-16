@@ -67,8 +67,13 @@ class relation:
         return ''
 
     def rename(self, name):
-        print(f'let {name} = {self.name} in')
-        return relation(name=name)
+        tmp_var = VarExpr(name, self.name)
+        self.operations.append(OpExpr('relation_rename', tmp_var))
+
+        self.name = name
+        self.iter_expr = IterExpr(self.name)
+
+        return self
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -222,9 +227,6 @@ class relation:
 
         return relation(name=self.gen_tmp_name(),
                         cols=self.cols,
-                        compo_expr=CompoExpr(iter_expr=self.iter_expr,
-                                             any_expr=SetExpr(RecExpr(tmp_dict))
-                                             ),
                         inherit_from=self
                         )
 

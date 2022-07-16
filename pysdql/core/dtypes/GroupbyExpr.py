@@ -243,7 +243,9 @@ class GroupbyExpr:
         self.operations.append(OpExpr('groupby_aggr_result', result))
 
         from pysdql import relation
+        output_cols = list(aggr_dict.keys())
         return relation(name=next_name,
+                        cols=output_cols,
                         inherit_from=self)
 
     def filter(self, func):

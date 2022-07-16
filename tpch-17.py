@@ -17,8 +17,8 @@ import pysdql
 if __name__ == '__main__':
     db_driver = pysdql.driver(db_path=r'T:/sdql')
 
-    lineitem = pysdql.relation(name='lineitem', cols=pysdql.LINEITEM_COLS)
-    part = pysdql.relation(name='part', cols=pysdql.PART_COLS)
+    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
+    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
     part_agg = lineitem.groupby(['l_partkey']) \
         .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \
@@ -29,8 +29,11 @@ if __name__ == '__main__':
                          & (part_agg['agg_partkey'] == lineitem['l_partkey']))
                      )
 
-    r = r[(part['p_brand'] == ':1')
-          & (part['p_container'] == ':2')
-          & (lineitem['l_quantity'] < part_agg['avg_quantity'])]
+    r = r[(part['p_brand'] == 'Brand#13')
+          & (part['p_container'] == 'JUMBO PKG')
+          & (lineitem['l_quantity'] < part_agg['avg_quantity'])
+          ]
 
     r = r.aggr(avg_yearly=((lineitem['l_extendedprice'] / 7.0), 'sum'))
+
+    db_driver.run(r)
