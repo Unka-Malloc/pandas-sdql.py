@@ -44,8 +44,7 @@ if __name__ == '__main__':
                      on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
                         & (supplier['s_nationkey'] == nation['n_nationkey']),
                      name='S'
-                     )
-    s = s[(nation['n_name'] == 'MOROCCO')]
+                     )[(nation['n_name'] == 'MOROCCO')]
     agg_val = (s['ps_supplycost'] * s['ps_availqty'] * 1).sum()
 
     # FROM

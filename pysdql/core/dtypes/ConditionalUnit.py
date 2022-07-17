@@ -1,9 +1,36 @@
+import re
+from datetime import datetime
+
+
 class CondUnit:
-    def __init__(self, unit1, operator: str, unit2, inherit_from=None):
+    def __init__(self, unit1, operator: str, unit2, inherit_from=None, isin=False):
         self.unit1 = unit1
         self.op = operator
         self.unit2 = unit2
         self.inherit_from = inherit_from
+        self.isin = isin
+
+        self.date_fmt()
+
+    def date_fmt(self):
+        if self.is_date(self.unit1):
+            date1 = self.parse_date(self.unit1)
+            self.unit1 = int(f'{date1.year}{date1.month}{date1.day}')
+        if self.is_date(self.unit2):
+            date2 = self.parse_date(self.unit2)
+            self.unit2 = int(f'{date2.year}{date2.month}{date2.day}')
+
+    @staticmethod
+    def parse_date(data):
+        return datetime.strptime(data.replace('"', ''), '%Y-%m-%d')
+
+    @staticmethod
+    def is_date(data):
+        if type(data) == str:
+            pattern = re.compile(r'("\d{4}-\d{2}-\d{2})"')
+            if pattern.findall(data.strip()):
+                return True
+        return False
 
     def inherit(self, other):
         if type(other) == CondUnit:
@@ -12,6 +39,8 @@ class CondUnit:
                     self.inherit_from.inherit(other.inherit_from)
                 else:
                     self.inherit_from = other.inherit_from
+            if self.isin or other.isin:
+                self.isin = True
         return self
 
     def new_cond(self, new_str):
@@ -82,7 +111,7 @@ class CondUnit:
         if self.op == '&&':
             return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '||':
-            return f'({self.unit1}) {self.op} ({self.unit2})'
+            return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '~':
             return f'(not ({self.unit1}))'
         return f'({self.unit1} {self.op} {self.unit2})'
@@ -101,9 +130,7 @@ class CondUnit:
                         unit2=self).inherit(other)
 
     def __iand__(self, other):
-        return CondUnit(unit1=other,
-                        operator='&&',
-                        unit2=self).inherit(other)
+        return (self & other).inherit(other)
 
     def __or__(self, other):
         return CondUnit(unit1=self,
@@ -116,9 +143,7 @@ class CondUnit:
                         unit2=self).inherit(other)
 
     def __ior__(self, other):
-        return CondUnit(unit1=self,
-                        operator='||',
-                        unit2=other).inherit(other)
+        return (self | other).inherit(other)
 
     def __invert__(self):
         return CondUnit(unit1=self,

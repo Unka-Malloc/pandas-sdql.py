@@ -28,7 +28,9 @@ if __name__ == '__main__':
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = lineitem[lineitem['l_shipdate'] <= 19960313]
+    var1 = '1998-12-01'
+
+    r = lineitem[lineitem['l_shipdate'] <= var1]
 
     r = r.groupby(['l_returnflag', 'l_linestatus'])
     r = r.aggr(sum_qty=(lineitem['l_quantity'], 'sum'),

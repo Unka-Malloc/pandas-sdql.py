@@ -38,7 +38,7 @@ if __name__ == '__main__':
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > ':1')[['l_orderkey']]
+    r = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > 10)[['l_orderkey']]
 
     s = pysdql.merge(customer, orders, lineitem,
                      on=(customer['c_custkey'] == orders['o_custkey'])
@@ -51,4 +51,4 @@ if __name__ == '__main__':
     s = s.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
         .aggr({s['l_quantity']: 'sum'})
 
-    db_driver.run(s)
+    db_driver.run(s, block=True)

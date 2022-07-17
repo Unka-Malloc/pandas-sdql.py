@@ -66,10 +66,10 @@ if __name__ == '__main__':
                      )
 
     s = s[(orders['o_orderstatus'] == 'F')
-          # & (l1['l_receiptdate'] > l1['l_commitdate'])
-          # & (nation['n_name'] == 'MOROCCO')
-          # & r1.exists()
-          # & r2.not_exists()
+          & (l1['l_receiptdate'] > l1['l_commitdate'])
+          & (nation['n_name'] == 'MOROCCO')
+          & r1.exists()
+          & r2.not_exists()
           ]
 
     s = s.groupby(['s_name']).aggr(numwait=('*', 'count'))
