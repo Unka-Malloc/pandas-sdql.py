@@ -51,4 +51,4 @@ if __name__ == '__main__':
 
     r = r.groupby(['n_name']).aggr(revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
 
-    db_driver.run(r)
+    db_driver.run(r, block=True)
