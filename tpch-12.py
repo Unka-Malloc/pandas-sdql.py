@@ -36,11 +36,11 @@ if __name__ == '__main__':
 
     r = pysdql.merge(orders, lineitem, on=(orders['o_orderkey'] == lineitem['l_orderkey']))
 
-    r = r[(lineitem['l_shipmode'].isin((':1', ':2')))
+    r = r[(lineitem['l_shipmode'].isin(('AIR', 'REG AIR')))
           & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
           & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
-          & (lineitem['l_receiptdate'] >= ':3')
-          & (lineitem['l_receiptdate'] < ':3 + 1 year')
+          & (lineitem['l_receiptdate'] >= 19960101)
+          & (lineitem['l_receiptdate'] < 19970101)
           ]
 
     r['high_line_priority'] = r.case((r['o_orderpriority'] == '1-URGENT') | (r['o_orderpriority'] == '2-HIGH'), 1, 0)
@@ -50,4 +50,4 @@ if __name__ == '__main__':
     r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
                                        low_line_count=(r['low_line_priority'], 'sum'))
 
-    db_driver.run(r)
+    db_driver.run(r, block=True)

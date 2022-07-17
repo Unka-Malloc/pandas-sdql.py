@@ -1,6 +1,7 @@
 import os
 import string
 
+from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.ArrayExpr import ArrayExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColumnExpr import ColExpr
@@ -89,15 +90,22 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
-        if item.inherit_from:
-            self.inherit(item.inherit_from)
-        item = item.new_cond(self.iter_expr.key)
-        cond_expr = CondExpr(conditions=item,
-                             then_case=DictExpr({self.iter_expr.key: 1}),
-                             else_case=DictExpr({}),
-                             new_iter=self.iter_expr.key)
-        compo_expr = CompoExpr(iter_expr=self.iter_expr,
-                               any_expr=cond_expr)
+        if item.isin:
+            cond_expr = CondExpr(conditions=item,
+                                 then_case=DictExpr({self.iter_expr.key: 1}),
+                                 else_case=DictExpr({}))
+            compo_expr = CompoExpr(iter_expr=[self.iter_expr, item.inherit_from.iter_expr],
+                                   any_expr=cond_expr)
+        else:
+            if item.inherit_from:
+                self.inherit(item.inherit_from)
+            item = item.new_cond(self.iter_expr.key)
+            cond_expr = CondExpr(conditions=item,
+                                 then_case=DictExpr({self.iter_expr.key: 1}),
+                                 else_case=DictExpr({}),
+                                 new_iter=self.iter_expr.key)
+            compo_expr = CompoExpr(iter_expr=self.iter_expr,
+                                   any_expr=cond_expr)
 
         var_name = self.gen_tmp_name()
 
@@ -111,27 +119,48 @@ class relation:
         return result
 
     def projection(self, cols):
-        tmp_d = {}
+        tmp_dict = {}
         for i in cols:
-            tmp_d[i] = f'{self.iter_expr.key}.{i}'
-        result = relation(name=self.gen_tmp_name(),
-                          inherit_from=self
-                          )
-        print(result)
+            tmp_dict[i] = f'{self.iter_expr.key}.{i}'
+
+        compo_expr = CompoExpr(iter_expr=self.iter_expr,
+                               any_expr=DictExpr({RecExpr(tmp_dict): 1}))
+
+        next_name = self.gen_tmp_name()
+
+        self.operations.append(OpExpr('relation_projection', VarExpr(next_name, compo_expr)))
+
+        result = relation(name=next_name,
+                          inherit_from=self)
         return result
 
     def get_col(self, col_name):
         return ColUnit(self, col_name)
 
-    def select_isin(self, isin_expr: IsinExpr):
-        u1 = isin_expr.unit1
-        u2 = isin_expr.unit2
-        new_name = self.gen_tmp_name()
-        print(f'let {new_name} = {self.iter_expr} {u2.relation.iter_expr} '
-              f'if ({self.iter_expr.key}.{u1.name} == {u2.relation.iter_expr.key}.{u2.name}) '
-              f'then {{ {self.iter_expr.key} }} else {{ }} in')
+    def selection_isin(self, isin_expr: IsinExpr):
+        unit1 = isin_expr.unit1
+        unit2 = isin_expr.unit2
 
-        return relation(name=new_name, inherit_from=self)
+        r2 = unit2.relation
+        self.inherit(r2)
+
+        cond_unit = CondUnit(unit1, '==', unit2)
+        cond_expr = CondExpr(conditions=cond_unit,
+                             then_case=DictExpr({self.iter_expr.key: 1}),
+                             else_case=DictExpr({}))
+        compo_expr = CompoExpr(iter_expr=[self.iter_expr, r2.iter_expr],
+                               any_expr=cond_expr)
+
+        var_name = self.gen_tmp_name()
+
+        result = relation(name=var_name,
+                          # data=self.data,
+                          # cols=self.cols,
+                          # compo_expr=compo_expr,
+                          inherit_from=self)
+
+        self.operations.append(OpExpr('relation_selection_isin', VarExpr(var_name, compo_expr)))
+        return result
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -145,7 +174,7 @@ class relation:
         if type(item) == list:
             return self.projection(item)
         if type(item) == IsinExpr:
-            return self.select_isin(item)
+            return self.selection_isin(item)
 
     def __setitem__(self, key, value):
         """
@@ -155,10 +184,17 @@ class relation:
         :return:
         """
         if type(value) == CaseExpr:
-            self.name = self.gen_tmp_name()
-            value.set(key, self.name, self.iter_expr)
+            tmp_name = self.gen_tmp_name()
+
+            self.cols.append(key)
+
+            output = value.set(key, tmp_name, self.iter_expr)
+            self.history_name.append(tmp_name)
+            self.operations.append(OpExpr('relation_set_caseexpr', output))
+
+            self.name = tmp_name
             self.iter_expr = IterExpr(self.name)
-            return
+            return self
         if type(value) == ColUnit or type(value) == ColExpr:
             return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
 
@@ -183,9 +219,6 @@ class relation:
         # new_history_name = new_history_name + self.history_name
         result = relation(name=new_name,
                           cols=self.cols,
-                          compo_expr=CompoExpr(iter_expr=self.iter_expr,
-                                               any_expr=SetExpr(RecExpr(kv_pair=rename_dict))
-                                               ),
                           inherit_from=self)
 
         print(result)
@@ -237,8 +270,8 @@ class relation:
         """
         var_name = self.gen_tmp_name()
         return GroupbyExpr(name=var_name,
-                              groupby_from=self,
-                              groupby_cols=cols)
+                           groupby_from=self,
+                           groupby_cols=cols)
 
     def aggr(self, aggr_func=None, *aggr_args, **aggr_kwargs):
         """

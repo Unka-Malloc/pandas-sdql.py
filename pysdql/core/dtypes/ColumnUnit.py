@@ -1,8 +1,6 @@
 from pysdql.core.dtypes.ConditionalUnit import CondUnit
 from pysdql.core.dtypes.ColumnExpr import ColExpr
-from pysdql.core.dtypes.CompositionExpr import CompoExpr
 from pysdql.core.dtypes.IsinExpr import IsinExpr
-from pysdql.core.dtypes.IterationExpr import IterExpr
 
 
 class ColUnit:

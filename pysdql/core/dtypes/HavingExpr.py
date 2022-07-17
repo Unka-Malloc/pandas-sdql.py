@@ -9,13 +9,13 @@ from pysdql.core.dtypes.RecordExpr import RecExpr
 
 
 class HavExpr:
-    def __init__(self, iter_expr, groupby_expr, unit1, op, unit2):
-        self.iter_expr = iter_expr
+    def __init__(self, groupby_expr, unit1, op, unit2):
         self.unit1 = unit1
         self.op = op
         self.unit2 = unit2
         self.groupby_expr = groupby_expr
         self.groupby_cols = self.groupby_expr.groupby_cols
+        self.iter_expr = self.groupby_expr.iter_expr
 
         self.agg = None
 

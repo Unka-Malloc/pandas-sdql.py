@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
-from pysdql.core.dtypes.structure.relation import relation
+from pysdql.core.dtypes.relation import relation
 
 
 class driver:
@@ -80,7 +80,7 @@ class driver:
         print('========================================================')
         return output
 
-    def run(self, query, show=True, block=False):
+    def run(self, query, show=True, verbose=False, mute=False, block=False):
         if type(query) == relation or type(query) == GroupbyExpr:
             query = query.sdql_expr
         elif type(query) == str:

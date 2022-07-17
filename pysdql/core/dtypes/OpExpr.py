@@ -15,8 +15,8 @@ class OpExpr:
                 'groupby_aggr_result': 5,
                 'relation_aggr_kwargs_aggr_tuple': 6,
                 'relation_aggr_kwargs_aggr_result': 7,
-                'pysdql_merge': 8,
-                'pysdql_merge_on': 9,
+                'pysdql_merge_by_cols': 8,
+                'pysdql_merge_on_by_cols': 9,
                 'relation_exists': 10,
                 'relation_not_exists': 11,
                 'colexpr_aggr_sum': 12,
@@ -24,7 +24,13 @@ class OpExpr:
                 'havepxr_hvmp': 14,
                 'havexpr_hvr': 15,
                 'havexpr_fhvr': 16,
-                'relation_rename': 17
+                'relation_rename': 17,
+                'relation_set_caseexpr': 18,
+                'pysdql_merge_on_by_concatexpr': 19,
+                'pysdql_merge_by_concatexpr': 20,
+                'varexpr_rename': 21,
+                'relation_projection': 22,
+                'relation_selection_isin': 23,
                 }
 
     @property

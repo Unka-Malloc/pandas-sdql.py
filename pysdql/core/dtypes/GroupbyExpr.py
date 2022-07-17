@@ -160,23 +160,54 @@ class GroupbyExpr:
             if type(aggr_key) == ColUnit or type(aggr_key) == ColExpr:
                 aggr_calc = f'{aggr_key.name}'
             if dict_val == 'sum':
-                tmp_dict[aggr_calc] = f'{aggr_tmp_iter_key}.{aggr_calc} * {self.iter_expr.val}'
-                result_dict[aggr_calc] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}'
+                tmp_dict[f'{aggr_calc}_sum'] = f'{aggr_tmp_iter_key}.{aggr_calc} * {self.iter_expr.val}'
+                result_dict[f'{aggr_calc}_sum'] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}_sum'
             if dict_val == 'count':
-                pass
+                tmp_dict[f'{aggr_calc}_count'] = f'{self.iter_expr.val}'
+                result_dict[f'{aggr_calc}_count'] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}_count'
             if dict_val == 'avg':
-                pass
+                tmp_dict[f'{aggr_calc}_sum'] = f'{aggr_tmp_iter_key}.{aggr_calc} * {self.iter_expr.val}'
+                tmp_dict[f'{aggr_calc}_count'] = f'{self.iter_expr.val}'
+                result_dict[f'{aggr_calc}_avg'] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}_sum' \
+                                                  f' / ' \
+                                                  f'{aggr_tuple_iter_expr.val}.{aggr_calc}_count'
 
-        print(
-            f'let {aggr_tuple_name} = {self.iter_expr} {aggr_tmp_iter_expr} '
-            f'{{ {RecExpr(self.cols_in_rec())} -> {RecExpr(tmp_dict)} }} in')
+        parse_nested_dict = VarExpr(name=aggr_tuple_name,
+                                    data=CompoExpr([self.iter_expr, aggr_tmp_iter_expr],
+                                                   DictExpr(
+                                                       {RecExpr(self.cols_in_rec()):
+                                                            RecExpr(tmp_dict)})
+                                                   )
+                                    )
 
-        self.history_name += [aggr_tuple_name]
+        self.groupby_aggr_parse_nested_dict = parse_nested_dict
+        self.history_name.append(aggr_tuple_name)
+        self.operations.append(OpExpr('groupby_aggr_parse_nested_dict', parse_nested_dict))
 
-        print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
+        next_name = f'aggr_{self.groupby_from.name}'
+
+        result = VarExpr(name=next_name,
+                         data=CompoExpr(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+        self.groupby_aggr_result = result
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('groupby_aggr_result', result))
 
         from pysdql import relation
-        return relation('agg_r')
+        output_cols = list(aggr_func.keys())
+        return relation(name=next_name,
+                        cols=output_cols,
+                        inherit_from=self)
+
+        # print(
+        #     f'let {aggr_tuple_name} = {self.iter_expr} {aggr_tmp_iter_expr} '
+        #     f'{{ {RecExpr(self.cols_in_rec())} -> {RecExpr(tmp_dict)} }} in')
+        #
+        # self.history_name += [aggr_tuple_name]
+        #
+        # print(f'let agg_r = {aggr_tuple_iter_expr} {{ {RecExpr(result_dict)} }} in')
+        #
+        # from pysdql import relation
+        # return relation('agg_r')
 
     def aggr_kwargs_parse(self, aggr_dict: dict):
         result_dict = {}
@@ -249,7 +280,7 @@ class GroupbyExpr:
                         inherit_from=self)
 
     def filter(self, func):
-        output = func(HavUnit(iter_expr=self.iter_expr, groupby_expr=self))
+        output = func(HavUnit(groupby_expr=self))
 
         from pysdql import relation
         return relation(name=output.name,
