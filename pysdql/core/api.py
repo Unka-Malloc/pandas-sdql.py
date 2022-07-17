@@ -20,6 +20,11 @@ from pysdql.core.dtypes.api import (
 from pysdql.core.util.api import (
     # data_loader
     read_tbl,
+    tune_tbl,
+
+    # data_parser
+    get_tbl_type,
+    get_load,
 
     # type_checker
     is_int,
