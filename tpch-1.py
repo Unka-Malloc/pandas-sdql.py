@@ -21,6 +21,8 @@ order by
 	l_returnflag,
 	l_linestatus
 """
+from datetime import datetime, timedelta
+
 import pysdql
 
 if __name__ == '__main__':
@@ -28,7 +30,9 @@ if __name__ == '__main__':
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    var1 = '1998-12-01'
+    d1 = datetime.strptime('1998-12-01', "%Y-%m-%d")
+    d3 = d1 + timedelta(days=87)
+    var1 = d3.strftime("%Y-%m-%d")
 
     r = lineitem[lineitem['l_shipdate'] <= var1]
 
