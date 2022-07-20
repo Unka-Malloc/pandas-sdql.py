@@ -39,7 +39,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    db_driver = pysdql.driver(db_path=r'T:/sdql')
+    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
     l1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)

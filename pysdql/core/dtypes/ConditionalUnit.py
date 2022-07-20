@@ -3,22 +3,35 @@ from datetime import datetime
 
 
 class CondUnit:
-    def __init__(self, unit1, operator: str, unit2, inherit_from=None, isin=False):
+    def __init__(self, unit1, operator: str, unit2, inherit_from=None, isin=False, isjoin=False):
         self.unit1 = unit1
         self.op = operator
         self.unit2 = unit2
         self.inherit_from = inherit_from
         self.isin = isin
+        self.isjoin = isjoin
 
         self.date_fmt()
 
     def date_fmt(self):
         if self.is_date(self.unit1):
             date1 = self.parse_date(self.unit1)
-            self.unit1 = int(f'{date1.year}{date1.month}{date1.day}')
+            m = str(date1.month)
+            d = str(date1.day)
+            if len(m) == 1:
+                m = f'0{m}'
+            if len(d) == 1:
+                d = f'0{d}'
+            self.unit1 = f'date({date1.year}{m}{d})'
         if self.is_date(self.unit2):
             date2 = self.parse_date(self.unit2)
-            self.unit2 = int(f'{date2.year}{date2.month}{date2.day}')
+            m = str(date2.month)
+            d = str(date2.day)
+            if len(m) == 1:
+                m = f'0{m}'
+            if len(d) == 1:
+                d = f'0{d}'
+            self.unit2 = f'date({date2.year}{m}{d})'
 
     @staticmethod
     def parse_date(data):
@@ -82,12 +95,6 @@ class CondUnit:
         if self.op == '~':
             return f'(not ({u1_str}))'
         return f'({u1_str} {self.op} {u2_str})'
-
-    def get_1st(self):
-        return str(self.unit1)
-
-    def get_2nd(self):
-        return str(self.unit2)
 
     def concat(self, u1, u2):
         if self.op in ['<', '<=', '==', '!=', '&&', '||', '~']:

@@ -18,6 +18,8 @@ from pysdql.core.dtypes.SDict import sdict
 from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
+from pysdql.core.dtypes.LoadExpr import LoadExpr
+from pysdql.core.dtypes.ExtExpr import ExtExpr
 
 
 class relation:
@@ -29,6 +31,7 @@ class relation:
         :param compo_expr:
         :param inherit_from:
         """
+
         if cols is None:
             cols = []
 
@@ -47,11 +50,17 @@ class relation:
                 self.operations.append(OpExpr('relation_data', VarExpr(self.name, self.data)))
             if type(data) == list:
                 self.operations.append(OpExpr('relation_merge_data', VarExpr(self.name, self.data)))
+            if type(data) == LoadExpr:
+                self.operations.append(OpExpr('relation_load_data', VarExpr(self.name, self.data)))
 
         if inherit_from:
             self.inherit(inherit_from)
 
-        self.iter_expr = IterExpr(self.name)
+        self.using_col = []
+
+    @property
+    def iter_expr(self):
+        return IterExpr(self.name)
 
     @property
     def key(self):
@@ -69,12 +78,12 @@ class relation:
 
     def rename(self, name):
         tmp_var = VarExpr(name, self.name)
+        self.history_name.append(name)
         self.operations.append(OpExpr('relation_rename', tmp_var))
 
-        self.name = name
-        self.iter_expr = IterExpr(self.name)
-
-        return self
+        return relation(name=name,
+                        cols=self.cols,
+                        inherit_from=self)
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -90,6 +99,7 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
+        print(self.name, self.history_name)
         if item.isin:
             cond_expr = CondExpr(conditions=item,
                                  then_case=DictExpr({self.iter_expr.key: 1}),
@@ -109,13 +119,16 @@ class relation:
 
         var_name = self.gen_tmp_name()
 
+        self.history_name.append(var_name)
+        self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
+
         result = relation(name=var_name,
                           # data=self.data,
-                          # cols=self.cols,
+                          cols=self.cols,
                           # compo_expr=compo_expr,
                           inherit_from=self)
 
-        self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
+        print(result.name, result.history_name)
         return result
 
     def projection(self, cols):
@@ -193,9 +206,10 @@ class relation:
             self.operations.append(OpExpr('relation_set_caseexpr', output))
 
             self.name = tmp_name
-            self.iter_expr = IterExpr(self.name)
             return self
         if type(value) == ColUnit or type(value) == ColExpr:
+            return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
+        if type(value) == ExtExpr:
             return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
 
     def keep_cols(self):
@@ -212,19 +226,20 @@ class relation:
         :return:
         """
 
-        rename_dict = {to_col.name: from_col}
-        rename_dict.update(self.keep_cols())
-        new_name = self.gen_tmp_name()
-        # new_history_name = [new_name]
-        # new_history_name = new_history_name + self.history_name
-        result = relation(name=new_name,
-                          cols=self.cols,
-                          inherit_from=self)
+        # print(f'rename column from {from_col} to {to_col}')
 
-        print(result)
+        print(self.history_name)
 
-        self.update_from_relation(result)
-        return result
+        next_name = self.gen_tmp_name()
+
+        tmp_concat_expr = ConcatExpr(self.iter_expr.key, RecExpr({to_col.name: from_col.new_expr(self.iter_expr.key)}))
+        tmp_dict_expr = DictExpr({tmp_concat_expr: 1})
+
+        output = VarExpr(next_name, CompoExpr(self.iter_expr, tmp_dict_expr))
+
+        self.name = next_name
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('relation_rename_col', output))
 
     @property
     def expr(self) -> str:
@@ -234,19 +249,7 @@ class relation:
         return self.expr
 
     def show(self):
-        if self.data:
-            print(f'let {self.name} = {self.data}')
-        print(self.name)
-
-    def update_from_relation(self, r):
-        """
-        Update all properties of 'self' from another relation 'r'
-        :param r:
-        :return:
-        """
-        self.name = r.name
-        self.cols = r.cols
-        self.history_name = r.history_name
+        print(self.sdql_expr)
 
     def from_cols(self, col_list: list):
         """
@@ -386,31 +389,90 @@ class relation:
     def access(self):
         return self
 
-    def merge(self, on: CondUnit, *args):
-        pass
+    def gen_merged_name(self):
+        dup_list = [self.name] + self.history_name
 
-    def optimized_merge(self, other, on):
-        if not type(other) == relation:
+        protoname = 'Rm'
+
+        for i in range(100):
+            output = f'{protoname}{i}'
+            if output not in dup_list:
+                return output
+
+    def merge(self, right, on=None, left_on=None, right_on=None, optimized=False):
+        if optimized:
+            return self.optimized_merge(right, left_on, right_on)
+        if not type(right) == relation:
             raise TypeError()
-        tmp_d = DictExpr({on.get_1st(): DictExpr({self.iter_expr.key: self.iter_expr.val})})
-        tmp_r = relation(name=f'part_{self.name}',
-                         inherit_from=self
-                         )
-        print(tmp_r)
+        merged_name = self.gen_merged_name()
+        if on:
+            result = VarExpr(merged_name, CompoExpr([self.iter_expr, right.iter_expr],
+                                                    CondExpr(on, DictExpr(
+                                                        {f'concat({self.iter_expr.key}, {right.iter_expr.key})':
+                                                             f'{self.iter_expr.val} * {right.iter_expr.val}'}),
+                                                             DictExpr({}))))
+            self.history_name.append(merged_name)
+            self.operations.append(OpExpr('relation_merge_on_by_concatexpr', result))
 
-        result_d = DictExpr(
-            {f'concat({other.iter_expr.key}, {tmp_r.iter_expr.key})': f'{other.iter_expr.val} * {tmp_r.iter_expr.val}'})
-        result_r = relation(name=self.gen_tmp_name(),
-                            inherit_from=tmp_r)
-        print(result_r)
+            new_cols = self.cols + right.cols
+            return relation(name=merged_name, cols=new_cols, inherit_from=self).inherit(right)
+        elif left_on and right_on:
+            pass
+        else:
+            result = VarExpr(merged_name, CompoExpr([self.iter_expr, right.iter_expr],
+                                                    DictExpr({f'concat({self.iter_expr.key}, {right.iter_expr.key})':
+                                                                  f'{self.iter_expr.val} * {right.iter_expr.val}'})))
+            self.history_name.append(merged_name)
+            self.operations.append(OpExpr('pysdql_merge_by_concatexpr', result))
+            new_cols = self.cols + right.cols
+            return relation(name=merged_name, cols=new_cols, inherit_from=self).inherit(right)
 
+    def optimized_merge(self, right, left_on, right_on):
+        if not type(right) == relation:
+            raise TypeError()
+
+        if type(left_on) != type(right_on):
+            raise TypeError()
+
+        if type(left_on) == list:
+            if type(right_on) == list:
+                if len(left_on) != len(right_on):
+                    raise ValueError()
+            else:
+                raise TypeError()
+
+        part_dict = {}
+
+        if type(left_on) == str and type(right_on) == str:
+            rec = RecExpr({right_on: f'{right.iter_expr.key}.{right_on}'})
+            part_dict[rec] = DictExpr({right.iter_expr.key: right.iter_expr.val})
+
+        for i in self.using_col:
+            print(i)
+
+        part_name = f'part_{right.name[0]}'
+        part_key = 'p_k'
+        part_val = 'p_v'
+        part_iter = f'sum(<{part_key}, {part_val}> in {part_name}(<{right_on}={self.iter_expr.key}.{left_on}>))'
+        part_var = VarExpr(part_name, CompoExpr(right.iter_expr, DictExpr(part_dict)))
+        self.history_name.append(part_name)
+        self.operations.append(OpExpr('relation_optimized_merge_part_right', part_var))
+
+        new_name = self.gen_merged_name()
+        result = VarExpr(new_name, CompoExpr([self.iter_expr, part_iter],
+                                             DictExpr({f'concat({self.iter_expr.key}, {part_key})':
+                                                           f'{self.iter_expr.val} * {part_val}'})))
+        self.history_name.append(new_name)
+        self.operations.append(OpExpr('relation_optimized_merge_result', result))
         '''
         let part_c = sum(<c_k,c_v> in customer) { c_k.c_custkey -> {c_k->c_v} } in
         sum(<o_k,o_v> in orders) sum(<p_k,p_v> in part_c(o_k.o_custkey)) 
         { concat(o_k,p_k)->o_v*p_v }
         '''
-
-        return result_r
+        new_cols = self.cols + right.cols
+        return relation(name=new_name,
+                        cols=new_cols,
+                        inherit_from=self).inherit(right)
 
     def inherit(self, other):
         """
@@ -433,6 +495,8 @@ class relation:
                     self.operations.remove(i)
             self.operations = other.operations + self.operations
 
+        return self
+
     def exists(self):
         count_name = f'count_{self.name}'
         result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
@@ -445,12 +509,29 @@ class relation:
         self.operations.append(OpExpr('relation_exists', result))
         return CondUnit(count_name, '==', 0, inherit_from=self)
 
-    @staticmethod
-    def case(when, then_case, else_case):
-        return CaseExpr(when, then_case, else_case)
+    def case(self, when, then_case, else_case):
+        return CaseExpr(self, when, then_case, else_case)
 
     @property
     def sdql_expr(self):
         expr_str = f'\n'.join([f'{i}' for i in self.operations])
         expr_str += f'\n{self.name}'
         return expr_str
+
+    def count(self):
+        next_name = f'count_{self.name}'
+        var = VarExpr(next_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('relation_count', var))
+        return relation(name=next_name,
+                        inherit_from=self)
+
+    def head(self, size):
+        next_name = self.gen_tmp_name()
+        output = VarExpr(next_name, f'ext(`TopN`, {size})')
+
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('relation_head', output))
+
+        return relation(name=next_name,
+                        inherit_from=self)

@@ -9,3 +9,4 @@ from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.SDict import sdict
 from pysdql.core.dtypes.SRecord import srecord
+from pysdql.core.dtypes.LoadExpr import LoadExpr

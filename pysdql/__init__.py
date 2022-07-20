@@ -1,6 +1,6 @@
 from pysdql.core.api import (
     # db_driver
-    driver,
+    db_driver,
 
     # dtypes
     relation,
@@ -15,6 +15,7 @@ from pysdql.core.api import (
     # data_loader
     read_tbl,
     tune_tbl,
+    load_tbl,
 
     # data_parser
     get_tbl_type,
@@ -41,9 +42,17 @@ from pysdql.const import (
 )
 
 
-def merge(*args, on=None, name=None, optimize=False, by_cols=False):
-    if name is None:
-        name = 'R'
+def merge(*args, on=None, name='R', optimize=False, by_cols=False, by_relation=False):
+    # if by_relation:
+    #     args = list(args)
+    #     args.reverse()
+    #     r = args.pop()
+    #     s = args.pop()
+    #     r_merged = r.merge(s, on)
+    #     args.reverse()
+    #     for t in args:
+    #         r_merged = r_merged.merge(t, on)
+    #     return r_merged
 
     ie_list = []
     ik_list = []
@@ -57,6 +66,7 @@ def merge(*args, on=None, name=None, optimize=False, by_cols=False):
         ik_list.append(str(r.iter_expr.key))
         iv_list.append(str(r.iter_expr.val))
         icol_list.append(r.cols)
+
         col_list += r.cols
         op_list += r.operations
 

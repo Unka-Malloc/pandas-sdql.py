@@ -32,7 +32,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    db_driver = pysdql.driver(db_path=r'T:/sdql')
+    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)

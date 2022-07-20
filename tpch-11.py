@@ -28,7 +28,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    db_driver = pysdql.driver(db_path=r'T:/sdql')
+    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
