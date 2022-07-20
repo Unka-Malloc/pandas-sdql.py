@@ -63,8 +63,8 @@ class ColExpr:
     def __rmul__(self, other):
         return ColExpr(unit1=other, operator='*', unit2=self, inherit_from=self.inherit_from)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         return ColExpr(unit1=self, operator='/', unit2=other, inherit_from=self.inherit_from)
 
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.inherit_from)
