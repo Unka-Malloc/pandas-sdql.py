@@ -114,19 +114,10 @@ class relation:
                 check_empty = CondExpr(conditions=CondUnit(f'{item.inherit_from}', '==', '{ }'),
                                        then_case=self.name,
                                        else_case=compo_expr)
-            else:
-                check_empty = CondExpr(conditions=CondUnit(f'{item.inherit_from}', '==', '{ }'),
-                                       then_case=self.name,
-                                       else_case=compo_expr)
+                var_name = self.gen_tmp_name()
 
-            var_name = self.gen_tmp_name()
-
-            self.history_name.append(var_name)
-            self.operations.append(OpExpr('relation_selection', VarExpr(var_name, check_empty)))
-
-            return relation(name=var_name,
-                            cols=self.cols,
-                            inherit_from=self)
+                self.history_name.append(var_name)
+                self.operations.append(OpExpr('relation_selection', VarExpr(var_name, check_empty)))
         else:
             if item.inherit_from:
                 self.inherit(item.inherit_from)

@@ -148,7 +148,7 @@ class ColUnit:
     def __rtruediv__(self, other):
         return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.relation)
 
-    def isin(self, vals):
+    def isin(self, vals, ext=None):
         if type(vals) == ColUnit:
             return IsinExpr(self, vals)
 
@@ -162,7 +162,10 @@ class ColUnit:
             for i in vals:
                 if type(i) == str:
                     i = f'"{i}"'
-                tmp_list.append(CondUnit(unit1=self, operator='==', unit2=i))
+                if ext:
+                    tmp_list.append(CondUnit(unit1=ext, operator='==', unit2=i))
+                else:
+                    tmp_list.append(CondUnit(unit1=self, operator='==', unit2=i))
 
             a = tmp_list.pop()
             b = tmp_list.pop()
@@ -188,3 +191,6 @@ class ColUnit:
 
     def not_contains(self, *args):
         return ExtExpr(self, 'not_StrContains', args)
+
+    def substring(self, start, end):
+        return ExtExpr(self, 'SubString', (start, end))

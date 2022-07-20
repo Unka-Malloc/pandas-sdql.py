@@ -39,39 +39,51 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    var1 = 'INDIA'
+
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
-    l1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
-    l2 = l1.rename('l2')
-    l3 = l1.rename('l3')
+    l1_cols = ['l1_orderkey', 'l1_partkey', 'l1_suppkey', 'l1_linenumber', 'l1_quantity', 'l1_extendedprice',
+               'l1_discount', 'l1_tax', 'l1_returnflag', 'l1_linestatus', 'l1_shipdate', 'l1_commitdate',
+               'l1_receiptdate', 'l1_shipinstruct', 'l1_shipmode', 'l1_comment']
+    l1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=l1_cols, name='l1')
+    l2_cols = ['l2_orderkey', 'l2_partkey', 'l2_suppkey', 'l2_linenumber', 'l2_quantity', 'l2_extendedprice',
+               'l2_discount', 'l2_tax', 'l2_returnflag', 'l2_linestatus', 'l2_shipdate', 'l2_commitdate',
+               'l2_receiptdate', 'l2_shipinstruct', 'l2_shipmode', 'l2_comment']
+    l2 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=l2_cols, name='l2')
+    l3_cols = ['l3_orderkey', 'l3_partkey', 'l3_suppkey', 'l3_linenumber', 'l3_quantity', 'l3_extendedprice',
+               'l3_discount', 'l3_tax', 'l3_returnflag', 'l3_linestatus', 'l3_shipdate', 'l3_commitdate',
+               'l3_receiptdate', 'l3_shipinstruct', 'l3_shipmode', 'l3_comment']
+    l3 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=l3_cols, name='l3')
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
-    r1 = pysdql.merge(l1, l2,
-                      on=((l2['l_orderkey'] == l1['l_orderkey'])
-                          & (l2['l_suppkey'] != l1['l_suppkey']))
-                      ).rename('r1')
+    sub_n = nation[(nation['n_name'] == var1)].rename('sub_n')
 
-    r2 = pysdql.merge(l1, l3,
-                      on=((l3['l_orderkey'] == l1['l_orderkey'])
-                          & (l3['l_suppkey'] != l1['l_suppkey'])
-                          & (l3['l_receiptdate'] > l3['l_commitdate']))
-                      ).rename('r2')
+    join_ns = supplier.merge(sub_n, on=supplier['s_nationkey'] == sub_n['n_nationkey']).rename('join_ns')
 
-    s = pysdql.merge(supplier, l1, orders, nation,
-                     on=(supplier['s_suppkey'] == l1['l_suppkey'])
-                        & (orders['o_orderkey'] == l1['l_orderkey'])
-                        & (supplier['s_nationkey'] == nation['n_nationkey'])
-                     )
+    sub_l1 = l1[(l1['l1_receiptdate'] > l1['l1_commitdate'])]
 
-    s = s[(orders['o_orderstatus'] == 'F')
-          & (l1['l_receiptdate'] > l1['l_commitdate'])
-          & (nation['n_name'] == 'MOROCCO')
-          & r1.exists()
-          & r2.not_exists()
-          ]
+    r = join_ns.merge(sub_l1, on=(join_ns['s_suppkey'] == sub_l1['l1_suppkey']))
+
+    sub_o = orders[(orders['o_orderstatus'] == 'F')]
+
+    r = r.merge(sub_o, on=(r['l1_orderkey'] == sub_o['o_orderkey']))
+
+    r1 = l2.merge(sub_l1, on=((l2['l2_orderkey'] == sub_l1['l1_orderkey'])
+                              & (l2['l2_suppkey'] != sub_l1['l1_suppkey']))
+                  ).rename('r1')
+
+    sub_l3 = l3[(l3['l3_receiptdate'] > l3['l3_commitdate'])]
+
+    r2 = l3.merge(sub_l1,
+                  on=((l3['l3_orderkey'] == sub_l1['l1_orderkey'])
+                      & (l3['l3_suppkey'] != sub_l1['l1_suppkey']))
+                  ).rename('r2')
+
+    s = r[r1.exists() & r2.not_exists()]
 
     s = s.groupby(['s_name']).aggr(numwait=('*', 'count'))
 
-    db_driver.run(s, block=True)
+    db_driver.run(r)
