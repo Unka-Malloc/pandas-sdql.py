@@ -430,12 +430,15 @@ class relation:
             if output not in dup_list:
                 return output
 
-    def merge(self, right, on=None, left_on=None, right_on=None, optimized=False):
+    def merge(self, right, on=None, left_on=None, right_on=None, optimized=False, name=None):
         if optimized:
             return self.optimized_merge(right, left_on, right_on)
         if not type(right) == relation:
             raise TypeError()
-        merged_name = self.gen_merged_name()
+        if name:
+            merged_name = name
+        else:
+            merged_name = self.gen_merged_name()
         if on:
             result = VarExpr(merged_name, CompoExpr([self.iter_expr, right.iter_expr],
                                                     CondExpr(on, DictExpr(
