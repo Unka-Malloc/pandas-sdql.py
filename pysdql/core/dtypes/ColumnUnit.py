@@ -164,14 +164,13 @@ class ColUnit:
                     i = f'"{i}"'
                 tmp_list.append(CondUnit(unit1=self, operator='==', unit2=i))
 
-            while True:
-                a = tmp_list.pop()
-                b = tmp_list.pop()
-                tmp_cond = a | b
-                if tmp_list:
-                    tmp_cond |= tmp_cond
-                else:
-                    return tmp_cond
+            a = tmp_list.pop()
+            b = tmp_list.pop()
+            tmp_cond = a | b
+            if tmp_list:
+                for i in tmp_list:
+                    tmp_cond |= i
+            return tmp_cond
 
     @property
     def str(self):

@@ -3,7 +3,7 @@ from pysdql.core.dtypes.DictionaryExpr import DictExpr
 
 
 class CondExpr:
-    def __init__(self, conditions, then_case: DictExpr, else_case: DictExpr, new_iter=None):
+    def __init__(self, conditions, then_case, else_case, new_iter=None):
         self.conditions = conditions
         self.then_case = then_case
         self.else_case = else_case

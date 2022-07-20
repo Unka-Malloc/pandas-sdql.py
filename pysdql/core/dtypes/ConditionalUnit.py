@@ -91,9 +91,9 @@ class CondUnit:
         if self.op == '&&':
             return f'({u1_str} {self.op} {u2_str})'
         if self.op == '||':
-            return f'({u1_str}) {self.op} ({u2_str})'
+            return f'({u1_str} {self.op} {u2_str})'
         if self.op == '~':
-            return f'(not ({u1_str}))'
+            return f'(!({u1_str}))'
         return f'({u1_str} {self.op} {u2_str})'
 
     def concat(self, u1, u2):
@@ -120,7 +120,7 @@ class CondUnit:
         if self.op == '||':
             return f'({self.unit1} {self.op} {self.unit2})'
         if self.op == '~':
-            return f'(not ({self.unit1}))'
+            return f'(!({self.unit1}))'
         return f'({self.unit1} {self.op} {self.unit2})'
 
     def __repr__(self):
@@ -150,7 +150,9 @@ class CondUnit:
                         unit2=self).inherit(other)
 
     def __ior__(self, other):
-        return (self | other).inherit(other)
+        return CondUnit(unit1=self,
+                        operator='||',
+                        unit2=other, inherit_from=self.inherit_from).inherit(other)
 
     def __invert__(self):
         return CondUnit(unit1=self,

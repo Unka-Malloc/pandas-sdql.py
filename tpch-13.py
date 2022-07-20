@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     part_o = orders[orders['o_comment'].str.not_contains(var1, var2)]
 
+    # LEFT OUTER JOIN
     r = customer.merge(part_o, on=(customer['c_custkey'] == orders['o_custkey']))
 
     c_orders = r.groupby(['c_custkey']).aggr(c_count=(r['o_orderkey'], 'count')).rename('c_orders')

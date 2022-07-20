@@ -41,3 +41,7 @@ class ExtExpr:
 
     def __repr__(self):
         return self.expr
+
+    def __invert__(self):
+        return f'!({self.expr})'
+
