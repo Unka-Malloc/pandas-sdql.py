@@ -1,12 +1,14 @@
-let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
-let lmp = sum (<l_k, l_v> in lineitem) if (((((((l_k.l_shipmode == "AIR")) || ((l_k.l_shipmode == "FOB")) && (l_k.l_commitdate < l_k.l_receiptdate)) && (l_k.l_shipdate < l_k.l_commitdate)) && (date(19950101) <= l_k.l_receiptdate)) && (l_k.l_receiptdate < date(19960101)))) then { l_k -> 1 } else {  }
-let part_l = lmp
 let orders = load[{<o_orderkey: int, o_custkey: int, o_orderstatus: string, o_totalprice: double, o_orderdate: date, o_orderpriority: string, o_clerk: string, o_shippriority: int, o_comment: string> -> int}]("T:/UG4-Proj/datasets/orders.tbl")
-let Rm0 = sum (<o_k, o_v> in orders) sum (<pl_k, pl_v> in part_l) if ((o_k.o_orderkey == pl_k.l_orderkey)) then { concat(o_k, pl_k) -> o_v * pl_v } else {  }
-let rmp = sum (<r0_k, r0_v> in Rm0) if (((r0_k.o_orderpriority == "1-URGENT")) || ((r0_k.o_orderpriority == "2-HIGH"))) then { concat(r0_k, < high_line_priority=1 >) -> 1 } else { concat(r0_k, < high_line_priority=0 >) -> 1 }
-let tmp = sum (<r_k, r_v> in rmp) if (((r_k.o_orderpriority != "1-URGENT")) || ((r_k.o_orderpriority != "2-HIGH"))) then { concat(r_k, < low_line_priority=1 >) -> 1 } else { concat(r_k, < low_line_priority=0 >) -> 1 }
-let tmpb = sum (<t_k, t_v> in tmp) { < l_shipmode=t_k.l_shipmode > -> { t_k -> t_v } }
-let tmpa = sum (<tb_k, tb_v> in tmpb) { < l_shipmode=tb_k.l_shipmode, group=tb_v > -> 1 }
-let tmpc = sum (<ta_k, ta_v> in tmpa) sum (<g_k, g_v> in ta_k.group) { < l_shipmode=ta_k.l_shipmode > -> < high_line_count=g_k.high_line_priority * g_v, low_line_count=g_k.low_line_priority * g_v > }
-let aggr_tmp = sum (<tc_k, tc_v> in tmpc) { < l_shipmode=tc_k.l_shipmode, high_line_count=tc_v.high_line_count, low_line_count=tc_v.low_line_count > -> 1 }
-aggr_tmp
+let omp = sum (<o_k, o_v> in orders) if (!(ext(`StrContainsN`, o_k.o_comment, "special", "requests"))) then { o_k -> 1 } else {  }
+let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: double, c_mktsegment: string, c_comment: string> -> int}]("T:/UG4-Proj/datasets/customer.tbl")
+let Rm0 = sum (<c_k, c_v> in customer) sum (<o_k, o_v> in omp) if ((c_k.c_custkey == o_k.o_custkey)) then { concat(c_k, o_k) -> c_v * o_v } else {  }
+let tmp = sum (<r0_k, r0_v> in Rm0) { < c_custkey=r0_k.c_custkey > -> { r0_k -> r0_v } }
+let rmp = sum (<t_k, t_v> in tmp) { < c_custkey=t_k.c_custkey, group=t_v > -> 1 }
+let tmpa = sum (<r_k, r_v> in rmp) sum (<g_k, g_v> in r_k.group) { < c_custkey=r_k.c_custkey > -> < c_count=g_v > }
+let aggr_Rm0 = sum (<ta_k, ta_v> in tmpa) { < c_custkey=ta_k.c_custkey, c_count=ta_v.c_count > -> 1 }
+let c_orders = aggr_Rm0
+let tmpb = sum (<co_k, co_v> in c_orders) { < c_count=co_k.c_count > -> { co_k -> co_v } }
+let cmp = sum (<tb_k, tb_v> in tmpb) { < c_count=tb_k.c_count, group=tb_v > -> 1 }
+let tmpc = sum (<c_k, c_v> in cmp) sum (<g_k, g_v> in c_k.group) { < c_count=c_k.c_count > -> < custdist=g_v > }
+let aggr_c_orders = sum (<tc_k, tc_v> in tmpc) { < c_count=tc_k.c_count, custdist=tc_v.custdist > -> 1 }
+aggr_c_orders

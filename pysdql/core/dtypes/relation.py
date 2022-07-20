@@ -278,7 +278,9 @@ class relation:
                         inherit_from=self
                         )
 
-    def groupby(self, cols: list):
+    def groupby(self, cols):
+        if type(cols) != list:
+            raise TypeError()
         """
         let tmp = sum (<l_k, l_v> in lineitem) { <l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus> -> {l_k -> l_v} }
         in let tmpa = sum(<t_k, t_v> in tmp) { <l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus, group=t_v> }
