@@ -99,12 +99,34 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
+        'let rmp = if (is_empty) then Rm0 else sum (<r0_k, r0_v> in Rm0) sum (<ps_k, ps_v> in part_s) if ((!((r0_k.ps_suppkey == ps_k.s_suppkey)))) then { r0_k -> 1 } else {  } '
         if item.isin:
+            if item.inherit_from:
+                self.inherit(item.inherit_from)
+
             cond_expr = CondExpr(conditions=item,
                                  then_case=DictExpr({self.iter_expr.key: 1}),
                                  else_case=DictExpr({}))
+
             compo_expr = CompoExpr(iter_expr=[self.iter_expr, item.inherit_from.iter_expr],
                                    any_expr=cond_expr)
+            if item.op == '~':
+                check_empty = CondExpr(conditions=CondUnit(f'{item.inherit_from}', '==', '{ }'),
+                                       then_case=self.name,
+                                       else_case=compo_expr)
+            else:
+                check_empty = CondExpr(conditions=CondUnit(f'{item.inherit_from}', '==', '{ }'),
+                                       then_case=self.name,
+                                       else_case=compo_expr)
+
+            var_name = self.gen_tmp_name()
+
+            self.history_name.append(var_name)
+            self.operations.append(OpExpr('relation_selection', VarExpr(var_name, check_empty)))
+
+            return relation(name=var_name,
+                            cols=self.cols,
+                            inherit_from=self)
         else:
             if item.inherit_from:
                 self.inherit(item.inherit_from)
@@ -122,10 +144,8 @@ class relation:
         self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
 
         return relation(name=var_name,
-                          # data=self.data,
-                          cols=self.cols,
-                          # compo_expr=compo_expr,
-                          inherit_from=self)
+                        cols=self.cols,
+                        inherit_from=self)
 
     def projection(self, cols):
         tmp_dict = {}
@@ -163,9 +183,6 @@ class relation:
         var_name = self.gen_tmp_name()
 
         result = relation(name=var_name,
-                          # data=self.data,
-                          # cols=self.cols,
-                          # compo_expr=compo_expr,
                           inherit_from=self)
 
         self.operations.append(OpExpr('relation_selection_isin', VarExpr(var_name, compo_expr)))

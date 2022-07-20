@@ -1,9 +1,13 @@
+let supplier = load[{<s_suppkey: int, s_name: string, s_address: string, s_nationkey: int, s_phone: string, s_acctbal: double, s_comment: string> -> int}]("T:/UG4-Proj/datasets/supplier.tbl")
+let smp = sum (<sup_k, sup_v> in supplier) if (ext(`StrContainsN`, sup_k.s_comment, "Customer", "Complaints")) then { sup_k -> 1 } else {  }
+let part_s = smp
+let partsupp = load[{<ps_partkey: int, ps_suppkey: int, ps_availqty: int, ps_supplycost: double, ps_comment: string> -> int}]("T:/UG4-Proj/datasets/partsupp.tbl")
 let part = load[{<p_partkey: int, p_name: string, p_mfgr: string, p_brand: string, p_type: string, p_size: int, p_container: string, p_retailprice: double, p_comment: string> -> int}]("T:/UG4-Proj/datasets/part.tbl")
-let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
-let lmp = sum (<l_k, l_v> in lineitem) if (((date(19950301) <= l_k.l_shipdate) && (l_k.l_shipdate < date(19950401)))) then { l_k -> 1 } else {  }
-let part_l = lmp
-let Rm0 = sum (<pl_k, pl_v> in part_l) sum (<p_k, p_v> in part) if ((pl_k.l_partkey == p_k.p_partkey)) then { concat(pl_k, p_k) -> pl_v * p_v } else {  }
-let rmp = sum (<r0_k, r0_v> in Rm0) if (ext(`StrStartsWith`, r0_k.p_type, "PROMO")) then { concat(r0_k, < promo=(r0_k.l_extendedprice * (1 - r0_k.l_discount)) >) -> 1 } else { concat(r0_k, < promo=0 >) -> 1 }
-let tmp = sum (<r_k, r_v> in rmp) < promo_revenue=((100 * r_k.promo) / (r_k.l_extendedprice * (1 - r_k.l_discount))) * r_v >
-let tmpa = { < promo_revenue=tmp.promo_revenue > -> 1 }
-tmpa
+let pmp = sum (<par_k, par_v> in part) if ((((par_k.p_brand != "Brand#21") && !(ext(`StrStartsWith`, par_k.p_type, "SMALL ANODIZED"))) && ((((((((par_k.p_size == 42) || (par_k.p_size == 10)) || (par_k.p_size == 48)) || (par_k.p_size == 33)) || (par_k.p_size == 18)) || (par_k.p_size == 16)) || (par_k.p_size == 8)) || (par_k.p_size == 3)))) then { par_k -> 1 } else {  }
+let Rm0 = sum (<p_k, p_v> in pmp) sum (<psup_k, psup_v> in partsupp) if ((p_k.p_partkey == psup_k.ps_partkey)) then { concat(p_k, psup_k) -> p_v * psup_v } else {  }
+let rmp = if ((part_s == { })) then Rm0 else sum (<r0_k, r0_v> in Rm0) sum (<ps_k, ps_v> in part_s) if ((!((r0_k.ps_suppkey == ps_k.s_suppkey)))) then { r0_k -> 1 } else {  }
+let tmpa = sum (<r_k, r_v> in rmp) { < p_brand=r_k.p_brand, p_type=r_k.p_type, p_size=r_k.p_size > -> { r_k -> r_v } }
+let tmp = sum (<ta_k, ta_v> in tmpa) { < p_brand=ta_k.p_brand, p_type=ta_k.p_type, p_size=ta_k.p_size, group=ta_v > -> 1 }
+let tmpb = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < p_brand=t_k.p_brand, p_type=t_k.p_type, p_size=t_k.p_size > -> < supplier_cnt=g_k.ps_suppkey * g_v > }
+let aggr_rmp = sum (<tb_k, tb_v> in tmpb) { < p_brand=tb_k.p_brand, p_type=tb_k.p_type, p_size=tb_k.p_size, supplier_cnt=tb_v.supplier_cnt > -> 1 }
+aggr_rmp
