@@ -34,5 +34,4 @@ if __name__ == '__main__':
 
     s = c_orders.groupby(['c_count']).aggr(custdist=('*', 'count'))
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(s, block=False)
-    
+    pysdql.db_driver(db_path=r'T:/sdql').run(s)

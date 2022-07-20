@@ -1,14 +1,9 @@
-let orders = load[{<o_orderkey: int, o_custkey: int, o_orderstatus: string, o_totalprice: double, o_orderdate: date, o_orderpriority: string, o_clerk: string, o_shippriority: int, o_comment: string> -> int}]("T:/UG4-Proj/datasets/orders.tbl")
-let omp = sum (<o_k, o_v> in orders) if (!(ext(`StrContainsN`, o_k.o_comment, "special", "requests"))) then { o_k -> 1 } else {  }
-let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: double, c_mktsegment: string, c_comment: string> -> int}]("T:/UG4-Proj/datasets/customer.tbl")
-let Rm0 = sum (<c_k, c_v> in customer) sum (<o_k, o_v> in omp) if ((c_k.c_custkey == o_k.o_custkey)) then { concat(c_k, o_k) -> c_v * o_v } else {  }
-let tmp = sum (<r0_k, r0_v> in Rm0) { < c_custkey=r0_k.c_custkey > -> { r0_k -> r0_v } }
-let rmp = sum (<t_k, t_v> in tmp) { < c_custkey=t_k.c_custkey, group=t_v > -> 1 }
-let tmpa = sum (<r_k, r_v> in rmp) sum (<g_k, g_v> in r_k.group) { < c_custkey=r_k.c_custkey > -> < c_count=g_v > }
-let aggr_Rm0 = sum (<ta_k, ta_v> in tmpa) { < c_custkey=ta_k.c_custkey, c_count=ta_v.c_count > -> 1 }
-let c_orders = aggr_Rm0
-let tmpb = sum (<co_k, co_v> in c_orders) { < c_count=co_k.c_count > -> { co_k -> co_v } }
-let cmp = sum (<tb_k, tb_v> in tmpb) { < c_count=tb_k.c_count, group=tb_v > -> 1 }
-let tmpc = sum (<c_k, c_v> in cmp) sum (<g_k, g_v> in c_k.group) { < c_count=c_k.c_count > -> < custdist=g_v > }
-let aggr_c_orders = sum (<tc_k, tc_v> in tmpc) { < c_count=tc_k.c_count, custdist=tc_v.custdist > -> 1 }
-aggr_c_orders
+let part = load[{<p_partkey: int, p_name: string, p_mfgr: string, p_brand: string, p_type: string, p_size: int, p_container: string, p_retailprice: double, p_comment: string> -> int}]("T:/UG4-Proj/datasets/part.tbl")
+let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
+let lmp = sum (<l_k, l_v> in lineitem) if (((date(19950301) <= l_k.l_shipdate) && (l_k.l_shipdate < date(19950401)))) then { l_k -> 1 } else {  }
+let part_l = lmp
+let Rm0 = sum (<pl_k, pl_v> in part_l) sum (<p_k, p_v> in part) if ((pl_k.l_partkey == p_k.p_partkey)) then { concat(pl_k, p_k) -> pl_v * p_v } else {  }
+let rmp = sum (<r0_k, r0_v> in Rm0) if (ext(`StrStartsWith`, r0_k.p_type, "PROMO")) then { concat(r0_k, < promo=(r0_k.l_extendedprice * (1 - r0_k.l_discount)) >) -> 1 } else { concat(r0_k, < promo=0 >) -> 1 }
+let tmp = sum (<r_k, r_v> in rmp) < promo_revenue=((100 * r_k.promo) / (r_k.l_extendedprice * (1 - r_k.l_discount))) * r_v >
+let tmpa = { < promo_revenue=tmp.promo_revenue > -> 1 }
+tmpa
