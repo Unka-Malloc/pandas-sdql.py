@@ -34,6 +34,9 @@ order by
 import pysdql
 
 if __name__ == '__main__':
+    var1 = '1993-08-01'
+    var2 = '1993-11-01'  # var1 + 3 month
+
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
@@ -41,17 +44,16 @@ if __name__ == '__main__':
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
-    r = pysdql.merge(customer, orders, lineitem, nation,
-                     on=(customer['c_custkey'] == orders['o_custkey'])
-                        & (lineitem['l_orderkey'] == orders['o_custkey'])
-                        & (customer['c_nationkey'] == nation['n_nationkey'])
-                     )
+    part_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)].rename('part_o')
 
-    r = r[(orders['o_orderdate'] >= 19960101)
-          & (orders['o_orderdate'] < 19960401)
-          & (lineitem['l_returnflag'] == 'R')]
+    r = customer.merge(part_o, on=customer['c_custkey'] == part_o['o_custkey'])
+    r = r.merge(nation, on=r['c_nationkey'] == nation['n_nationkey'])
+
+    part_l = lineitem[lineitem['l_returnflag'] == 'R'].rename('part_l')
+
+    r = r.merge(part_l, on=r['o_custkey'] == part_l['l_orderkey'])
 
     r = r.groupby(['c_custkey', 'c_name', 'c_acctbal', 'c_phone', 'n_name', 'c_address', 'c_comment']).aggr(
-        revenue=((lineitem['l_extendedprice'] * (1 - lineitem['l_discount'])), 'sum'))
+        revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
     db_driver.run(r)

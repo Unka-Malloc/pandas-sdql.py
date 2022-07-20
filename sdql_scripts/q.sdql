@@ -1,32 +1,12 @@
-let part = load[{<p_partkey: int, p_name: string, p_mfgr: string, p_brand: string, p_type: string, p_size: int, p_container: string, p_retailprice: double, p_comment: string> -> int}]("T:/UG4-Proj/datasets/part.tbl")
-let n2 = load[{<n2_nationkey: int, n2_name: string, n2_regionkey: int, n2_comment: string> -> int}]("T:/UG4-Proj/datasets/nation.tbl")
-let supplier = load[{<s_suppkey: int, s_name: string, s_address: string, s_nationkey: int, s_phone: string, s_acctbal: double, s_comment: string> -> int}]("T:/UG4-Proj/datasets/supplier.tbl")
-let Rm0 = sum (<s_k, s_v> in supplier) sum (<n2_k, n2_v> in n2) if ((s_k.s_nationkey == n2_k.n2_nationkey)) then { concat(s_k, n2_k) -> s_v * n2_v } else {  }
-let r2 = Rm0
 let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
+let lmp = sum (<l_k, l_v> in lineitem) if (((((((l_k.l_shipmode == "AIR")) || ((l_k.l_shipmode == "FOB")) && (l_k.l_commitdate < l_k.l_receiptdate)) && (l_k.l_shipdate < l_k.l_commitdate)) && (date(19950101) <= l_k.l_receiptdate)) && (l_k.l_receiptdate < date(19960101)))) then { l_k -> 1 } else {  }
+let part_l = lmp
 let orders = load[{<o_orderkey: int, o_custkey: int, o_orderstatus: string, o_totalprice: double, o_orderdate: date, o_orderpriority: string, o_clerk: string, o_shippriority: int, o_comment: string> -> int}]("T:/UG4-Proj/datasets/orders.tbl")
-let region = load[{<r_regionkey: int, r_name: string, r_comment: string> -> int}]("T:/UG4-Proj/datasets/region.tbl")
-let n1 = load[{<n1_nationkey: int, n1_name: string, n1_regionkey: int, n1_comment: string> -> int}]("T:/UG4-Proj/datasets/nation.tbl")
-let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: double, c_mktsegment: string, c_comment: string> -> int}]("T:/UG4-Proj/datasets/customer.tbl")
-let Rm0 = sum (<c_k, c_v> in customer) sum (<n1_k, n1_v> in n1) if ((c_k.c_nationkey == n1_k.n1_nationkey)) then { concat(c_k, n1_k) -> c_v * n1_v } else {  }
-let Rm1 = sum (<r0_k, r0_v> in Rm0) sum (<r_k, r_v> in region) if ((r0_k.n1_regionkey == r_k.r_regionkey)) then { concat(r0_k, r_k) -> r0_v * r_v } else {  }
-let rmp = sum (<r1_k, r1_v> in Rm1) if ((r1_k.r_name == "MIDDLE EAST")) then { r1_k -> 1 } else {  }
-let Rm2 = sum (<r_k, r_v> in rmp) sum (<o_k, o_v> in orders) if ((r_k.c_custkey == o_k.o_custkey)) then { concat(r_k, o_k) -> r_v * o_v } else {  }
-let tmp = sum (<r2_k, r2_v> in Rm2) if (((date(19950101) <= r2_k.o_orderdate) && (r2_k.o_orderdate <= date(19961231)))) then { r2_k -> 1 } else {  }
-let Rm3 = sum (<t_k, t_v> in tmp) sum (<l_k, l_v> in lineitem) if ((t_k.o_orderkey == l_k.l_orderkey)) then { concat(t_k, l_k) -> t_v * l_v } else {  }
-let r1 = Rm3
-let Rm4 = sum (<r1_k, r1_v> in r1) sum (<r2_k, r2_v> in r2) if ((r1_k.l_suppkey == r2_k.s_suppkey)) then { concat(r1_k, r2_k) -> r1_v * r2_v } else {  }
-let Rm5 = sum (<r4_k, r4_v> in Rm4) sum (<p_k, p_v> in part) if ((r4_k.l_partkey == p_k.p_partkey)) then { concat(r4_k, p_k) -> r4_v * p_v } else {  }
-let tmpa = sum (<r5_k, r5_v> in Rm5) if ((r5_k.p_type == "SMALL ANODIZED COPPER")) then { r5_k -> 1 } else {  }
-let tmpb = sum (<ta_k, ta_v> in tmpa) { concat(ta_k, < o_year=ext(`Year`, ta_k.o_orderdate) >) -> 1 }
-let tmpc = sum (<tb_k, tb_v> in tmpb) { concat(tb_k, < volume=(tb_k.l_extendedprice * (1 - tb_k.l_discount)) >) -> 1 }
-let tmpd = sum (<tc_k, tc_v> in tmpc) { concat(tc_k, < nation=tc_k.n2_name >) -> 1 }
-let tmpe = sum (<td_k, td_v> in tmpd) { < o_year=td_k.o_year, volume=td_k.volume, nation=td_k.nation > -> 1 }
-let all_nations = tmpe
-let amp = sum (<an_k, an_v> in all_nations) if ((an_k.nation == "JORDAN")) then { concat(an_k, < mkt_value=an_k.volume >) -> 1 } else { concat(an_k, < mkt_value=0 >) -> 1 }
-let tmpf = sum (<a_k, a_v> in amp) { concat(a_k, < mkt_value=(a_k.mkt_value / a_k.volume) >) -> 1 }
-let tmph = sum (<tf_k, tf_v> in tmpf) { < o_year=tf_k.o_year > -> { tf_k -> tf_v } }
-let tmpg = sum (<th_k, th_v> in tmph) { < o_year=th_k.o_year, group=th_v > -> 1 }
-let tmpi = sum (<tg_k, tg_v> in tmpg) sum (<g_k, g_v> in tg_k.group) { < o_year=tg_k.o_year > -> < mkt_share=g_k.mkt_value * g_v > }
-let aggr_tmpf = sum (<ti_k, ti_v> in tmpi) { < o_year=ti_k.o_year, mkt_share=ti_v.mkt_share > -> 1 }
-aggr_tmpf
+let Rm0 = sum (<o_k, o_v> in orders) sum (<pl_k, pl_v> in part_l) if ((o_k.o_orderkey == pl_k.l_orderkey)) then { concat(o_k, pl_k) -> o_v * pl_v } else {  }
+let rmp = sum (<r0_k, r0_v> in Rm0) if (((r0_k.o_orderpriority == "1-URGENT")) || ((r0_k.o_orderpriority == "2-HIGH"))) then { concat(r0_k, < high_line_priority=1 >) -> 1 } else { concat(r0_k, < high_line_priority=0 >) -> 1 }
+let tmp = sum (<r_k, r_v> in rmp) if (((r_k.o_orderpriority != "1-URGENT")) || ((r_k.o_orderpriority != "2-HIGH"))) then { concat(r_k, < low_line_priority=1 >) -> 1 } else { concat(r_k, < low_line_priority=0 >) -> 1 }
+let tmpb = sum (<t_k, t_v> in tmp) { < l_shipmode=t_k.l_shipmode > -> { t_k -> t_v } }
+let tmpa = sum (<tb_k, tb_v> in tmpb) { < l_shipmode=tb_k.l_shipmode, group=tb_v > -> 1 }
+let tmpc = sum (<ta_k, ta_v> in tmpa) sum (<g_k, g_v> in ta_k.group) { < l_shipmode=ta_k.l_shipmode > -> < high_line_count=g_k.high_line_priority * g_v, low_line_count=g_k.low_line_priority * g_v > }
+let aggr_tmp = sum (<tc_k, tc_v> in tmpc) { < l_shipmode=tc_k.l_shipmode, high_line_count=tc_v.high_line_count, low_line_count=tc_v.low_line_count > -> 1 }
+aggr_tmp

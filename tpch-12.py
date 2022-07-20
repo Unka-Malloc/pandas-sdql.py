@@ -29,19 +29,22 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    var1 = 'FOB'
+    var2 = 'AIR'
+    var3 = '1995-01-01'
+    var4 = '1996-01-01'
+
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = pysdql.merge(orders, lineitem, on=(orders['o_orderkey'] == lineitem['l_orderkey']))
+    part_l = lineitem[(lineitem['l_shipmode'].isin((var1, var2)))
+                      & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
+                      & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
+                      & (lineitem['l_receiptdate'] >= var3) & (lineitem['l_receiptdate'] < var4)].rename('part_l')
 
-    r = r[(lineitem['l_shipmode'].isin(('AIR', 'REG AIR')))
-          & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
-          & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
-          & (lineitem['l_receiptdate'] >= 19960101)
-          & (lineitem['l_receiptdate'] < 19970101)
-          ]
+    r = orders.merge(part_l, on=(orders['o_orderkey'] == part_l['l_orderkey']))
 
     r['high_line_priority'] = r.case((r['o_orderpriority'] == '1-URGENT') | (r['o_orderpriority'] == '2-HIGH'), 1, 0)
 
@@ -50,4 +53,4 @@ if __name__ == '__main__':
     r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
                                        low_line_count=(r['low_line_priority'], 'sum'))
 
-    db_driver.run(r, block=True)
+    db_driver.run(r)

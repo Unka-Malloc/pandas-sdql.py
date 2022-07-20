@@ -99,7 +99,6 @@ class relation:
                 return tmp_name
 
     def selection(self, item: CondUnit):
-        print(self.name, self.history_name)
         if item.isin:
             cond_expr = CondExpr(conditions=item,
                                  then_case=DictExpr({self.iter_expr.key: 1}),
@@ -122,14 +121,11 @@ class relation:
         self.history_name.append(var_name)
         self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
 
-        result = relation(name=var_name,
+        return relation(name=var_name,
                           # data=self.data,
                           cols=self.cols,
                           # compo_expr=compo_expr,
                           inherit_from=self)
-
-        print(result.name, result.history_name)
-        return result
 
     def projection(self, cols):
         tmp_dict = {}
@@ -179,6 +175,22 @@ class relation:
         if type(item) == str:
             return self.get_col(col_name=item)
 
+    def selection_ext(self, item):
+        cond_expr = CondExpr(conditions=item,
+                             then_case=DictExpr({self.iter_expr.key: 1}),
+                             else_case=DictExpr({}))
+        compo_expr = CompoExpr(iter_expr=self.iter_expr,
+                               any_expr=cond_expr)
+
+        var_name = self.gen_tmp_name()
+
+        self.history_name.append(var_name)
+        self.operations.append(OpExpr('relation_selection_ext', VarExpr(var_name, compo_expr)))
+
+        return relation(name=var_name,
+                        cols=self.cols,
+                        inherit_from=self)
+
     def __getitem__(self, item):
         if type(item) == CondUnit:
             return self.selection(item)
@@ -188,6 +200,8 @@ class relation:
             return self.projection(item)
         if type(item) == IsinExpr:
             return self.selection_isin(item)
+        if type(item) == ExtExpr:
+            return self.selection_ext(item)
 
     def __setitem__(self, key, value):
         """
@@ -227,8 +241,6 @@ class relation:
         """
 
         # print(f'rename column from {from_col} to {to_col}')
-
-        print(self.history_name)
 
         next_name = self.gen_tmp_name()
 
