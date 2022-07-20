@@ -42,9 +42,9 @@ if __name__ == '__main__':
 
     aggr_l = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > var1)
 
-    part_o = orders[(orders['o_orderkey'].isin(aggr_l['l_orderkey']))]
+    sub_o = orders[(orders['o_orderkey'].isin(aggr_l['l_orderkey']))]
 
-    r = customer.merge(part_o, on=(customer['c_custkey'] == part_o['o_custkey']))
+    r = customer.merge(sub_o, on=(customer['c_custkey'] == sub_o['o_custkey']))
     r = r.merge(lineitem, on=r['o_orderkey'] == lineitem['l_orderkey'])
 
     r = r.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\

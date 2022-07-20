@@ -39,12 +39,12 @@ if __name__ == '__main__':
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    part_l = lineitem[(lineitem['l_shipmode'].isin((var1, var2)))
-                      & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
-                      & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
-                      & (lineitem['l_receiptdate'] >= var3) & (lineitem['l_receiptdate'] < var4)].rename('part_l')
+    sub_l = lineitem[(lineitem['l_shipmode'].isin((var1, var2)))
+                     & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
+                     & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
+                     & (lineitem['l_receiptdate'] >= var3) & (lineitem['l_receiptdate'] < var4)].rename('sub_l')
 
-    r = orders.merge(part_l, on=(orders['o_orderkey'] == part_l['l_orderkey']))
+    r = orders.merge(sub_l, on=(orders['o_orderkey'] == sub_l['l_orderkey']))
 
     r['high_line_priority'] = r.case((r['o_orderpriority'] == '1-URGENT') | (r['o_orderpriority'] == '2-HIGH'), 1, 0)
 

@@ -43,9 +43,9 @@ if __name__ == '__main__':
     #                        )[(nation['n_name'] == ':1')] \
     #     .aggr({(partsupp['ps_supplycost'] * partsupp['ps_availqty'] * ':2'): 'sum'})[0]
 
-    part_n = nation[(nation['n_name'] == var1)].rename('part_n')
+    sub_n = nation[(nation['n_name'] == var1)].rename('sub_n')
 
-    join_ns = part_n.merge(supplier, on=(part_n['n_nationkey'] == supplier['s_nationkey'])).rename('join_ns')
+    join_ns = sub_n.merge(supplier, on=(sub_n['n_nationkey'] == supplier['s_nationkey'])).rename('join_ns')
 
     r1 = join_ns.merge(partsupp, join_ns['s_suppkey'] == partsupp['ps_suppkey']).rename('r1')
 
