@@ -15,6 +15,8 @@ class ExtExpr:
             return f'ext(`{self.func}`, {self.col.new_expr(new_str)}, "{self.args}")'
         if self.func == 'not_StrContains':
             pass
+        if self.func == 'SubString':
+            return f'ext(`SubString`, {self.col.new_expr(new_str)}, {self.args[0]}, {self.args[1]})'
 
     @property
     def expr(self):
@@ -38,6 +40,8 @@ class ExtExpr:
                 if i < len(self.args) - 1:
                     tmp_str += ', '
             return f'!(ext(`StrContainsN`, {self.col}, {tmp_str}))'
+        if self.func == 'SubString':
+            return f'ext(`SubString`, {self.col}, {self.args[0]}, {self.args[1]})'
 
     def __repr__(self):
         return self.expr
@@ -45,3 +49,5 @@ class ExtExpr:
     def __invert__(self):
         return f'!({self.expr})'
 
+    def isin(self, vals):
+        return self.col.isin(vals, ext=self.expr)

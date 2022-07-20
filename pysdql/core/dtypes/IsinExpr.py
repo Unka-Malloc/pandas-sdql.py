@@ -10,6 +10,9 @@ class IsinExpr:
     def expr(self):
         return f'{self.unit1} == {self.unit2}'
 
+    def __repr__(self):
+        return str(self.cond)
+
     @property
     def cond(self):
         return CondUnit(self.unit1, '==', self.unit2, inherit_from=self.unit2.relation, isin=True)
