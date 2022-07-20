@@ -1,46 +1,32 @@
-let partsupp = { < ps_partkey = 1, ps_suppkey = 1, ps_availqty = 3325, ps_supplycost = 771.64, ps_comment = ", even theodolites. regular, final theodolites eat after the carefully pending foxes. furiously regular deposits sleep slyly. carefully bold realms above the ironic dependencies haggle careful" > -> 1, 
-< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 8076, ps_supplycost = 993.49, ps_comment = "ven ideas. quickly even packages print. pending multipliers must have to are fluff" > -> 1, 
-< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 3956, ps_supplycost = 337.09, ps_comment = "after the fluffily ironic deposits? blithely special dependencies integrate furiously even excuses. blithely silent theodolites could have to haggle pending, express requests; fu" > -> 1, 
-< ps_partkey = 1, ps_suppkey = 1, ps_availqty = 4069, ps_supplycost = 357.84, ps_comment = "al, regular dependencies serve carefully after the quickly final pinto beans. furiously even deposits sleep quickly final, silent pinto beans. fluffily reg" > -> 1 }
-let supplier = { < s_suppkey = 1, s_name = "Supplier#000000001", s_address = " N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", s_nationkey = 15, s_phone = "27-918-335-1736", s_acctbal = 5755.94, s_comment = "each slyly above the careful" > -> 1 }
-let nation = { < n_nationkey = 0, n_name = "ALGERIA", n_regionkey = 0, n_comment = " haggle. carefully final deposits detect slyly agai" > -> 1, 
-< n_nationkey = 1, n_name = "ARGENTINA", n_regionkey = 1, n_comment = "al foxes promise slyly according to the regular accounts. bold requests alon" > -> 1, 
-< n_nationkey = 2, n_name = "BRAZIL", n_regionkey = 1, n_comment = "y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special " > -> 1, 
-< n_nationkey = 3, n_name = "CANADA", n_regionkey = 1, n_comment = "eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold" > -> 1, 
-< n_nationkey = 4, n_name = "EGYPT", n_regionkey = 4, n_comment = "y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d" > -> 1, 
-< n_nationkey = 5, n_name = "ETHIOPIA", n_regionkey = 0, n_comment = "ven packages wake quickly. regu" > -> 1, 
-< n_nationkey = 6, n_name = "FRANCE", n_regionkey = 3, n_comment = "refully final requests. regular, ironi" > -> 1, 
-< n_nationkey = 7, n_name = "GERMANY", n_regionkey = 3, n_comment = "l platelets. regular accounts x-ray: unusual, regular acco" > -> 1, 
-< n_nationkey = 8, n_name = "INDIA", n_regionkey = 2, n_comment = "ss excuses cajole slyly across the packages. deposits print aroun" > -> 1, 
-< n_nationkey = 9, n_name = "INDONESIA", n_regionkey = 2, n_comment = " slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull" > -> 1, 
-< n_nationkey = 10, n_name = "IRAN", n_regionkey = 4, n_comment = "efully alongside of the slyly final dependencies. " > -> 1, 
-< n_nationkey = 11, n_name = "IRAQ", n_regionkey = 4, n_comment = "nic deposits boost atop the quickly final requests? quickly regula" > -> 1, 
-< n_nationkey = 12, n_name = "JAPAN", n_regionkey = 2, n_comment = "ously. final, express gifts cajole a" > -> 1, 
-< n_nationkey = 13, n_name = "JORDAN", n_regionkey = 4, n_comment = "ic deposits are blithely about the carefully regular pa" > -> 1, 
-< n_nationkey = 14, n_name = "KENYA", n_regionkey = 0, n_comment = " pending excuses haggle furiously deposits. pending, express pinto beans wake fluffily past t" > -> 1, 
-< n_nationkey = 15, n_name = "MOROCCO", n_regionkey = 0, n_comment = "rns. blithely bold courts among the closely regular packages use furiously bold platelets?" > -> 1, 
-< n_nationkey = 16, n_name = "MOZAMBIQUE", n_regionkey = 0, n_comment = "s. ironic, unusual asymptotes wake blithely r" > -> 1, 
-< n_nationkey = 17, n_name = "PERU", n_regionkey = 1, n_comment = "platelets. blithely pending dependencies use fluffily across the even pinto beans. carefully silent accoun" > -> 1, 
-< n_nationkey = 18, n_name = "CHINA", n_regionkey = 2, n_comment = "c dependencies. furiously express notornis sleep slyly regular accounts. ideas sleep. depos" > -> 1, 
-< n_nationkey = 19, n_name = "ROMANIA", n_regionkey = 3, n_comment = "ular asymptotes are about the furious multipliers. express dependencies nag above the ironically ironic account" > -> 1, 
-< n_nationkey = 20, n_name = "SAUDI ARABIA", n_regionkey = 4, n_comment = "ts. silent requests haggle. closely express packages sleep across the blithely" > -> 1, 
-< n_nationkey = 21, n_name = "VIETNAM", n_regionkey = 2, n_comment = "hely enticingly express accounts. even, final " > -> 1, 
-< n_nationkey = 22, n_name = "RUSSIA", n_regionkey = 3, n_comment = " requests against the platelets use never according to the quickly regular pint" > -> 1, 
-< n_nationkey = 23, n_name = "UNITED KINGDOM", n_regionkey = 3, n_comment = "eans boost carefully special requests. accounts are. carefull" > -> 1, 
-< n_nationkey = 24, n_name = "UNITED STATES", n_regionkey = 1, n_comment = "y final packages. slow foxes cajole quickly. quickly silent platelets breach ironic accounts. unusual pinto be" > -> 1 }
-let S = sum (<p_k, p_v> in partsupp) sum (<s_k, s_v> in supplier) sum (<n_k, n_v> in nation) if (((p_k.ps_suppkey == s_k.s_suppkey) && (s_k.s_nationkey == n_k.n_nationkey))) then { concat(concat(p_k, s_k), n_k) -> p_v * s_v * n_v } else {  }
-let smp = sum (<s_k, s_v> in S) if ((s_k.n_name == "MOROCCO")) then { s_k -> 1 } else {  }
-let agg_val = sum (<s_k, s_v> in smp) s_v
-let supplier = { < s_suppkey = 1, s_name = "Supplier#000000001", s_address = " N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ", s_nationkey = 15, s_phone = "27-918-335-1736", s_acctbal = 5755.94, s_comment = "each slyly above the careful" > -> 1 }
-let R = sum (<p_k, p_v> in partsupp) sum (<s_k, s_v> in supplier) sum (<n_k, n_v> in nation) if (((p_k.ps_suppkey == s_k.s_suppkey) && (s_k.s_nationkey == n_k.n_nationkey))) then { concat(concat(p_k, s_k), n_k) -> p_v * s_v * n_v } else {  }
-let rmp = sum (<r_k, r_v> in R) if ((r_k.n_name == "MOROCCO")) then { r_k -> 1 } else {  }
-let tmpa = sum (<r_k, r_v> in rmp) { < ps_partkey=r_k.ps_partkey > -> { r_k -> r_v } }
-let tmp = sum (<ta_k, ta_v> in tmpa) { < ps_partkey=ta_k.ps_partkey, group=ta_v > -> 1 }
-let hvmp = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < ps_partkey=t_k.ps_partkey > -> < val=((g_k.ps_supplycost * g_k.ps_availqty) * g_v) > }
-let hvR = sum (<hv_k, hv_v> in hvmp) if ((agg_val < hv_v.val)) then { < ps_partkey=hv_k.ps_partkey > -> 1 } else {  }
-let fhrmp = sum (<r_k, r_v> in rmp) sum (<h_k, h_v> in hvR) if ((h_k.ps_partkey == r_k.ps_partkey)) then { r_k -> 1 } else {  }
-let tmpb = sum (<f_k, f_v> in fhrmp) { < ps_partkey=f_k.ps_partkey > -> { f_k -> f_v } }
-let fmp = sum (<tb_k, tb_v> in tmpb) { < ps_partkey=tb_k.ps_partkey, group=tb_v > -> 1 }
-let tmpc = sum (<f_k, f_v> in fmp) sum (<g_k, g_v> in f_k.group) { < ps_partkey=f_k.ps_partkey > -> < value=(g_k.ps_supplycost * g_k.ps_availqty) * g_v > }
-let aggr_fhrmp = sum (<tc_k, tc_v> in tmpc) { < ps_partkey=tc_k.ps_partkey, value=tc_v.value > -> 1 }
-aggr_fhrmp
+let part = load[{<p_partkey: int, p_name: string, p_mfgr: string, p_brand: string, p_type: string, p_size: int, p_container: string, p_retailprice: double, p_comment: string> -> int}]("T:/UG4-Proj/datasets/part.tbl")
+let n2 = load[{<n2_nationkey: int, n2_name: string, n2_regionkey: int, n2_comment: string> -> int}]("T:/UG4-Proj/datasets/nation.tbl")
+let supplier = load[{<s_suppkey: int, s_name: string, s_address: string, s_nationkey: int, s_phone: string, s_acctbal: double, s_comment: string> -> int}]("T:/UG4-Proj/datasets/supplier.tbl")
+let Rm0 = sum (<s_k, s_v> in supplier) sum (<n2_k, n2_v> in n2) if ((s_k.s_nationkey == n2_k.n2_nationkey)) then { concat(s_k, n2_k) -> s_v * n2_v } else {  }
+let r2 = Rm0
+let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
+let orders = load[{<o_orderkey: int, o_custkey: int, o_orderstatus: string, o_totalprice: double, o_orderdate: date, o_orderpriority: string, o_clerk: string, o_shippriority: int, o_comment: string> -> int}]("T:/UG4-Proj/datasets/orders.tbl")
+let region = load[{<r_regionkey: int, r_name: string, r_comment: string> -> int}]("T:/UG4-Proj/datasets/region.tbl")
+let n1 = load[{<n1_nationkey: int, n1_name: string, n1_regionkey: int, n1_comment: string> -> int}]("T:/UG4-Proj/datasets/nation.tbl")
+let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: double, c_mktsegment: string, c_comment: string> -> int}]("T:/UG4-Proj/datasets/customer.tbl")
+let Rm0 = sum (<c_k, c_v> in customer) sum (<n1_k, n1_v> in n1) if ((c_k.c_nationkey == n1_k.n1_nationkey)) then { concat(c_k, n1_k) -> c_v * n1_v } else {  }
+let Rm1 = sum (<r0_k, r0_v> in Rm0) sum (<r_k, r_v> in region) if ((r0_k.n1_regionkey == r_k.r_regionkey)) then { concat(r0_k, r_k) -> r0_v * r_v } else {  }
+let rmp = sum (<r1_k, r1_v> in Rm1) if ((r1_k.r_name == "MIDDLE EAST")) then { r1_k -> 1 } else {  }
+let Rm2 = sum (<r_k, r_v> in rmp) sum (<o_k, o_v> in orders) if ((r_k.c_custkey == o_k.o_custkey)) then { concat(r_k, o_k) -> r_v * o_v } else {  }
+let tmp = sum (<r2_k, r2_v> in Rm2) if (((date(19950101) <= r2_k.o_orderdate) && (r2_k.o_orderdate <= date(19961231)))) then { r2_k -> 1 } else {  }
+let Rm3 = sum (<t_k, t_v> in tmp) sum (<l_k, l_v> in lineitem) if ((t_k.o_orderkey == l_k.l_orderkey)) then { concat(t_k, l_k) -> t_v * l_v } else {  }
+let r1 = Rm3
+let Rm4 = sum (<r1_k, r1_v> in r1) sum (<r2_k, r2_v> in r2) if ((r1_k.l_suppkey == r2_k.s_suppkey)) then { concat(r1_k, r2_k) -> r1_v * r2_v } else {  }
+let Rm5 = sum (<r4_k, r4_v> in Rm4) sum (<p_k, p_v> in part) if ((r4_k.l_partkey == p_k.p_partkey)) then { concat(r4_k, p_k) -> r4_v * p_v } else {  }
+let tmpa = sum (<r5_k, r5_v> in Rm5) if ((r5_k.p_type == "SMALL ANODIZED COPPER")) then { r5_k -> 1 } else {  }
+let tmpb = sum (<ta_k, ta_v> in tmpa) { concat(ta_k, < o_year=ext(`Year`, ta_k.o_orderdate) >) -> 1 }
+let tmpc = sum (<tb_k, tb_v> in tmpb) { concat(tb_k, < volume=(tb_k.l_extendedprice * (1 - tb_k.l_discount)) >) -> 1 }
+let tmpd = sum (<tc_k, tc_v> in tmpc) { concat(tc_k, < nation=tc_k.n2_name >) -> 1 }
+let tmpe = sum (<td_k, td_v> in tmpd) { < o_year=td_k.o_year, volume=td_k.volume, nation=td_k.nation > -> 1 }
+let all_nations = tmpe
+let amp = sum (<an_k, an_v> in all_nations) if ((an_k.nation == "JORDAN")) then { concat(an_k, < mkt_value=an_k.volume >) -> 1 } else { concat(an_k, < mkt_value=0 >) -> 1 }
+let tmpf = sum (<a_k, a_v> in amp) { concat(a_k, < mkt_value=(a_k.mkt_value / a_k.volume) >) -> 1 }
+let tmph = sum (<tf_k, tf_v> in tmpf) { < o_year=tf_k.o_year > -> { tf_k -> tf_v } }
+let tmpg = sum (<th_k, th_v> in tmph) { < o_year=th_k.o_year, group=th_v > -> 1 }
+let tmpi = sum (<tg_k, tg_v> in tmpg) sum (<g_k, g_v> in tg_k.group) { < o_year=tg_k.o_year > -> < mkt_share=g_k.mkt_value * g_v > }
+let aggr_tmpf = sum (<ti_k, ti_v> in tmpi) { < o_year=ti_k.o_year, mkt_share=ti_v.mkt_share > -> 1 }
+aggr_tmpf

@@ -1,5 +1,5 @@
 from pysdql.core.driver.api import (
-    driver,
+    db_driver,
 )
 
 from pysdql.core.dtypes.api import (
@@ -21,6 +21,7 @@ from pysdql.core.util.api import (
     # data_loader
     read_tbl,
     tune_tbl,
+    load_tbl,
 
     # data_parser
     get_tbl_type,

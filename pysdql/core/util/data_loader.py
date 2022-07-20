@@ -7,14 +7,29 @@ from pysdql.core.dtypes.api import (
 )
 
 
-def read_tbl(path: str, header: list, name=None, sep='|'):
+def load_tbl(file_path: str, col_names: list, col_types=None, name=None):
+    from pysdql.core.dtypes.LoadExpr import LoadExpr
+    if len(col_names) != len(col_types):
+        raise ValueError(f'length of names = {len(col_names)}, '
+                         f'length of types = {len(col_types)}')
+    return relation(name=name, data=LoadExpr(col_names, col_types, file_path), cols=col_names)
+
+
+def read_tbl(path: str, header: list, col_types=None, name=None, sep='|', by_load=True):
     if '.tbl' not in path:
         raise TypeError()
 
     if name is None:
         name = str(os.path.basename(path)).removesuffix('.tbl')
 
-    data = {}
+    if by_load:
+        if col_types is None:
+            from pysdql.core.util.data_parser import get_tbl_type
+            col_types = get_tbl_type(path, sep)
+        return load_tbl(file_path=path,
+                        col_names=header,
+                        col_types=col_types,
+                        name=name)
 
     with open(path, 'r') as tbl:
         line = tbl.readline()
@@ -37,14 +52,13 @@ def read_tbl(path: str, header: list, name=None, sep='|'):
 
             # create a dictionary
             rec = srecord(dict(zip(header, line_list)))
-            data[rec] = 1
 
             # operation end
 
             line = tbl.readline()
         else:
             return relation(name=name,
-                            data=sdict(data, name),
+                            data=sdict({rec: 1}, name),
                             cols=header)
 
 

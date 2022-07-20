@@ -31,6 +31,14 @@ class OpExpr:
                 'varexpr_rename': 21,
                 'relation_projection': 22,
                 'relation_selection_isin': 23,
+                'relation_load_data': 24,
+                'relation_merge_on_by_concatexpr': 25,
+                'relation_merge_by_concatexpr': 26,
+                'relation_count': 27,
+                'relation_optimized_merge_part_right': 28,
+                'relation_optimized_merge_result': 29,
+                'relation_rename_col': 30,
+                'relation_head': 31,
                 }
 
     @property

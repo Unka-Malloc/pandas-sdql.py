@@ -8,30 +8,28 @@ from pysdql.core.util.type_checker import (
 
 
 def get_tbl_type(file_path, sep='|'):
-    name = str(os.path.basename(file_path)).removesuffix('.tbl')
     output = []
     with open(file_path, 'r') as file:
         line = file.readline()
         line = file.readline()
 
+        line = line.removesuffix('\n')
+
         # remove '\n'
         line_list = line.split(sep)
-
-        if line[-1] == '\n':
-            del line_list[-1]
 
         for i in line_list:
             if is_int(i):
                 output.append('int')
-            if is_float(i):
-                output.append('real')
-            if is_date(i):
+            elif is_float(i):
+                output.append('double')
+            elif is_date(i):
                 output.append('date')
-            if is_str(i):
+            elif is_str(i):
                 output.append('string')
+            else:
+                print(f'type ? {i}')
 
-        # print(f'data: {line_list}\n'
-        #       f'output: {output}')
         return output
 
 

@@ -1,11 +1,12 @@
 import os
 import subprocess
+import time
 
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
 from pysdql.core.dtypes.relation import relation
 
 
-class driver:
+class db_driver:
     def __init__(self, db_path, script_path=None):
         self.db_path = db_path
         self.script_path = script_path
@@ -81,6 +82,8 @@ class driver:
         return output
 
     def run(self, query, show=True, verbose=False, mute=False, block=False):
+        t1 = time.time()
+
         if type(query) == relation or type(query) == GroupbyExpr:
             query = query.sdql_expr
         elif type(query) == str:
@@ -97,6 +100,7 @@ class driver:
         self.write_script(query)
         self.output = self.excute_script()
 
+        print(f'pysdql execution time: {time.time() - t1}')
         return self
 
     def export(self, data=None, file_name='query'):
