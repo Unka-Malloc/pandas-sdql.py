@@ -15,6 +15,9 @@ where
 import pysdql
 
 if __name__ == '__main__':
+    var1 = 'Brand#11'
+    var2 = 'WRAP CAN'
+
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
@@ -24,15 +27,11 @@ if __name__ == '__main__':
         .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \
         .rename('part_agg')
 
-    r = pysdql.merge(lineitem, part, part_agg,
-                     on=((part['p_partkey'] == lineitem['l_partkey'])
-                         & (part_agg['agg_partkey'] == lineitem['l_partkey']))
-                     )
+    part_p = part[(part['p_brand'] == var1) & (part['p_container'] == var2)].rename('part_p')
 
-    r = r[(part['p_brand'] == 'Brand#13')
-          & (part['p_container'] == 'JUMBO PKG')
-          & (lineitem['l_quantity'] < part_agg['avg_quantity'])
-          ]
+    r = part_p.merge(part_agg, on=part_p['p_partkey'] == part_agg['agg_partkey'])
+
+    r = r[(r['l_quantity'] < r['avg_quantity'])]
 
     r = r.aggr(avg_yearly=((lineitem['l_extendedprice'] / 7.0), 'sum'))
 

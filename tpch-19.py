@@ -38,37 +38,47 @@ where
 import pysdql
 
 if __name__ == '__main__':
+    var1 = 'Brand#54'
+    var2 = 'Brand#22'
+    var3 = 'Brand#12'
+    var4 = 1
+    var4_1 = var4 + 10
+    var5 = 18
+    var5_1 = var5 + 10
+    var6 = 26
+    var6_1 = var6 + 10
+    
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
-    c1 = (part['p_brand'] == 'Brand#13') \
+    c1 = (part['p_brand'] == var1) \
          & (part['p_container'].isin(('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG'))) \
-         & (lineitem['l_quantity'] >= 15) \
-         & (lineitem['l_quantity'] <= 25) \
+         & (lineitem['l_quantity'] >= var4) \
+         & (lineitem['l_quantity'] <= var4_1) \
          & (part['p_size'] > 1) \
          & (part['p_size'] < 5) \
          & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
          & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
-    c2 = (part['p_brand'] == 'Brand#13') \
+    c2 = (part['p_brand'] == var2) \
          & (part['p_container'].isin(('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK'))) \
-         & (lineitem['l_quantity'] >= 15) \
-         & (lineitem['l_quantity'] <= 25) \
+         & (lineitem['l_quantity'] >= var5) \
+         & (lineitem['l_quantity'] <= var5_1) \
          & (part['p_size'] > 1) \
          & (part['p_size'] < 10) \
          & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
          & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
     c3 = (part['p_brand'] == 'Brand#13') \
          & (part['p_container'].isin(('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG'))) \
-         & (lineitem['l_quantity'] >= 15) \
-         & (lineitem['l_quantity'] <= 25) \
+         & (lineitem['l_quantity'] >= var6) \
+         & (lineitem['l_quantity'] <= var6_1) \
          & (part['p_size'] > 1) \
          & (part['p_size'] < 15) \
          & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
          & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
 
-    r = pysdql.merge(lineitem, part, on=(part['p_partkey'] == lineitem['l_partkey']))
+    r = lineitem.merge(part, on=(lineitem['l_partkey'] == part['p_partkey']))
 
     r = r[c1 | c2 | c3]
 

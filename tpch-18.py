@@ -32,23 +32,22 @@ group by
 import pysdql
 
 if __name__ == '__main__':
+    var1 = 20
+
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > 10)[['l_orderkey']]
+    aggr_l = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > var1)
 
-    s = pysdql.merge(customer, orders, lineitem,
-                     on=(customer['c_custkey'] == orders['o_custkey'])
-                        & (orders['o_orderkey'] == lineitem['l_orderkey']),
-                     name='S'
-                     )
+    part_o = orders[(orders['o_orderkey'].isin(aggr_l['l_orderkey']))]
 
-    s = s[(s['o_orderkey'].isin(r['l_orderkey']))]
+    r = customer.merge(part_o, on=(customer['c_custkey'] == part_o['o_custkey']))
+    r = r.merge(lineitem, on=r['o_orderkey'] == lineitem['l_orderkey'])
 
-    s = s.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
-        .aggr({s['l_quantity']: 'sum'})
+    r = r.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
+        .aggr({r['l_quantity']: 'sum'})
 
-    db_driver.run(s, block=True)
+    db_driver.run(r)
