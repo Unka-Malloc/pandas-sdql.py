@@ -75,4 +75,4 @@ if __name__ == '__main__':
 
     r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).aggr(revenue=(r['volume'], 'sum'))
 
-    db_driver.run(r, block=False)
+    db_driver.run(r)

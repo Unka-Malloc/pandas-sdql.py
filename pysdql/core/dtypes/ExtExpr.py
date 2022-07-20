@@ -1,5 +1,5 @@
 class ExtExpr:
-    def __init__(self, col, ext_func, args):
+    def __init__(self, col, ext_func, args=None):
         self.col = col
         self.func = ext_func
         self.args = args
