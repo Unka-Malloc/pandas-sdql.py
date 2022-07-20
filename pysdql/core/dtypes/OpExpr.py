@@ -39,6 +39,7 @@ class OpExpr:
                 'relation_optimized_merge_result': 29,
                 'relation_rename_col': 30,
                 'relation_head': 31,
+                'relation_selection_ext': 32,
                 }
 
     @property

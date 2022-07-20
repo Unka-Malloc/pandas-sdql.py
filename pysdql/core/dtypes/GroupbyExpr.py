@@ -221,7 +221,8 @@ class GroupbyExpr:
         for k in aggr_dict.keys():
             v = aggr_dict[k]
             if type(v) == ColUnit:
-                tmp_cols.remove(v.name)
+                if v.name in tmp_cols:
+                    tmp_cols.remove(v.name)
 
         for c in tmp_cols:
             result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
