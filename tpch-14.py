@@ -22,8 +22,8 @@ if __name__ == '__main__':
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
-    part_l = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)].rename('part_l')
-    r = part_l.merge(part, on=part_l['l_partkey'] == part['p_partkey'])
+    sub_l = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)].rename('sub_l')
+    r = sub_l.merge(part, on=sub_l['l_partkey'] == part['p_partkey'])
 
     r['promo'] = r.case(r['p_type'].startswith('PROMO'), r['l_extendedprice'] * (1 - r['l_discount']), 0)
 

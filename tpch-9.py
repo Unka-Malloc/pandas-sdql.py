@@ -42,10 +42,10 @@ if __name__ == '__main__':
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
     # part_p
-    part_p = part[part['p_name'].startswith(var1)].rename('part_p')
+    sub_p = part[part['p_name'].startswith(var1)].rename('sub_p')
 
     # hash join (part, partsupp)
-    r1 = part_p.merge(partsupp, on=part_p['p_partkey'] == partsupp['ps_partkey']).rename('r1')
+    r1 = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey']).rename('r1')
 
     # hash join (supplier, nation)
     r2 = supplier.merge(nation, on=(supplier['s_nationkey'] == nation['n_nationkey']))

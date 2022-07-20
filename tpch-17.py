@@ -27,9 +27,9 @@ if __name__ == '__main__':
         .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \
         .rename('part_agg')
 
-    part_p = part[(part['p_brand'] == var1) & (part['p_container'] == var2)].rename('part_p')
+    sub_p = part[(part['p_brand'] == var1) & (part['p_container'] == var2)].rename('sub_p')
 
-    r = part_p.merge(part_agg, on=part_p['p_partkey'] == part_agg['agg_partkey'])
+    r = sub_p.merge(part_agg, on=sub_p['p_partkey'] == part_agg['agg_partkey'])
 
     r = r[(r['l_quantity'] < r['avg_quantity'])]
 

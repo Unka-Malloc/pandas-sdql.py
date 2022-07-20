@@ -170,6 +170,7 @@ class ColUnit:
             if tmp_list:
                 for i in tmp_list:
                     tmp_cond |= i
+            # print(tmp_cond)
             return tmp_cond
 
     @property

@@ -36,15 +36,15 @@ if __name__ == '__main__':
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
     partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
 
-    part_s = supplier[supplier['s_comment'].contains('Customer', 'Complaints')].rename('part_s')
+    sub_s = supplier[supplier['s_comment'].contains('Customer', 'Complaints')].rename('sub_s')
 
-    part_p = part[(part['p_brand'] != 'Brand#21')
-                  & (~part['p_type'].str.startswith('SMALL ANODIZED'))
-                  & (part['p_size'].isin(var3))]
+    sub_p = part[(part['p_brand'] != 'Brand#21')
+                 & (~part['p_type'].str.startswith('SMALL ANODIZED'))
+                 & (part['p_size'].isin(var3))].rename('sub_p')
 
-    r = part_p.merge(partsupp, on=part_p['p_partkey'] == partsupp['ps_partkey'])
+    r = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey'])
 
-    r = r[~(r['ps_suppkey'].isin(part_s['s_suppkey']))]
+    r = r[~(r['ps_suppkey'].isin(sub_s['s_suppkey']))]
 
     # COUNT (DISTINCT value)
     r = r.groupby(['p_brand', 'p_type', 'p_size']).aggr(supplier_cnt=(r['ps_suppkey'], 'sum'))
