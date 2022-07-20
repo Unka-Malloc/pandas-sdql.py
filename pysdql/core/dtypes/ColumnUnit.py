@@ -173,6 +173,10 @@ class ColUnit:
                 else:
                     return tmp_cond
 
+    @property
+    def str(self):
+        return self
+
     def startswith(self, pattern: str):
         return ExtExpr(self, 'StrStartsWith', pattern)
 
@@ -181,3 +185,6 @@ class ColUnit:
 
     def contains(self, *args):
         return ExtExpr(self, 'StrContains', args)
+
+    def not_contains(self, *args):
+        return ExtExpr(self, 'not_StrContains', args)
