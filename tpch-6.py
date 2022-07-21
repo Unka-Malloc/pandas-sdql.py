@@ -14,12 +14,12 @@ import pandas
 import pysdql
 
 if __name__ == '__main__':
-    var1 = '1993-01-01'
-    var2 = '1994-01-01'  # var1 + 1 year
-    discount = 0.07
-    var3 = discount - 0.01
-    var4 = discount + 0.01
-    var5 = 25
+    var1 = '1997-01-01'
+    var2 = '1998-01-01'  # var1 + 1 year
+    discount = 0.06
+    var3 = round(discount - 0.01, 2)
+    var4 = round(discount + 0.01, 2)
+    var5 = 24
 
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
