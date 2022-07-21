@@ -112,3 +112,15 @@ def concat_cols(keys: list, cols: list):
             tmp_dict[f'{c}'] = f'{k}.{c}'
 
     return RecExpr(tmp_dict)
+
+
+def month(date: str, m: int):
+    date_list = date.split('-')
+    old_m = int(date_list[1])
+    new_m = old_m + m
+    if len(str(new_m)) == 1:
+        date_list[1] = f'0{new_m}'
+    else:
+        date_list[1] = f'{new_m}'
+    print(f'{"-".join(date_list)}')
+    return f'{"-".join(date_list)}'

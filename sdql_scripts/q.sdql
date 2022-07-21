@@ -1,16 +1,7 @@
 let lineitem = load[{<l_orderkey: int, l_partkey: int, l_suppkey: int, l_linenumber: int, l_quantity: int, l_extendedprice: double, l_discount: double, l_tax: double, l_returnflag: string, l_linestatus: string, l_shipdate: date, l_commitdate: date, l_receiptdate: date, l_shipinstruct: string, l_shipmode: string, l_comment: string> -> int}]("T:/UG4-Proj/datasets/lineitem.tbl")
-let tmp = sum (<lin_k, lin_v> in lineitem) { < l_orderkey=lin_k.l_orderkey > -> { lin_k -> lin_v } }
-let lmp = sum (<t_k, t_v> in tmp) { < l_orderkey=t_k.l_orderkey, group=t_v > -> 1 }
-let hvmp = sum (<l_k, l_v> in lmp) sum (<g_k, g_v> in l_k.group) { < l_orderkey=l_k.l_orderkey > -> < val=(g_k.l_quantity * g_v) > }
-let hvR = sum (<hv_k, hv_v> in hvmp) if ((231 < hv_v.val)) then { < l_orderkey=hv_k.l_orderkey > -> 1 } else {  }
-let fhv_lineitem = sum (<lin_k, lin_v> in lineitem) sum (<h_k, h_v> in hvR) if ((h_k.l_orderkey == lin_k.l_orderkey)) then { lin_k -> 1 } else {  }
-let orders = load[{<o_orderkey: int, o_custkey: int, o_orderstatus: string, o_totalprice: double, o_orderdate: date, o_orderpriority: string, o_clerk: string, o_shippriority: int, o_comment: string> -> int}]("T:/UG4-Proj/datasets/orders.tbl")
-let omp = sum (<ord_k, ord_v> in orders) sum (<fl_k, fl_v> in fhv_lineitem) if ((ord_k.o_orderkey == fl_k.l_orderkey)) then { ord_k -> 1 } else {  }
-let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: double, c_mktsegment: string, c_comment: string> -> int}]("T:/UG4-Proj/datasets/customer.tbl")
-let Rm0 = sum (<cus_k, cus_v> in customer) sum (<o_k, o_v> in omp) if ((cus_k.c_custkey == o_k.o_custkey)) then { concat(cus_k, o_k) -> cus_v * o_v } else {  }
-let Rm1 = sum (<r0_k, r0_v> in Rm0) sum (<lin_k, lin_v> in lineitem) if ((r0_k.o_orderkey == lin_k.l_orderkey)) then { concat(r0_k, lin_k) -> r0_v * lin_v } else {  }
-let tmpa = sum (<r1_k, r1_v> in Rm1) { < c_name=r1_k.c_name, c_custkey=r1_k.c_custkey, o_orderkey=r1_k.o_orderkey, o_orderdate=r1_k.o_orderdate, o_totalprice=r1_k.o_totalprice > -> { r1_k -> r1_v } }
-let rmp = sum (<ta_k, ta_v> in tmpa) { < c_name=ta_k.c_name, c_custkey=ta_k.c_custkey, o_orderkey=ta_k.o_orderkey, o_orderdate=ta_k.o_orderdate, o_totalprice=ta_k.o_totalprice, group=ta_v > -> 1 }
-let tmpb = sum (<r_k, r_v> in rmp) sum (<g_k, g_v> in r_k.group) { < c_name=r_k.c_name, c_custkey=r_k.c_custkey, o_orderkey=r_k.o_orderkey, o_orderdate=r_k.o_orderdate, o_totalprice=r_k.o_totalprice > -> < l_quantity_sum=g_k.l_quantity * r_v > }
-let aggr_Rm1 = sum (<tb_k, tb_v> in tmpb) { < c_name=tb_k.c_name, c_custkey=tb_k.c_custkey, o_orderkey=tb_k.o_orderkey, o_orderdate=tb_k.o_orderdate, o_totalprice=tb_k.o_totalprice, l_quantity_sum=tb_v.l_quantity_sum > -> 1 }
-aggr_Rm1
+let lmp = sum (<lin_k, lin_v> in lineitem) if ((lin_k.l_shipdate <= date(19990215))) then { lin_k -> 1 } else {  }
+let tmpa = sum (<l_k, l_v> in lmp) { < l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus > -> { l_k -> l_v } }
+let tmp = sum (<ta_k, ta_v> in tmpa) { < l_returnflag=ta_k.l_returnflag, l_linestatus=ta_k.l_linestatus, group=ta_v > -> 1 }
+let tmpb = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus > -> < sum_qty=g_k.l_quantity * g_v, sum_base_price=g_k.l_extendedprice * g_v, sum_disc_price=(g_k.l_extendedprice * (1 - g_k.l_discount)) * g_v, sum_charge=((g_k.l_extendedprice * (1 - g_k.l_discount)) * (1 + g_k.l_tax)) * g_v, avg_qty_sum=g_k.l_quantity * g_v, avg_qty_count=g_v, avg_price_sum=g_k.l_extendedprice * g_v, avg_price_count=g_v, avg_disc_sum=g_k.l_discount * g_v, avg_disc_count=g_v, count_order=g_v > }
+let aggr_lmp = sum (<tb_k, tb_v> in tmpb) { < l_returnflag=tb_k.l_returnflag, l_linestatus=tb_k.l_linestatus, sum_qty=tb_v.sum_qty, sum_base_price=tb_v.sum_base_price, sum_disc_price=tb_v.sum_disc_price, sum_charge=tb_v.sum_charge, avg_qty=(tb_v.avg_qty_sum / tb_v.avg_qty_count), avg_price=(tb_v.avg_price_sum / tb_v.avg_price_count), avg_disc=(tb_v.avg_disc_sum / tb_v.avg_disc_count), count_order=tb_v.count_order > -> 1 }
+aggr_lmp
