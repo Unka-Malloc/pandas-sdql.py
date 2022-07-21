@@ -16,7 +16,7 @@ class CaseExpr:
 
     @property
     def expr(self):
-        return f'{self.when}, {self.then_case}, {self.else_case}'
+        return f'(if ({self.when}) then {self.then_case} else {self.else_case})'
 
     def __repr__(self):
         return self.expr
@@ -34,8 +34,3 @@ class CaseExpr:
                                                                   new_iter=iter_expr.key)))
 
         return output
-
-        # print(f'let {r_name} = {iter_expr} '
-        #       f'if ({self.when}) '
-        #       f'then {{ concat({iter_expr.key}, <{col_name}={self.then_case}>) }} '
-        #       f'else {{ concat({iter_expr.key}, <{col_name}={self.else_case}>) }} in')

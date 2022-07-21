@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import time
@@ -7,19 +8,51 @@ from pysdql.core.dtypes.relation import relation
 
 
 class db_driver:
-    def __init__(self, db_path, script_path=None):
+    def __init__(self, db_path, name='', script_path=None):
         self.db_path = db_path
         self.script_path = script_path
 
         if self.script_path is None:
-            self.script_path = os.getcwd() + fr'{os.sep}sdql_scripts'
+            self.script_path = os.getcwd() + fr'{os.sep}output'
             if not os.path.exists(self.script_path):
                 os.mkdir(self.script_path)
 
-        self.script_file_name = 'q.sdql'
+        self.script_file_name = 'Q00.sdql'
         self.script_file_path = (self.script_path + os.sep + self.script_file_name).replace('\\', '/')
 
         self.output = ''
+        self.data = None
+
+        if name:
+            self.driver_name = name
+        else:
+            self.driver_name = 'db_driver'
+
+        self.logger = self.logger_config(self.driver_name)
+
+    @staticmethod
+    def logger_config(log_name, log_path=None):
+        if log_path is None:
+            log_path = os.getcwd() + fr'{os.sep}output' + fr'{os.sep}log'
+            if not os.path.exists(log_path):
+                os.mkdir(log_path)
+
+        file_name = f'{log_name}.log'
+
+        logger = logging.getLogger(log_name)
+        logger.setLevel(level=logging.DEBUG)
+        handler = logging.FileHandler(log_path + os.sep + file_name, encoding='UTF-8')
+
+        # '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        formatter = logging.Formatter('[%(levelname)s]%(asctime)s: %(message)s')
+        handler.setFormatter(formatter)
+
+        console = logging.StreamHandler()
+        console.setLevel(logging.DEBUG)
+
+        logger.addHandler(handler)
+        logger.addHandler(console)
+        return logger
 
     def start(self, cmd):
         return subprocess.Popen(
@@ -32,14 +65,13 @@ class db_driver:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
 
-    @staticmethod
-    def read(process: subprocess):
+    def read(self, process: subprocess):
         output = []
         get_output = False
 
         line = process.stdout.readline().strip()
         while line:
-            print(line)
+            self.logger.info(line)
 
             if '[success] Total time:' in line:
                 break
@@ -78,7 +110,7 @@ class db_driver:
         output = self.read(process)
         self.write(process, "exit")
         self.terminate(process)
-        print('========================================================')
+        self.logger.info('========================================================')
         return output
 
     def run(self, query, show=True, verbose=False, mute=False, block=False):
@@ -89,10 +121,12 @@ class db_driver:
         elif type(query) == str:
             query = query
 
+        self.data = query
+
         if show:
-            print('========================================================')
-            print(query)
-            print('========================================================')
+            self.logger.info('========================================================')
+            self.logger.info(query)
+            self.logger.info('========================================================')
 
         if block:
             return self
@@ -100,17 +134,51 @@ class db_driver:
         self.write_script(query)
         self.output = self.excute_script()
 
-        print(f'pysdql execution time: {time.time() - t1}')
+        self.logger.info(f'pysdql execution time: {time.time() - t1}')
         return self
 
-    def export(self, data=None, file_name='query'):
-        file_path = (self.script_path + os.sep + file_name + '.sdql').replace('\\', '/')
+    def export(self, file_name='', data=None):
+        if file_name:
+            file_name = file_name
+        else:
+            if self.driver_name != 'db_driver':
+                file_name = self.driver_name + '.sdql'
+            else:
+                file_name = 'query.sdql'
+
+        if data is None:
+            data = self.data
+
+        file_path = (self.script_path + os.sep + file_name).replace('\\', '/')
         if type(data) == relation or type(data) == GroupbyExpr:
             with open(file_path, 'w') as f:
                 f.write(data.sdql_expr)
-        print(f'export sdql script {file_name}.sdql to {file_path} \n'
-              f'excute by: \n'
-              f'run interpret {file_path}')
+        else:
+            if data:
+                with open(file_path, 'w') as f:
+                    f.write(str(data))
+
+        self.logger.info(f'export sdql script "{file_name}" to "{file_path}"')
+        self.logger.info(f'excute by:')
+        self.logger.info(f'run interpret {file_path}')
+
+        return self
+
+    def red(self, file_name=''):
+        if file_name:
+            file_name = file_name
+        else:
+            if self.driver_name != 'db_driver':
+                file_name = self.driver_name + '.out'
+            else:
+                file_name = 'query.out'
+
+        with open(self.script_path + os.sep + file_name, 'w') as f:
+            f.write(''.join(self.output))
+        return self
+
+    def to(self, file_name=''):
+        return self.red(file_name)
 
     def __repr__(self):
         return ''.join(self.output)

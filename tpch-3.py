@@ -28,7 +28,7 @@ if __name__ == '__main__':
     var1 = 'BUILDING'
     var2 = '1995-03-22'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-3')
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
@@ -44,4 +44,4 @@ if __name__ == '__main__':
     r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
         .aggr(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
-    db_driver.run(r)
+    db_driver.run(r).export().to()

@@ -40,6 +40,9 @@ class OpExpr:
                 'relation_rename_col': 30,
                 'relation_head': 31,
                 'relation_selection_ext': 32,
+                'relation_setitem_list_loopfusion': 33,
+                'groupby_optimized_agg_parse_nested_dict': 34,
+                'groupby_optimized_agg_result': 35,
                 }
 
     @property

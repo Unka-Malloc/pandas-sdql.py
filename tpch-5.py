@@ -27,11 +27,9 @@ order by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 'MIDDLE EAST'
-    var2 = '1993-01-01'
-    var3 = '1994-01-01'  # var2 + 1 year
-
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    var1 = 'AMERICA'
+    var2 = '1995-01-01'
+    var3 = '1996-01-01'  # var2 + 1 year
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
@@ -40,34 +38,32 @@ if __name__ == '__main__':
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
     region = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/region.tbl', header=pysdql.REGION_COLS)
 
-    r = customer.merge(right=orders, on=(customer['c_custkey'] == orders['o_custkey']))  # 1500 lines: 4s
-    r = r.merge(lineitem, on=(r['o_orderkey'] == lineitem['l_orderkey']))  # 6005 lines: 59s
-    r = r.merge(supplier, on=((r['l_suppkey'] == supplier['s_suppkey'])
-                              & (r['c_nationkey'] == supplier['s_nationkey'])
-                              )
-                )  # 240 lines: 60s
-    r = r.merge(nation, on=(r['s_nationkey'] == nation['n_nationkey']))  # 240 lines: 61s
-    r = r.merge(region, on=(r['n_regionkey'] == region['r_regionkey']))  # 240 lines: 60s
+    sub_r = region[region['r_name'] == var1].rename('sub_r')
+    sub_o = orders[(orders['o_orderdate'] >= var2) & (orders['o_orderdate'] < var3)].rename('sub_o')
 
-    # r = pysdql.merge(customer, orders, lineitem, supplier, nation, region,
-    #                  on=(customer['c_custkey'] == orders['o_custkey'])
-    #                     & (orders['o_orderkey'] == lineitem['l_orderkey'])
-    #                     & (lineitem['l_suppkey'] == supplier['s_suppkey'])
-    #                     & (customer['c_nationkey'] == supplier['s_nationkey'])
-    #                     & (supplier['s_nationkey'] == nation['n_nationkey'])
-    #                     & (nation['n_regionkey'] == region['r_regionkey'])
-    #                  )
+    # r = customer.merge(right=orders, on=(customer['c_custkey'] == orders['o_custkey']))  # 1500 lines: 4s
+    # r = r.merge(lineitem, on=(r['o_orderkey'] == lineitem['l_orderkey']))  # 6005 lines: 59s
+    # r = r.merge(supplier, on=((r['l_suppkey'] == supplier['s_suppkey'])
+    #                           & (r['c_nationkey'] == supplier['s_nationkey'])))  # 240 lines: 60s
+    # r = r.merge(nation, on=(r['s_nationkey'] == nation['n_nationkey']))  # 240 lines: 61s
+    # r = r.merge(region, on=(r['n_regionkey'] == region['r_regionkey']))  # 240 lines: 60s
 
-    # r = customer.merge(right=orders, left_on='c_custkey', right_on='o_custkey')
-    # r = r.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
-    # r = r.merge(right=supplier, left_on=['l_suppkey', 'c_nationkey'], right_on=['s_suppkey', 's_nationkey'])
-    # r = r.merge(right=nation, left_on='s_nationkey', right_on='n_nationkey')
-    # r = r.merge(right=region, left_on='n_regionkey', right_on='r_regionkey')
+    # r = sub_r.merge(nation, on=(sub_r['r_regionkey'] == nation['n_nationkey']))  # 1500 lines: 4s
+    # r = r.merge(customer, on=(r['n_nationkey'] == customer['c_nationkey']))  # 6005 lines: 59s
+    # r = r.merge(sub_o, on=(r['c_custkey'] == sub_o['o_custkey']))  # 240 lines: 60s
+    # r = r.merge(lineitem, on=(r['o_orderkey'] == lineitem['l_orderkey']))  # 240 lines: 61s
+    # r = r.merge(supplier, on=(r['c_nationkey'] == supplier['s_nationkey'])
+    #                          & (r['n_nationkey'] == supplier['s_nationkey'])
+    #                          & (r['l_suppkey'] == supplier['s_suppkey']))  # 240 lines: 60s
 
-    r = r[(region['r_name'] == var1)
-          & (orders['o_orderdate'] >= var2)
-          & (orders['o_orderdate'] < var3)]
+    r = region.merge(right=nation, left_on='r_regionkey', right_on='n_nationkey')
+    r = r.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
+    r = r.merge(right=orders, left_on='c_custkey', right_on='o_custkey')
+    r = r.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
+    r = r.merge(right=supplier, on=(r['c_nationkey'] == supplier['s_nationkey'])
+                                   & (r['n_nationkey'] == supplier['s_nationkey'])
+                                   & (r['l_suppkey'] == supplier['s_suppkey']))
 
-    r = r.groupby(['n_name']).aggr(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r = r.groupby(['n_name']).agg(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
-    db_driver.run(r, block=False)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-5').run(r).export().to()

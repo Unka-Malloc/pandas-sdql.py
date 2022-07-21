@@ -18,8 +18,6 @@ if __name__ == '__main__':
     var1 = 'Brand#11'
     var2 = 'WRAP CAN'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
-
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
@@ -35,4 +33,4 @@ if __name__ == '__main__':
 
     r = r.aggr(avg_yearly=((lineitem['l_extendedprice'] / 7.0), 'sum'))
 
-    db_driver.run(r)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-17').run(r).export().to()

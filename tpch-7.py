@@ -39,8 +39,8 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 'MOZAMBIQUE'
-    var2 = 'JORDAN'
+    var1 = 'PERU'
+    var2 = 'MOROCCO'
 
     db_driver = pysdql.db_driver(db_path=r'T:/sdql')
 
@@ -54,25 +54,24 @@ if __name__ == '__main__':
     n1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n1_cols, name='n1')
     n2 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n2_cols, name='n2')
 
-    r1 = supplier.merge(n1, on=(supplier['s_nationkey'] == n1['n1_nationkey'])).rename('r1')
+    r = n1.merge(n2, on=((n1['n1_name'] == var1) & (n2['n2_name'] == var2))
+                        | ((n1['n1_name'] == var2) & (n2['n2_name'] == var1)))
 
-    r2 = customer.merge(n2, on=(customer['c_nationkey'] == n2['n2_nationkey'])).rename('r2')
+    r = r.merge(customer, on=r['n2_nationkey'] == customer['c_nationkey'])
+    r = r.merge(supplier, on=r['n1_nationkey'] == supplier['s_nationkey'])
+    r = r.merge(orders, on=r['c_custkey'] == orders['o_custkey'])
 
-    r = r1.merge(r2, on=((r1['n1_name'] == 'MOZAMBIQUE') & (r2['n2_name'] == 'JORDAN'))
-                        | ((r1['n1_name'] == 'JORDAN') & (r2['n2_name'] == 'MOZAMBIQUE')))
+    sub_l = lineitem[(lineitem['l_shipdate'] >= '1995-01-01') & (lineitem['l_shipdate'] <= '1996-12-31')].rename('sub_l')
 
-    r = r.merge(lineitem, on=(r['s_suppkey'] == lineitem['l_suppkey']))
-    r = r.merge(orders, on=(r['l_orderkey'] == orders['o_orderkey']) & (r['c_custkey'] == orders['o_custkey']))
+    r = r.merge(sub_l, on=r['s_suppkey'] == sub_l['l_suppkey'])
 
-    r = r[(r['l_shipdate'] >= '1995-01-01') & (r['l_shipdate'] <= '1996-12-31')]
-
-    r['supp_nation'] = r['n1_name']
-    r['cust_nation'] = r['n2_name']
-    r['volume'] = r['l_extendedprice'] * (1 - r['l_discount'])
-    r['l_year'] = r['l_shipdate'].year
+    r[['supp_nation', 'cust_nation', 'volume', 'l_year']] = [r['n1_name'],
+                                                             r['n2_name'],
+                                                             r['l_extendedprice'] * (1 - r['l_discount']),
+                                                             r['l_shipdate'].year]
 
     r = r[['supp_nation', 'cust_nation', 'l_year', 'volume']].rename('shiping')
 
     r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).aggr(revenue=(r['volume'], 'sum'))
 
-    db_driver.run(r)
+    db_driver.run(r).export('tpch-7.sdql').to('tpch-7.out')

@@ -27,6 +27,11 @@ if __name__ == '__main__':
 
     r['promo'] = r.case(r['p_type'].startswith('PROMO'), r['l_extendedprice'] * (1 - r['l_discount']), 0)
 
-    r = r.aggr(promo_revenue=(100 * r['promo'] / (r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r = r.aggr(value1=(r['promo'], 'sum'),
+               value2=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'))
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(r)
+    r['promo_revenue'] = 100 * r['value1'] / r['value2']
+
+    r = r[['promo_revenue']]
+
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-14').run(r).export().to()
