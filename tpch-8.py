@@ -38,11 +38,11 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 'JORDAN'
+    var1 = 'MOROCCO'
     var2 = 'MIDDLE EAST'
     var3 = 'SMALL ANODIZED COPPER'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-8')
 
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
@@ -56,37 +56,31 @@ if __name__ == '__main__':
     n1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n1_cols, name='n1')
     n2 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n2_cols, name='n2')
 
-    r1 = customer.merge(n1, on=customer['c_nationkey'] == n1['n1_nationkey'])
-    r1 = r1.merge(region, on=r1['n1_regionkey'] == region['r_regionkey'])
+    sub_r = region[(region['r_name'] == var2)].rename('sub_r')
+    sub_o = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] <= '1996-12-31')].rename('sub_o')
 
-    r1 = r1[(r1['r_name'] == var2)]
+    r1 = n1.merge(sub_r, on=n1['n1_regionkey'] == sub_r['r_regionkey']).rename('r1')
 
-    r1 = r1.merge(orders, on=r1['c_custkey'] == orders['o_custkey'])
+    r2 = part.merge(lineitem, on=part['p_partkey'] == lineitem['l_partkey'])
+    r2 = r2.merge(orders, on=r2['l_orderkey'] == orders['o_orderkey'])
+    r2 = r2.merge(customer, on=r2['o_custkey'] == customer['c_custkey']).rename('r2')
 
-    r1 = r1[(r1['o_orderdate'] >= '1995-01-01') & (r1['o_orderdate'] <= '1996-12-31')]
+    r = r1.merge(r2, on=r1['n1_nationkey'] == r2['c_nationkey'])
+    r = r.merge(supplier, on=r['l_suppkey'] == supplier['s_suppkey'])
+    r = r.merge(n2, on=r['s_nationkey'] == n2['n2_nationkey'])
 
-    r1 = r1.merge(lineitem, on=r1['o_orderkey'] == lineitem['l_orderkey']).rename('r1')
+    r[['o_year', 'volume', 'nation']] = [r['o_orderdate'].year,
+                                         r['l_extendedprice'] * (1 - r['l_discount']),
+                                         r['n2_name']]
 
-    r2 = supplier.merge(n2, on=supplier['s_nationkey'] == n2['n2_nationkey']).rename('r2')
+    all_nations = r[['o_year', 'volume', 'nation']].rename('all_nations')
 
-    r1 = r1.merge(r2, on=r1['l_suppkey'] == r2['s_suppkey'])
+    all_nations['value1'] = all_nations.case(all_nations['nation'] == var1, all_nations['volume'], 0)
 
-    r = r1.merge(part, on=r1['l_partkey'] == part['p_partkey'])
+    s = all_nations.groupby(['o_year']).aggr(value2=(all_nations['value1'], 'sum'),
+                                             value3=(all_nations['volume'], 'sum'))
+    s['mkt_share'] = s['value2'] / s['value3']
 
-    r = r[(r['p_type'] == var3)]
+    s = s[['o_year', 'mkt_share']]
 
-    r['o_year'] = r['o_orderdate'].year
-    r['volume'] = r['l_extendedprice'] * (1 - r['l_discount'])
-    r['nation'] = r['n2_name']
-
-    r = r[['o_year', 'volume', 'nation']]
-
-    all_nations = r.rename('all_nations')
-
-    all_nations['mkt_value'] = all_nations.case(all_nations['nation'] == var1, all_nations['volume'], 0)
-
-    all_nations['mkt_value'] = all_nations['mkt_value'] / all_nations['volume']
-
-    s = all_nations.groupby(['o_year']).aggr(mkt_share=(all_nations['mkt_value'], 'sum'))
-
-    db_driver.run(s)
+    db_driver.run(s).export().to()

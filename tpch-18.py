@@ -32,9 +32,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 20
-
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    var1 = 231
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
@@ -50,4 +48,4 @@ if __name__ == '__main__':
     r = r.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
         .aggr({r['l_quantity']: 'sum'})
 
-    db_driver.run(r)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-18').run(r).export().to()

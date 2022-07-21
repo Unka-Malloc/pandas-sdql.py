@@ -29,6 +29,8 @@ class GroupbyExpr:
         self.operations = []
         self.operations += groupby_from.operations
 
+        self.iter_for_agg = self.groupby_from.iter_expr
+
         self.iter_expr = IterExpr(self.name)
         self.last_iter = self.groupby_from.iter_expr
         self.nested_dict_name = self.gen_tmp_name()
@@ -114,6 +116,97 @@ class GroupbyExpr:
             pass
         if aggr_kwargs:
             return self.aggr_kwargs_parse(aggr_kwargs)
+
+    def agg(self, agg_func=None, *agg_args, **agg_kwargs):
+        if agg_func:
+            if type(agg_func) == str:
+                return self.optimized_agg_str_parse(agg_func)
+            if type(agg_func) == dict:
+                return self.optimized_agg_dict_parse(agg_func)
+        if agg_args:
+            pass
+        if agg_kwargs:
+            return self.optimized_agg_kwargs_parse(agg_kwargs)
+
+    def optimized_agg_str_parse(self, agg_str):
+        pass
+
+    def optimized_agg_dict_parse(self, agg_func):
+        pass
+
+    def optimized_agg_kwargs_parse(self, agg_dict):
+        if self.groupby_result:
+            self.operations.pop()
+            self.history_name.pop()
+        if self.groupby_nested_dict:
+            self.operations.pop()
+            self.history_name.pop()
+
+        result_dict = {}
+
+        aggr_tuple_name = self.gen_tmp_name()
+        aggr_tuple_iter_expr = IterExpr(aggr_tuple_name)
+
+        tmp_cols = []
+        tmp_cols += self.groupby_cols
+
+        for k in agg_dict.keys():
+            v = agg_dict[k]
+            if type(v) == ColUnit:
+                if v.name in tmp_cols:
+                    tmp_cols.remove(v.name)
+
+        for c in tmp_cols:
+            result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
+
+        aggr_tuple_dict = {}
+        for aggr_key in agg_dict.keys():
+            aggr_val = agg_dict[aggr_key]
+            if type(aggr_val) == ColUnit:
+                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{agg_dict[aggr_key].name}'
+            if type(aggr_val) == tuple:
+                if type(agg_dict[aggr_key][0]) == ColUnit or type(agg_dict[aggr_key][0]) == ColExpr:
+                    aggr_calc = agg_dict[aggr_key][0].new_expr(f'{self.iter_for_agg.key}')
+                else:
+                    aggr_calc = agg_dict[aggr_key][0]
+                aggr_flag = agg_dict[aggr_key][1]
+                if aggr_flag == 'sum':
+                    aggr_tuple_dict[aggr_key] = f'{aggr_calc} * {self.iter_for_agg.val}'
+                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                if aggr_flag == 'count':
+                    aggr_tuple_dict[aggr_key] = f'{self.iter_for_agg.val}'
+                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                if aggr_flag == 'avg':
+                    aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {self.iter_for_agg.val}'
+                    aggr_tuple_dict[f'{aggr_key}_count'] = f'{self.iter_for_agg.val}'
+                    result_dict[
+                        aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
+
+        parse_nested_dict = VarExpr(name=aggr_tuple_name,
+                                    data=CompoExpr(self.iter_for_agg,
+                                                   DictExpr(
+                                                       {RecExpr(self.cols_in_rec(self.iter_for_agg.key)):
+                                                            RecExpr(aggr_tuple_dict)})
+                                                   )
+                                    )
+
+        self.groupby_aggr_parse_nested_dict = parse_nested_dict
+        self.history_name.append(aggr_tuple_name)
+        self.operations.append(OpExpr('groupby_optimized_agg_parse_nested_dict', parse_nested_dict))
+
+        next_name = f'agg_{self.groupby_from.name}'
+
+        result = VarExpr(name=next_name,
+                         data=CompoExpr(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+        self.groupby_aggr_result = result
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('groupby_optimized_agg_result', result))
+
+        from pysdql import relation
+        output_cols = list(agg_dict.keys())
+        return relation(name=next_name,
+                        cols=output_cols,
+                        inherit_from=self)
 
     def __getitem__(self, item):
         return self.groupby_from[item]

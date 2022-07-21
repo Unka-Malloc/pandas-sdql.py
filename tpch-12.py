@@ -34,8 +34,6 @@ if __name__ == '__main__':
     var3 = '1995-01-01'
     var4 = '1996-01-01'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
-
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
@@ -53,4 +51,4 @@ if __name__ == '__main__':
     r = r.groupby(['l_shipmode']).aggr(high_line_count=(r['high_line_priority'], 'sum'),
                                        low_line_count=(r['low_line_priority'], 'sum'))
 
-    db_driver.run(r)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-12').run(r).export().to()

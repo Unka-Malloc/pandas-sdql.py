@@ -29,14 +29,12 @@ if __name__ == '__main__':
     days = 76
     var1 = (datetime.strptime('1998-12-01', "%Y-%m-%d") + timedelta(days=days)).strftime("%Y-%m-%d")
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
-
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
     r = lineitem[(lineitem['l_shipdate'] <= var1)]
 
     r = r.groupby(['l_returnflag', 'l_linestatus'])
-    r = r.aggr(sum_qty=(r['l_quantity'], 'sum'),
+    r = r.agg(sum_qty=(r['l_quantity'], 'sum'),
                sum_base_price=(r['l_extendedprice'], 'sum'),
                sum_disc_price=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'),
                sum_charge=(r['l_extendedprice'] * (1 - r['l_discount']) * (1 + r['l_tax']), 'sum'),
@@ -45,4 +43,4 @@ if __name__ == '__main__':
                avg_disc=(r['l_discount'], 'avg'),
                count_order=('*', 'count'))
 
-    db_driver.run(r)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-1').run(r).export().to()

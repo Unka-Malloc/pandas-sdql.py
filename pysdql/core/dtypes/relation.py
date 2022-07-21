@@ -218,6 +218,25 @@ class relation:
         :param value:
         :return:
         """
+        if type(key) == list and type(value) == list:
+            if len(key) != len(value):
+                raise ValueError()
+
+            next_name = self.gen_tmp_name()
+
+            compo = CompoExpr(self.iter_expr,
+                              DictExpr({f'concat({self.iter_expr.key}, {RecExpr(dict(zip(key, value)))})': 1}))
+
+            output = VarExpr(next_name, compo)
+
+            self.name = next_name
+            self.history_name.append(next_name)
+            self.operations.append(OpExpr('relation_setitem_list_loopfusion', output))
+
+        if type(value) in (ColUnit, ColExpr, CaseExpr, ExtExpr):
+            return self.set_col(key, value)
+
+    def set_col(self, key, value):
         if type(value) == CaseExpr:
             tmp_name = self.gen_tmp_name()
 
@@ -260,6 +279,8 @@ class relation:
         self.name = next_name
         self.history_name.append(next_name)
         self.operations.append(OpExpr('relation_rename_col', output))
+
+        return self
 
     @property
     def expr(self) -> str:
@@ -421,11 +442,24 @@ class relation:
             if output not in dup_list:
                 return output
 
-    def merge(self, right, on=None, left_on=None, right_on=None, optimized=False, name=None):
-        if optimized:
-            return self.optimized_merge(right, left_on, right_on)
+    def merge(self, right, on=None, left_on=None, right_on=None, name=None):
         if not type(right) == relation:
             raise TypeError()
+
+        if on is None:
+            if left_on and right_on:
+                optimized = True
+            else:
+                raise ValueError()
+        else:
+            if left_on is None and right_on is None:
+                optimized = False
+            else:
+                raise ValueError()
+
+        if optimized:
+            return self.optimized_merge(right, left_on, right_on)
+
         if name:
             merged_name = name
         else:
