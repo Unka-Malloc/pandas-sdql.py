@@ -159,6 +159,8 @@ class GroupbyExpr:
         for c in tmp_cols:
             result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
 
+        promoted_cols = {}
+
         aggr_tuple_dict = {}
         for aggr_key in agg_dict.keys():
             aggr_val = agg_dict[aggr_key]
@@ -179,9 +181,14 @@ class GroupbyExpr:
                 if aggr_flag == 'avg':
                     aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {self.iter_for_agg.val}'
                     aggr_tuple_dict[f'{aggr_key}_count'] = f'{self.iter_for_agg.val}'
-                    result_dict[
-                        aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum / {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
-
+                    result_dict[aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum ' \
+                                            f'/ {aggr_tuple_iter_expr.val}.{aggr_key}_count)'
+                if aggr_flag == 'min':
+                    promoted_cols[aggr_key] = 'promote[mnpr]'
+                    aggr_tuple_dict[aggr_key] = f'promote[mnpr]({aggr_calc}) * promote[mnpr]({self.iter_for_agg.val})'
+                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                if aggr_flag == 'max':
+                    pass
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt(self.iter_for_agg,
                                                   DictExpr(
@@ -206,7 +213,8 @@ class GroupbyExpr:
         output_cols = list(agg_dict.keys())
         return relation(name=next_name,
                         cols=output_cols,
-                        inherit_from=self)
+                        inherit_from=self,
+                        promoted_cols=promoted_cols)
 
     def __getitem__(self, item):
         return self.groupby_from[item]

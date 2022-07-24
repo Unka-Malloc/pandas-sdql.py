@@ -75,4 +75,4 @@ if __name__ == '__main__':
 
     r = r[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-2').run(r).export().to()
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-2').run(r)
