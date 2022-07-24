@@ -24,7 +24,7 @@ from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 
 
 class relation:
-    def __init__(self, name, data=None, cols=None, inherit_from=None, operations=None):
+    def __init__(self, name, data=None, cols=None, inherit_from=None, operations=None, promoted_cols=None):
         """
         If you need an optimizer, give it to relation and pass to all classes
         :param name:
@@ -59,6 +59,11 @@ class relation:
 
         self.using_col = []
 
+        if promoted_cols is None:
+            self.promoted_cols = {}
+        else:
+            self.promoted_cols = promoted_cols
+
     @property
     def iter_expr(self):
         return IterExpr(self.name)
@@ -84,7 +89,8 @@ class relation:
 
         return relation(name=name,
                         cols=self.cols,
-                        inherit_from=self)
+                        inherit_from=self,
+                        promoted_cols=self.promoted_cols)
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -156,7 +162,10 @@ class relation:
         return result
 
     def get_col(self, col_name):
-        return ColEl(self, col_name)
+        if col_name in self.promoted_cols.keys():
+            return ColEl(self, col_name, promoted=self.promoted_cols[col_name])
+        else:
+            return ColEl(self, col_name)
 
     def selection_isin(self, isin_expr: IsinExpr):
         unit1 = isin_expr.unit1
@@ -212,32 +221,56 @@ class relation:
             tmp_cond = (main_col == sub_col)
 
         if item.flag == 'not_exists':
-            tmp_cond = ~ tmp_cond
+            exists_name = f'exists_{sub_r.name}'
+            step1 = VarExpr(exists_name, IterStmt([main_r.iter_expr, sub_r.iter_expr],
+                                                  CondStmt(conditions=tmp_cond,
+                                                           then_case=DictExpr(
+                                                               {RecExpr({main_col.name: main_col.expr}): 1}),
+                                                           else_case=DictExpr(
+                                                               {RecExpr({main_col.name: main_col.expr}): 0}))))
+            self.history_name.append(exists_name)
+            self.operations.append(OpExpr('relation_selection_not_exists_groupby', step1))
 
-        exists_name = f'exists_{sub_r.name}'
-        step1 = VarExpr(exists_name, IterStmt([main_r.iter_expr, sub_r.iter_expr],
-                                              CondStmt(conditions=tmp_cond,
-                                                       then_case=DictExpr(
-                                                           {RecExpr({main_col.name: main_col.expr}): 1}),
-                                                       else_case=DictExpr(
-                                                           {RecExpr({main_col.name: main_col.expr}): 0}))))
-        self.history_name.append(exists_name)
-        self.operations.append(OpExpr('relation_selection_exists_groupby', step1))
+            next_name = self.gen_tmp_name(sub_r.history_name)
+            tmp_rec = RecExpr({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
+            step2 = VarExpr(next_name,
+                            IterStmt(self.iter_expr,
+                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '==', 0),
+                                              DictExpr({self.iter_expr.key: 1}), DictExpr({})))
+                            )
+            self.history_name.append(next_name)
+            self.operations.append(OpExpr('relation_selection_not_exists_output', step2))
 
-        next_name = self.gen_tmp_name(sub_r.history_name)
-        tmp_rec = RecExpr({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
-        step2 = VarExpr(next_name,
-                        IterStmt(self.iter_expr,
-                                 CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0), DictExpr({self.iter_expr.key: 1}), DictExpr({})))
-                        )
-        self.history_name.append(next_name)
-        self.operations.append(OpExpr('relation_selection_exists_output', step2))
+            next_relation = relation(name=next_name,
+                                     inherit_from=self)
+            next_relation.inherit(sub_r)
 
-        next_relation = relation(name=next_name,
-                                 inherit_from=self)
-        next_relation.inherit(sub_r)
+            return next_relation
+        else:
+            exists_name = f'exists_{sub_r.name}'
+            step1 = VarExpr(exists_name, IterStmt([main_r.iter_expr, sub_r.iter_expr],
+                                                  CondStmt(conditions=tmp_cond,
+                                                           then_case=DictExpr(
+                                                               {RecExpr({main_col.name: main_col.expr}): 1}),
+                                                           else_case=DictExpr(
+                                                               {RecExpr({main_col.name: main_col.expr}): 0}))))
+            self.history_name.append(exists_name)
+            self.operations.append(OpExpr('relation_selection_exists_groupby', step1))
 
-        return next_relation
+            next_name = self.gen_tmp_name(sub_r.history_name)
+            tmp_rec = RecExpr({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
+            step2 = VarExpr(next_name,
+                            IterStmt(self.iter_expr,
+                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0), DictExpr({self.iter_expr.key: 1}), DictExpr({})))
+                            )
+            self.history_name.append(next_name)
+            self.operations.append(OpExpr('relation_selection_exists_output', step2))
+
+            next_relation = relation(name=next_name,
+                                     inherit_from=self)
+            next_relation.inherit(sub_r)
+
+            return next_relation
 
         # cond_expr = CondStmt(conditions=item,
         #                      then_case=DictExpr({self.iter_expr.key: 1}),
@@ -457,6 +490,12 @@ class relation:
                 result_str = f'{aggr_tuple_name}.{aggr_prefix}_sum' \
                              f' / ' \
                              f'{aggr_tuple_name}.{aggr_prefix}_count'
+            if dict_val == 'min':
+                pass
+            if dict_val == 'max':
+                tmp_dict[f'{aggr_prefix}_max'] = f'promote[mxpr]({self.iter_expr.key}.{aggr_prefix})'
+                result_dict[f'{aggr_prefix}_max'] = f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_max'
+                result_str = f'{aggr_tuple_name}.{aggr_prefix}_max'
 
         agg_tuple = VarExpr(name=aggr_tuple_name,
                             data=IterStmt(self.iter_expr, RecExpr(tmp_dict)))

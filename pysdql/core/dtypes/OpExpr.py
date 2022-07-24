@@ -45,6 +45,8 @@ class OpExpr:
                 'groupby_optimized_agg_result': 35,
                 'relation_agg_dict_agg_tuple': 36,
                 'relation_agg_dict_agg_result_value': 37,
+                'relation_selection_not_exists_groupby': 38,
+                'relation_selection_not_exists_output': 39,
                 }
 
     @property

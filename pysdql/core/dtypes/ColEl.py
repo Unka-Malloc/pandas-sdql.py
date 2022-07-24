@@ -10,7 +10,7 @@ from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
 
 class ColEl:
-    def __init__(self, relation, col_name: str):
+    def __init__(self, relation, col_name: str, promoted=None):
         """
         ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
         :param relation:
@@ -18,6 +18,8 @@ class ColEl:
         """
         self.relation = relation
         self.name = col_name
+        self.promoted = promoted
+        self.follow_promotion = None
 
     @property
     def year(self):
@@ -37,6 +39,8 @@ class ColEl:
 
     @property
     def expr(self):
+        if self.follow_promotion:
+            return f'{self.follow_promotion}({self.relation.key}.{self.name})'
         return f'{self.relation.key}.{self.name}'
 
     def __repr__(self):
@@ -112,6 +116,9 @@ class ColEl:
         isjoin = False
         if type(other) == ColEl:
             isjoin = True
+        if type(other) == ColEl:
+            if self.promoted:
+                other.follow_promotion = self.promoted
         return CondExpr(unit1=self, operator='==', unit2=other, isjoin=isjoin)
         # return f'{self.column} == {other}'
 
@@ -208,4 +215,8 @@ class ColEl:
 
     def not_exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond, reverse=True)
+
+    def promote(self, func):
+        self.follow_promotion = f'promote[{func}]'
+        return self
 
