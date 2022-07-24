@@ -11,10 +11,10 @@ class OpExpr:
                 'relation_selection': 1,
                 'groupby_nested_dict': 2,
                 'groupby_result': 3,
-                'groupby_aggr_parse_nested_dict': 4,
-                'groupby_aggr_result': 5,
-                'relation_aggr_kwargs_aggr_tuple': 6,
-                'relation_aggr_kwargs_aggr_result': 7,
+                'groupby_aggregate_parse_nested_dict': 4,
+                'groupby_aggregate_result': 5,
+                'relation_aggregate_kwargs_aggr_tuple': 6,
+                'relation_aggregate_kwargs_aggr_result': 7,
                 'pysdql_merge_by_cols': 8,
                 'pysdql_merge_on_by_cols': 9,
                 'relation_exists': 10,
@@ -43,6 +43,8 @@ class OpExpr:
                 'relation_setitem_list_loopfusion': 33,
                 'groupby_optimized_agg_parse_nested_dict': 34,
                 'groupby_optimized_agg_result': 35,
+                'relation_agg_dict_agg_tuple': 36,
+                'relation_agg_dict_agg_result_value': 37,
                 }
 
     @property

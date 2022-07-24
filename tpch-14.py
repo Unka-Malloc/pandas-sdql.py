@@ -27,8 +27,8 @@ if __name__ == '__main__':
 
     r['promo'] = r.case(r['p_type'].startswith('PROMO'), r['l_extendedprice'] * (1 - r['l_discount']), 0)
 
-    r = r.aggr(value1=(r['promo'], 'sum'),
-               value2=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'))
+    r = r.aggregate(value1=(r['promo'], 'sum'),
+                    value2=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'))
 
     r['promo_revenue'] = 100 * r['value1'] / r['value2']
 

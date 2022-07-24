@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 
-class CondUnit:
+class CondExpr:
     def __init__(self, unit1, operator: str, unit2, inherit_from=None, isin=False, isjoin=False):
         self.unit1 = unit1
         self.op = operator
@@ -46,7 +46,7 @@ class CondUnit:
         return False
 
     def inherit(self, other):
-        if type(other) == CondUnit:
+        if type(other) == CondExpr:
             if other.inherit_from:
                 if self.inherit_from:
                     self.inherit_from.inherit(other.inherit_from)
@@ -57,12 +57,12 @@ class CondUnit:
         return self
 
     def new_cond(self, new_str):
-        from pysdql.core.dtypes.ColumnUnit import ColUnit
-        if type(self.unit1) == ColUnit or type(self.unit1) == CondUnit:
+        from pysdql.core.dtypes.ColEl import ColEl
+        if type(self.unit1) == ColEl or type(self.unit1) == CondExpr:
             u1_str = self.unit1.new_expr(new_str)
         else:
             u1_str = str(self.unit1)
-        if type(self.unit2) == ColUnit or type(self.unit2) == CondUnit:
+        if type(self.unit2) == ColEl or type(self.unit2) == CondExpr:
             u2_str = self.unit2.new_expr(new_str)
         else:
             u2_str = str(self.unit2)
@@ -70,12 +70,12 @@ class CondUnit:
         return self.concat(u1_str, u2_str)
 
     def new_expr(self, new_str) -> str:
-        from pysdql.core.dtypes.ColumnUnit import ColUnit
-        if type(self.unit1) == ColUnit or type(self.unit1) == CondUnit:
+        from pysdql.core.dtypes.ColEl import ColEl
+        if type(self.unit1) == ColEl or type(self.unit1) == CondExpr:
             u1_str = self.unit1.new_expr(new_str)
         else:
             u1_str = str(self.unit1)
-        if type(self.unit2) == ColUnit or type(self.unit2) == CondUnit:
+        if type(self.unit2) == ColEl or type(self.unit2) == CondExpr:
             u2_str = self.unit2.new_expr(new_str)
         else:
             u2_str = str(self.unit2)
@@ -98,12 +98,12 @@ class CondUnit:
 
     def concat(self, u1, u2):
         if self.op in ['<', '<=', '==', '!=', '&&', '||', '~']:
-            return CondUnit(u1, self.op, u2).inherit(self)
+            return CondExpr(u1, self.op, u2).inherit(self)
         if self.op == '>':
-            return CondUnit(u2, '<', u1).inherit(self)
+            return CondExpr(u2, '<', u1).inherit(self)
         if self.op == '>=':
-            return CondUnit(u2, '<=', u1).inherit(self)
-        return CondUnit(u1, self.op, u2).inherit(self)
+            return CondExpr(u2, '<=', u1).inherit(self)
+        return CondExpr(u1, self.op, u2).inherit(self)
 
     @property
     def expr(self):
@@ -127,12 +127,12 @@ class CondUnit:
         return self.expr
 
     def __and__(self, other):
-        return CondUnit(unit1=self,
+        return CondExpr(unit1=self,
                         operator='&&',
                         unit2=other).inherit(other)
 
     def __rand__(self, other):
-        return CondUnit(unit1=other,
+        return CondExpr(unit1=other,
                         operator='&&',
                         unit2=self).inherit(other)
 
@@ -140,21 +140,21 @@ class CondUnit:
         return (self & other).inherit(other)
 
     def __or__(self, other):
-        return CondUnit(unit1=self,
+        return CondExpr(unit1=self,
                         operator='||',
                         unit2=other).inherit(other)
 
     def __ror__(self, other):
-        return CondUnit(unit1=other,
+        return CondExpr(unit1=other,
                         operator='||',
                         unit2=self).inherit(other)
 
     def __ior__(self, other):
-        return CondUnit(unit1=self,
+        return CondExpr(unit1=self,
                         operator='||',
                         unit2=other, inherit_from=self.inherit_from).inherit(other)
 
     def __invert__(self):
-        return CondUnit(unit1=self,
+        return CondExpr(unit1=self,
                         operator='~',
                         unit2=self).inherit(self)

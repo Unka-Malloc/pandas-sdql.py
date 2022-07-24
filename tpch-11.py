@@ -53,6 +53,6 @@ if __name__ == '__main__':
     r = r2.groupby(['ps_partkey']).filter(lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val)
 
     # SELECT GROUPBY AGGREGATION
-    r = r.groupby(['ps_partkey']).aggr(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
+    r = r.groupby(['ps_partkey']).aggregate(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-11').run(r).export().to()

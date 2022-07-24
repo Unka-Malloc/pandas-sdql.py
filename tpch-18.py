@@ -46,6 +46,6 @@ if __name__ == '__main__':
     r = r.merge(lineitem, on=r['o_orderkey'] == lineitem['l_orderkey'])
 
     r = r.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'])\
-        .aggr({r['l_quantity']: 'sum'})
+        .aggregate({r['l_quantity']: 'sum'})
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-18').run(r).export().to()

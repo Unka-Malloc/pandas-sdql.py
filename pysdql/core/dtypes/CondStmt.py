@@ -1,8 +1,8 @@
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
-from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.DictExpr import DictExpr
 
 
-class CondExpr:
+class CondStmt:
     def __init__(self, conditions, then_case, else_case, new_iter=None):
         self.conditions = conditions
         self.then_case = then_case
@@ -18,10 +18,13 @@ class CondExpr:
 
     @property
     def expr(self):
-        if self.new_iter:
-            c_str = self.conditions.new_expr(self.new_iter)
+        if type(self.conditions) == CondExpr:
+            if self.new_iter:
+                c_str = self.conditions.new_expr(self.new_iter)
+            else:
+                c_str = self.conditions.expr
         else:
-            c_str = self.conditions.expr
+            c_str = f'{self.conditions}'
         return f'if ({c_str}) then {self.then_case} else {self.else_case}'
 
     def new_expr(self, new_str) -> str:

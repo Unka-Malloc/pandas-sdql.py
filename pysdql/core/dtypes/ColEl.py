@@ -1,10 +1,15 @@
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
-from pysdql.core.dtypes.ColumnExpr import ColExpr
+from pysdql.core.dtypes.ExistExpr import ExistExpr
+from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.IterStmt import IterStmt
+from pysdql.core.dtypes.RecordExpr import RecExpr
+from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.IsinExpr import IsinExpr
-from pysdql.core.dtypes.ExtExpr import ExtExpr
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.CondStmt import CondStmt
 
-
-class ColUnit:
+class ColEl:
     def __init__(self, relation, col_name: str):
         """
         ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
@@ -16,8 +21,8 @@ class ColUnit:
 
     @property
     def year(self):
-        return ExtExpr(col=self,
-                       ext_func='Year')
+        return ExternalExpr(col=self,
+                            ext_func='Year')
 
     @property
     def month(self):
@@ -40,7 +45,7 @@ class ColUnit:
     def __hash__(self):
         return hash((self.relation.iter_expr.key, self.name))
 
-    def __lt__(self, other) -> CondUnit:
+    def __lt__(self, other) -> CondExpr:
         """
         Less than
         :param other:
@@ -49,12 +54,12 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=self, operator='<', unit2=other, isjoin=isjoin)
+        return CondExpr(unit1=self, operator='<', unit2=other, isjoin=isjoin)
         # return f'{self.column} < {other}'
 
-    def __le__(self, other) -> CondUnit:
+    def __le__(self, other) -> CondExpr:
         """
         Less than or Equal
         :param other:
@@ -63,12 +68,12 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=self, operator='<=', unit2=other, isjoin=isjoin)
+        return CondExpr(unit1=self, operator='<=', unit2=other, isjoin=isjoin)
         # return f'{self.column} <= {other}'
 
-    def __gt__(self, other) -> CondUnit:
+    def __gt__(self, other) -> CondExpr:
         """
         Greater than
         :param other:
@@ -77,12 +82,12 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=other, operator='<', unit2=self, isjoin=isjoin)
+        return CondExpr(unit1=other, operator='<', unit2=self, isjoin=isjoin)
         # return f'{self.column} > {other}'
 
-    def __ge__(self, other) -> CondUnit:
+    def __ge__(self, other) -> CondExpr:
         """
         Greater than or Equal
         :param other:
@@ -91,12 +96,12 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=other, operator='<=', unit2=self, isjoin=isjoin)
+        return CondExpr(unit1=other, operator='<=', unit2=self, isjoin=isjoin)
         # return f'{self.column} >= {other}'
 
-    def __eq__(self, other) -> CondUnit:
+    def __eq__(self, other) -> CondExpr:
         """
         Equal
         :param other:
@@ -105,12 +110,12 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=self, operator='==', unit2=other, isjoin=isjoin)
+        return CondExpr(unit1=self, operator='==', unit2=other, isjoin=isjoin)
         # return f'{self.column} == {other}'
 
-    def __ne__(self, other) -> CondUnit:
+    def __ne__(self, other) -> CondExpr:
         """
         Not equal
         :param other:
@@ -119,9 +124,9 @@ class ColUnit:
         if type(other) == str:
             other = f'"{other}"'
         isjoin = False
-        if type(other) == ColUnit:
+        if type(other) == ColEl:
             isjoin = True
-        return CondUnit(unit1=self, operator='!=', unit2=other, isjoin=isjoin)
+        return CondExpr(unit1=self, operator='!=', unit2=other, isjoin=isjoin)
         # return f'not ({self.column} == {other})'
 
     def __add__(self, other):
@@ -149,7 +154,7 @@ class ColUnit:
         return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.relation)
 
     def isin(self, vals, ext=None):
-        if type(vals) == ColUnit:
+        if type(vals) == ColEl:
             return IsinExpr(self, vals)
 
         if type(vals) == list or type(vals) == tuple:
@@ -163,9 +168,9 @@ class ColUnit:
                 if type(i) == str:
                     i = f'"{i}"'
                 if ext:
-                    tmp_list.append(CondUnit(unit1=ext, operator='==', unit2=i))
+                    tmp_list.append(CondExpr(unit1=ext, operator='==', unit2=i))
                 else:
-                    tmp_list.append(CondUnit(unit1=self, operator='==', unit2=i))
+                    tmp_list.append(CondExpr(unit1=self, operator='==', unit2=i))
 
             a = tmp_list.pop()
             b = tmp_list.pop()
@@ -181,16 +186,26 @@ class ColUnit:
         return self
 
     def startswith(self, pattern: str):
-        return ExtExpr(self, 'StrStartsWith', pattern)
+        return ExternalExpr(self, 'StrStartsWith', pattern)
 
     def endswith(self, pattern: str):
-        return ExtExpr(self, 'StrEndsWith', pattern)
+        return ExternalExpr(self, 'StrEndsWith', pattern)
 
     def contains(self, *args):
-        return ExtExpr(self, 'StrContains', args)
+        return ExternalExpr(self, 'StrContains', args)
 
     def not_contains(self, *args):
-        return ExtExpr(self, 'not_StrContains', args)
+        return ExternalExpr(self, 'not_StrContains', args)
 
     def substring(self, start, end):
-        return ExtExpr(self, 'SubString', (start, end))
+        return ExternalExpr(self, 'SubString', (start, end))
+
+    def exists(self, on, *args):
+        return ExistExpr(self, on, conds=args)
+
+    def exists(self, bind_on, cond=None):
+        return ExistExpr(self, bind_on, conds=cond)
+
+    def not_exists(self, bind_on, cond=None):
+        return ExistExpr(self, bind_on, conds=cond, reverse=True)
+

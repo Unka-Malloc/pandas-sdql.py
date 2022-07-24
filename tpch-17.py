@@ -16,21 +16,29 @@ import pysdql
 
 if __name__ == '__main__':
     var1 = 'Brand#11'
-    var2 = 'WRAP CAN'
+    var2 = 'WRAP CASE'
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
+    # Co-related Nested Queries
     part_agg = lineitem.groupby(['l_partkey']) \
-        .aggr(agg_partkey=lineitem['l_partkey'], avg_quantity=(0.2 * lineitem['l_quantity'], 'avg')) \
+        .agg(agg_partkey=lineitem['l_partkey'], avg_quantity_1=(lineitem['l_quantity'], 'avg')) \
         .rename('part_agg')
+
+    part_agg['avg_quantity'] = 0.2 * part_agg['avg_quantity_1']
+    part_agg = part_agg[['agg_partkey', 'avg_quantity']]
 
     sub_p = part[(part['p_brand'] == var1) & (part['p_container'] == var2)].rename('sub_p')
 
-    r = sub_p.merge(part_agg, on=sub_p['p_partkey'] == part_agg['agg_partkey'])
+    r = sub_p.merge(lineitem, on=sub_p['p_partkey'] == lineitem['l_partkey'])
+    r = r.merge(part_agg, on=(r['l_partkey'] == part_agg['agg_partkey'])
+                             & (r['l_quantity'] < part_agg['avg_quantity']))
 
-    r = r[(r['l_quantity'] < r['avg_quantity'])]
+    r = r.agg(avg_yearly=(lineitem['l_extendedprice'] / 7.0, 'sum'))
 
-    r = r.aggr(avg_yearly=((lineitem['l_extendedprice'] / 7.0), 'sum'))
+    # r = r.agg(value=(lineitem['l_extendedprice'], 'sum'))
+    # r['avg_yearly'] = r['value'] / 7.0
+    # r = r[['avg_yearly']]
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-17').run(r).export().to()

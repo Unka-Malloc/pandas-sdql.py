@@ -1,5 +1,5 @@
 import unittest
-from pysdql.core.dtypes.IterationElement import IterEl
+from pysdql.core.dtypes.IterEl import IterEl
 
 
 class MyTestCase(unittest.TestCase):

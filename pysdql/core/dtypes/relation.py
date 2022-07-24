@@ -4,14 +4,15 @@ import string
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.ArrayExpr import ArrayExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
-from pysdql.core.dtypes.ColumnExpr import ColExpr
+from pysdql.core.dtypes.ColExpr import ColExpr
+from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.IsinExpr import IsinExpr
-from pysdql.core.dtypes.IterationExpr import IterExpr
-from pysdql.core.dtypes.ColumnUnit import ColUnit
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
-from pysdql.core.dtypes.ConditionalExpr import CondExpr
-from pysdql.core.dtypes.CompositionExpr import CompoExpr
-from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.IterExpr import IterExpr
+from pysdql.core.dtypes.ColEl import ColEl
+from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.CondStmt import CondStmt
+from pysdql.core.dtypes.IterStmt import IterStmt
+from pysdql.core.dtypes.DictExpr import DictExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 from pysdql.core.dtypes.SDict import sdict
@@ -19,7 +20,7 @@ from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
 from pysdql.core.dtypes.LoadExpr import LoadExpr
-from pysdql.core.dtypes.ExtExpr import ExtExpr
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 
 
 class relation:
@@ -98,22 +99,22 @@ class relation:
             if tmp_name not in dup_list:
                 return tmp_name
 
-    def selection(self, item: CondUnit):
-        'let rmp = if (is_empty) then Rm0 else sum (<r0_k, r0_v> in Rm0) sum (<ps_k, ps_v> in part_s) if ((!((r0_k.ps_suppkey == ps_k.s_suppkey)))) then { r0_k -> 1 } else {  } '
+    def selection(self, item: CondExpr):
+        """let rmp = if (is_empty) then Rm0 else sum (<r0_k, r0_v> in Rm0) sum (<ps_k, ps_v> in part_s) if ((!((r0_k.ps_suppkey == ps_k.s_suppkey)))) then { r0_k -> 1 } else {  } """
         if item.isin:
             if item.inherit_from:
                 self.inherit(item.inherit_from)
 
-            cond_expr = CondExpr(conditions=item,
+            cond_expr = CondStmt(conditions=item,
                                  then_case=DictExpr({self.iter_expr.key: 1}),
                                  else_case=DictExpr({}))
 
-            compo_expr = CompoExpr(iter_expr=[self.iter_expr, item.inherit_from.iter_expr],
-                                   any_expr=cond_expr)
+            iter_stmt = IterStmt(iter_expr=[self.iter_expr, item.inherit_from.iter_expr],
+                                 any_expr=cond_expr)
             if item.op == '~':
-                check_empty = CondExpr(conditions=CondUnit(f'{item.inherit_from}', '==', '{ }'),
+                check_empty = CondStmt(conditions=CondExpr(f'{item.inherit_from}', '==', '{ }'),
                                        then_case=self.name,
-                                       else_case=compo_expr)
+                                       else_case=iter_stmt)
                 var_name = self.gen_tmp_name()
 
                 self.history_name.append(var_name)
@@ -122,17 +123,17 @@ class relation:
             if item.inherit_from:
                 self.inherit(item.inherit_from)
             item = item.new_cond(self.iter_expr.key)
-            cond_expr = CondExpr(conditions=item,
+            cond_expr = CondStmt(conditions=item,
                                  then_case=DictExpr({self.iter_expr.key: 1}),
                                  else_case=DictExpr({}),
                                  new_iter=self.iter_expr.key)
-            compo_expr = CompoExpr(iter_expr=self.iter_expr,
-                                   any_expr=cond_expr)
+            iter_stmt = IterStmt(iter_expr=self.iter_expr,
+                                 any_expr=cond_expr)
 
         var_name = self.gen_tmp_name()
 
         self.history_name.append(var_name)
-        self.operations.append(OpExpr('relation_selection', VarExpr(var_name, compo_expr)))
+        self.operations.append(OpExpr('relation_selection', VarExpr(var_name, iter_stmt)))
 
         return relation(name=var_name,
                         cols=self.cols,
@@ -143,8 +144,8 @@ class relation:
         for i in cols:
             tmp_dict[i] = f'{self.iter_expr.key}.{i}'
 
-        compo_expr = CompoExpr(iter_expr=self.iter_expr,
-                               any_expr=DictExpr({RecExpr(tmp_dict): 1}))
+        compo_expr = IterStmt(iter_expr=self.iter_expr,
+                              any_expr=DictExpr({RecExpr(tmp_dict): 1}))
 
         next_name = self.gen_tmp_name()
 
@@ -155,7 +156,7 @@ class relation:
         return result
 
     def get_col(self, col_name):
-        return ColUnit(self, col_name)
+        return ColEl(self, col_name)
 
     def selection_isin(self, isin_expr: IsinExpr):
         unit1 = isin_expr.unit1
@@ -164,12 +165,12 @@ class relation:
         r2 = unit2.relation
         self.inherit(r2)
 
-        cond_unit = CondUnit(unit1, '==', unit2)
-        cond_expr = CondExpr(conditions=cond_unit,
+        cond_unit = CondExpr(unit1, '==', unit2)
+        cond_expr = CondStmt(conditions=cond_unit,
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}))
-        compo_expr = CompoExpr(iter_expr=[self.iter_expr, r2.iter_expr],
-                               any_expr=cond_expr)
+        compo_expr = IterStmt(iter_expr=[self.iter_expr, r2.iter_expr],
+                              any_expr=cond_expr)
 
         var_name = self.gen_tmp_name()
 
@@ -183,12 +184,12 @@ class relation:
         if type(item) == str:
             return self.get_col(col_name=item)
 
-    def selection_ext(self, item):
-        cond_expr = CondExpr(conditions=item,
+    def selection_external(self, item):
+        cond_expr = CondStmt(conditions=item,
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}))
-        compo_expr = CompoExpr(iter_expr=self.iter_expr,
-                               any_expr=cond_expr)
+        compo_expr = IterStmt(iter_expr=self.iter_expr,
+                              any_expr=cond_expr)
 
         var_name = self.gen_tmp_name()
 
@@ -199,8 +200,62 @@ class relation:
                         cols=self.cols,
                         inherit_from=self)
 
+    def selection_exists(self, item):
+        main_col = item.main_col
+        sub_col = item.sub_col
+        main_r = item.main_r
+        sub_r = item.sub_r
+
+        if item.conds:
+            tmp_cond = (main_col == sub_col) & item.conds
+        else:
+            tmp_cond = (main_col == sub_col)
+
+        if item.flag == 'not_exists':
+            tmp_cond = ~ tmp_cond
+
+        exists_name = f'exists_{sub_r.name}'
+        step1 = VarExpr(exists_name, IterStmt([main_r.iter_expr, sub_r.iter_expr],
+                                              CondStmt(conditions=tmp_cond,
+                                                       then_case=DictExpr(
+                                                           {RecExpr({main_col.name: main_col.expr}): 1}),
+                                                       else_case=DictExpr(
+                                                           {RecExpr({main_col.name: main_col.expr}): 0}))))
+        self.history_name.append(exists_name)
+        self.operations.append(OpExpr('relation_selection_exists_groupby', step1))
+
+        next_name = self.gen_tmp_name(sub_r.history_name)
+        tmp_rec = RecExpr({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
+        step2 = VarExpr(next_name,
+                        IterStmt(self.iter_expr,
+                                 CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0), DictExpr({self.iter_expr.key: 1}), DictExpr({})))
+                        )
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('relation_selection_exists_output', step2))
+
+        next_relation = relation(name=next_name,
+                                 inherit_from=self)
+        next_relation.inherit(sub_r)
+
+        return next_relation
+
+        # cond_expr = CondStmt(conditions=item,
+        #                      then_case=DictExpr({self.iter_expr.key: 1}),
+        #                      else_case=DictExpr({}))
+        # compo_expr = IterStmt(iter_expr=self.iter_expr,
+        #                       any_expr=cond_expr)
+        #
+        # var_name = self.gen_tmp_name()
+        #
+        # self.history_name.append(var_name)
+        # self.operations.append(OpExpr('relation_selection_ext', VarExpr(var_name, compo_expr)))
+
+        # return relation(name=var_name,
+        #                 cols=self.cols,
+        #                 inherit_from=self)
+
     def __getitem__(self, item):
-        if type(item) == CondUnit:
+        if type(item) == CondExpr:
             return self.selection(item)
         if type(item) == str:
             return self.get_col(col_name=item)
@@ -208,8 +263,11 @@ class relation:
             return self.projection(item)
         if type(item) == IsinExpr:
             return self.selection_isin(item)
-        if type(item) == ExtExpr:
-            return self.selection_ext(item)
+        if type(item) == ExternalExpr:
+            return self.selection_external(item)
+        if type(item) == ExistExpr:
+            return self.selection_exists(item)
+        print(item)
 
     def __setitem__(self, key, value):
         """
@@ -224,8 +282,8 @@ class relation:
 
             next_name = self.gen_tmp_name()
 
-            compo = CompoExpr(self.iter_expr,
-                              DictExpr({f'concat({self.iter_expr.key}, {RecExpr(dict(zip(key, value)))})': 1}))
+            compo = IterStmt(self.iter_expr,
+                             DictExpr({f'concat({self.iter_expr.key}, {RecExpr(dict(zip(key, value)))})': 1}))
 
             output = VarExpr(next_name, compo)
 
@@ -233,7 +291,7 @@ class relation:
             self.history_name.append(next_name)
             self.operations.append(OpExpr('relation_setitem_list_loopfusion', output))
 
-        if type(value) in (ColUnit, ColExpr, CaseExpr, ExtExpr):
+        if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
             return self.set_col(key, value)
 
     def set_col(self, key, value):
@@ -248,15 +306,15 @@ class relation:
 
             self.name = tmp_name
             return self
-        if type(value) == ColUnit or type(value) == ColExpr:
-            return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
-        if type(value) == ExtExpr:
-            return self.col_rename(from_col=value, to_col=ColUnit(relation=self, col_name=key))
+        if type(value) == ColEl or type(value) == ColExpr:
+            return self.col_rename(from_col=value, to_col=ColEl(relation=self, col_name=key))
+        if type(value) == ExternalExpr:
+            return self.col_rename(from_col=value, to_col=ColEl(relation=self, col_name=key))
 
     def keep_cols(self):
         tmp_dict = {}
         for i in self.cols:
-            tmp_dict[i] = ColUnit(relation=self, col_name=i)
+            tmp_dict[i] = ColEl(relation=self, col_name=i)
         return tmp_dict
 
     def col_rename(self, from_col, to_col):
@@ -274,7 +332,7 @@ class relation:
         tmp_concat_expr = ConcatExpr(self.iter_expr.key, RecExpr({to_col.name: from_col.new_expr(self.iter_expr.key)}))
         tmp_dict_expr = DictExpr({tmp_concat_expr: 1})
 
-        output = VarExpr(next_name, CompoExpr(self.iter_expr, tmp_dict_expr))
+        output = VarExpr(next_name, IterStmt(self.iter_expr, tmp_dict_expr))
 
         self.name = next_name
         self.history_name.append(next_name)
@@ -319,7 +377,7 @@ class relation:
                            groupby_from=self,
                            groupby_cols=cols)
 
-    def aggr(self, aggr_func=None, *aggr_args, **aggr_kwargs):
+    def agg(self, aggr_func=None, *aggr_args, **aggr_kwargs):
         """
         Aggregation
         :param aggr_func:
@@ -328,50 +386,96 @@ class relation:
         :return:
         """
         if aggr_func:
-            if type(aggr_func) == str:
-                return self.aggr_str_parse(aggr_func)
             if type(aggr_func) == dict:
-                return self.aggr_dict_parse(aggr_func)
-        if aggr_args:
-            pass
+                return self.agg_dict_parse(aggr_func)
         if aggr_kwargs:
-            return self.aggr_kwargs_parse(aggr_kwargs)
+            return self.agg_kwargs_parse(aggr_kwargs)
 
-    def aggr_str_parse(self, aggr_str):
-        if aggr_str == 'count':
-            print('Aggregation Count')
-
-    def aggr_dict_parse(self, aggr_func: dict):
+    def agg_dict_parse(self, aggr_dict: dict):
         """
         This function produce an Array of values.
-        :param aggr_func:
+        :param aggr_dict:
         :return:
         """
-        new_name = self.gen_tmp_name()
+        # new_name = self.gen_tmp_name()
+        #
+        # tmp_dict = {}
+        # avg_n = 1
+        # for aggr_key in aggr_func.keys():
+        #     aggr_val = aggr_func[aggr_key]
+        #     aggr_calc = aggr_key
+        #     if type(aggr_calc) == ColEl or type(aggr_calc) == ColExpr:
+        #         aggr_calc = aggr_calc.new_expr(f'{self.iter_expr.key}')
+        #     if aggr_val == 'sum':
+        #         tmp_dict[aggr_key] = f'{aggr_calc} * {self.iter_expr.val}'
+        #     if aggr_val == 'count':
+        #         tmp_dict[aggr_key] = f'{self.iter_expr.val}'
+        #     if aggr_val == 'avg':
+        #         print(f'let sc_{avg_n} = <s=({aggr_calc} * {self.iter_expr.val}), c={self.iter_expr.val}>')
+        #         tmp_dict[aggr_key] = f'(sc_{avg_n}.s / sc_{avg_n}.c)'
+        #         avg_n += 1
+        #
+        # aggr_array = ', '.join(tmp_dict.values())
+        #
+        # print(f'let {new_name} = {self.iter_expr} [| {aggr_array} |]')
+        #
+        # return ArrayExpr(new_name, list(tmp_dict.values()))
+
+        next_name = f'agg_value'
+        next_relation = relation(name=next_name,
+                                 inherit_from=self)
+
+        # print(next_relation.operations, aggr_dict)
 
         tmp_dict = {}
-        avg_n = 1
-        for aggr_key in aggr_func.keys():
-            aggr_val = aggr_func[aggr_key]
-            aggr_calc = aggr_key
-            if type(aggr_calc) == ColUnit or type(aggr_calc) == ColExpr:
-                aggr_calc = aggr_calc.new_expr(f'{self.iter_expr.key}')
-            if aggr_val == 'sum':
-                tmp_dict[aggr_key] = f'{aggr_calc} * {self.iter_expr.val}'
-            if aggr_val == 'count':
-                tmp_dict[aggr_key] = f'{self.iter_expr.val}'
-            if aggr_val == 'avg':
-                print(f'let sc_{avg_n} = <s=({aggr_calc} * {self.iter_expr.val}), c={self.iter_expr.val}>')
-                tmp_dict[aggr_key] = f'(sc_{avg_n}.s / sc_{avg_n}.c)'
-                avg_n += 1
+        result_dict = {}
 
-        aggr_array = ', '.join(tmp_dict.values())
+        aggr_tuple_name = self.gen_tmp_name()
+        aggr_tuple_iter_expr = IterExpr(aggr_tuple_name)
 
-        print(f'let {new_name} = {self.iter_expr} [| {aggr_array} |]')
+        result_str = ''
 
-        return ArrayExpr(new_name, list(tmp_dict.values()))
+        for aggr_key in aggr_dict.keys():
+            dict_val = aggr_dict[aggr_key]
+            aggr_prefix = 'the'
+            if type(aggr_key) == ColEl:
+                aggr_prefix = f'{aggr_key.name}'
+            if dict_val == 'sum':
+                tmp_dict[f'{aggr_prefix}_sum'] = f'{aggr_key} * {self.iter_expr.val}'
+                result_dict[f'{aggr_prefix}_sum'] = f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_sum'
+                result_str = f'{aggr_tuple_name}.{aggr_prefix}_sum'
+            if dict_val == 'count':
+                tmp_dict[f'{aggr_prefix}_count'] = f'{self.iter_expr.val}'
+                result_dict[f'{aggr_prefix}_count'] = f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_count'
+                result_str = f'{aggr_tuple_name}.{aggr_prefix}_count'
+            if dict_val == 'avg':
+                tmp_dict[f'{aggr_prefix}_sum'] = f'{self.iter_expr.key}.{aggr_prefix} * {self.iter_expr.val}'
+                tmp_dict[f'{aggr_prefix}_count'] = f'{self.iter_expr.val}'
+                result_dict[f'{aggr_prefix}_avg'] = f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_sum' \
+                                                    f' / ' \
+                                                    f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_count'
+                result_str = f'{aggr_tuple_name}.{aggr_prefix}_sum' \
+                             f' / ' \
+                             f'{aggr_tuple_name}.{aggr_prefix}_count'
 
-    def aggr_kwargs_parse(self, aggr_dict: dict):
+        agg_tuple = VarExpr(name=aggr_tuple_name,
+                            data=IterStmt(self.iter_expr, RecExpr(tmp_dict)))
+        next_relation.history_name.append(aggr_tuple_name)
+        next_relation.operations.append(OpExpr('relation_agg_dict_agg_tuple', agg_tuple))
+
+        result = VarExpr(name=next_name,
+                         data=result_str)
+        next_relation.history_name.append(next_name)
+        next_relation.operations.append(OpExpr('relation_agg_dict_agg_result_value', result))
+
+        return next_relation
+
+        # output_cols = list(aggr_dict.keys())
+        # return relation(name=next_name,
+        #                 cols=output_cols,
+        #                 inherit_from=self)
+
+    def agg_kwargs_parse(self, aggr_dict: dict):
         result_dict = {}
 
         aggr_record = self.gen_tmp_name()
@@ -382,10 +486,12 @@ class relation:
         tmp_dict = {}
         for aggr_key in aggr_dict.keys():
             aggr_val = aggr_dict[aggr_key]
-            if type(aggr_val) == ColUnit:
+            if type(aggr_val) == ColEl:
                 result_dict[aggr_key] = f'{aggr_record}.{aggr_dict[aggr_key].name}'
             if type(aggr_val) == tuple:
-                if type(aggr_dict[aggr_key][0]) == ColUnit or type(aggr_dict[aggr_key][0]) == ColExpr:
+                if type(aggr_dict[aggr_key][0]) == ColExpr and aggr_dict[aggr_key][1] == 'avg':
+                    print(f'You should not use {aggr_dict[aggr_key][0]} with "avg" aggregation')
+                if type(aggr_dict[aggr_key][0]) == ColEl or type(aggr_dict[aggr_key][0]) == ColExpr:
                     aggr_calc = aggr_dict[aggr_key][0].new_expr(f'{self.iter_expr.key}')
                 else:
                     aggr_calc = aggr_dict[aggr_key][0]
@@ -403,7 +509,7 @@ class relation:
                                             f' / ' \
                                             f'{aggr_record}.{aggr_key}_count)'
 
-        aggr_record = VarExpr(tmp_name, CompoExpr(self.iter_expr, RecExpr(tmp_dict)))
+        aggr_record = VarExpr(tmp_name, IterStmt(self.iter_expr, RecExpr(tmp_dict)))
         self.history_name.append(tmp_name)
         self.operations.append(OpExpr('relation_aggr_kwargs_aggr_record', aggr_record))
 
@@ -427,7 +533,7 @@ class relation:
         """
         new_r = self.from_cols(col_list=[col_name])
         print(new_r)
-        return new_r.aggr(aggr_func, *args, **kwargs)
+        return new_r.agg(aggr_func, *args, **kwargs)
 
     def access(self):
         return self
@@ -442,7 +548,7 @@ class relation:
             if output not in dup_list:
                 return output
 
-    def merge(self, right, on=None, left_on=None, right_on=None, name=None):
+    def merge(self, right, on=None, left_on=None, right_on=None, how='inner', name=None):
         if not type(right) == relation:
             raise TypeError()
 
@@ -465,11 +571,11 @@ class relation:
         else:
             merged_name = self.gen_merged_name()
         if on:
-            result = VarExpr(merged_name, CompoExpr([self.iter_expr, right.iter_expr],
-                                                    CondExpr(on, DictExpr(
-                                                        {f'concat({self.iter_expr.key}, {right.iter_expr.key})':
-                                                             f'{self.iter_expr.val} * {right.iter_expr.val}'}),
-                                                             DictExpr({}))))
+            result = VarExpr(merged_name, IterStmt([self.iter_expr, right.iter_expr],
+                                                   CondStmt(on, DictExpr(
+                                                       {f'concat({self.iter_expr.key}, {right.iter_expr.key})':
+                                                            f'{self.iter_expr.val} * {right.iter_expr.val}'}),
+                                                            DictExpr({}))))
             self.history_name.append(merged_name)
             self.operations.append(OpExpr('relation_merge_on_by_concatexpr', result))
 
@@ -478,9 +584,9 @@ class relation:
         elif left_on and right_on:
             pass
         else:
-            result = VarExpr(merged_name, CompoExpr([self.iter_expr, right.iter_expr],
-                                                    DictExpr({f'concat({self.iter_expr.key}, {right.iter_expr.key})':
-                                                                  f'{self.iter_expr.val} * {right.iter_expr.val}'})))
+            result = VarExpr(merged_name, IterStmt([self.iter_expr, right.iter_expr],
+                                                   DictExpr({f'concat({self.iter_expr.key}, {right.iter_expr.key})':
+                                                                 f'{self.iter_expr.val} * {right.iter_expr.val}'})))
             self.history_name.append(merged_name)
             self.operations.append(OpExpr('pysdql_merge_by_concatexpr', result))
             new_cols = self.cols + right.cols
@@ -513,14 +619,14 @@ class relation:
         part_key = 'p_k'
         part_val = 'p_v'
         part_iter = f'sum(<{part_key}, {part_val}> in {part_name}(<{right_on}={self.iter_expr.key}.{left_on}>))'
-        part_var = VarExpr(part_name, CompoExpr(right.iter_expr, DictExpr(part_dict)))
+        part_var = VarExpr(part_name, IterStmt(right.iter_expr, DictExpr(part_dict)))
         self.history_name.append(part_name)
         self.operations.append(OpExpr('relation_optimized_merge_part_right', part_var))
 
         new_name = self.gen_merged_name()
-        result = VarExpr(new_name, CompoExpr([self.iter_expr, part_iter],
-                                             DictExpr({f'concat({self.iter_expr.key}, {part_key})':
-                                                           f'{self.iter_expr.val} * {part_val}'})))
+        result = VarExpr(new_name, IterStmt([self.iter_expr, part_iter],
+                                            DictExpr({f'concat({self.iter_expr.key}, {part_key})':
+                                                          f'{self.iter_expr.val} * {part_val}'})))
         self.history_name.append(new_name)
         self.operations.append(OpExpr('relation_optimized_merge_result', result))
         '''
@@ -556,17 +662,34 @@ class relation:
 
         return self
 
-    def exists(self):
-        count_name = f'count_{self.name}'
-        result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
-        self.operations.append(OpExpr('relation_exists', result))
-        return CondUnit(count_name, '>', 0, inherit_from=self)
+    def exists(self, on):
+        # count_name = f'count_{self.name}'
+        # result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        # self.operations.append(OpExpr('relation_exists', result))
+        # return CondUnit(count_name, '>', 0, inherit_from=self)
+        # return CondExpr(self.name, '==', '{ }', inherit_from=self)
 
-    def not_exists(self):
-        count_name = f'count_{self.name}'
-        result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
-        self.operations.append(OpExpr('relation_exists', result))
-        return CondUnit(count_name, '==', 0, inherit_from=self)
+        # tmp_dict = {}
+        # for c in self.groupby_cols:
+        #     tmp_dict[c] = f'{self.last_iter.key}.{c}'
+        #
+        # tmp_key = RecExpr(tmp_dict)
+        # tmp_val = DictExpr({self.last_iter.key: self.last_iter.val})
+        #
+        # nested_dict = VarExpr(name=self.nested_dict_name,
+        #                       data=IterStmt(self.last_iter, DictExpr({tmp_key: tmp_val})))
+        #
+        # self.history_name.append(self.nested_dict_name)
+        # self.operations.append(OpExpr('groupby_nested_dict', nested_dict))
+        pass
+
+    def not_exists(self, on):
+        # count_name = f'count_{self.name}'
+        # result = VarExpr(count_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        # self.operations.append(OpExpr('relation_exists', result))
+        # return CondUnit(count_name, '==', 0, inherit_from=self)
+        # return CondExpr(self.name, '!=', '{ }', inherit_from=self)
+        pass
 
     def case(self, when, then_case, else_case):
         return CaseExpr(self, when, then_case, else_case)
@@ -579,7 +702,7 @@ class relation:
 
     def count(self):
         next_name = f'count_{self.name}'
-        var = VarExpr(next_name, CompoExpr(self.iter_expr, self.iter_expr.val))
+        var = VarExpr(next_name, IterStmt(self.iter_expr, self.iter_expr.val))
         self.history_name.append(next_name)
         self.operations.append(OpExpr('relation_count', var))
         return relation(name=next_name,
@@ -594,3 +717,10 @@ class relation:
 
         return relation(name=next_name,
                         inherit_from=self)
+
+    def sub_query(self, other, super_key: str, sub_key: str):
+        if type(other) == relation:
+            for o in other.operations:
+                print(o.op_str, o.op_obj, type(o.op_obj))
+
+        return self

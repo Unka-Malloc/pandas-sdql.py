@@ -7,8 +7,8 @@ from pysdql.core.dtypes.api import (
 
     RecExpr,
     DictExpr,
-    CondExpr,
-    CompoExpr,
+    CondStmt,
+    IterStmt,
     VarExpr,
     OpExpr,
 

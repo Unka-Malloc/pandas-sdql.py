@@ -45,12 +45,10 @@ if __name__ == '__main__':
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
     part_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)].rename('part_o')
-
     r = customer.merge(part_o, on=customer['c_custkey'] == part_o['o_custkey'])
     r = r.merge(nation, on=r['c_nationkey'] == nation['n_nationkey'])
 
     part_l = lineitem[lineitem['l_returnflag'] == 'R'].rename('part_l')
-
     r = r.merge(part_l, on=r['o_custkey'] == part_l['l_orderkey'])
 
     r = r.groupby(['c_custkey', 'c_name', 'c_acctbal', 'c_phone', 'n_name', 'c_address', 'c_comment']).agg(

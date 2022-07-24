@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
+from pysdql.core.dtypes.CondExpr import CondExpr
 
 
 class IsinExpr:
@@ -15,29 +15,29 @@ class IsinExpr:
 
     @property
     def cond(self):
-        return CondUnit(self.unit1, '==', self.unit2, inherit_from=self.unit2.relation, isin=True)
+        return CondExpr(self.unit1, '==', self.unit2, inherit_from=self.unit2.relation, isin=True)
 
     def __and__(self, other):
-        return CondUnit(unit1=self.cond,
+        return CondExpr(unit1=self.cond,
                         operator='&&',
                         unit2=other).inherit(self.cond).inherit(other)
 
     def __rand__(self, other):
-        return CondUnit(unit1=other,
+        return CondExpr(unit1=other,
                         operator='&&',
                         unit2=self.cond).inherit(self.cond).inherit(other)
 
     def __or__(self, other):
-        return CondUnit(unit1=self.cond,
+        return CondExpr(unit1=self.cond,
                         operator='||',
                         unit2=other).inherit(self.cond).inherit(other)
 
     def __ror__(self, other):
-        return CondUnit(unit1=other,
+        return CondExpr(unit1=other,
                         operator='||',
                         unit2=self.cond).inherit(self.cond).inherit(other)
 
     def __invert__(self):
-        return CondUnit(unit1=self.cond,
+        return CondExpr(unit1=self.cond,
                         operator='~',
                         unit2=self.cond).inherit(self.cond)
