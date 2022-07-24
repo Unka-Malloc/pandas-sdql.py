@@ -47,6 +47,6 @@ if __name__ == '__main__':
     r = r[~(r['ps_suppkey'].isin(sub_s['s_suppkey']))]
 
     # COUNT (DISTINCT value) ?
-    r = r.groupby(['p_brand', 'p_type', 'p_size']).aggr(supplier_cnt=(r['ps_suppkey'], 'sum'))
+    r = r.groupby(['p_brand', 'p_type', 'p_size']).agg(supplier_cnt=(r['ps_suppkey'], 'sum'))
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(r, block=False)
+    pysdql.db_driver(db_path=r'T:/sdql').run(r, block=True)

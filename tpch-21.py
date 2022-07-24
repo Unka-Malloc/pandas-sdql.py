@@ -39,9 +39,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 'INDIA'
-
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    var1 = 'UNITED KINGDOM'
 
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
     l1_cols = ['l1_orderkey', 'l1_partkey', 'l1_suppkey', 'l1_linenumber', 'l1_quantity', 'l1_extendedprice',
@@ -60,30 +58,18 @@ if __name__ == '__main__':
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
     sub_n = nation[(nation['n_name'] == var1)].rename('sub_n')
-
     join_ns = supplier.merge(sub_n, on=supplier['s_nationkey'] == sub_n['n_nationkey']).rename('join_ns')
-
-    sub_l1 = l1[(l1['l1_receiptdate'] > l1['l1_commitdate'])]
-
+    sub_l1 = l1[(l1['l1_receiptdate'] > l1['l1_commitdate'])].rename('sub_l1')
     r = join_ns.merge(sub_l1, on=(join_ns['s_suppkey'] == sub_l1['l1_suppkey']))
 
-    sub_o = orders[(orders['o_orderstatus'] == 'F')]
-
+    sub_o = orders[(orders['o_orderstatus'] == 'F')].rename('sub_o')
     r = r.merge(sub_o, on=(r['l1_orderkey'] == sub_o['o_orderkey']))
 
-    r1 = l2.merge(sub_l1, on=((l2['l2_orderkey'] == sub_l1['l1_orderkey'])
-                              & (l2['l2_suppkey'] != sub_l1['l1_suppkey']))
-                  ).rename('r1')
+    sub_l3 = l3[(l3['l3_receiptdate'] > l3['l3_commitdate'])].rename('sub_l3')
 
-    sub_l3 = l3[(l3['l3_receiptdate'] > l3['l3_commitdate'])]
+    r = r[r['l1_orderkey'].exists(l2['l2_orderkey'], r['l1_suppkey'] != l2['l2_suppkey'])]
+    r = r[r['l1_orderkey'].not_exists(sub_l3['l3_orderkey'], r['l1_suppkey'] != sub_l3['l3_suppkey'])]
 
-    r2 = l3.merge(sub_l1,
-                  on=((l3['l3_orderkey'] == sub_l1['l1_orderkey'])
-                      & (l3['l3_suppkey'] != sub_l1['l1_suppkey']))
-                  ).rename('r2')
+    r = r.groupby(['s_name']).agg(numwait=('*', 'count'))
 
-    s = r[r1.exists() & r2.not_exists()]
-
-    s = s.groupby(['s_name']).aggr(numwait=('*', 'count'))
-
-    db_driver.run(r)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-21').run(r).export().to()

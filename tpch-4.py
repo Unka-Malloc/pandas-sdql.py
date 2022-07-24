@@ -27,15 +27,14 @@ if __name__ == '__main__':
     var1 = '1996-05-01'
     var2 = '1996-08-01'  # var1 + 3 month
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-4')
-
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
 
-    r = lineitem[(lineitem['l_commitdate'] < lineitem['l_receiptdate'])]
-    r = r.merge(orders, on=(r['l_orderkey'] == orders['o_orderkey']))
+    sub_l = lineitem[(lineitem['l_commitdate'] < lineitem['l_receiptdate'])].rename('sub_l')
+    sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)].rename('sub_o')
 
-    s = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2) & r.exists()]
-    s = s.groupby(['o_orderpriority']).aggr(order_count=('*', 'count'))
+    r = sub_o[sub_o['o_orderkey'].exists(sub_l['l_orderkey'])]
 
-    db_driver.run(s).export().to()
+    r = r.groupby(['o_orderpriority']).agg(order_count=('*', 'count'))
+
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-4').run(r).export().to()

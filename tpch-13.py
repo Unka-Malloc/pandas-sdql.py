@@ -27,12 +27,10 @@ if __name__ == '__main__':
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
 
     sub_o = orders[orders['o_comment'].str.not_contains(var1, var2)].rename('sub_o')
-
     # LEFT OUTER JOIN ?
-    r = customer.merge(sub_o, on=(customer['c_custkey'] == sub_o['o_custkey']))
+    r = customer.merge(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
+    c_orders = r.groupby(['c_custkey']).agg(c_count=(r['o_orderkey'].right, 'count')).rename('c_orders')
 
-    c_orders = r.groupby(['c_custkey']).aggr(c_count=(r['o_orderkey'], 'count')).rename('c_orders')
-
-    s = c_orders.groupby(['c_count']).aggr(custdist=('*', 'count'))
+    s = c_orders.groupby(['c_count']).aggregate(custdist=('*', 'count'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-13').run(s).export().to()

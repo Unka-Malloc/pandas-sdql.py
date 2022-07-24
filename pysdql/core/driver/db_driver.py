@@ -104,8 +104,11 @@ class db_driver:
             script.write(sdql_expr)
             script.close()
 
-    def excute_script(self):
-        process = self.start('sbt')
+    def excute_script(self, skip_banner=False):
+        if skip_banner:
+            process = self.start('sbt skipBanner')
+        else:
+            process = self.start('sbt')
         self.write(process, f"run interpret {self.script_file_path}")
         output = self.read(process)
         self.write(process, "exit")
@@ -113,7 +116,7 @@ class db_driver:
         self.logger.info('========================================================')
         return output
 
-    def run(self, query, show=True, verbose=False, mute=False, block=False):
+    def run(self, query, show=True, skip_banner=False, verbose=False, mute=False, block=False):
         t1 = time.time()
 
         if type(query) == relation or type(query) == GroupbyExpr:
@@ -132,7 +135,7 @@ class db_driver:
             return self
 
         self.write_script(query)
-        self.output = self.excute_script()
+        self.output = self.excute_script(skip_banner=skip_banner)
 
         self.logger.info(f'pysdql execution time: {time.time() - t1}')
         return self

@@ -45,11 +45,9 @@ import pysdql
 
 if __name__ == '__main__':
     var1 = 'orange'
-    var2 = '1994-01-01'
-    var2_1 = '1995-01-01'  # var2 + 1 year
-    var3 = 'FRANCE'
-
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
+    var2 = '1995-01-01'
+    var2_1 = '1996-01-01'  # var2 + 1 year
+    var3 = 'UNITED STATES'
 
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
@@ -59,17 +57,18 @@ if __name__ == '__main__':
 
     sub_l = lineitem[(lineitem['l_shipdate'] >= var2) & (lineitem['l_shipdate'] < var2_1)].rename('sub_l')
     agg_lineitem = sub_l.groupby(['l_partkey', 'l_suppkey']) \
-        .aggr(agg_partkey=sub_l['l_partkey'],
-              agg_suppkey=sub_l['l_suppkey'],
-              agg_quantity=(0.5 * sub_l['l_quantity'], 'sum')) \
+        .aggregate(agg_partkey=sub_l['l_partkey'],
+                   agg_suppkey=sub_l['l_suppkey'],
+                   agg_quantity=(0.5 * sub_l['l_quantity'], 'sum')) \
         .rename('agg_lineitem')
+
+    r = partsupp.merge(agg_lineitem, on=(partsupp['ps_partkey'] == agg_lineitem['agg_partkey'])
+                                        & (partsupp['ps_suppkey'] == agg_lineitem['agg_suppkey'])
+                                        & (partsupp['ps_availqty'] > agg_lineitem['agg_quantity']))
 
     sub_p = part[part['p_name'].startswith(var1)].rename('sub_p')
 
-    r = partsupp.merge(agg_lineitem, on=(partsupp['ps_partkey'] == agg_lineitem['agg_partkey'])
-                                        & (partsupp['ps_suppkey'] == agg_lineitem['agg_suppkey']))
-
-    r = r[(r['ps_partkey'].isin(sub_p['p_partkey']) & (r['ps_availqty'] > r['agg_quantity']))]
+    r = r[(r['ps_partkey'].isin(sub_p['p_partkey']))]
 
     sub_n = nation[(nation['n_name'] == var3)].rename('sub_n')
 
@@ -79,4 +78,4 @@ if __name__ == '__main__':
 
     s = s[['s_name', 's_address']]
 
-    db_driver.run(supplier)
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-20').run(s).export().to()

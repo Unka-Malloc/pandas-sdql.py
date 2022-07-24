@@ -1,10 +1,10 @@
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.HavingExpr import HavExpr
-from pysdql.core.dtypes.ConditionalExpr import CondExpr
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
-from pysdql.core.dtypes.DictionaryExpr import DictExpr
-from pysdql.core.dtypes.CompositionExpr import CompoExpr
-from pysdql.core.dtypes.IterationExpr import IterExpr
+from pysdql.core.dtypes.CondStmt import CondStmt
+from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.IterStmt import IterStmt
+from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 
@@ -32,7 +32,7 @@ class HavUnit:
         result_name = 'hvR'
         result_key = 'hv_k'
         result_val = 'hv_v'
-        result_cond = CondUnit(f'{result_val}.val', op, other)
+        result_cond = CondExpr(f'{result_val}.val', op, other)
 
         tmp_dict = {}
         result_dict = {}
@@ -50,14 +50,14 @@ class HavUnit:
         if self.agg == 'sum':
             agg_dict['val'] = f'({self.new_expr(tmp_key)} * {tmp_val})'
 
-        hvmp = VarExpr(tmp_name, CompoExpr([self.iter_expr, tmp_iter_expr],
-                                           DictExpr({RecExpr(tmp_dict):
+        hvmp = VarExpr(tmp_name, IterStmt([self.iter_expr, tmp_iter_expr],
+                                          DictExpr({RecExpr(tmp_dict):
                                                          RecExpr(agg_dict)})))
         self.groupby_expr.history_name.append(tmp_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_hvmp', hvmp))
 
-        hvr = VarExpr(result_name, CompoExpr(result_iter_expr,
-                                             CondExpr(result_cond, DictExpr({RecExpr(result_dict): 1}), DictExpr({}))))
+        hvr = VarExpr(result_name, IterStmt(result_iter_expr,
+                                            CondStmt(result_cond, DictExpr({RecExpr(result_dict): 1}), DictExpr({}))))
         self.groupby_expr.history_name.append(result_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_hvr', hvr))
 
@@ -73,15 +73,15 @@ class HavUnit:
 
         new_cond = None
         for i in self.groupby_cols:
-            icond = CondUnit(f'{new_key}.{i}', '==', f'{r_key}.{i}')
+            icond = CondExpr(f'{new_key}.{i}', '==', f'{r_key}.{i}')
             if new_cond:
                 new_cond &= icond
             else:
                 new_cond = icond
 
         fhvr = VarExpr(new_name,
-                       CompoExpr([r_iter_expr, new_iter_expr],
-                                 CondExpr(new_cond, DictExpr({r_key: 1}), DictExpr({}))))
+                       IterStmt([r_iter_expr, new_iter_expr],
+                                CondStmt(new_cond, DictExpr({r_key: 1}), DictExpr({}))))
         self.groupby_expr.history_name.append(new_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_fhvr', fhvr))
 

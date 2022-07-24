@@ -1,4 +1,4 @@
-class CompoExpr:
+class IterStmt:
     def __init__(self, iter_expr, any_expr):
         self.iter_expr = iter_expr
         self.any_expr = any_expr

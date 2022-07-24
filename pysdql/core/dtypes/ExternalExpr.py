@@ -1,4 +1,4 @@
-class ExtExpr:
+class ExternalExpr:
     def __init__(self, col, ext_func, args=None):
         self.col = col
         self.func = ext_func
@@ -21,11 +21,11 @@ class ExtExpr:
     @property
     def expr(self):
         if self.func == 'Year':
-            return f'ext(`{self.func}`, {self.col})'
+            return f'ext(`Year`, {self.col})'
         if self.func == 'StrStartsWith':
-            return f'ext(`{self.func}`, {self.col}, "{self.args}")'
+            return f'ext(`StrStartsWith`, {self.col}, "{self.args}")'
         if self.func == 'StrEndsWith':
-            return f'ext(`{self.func}`, {self.col}, "{self.args}")'
+            return f'ext(`StrEndsWith`, {self.col}, "{self.args}")'
         if self.func == 'StrContains':
             tmp_str = ''
             for i in range(len(self.args)):

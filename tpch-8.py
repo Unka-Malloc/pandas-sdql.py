@@ -77,10 +77,12 @@ if __name__ == '__main__':
 
     all_nations['value1'] = all_nations.case(all_nations['nation'] == var1, all_nations['volume'], 0)
 
-    s = all_nations.groupby(['o_year']).aggr(value2=(all_nations['value1'], 'sum'),
-                                             value3=(all_nations['volume'], 'sum'))
+    s = all_nations.groupby(['o_year']).aggregate(value2=(all_nations['value1'], 'sum'),
+                                                  value3=(all_nations['volume'], 'sum'))
     s['mkt_share'] = s['value2'] / s['value3']
 
     s = s[['o_year', 'mkt_share']]
+
+    # 1M - 266s
 
     db_driver.run(s).export().to()

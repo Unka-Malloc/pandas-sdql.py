@@ -82,6 +82,6 @@ if __name__ == '__main__':
 
     r = sub_l.merge(sub_p, on=(sub_l['l_partkey'] == sub_p['p_partkey']))
 
-    r = r.aggr(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r = r.aggregate(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-19').run(r).export().to()

@@ -33,14 +33,14 @@ if __name__ == '__main__':
 
     r = lineitem[(lineitem['l_shipdate'] <= var1)]
 
-    r = r.groupby(['l_returnflag', 'l_linestatus'])
-    r = r.agg(sum_qty=(r['l_quantity'], 'sum'),
-               sum_base_price=(r['l_extendedprice'], 'sum'),
-               sum_disc_price=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'),
-               sum_charge=(r['l_extendedprice'] * (1 - r['l_discount']) * (1 + r['l_tax']), 'sum'),
-               avg_qty=(r['l_quantity'], 'avg'),
-               avg_price=(r['l_extendedprice'], 'avg'),
-               avg_disc=(r['l_discount'], 'avg'),
-               count_order=('*', 'count'))
+    r = r.groupby(['l_returnflag', 'l_linestatus']) \
+        .agg(sum_qty=(r['l_quantity'], 'sum'),
+             sum_base_price=(r['l_extendedprice'], 'sum'),
+             sum_disc_price=(r['l_extendedprice'] * (1 - r['l_discount']), 'sum'),
+             sum_charge=(r['l_extendedprice'] * (1 - r['l_discount']) * (1 + r['l_tax']), 'sum'),
+             avg_qty=(r['l_quantity'], 'avg'),
+             avg_price=(r['l_extendedprice'], 'avg'),
+             avg_disc=(r['l_discount'], 'avg'),
+             count_order=('*', 'count'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-1').run(r).export().to()

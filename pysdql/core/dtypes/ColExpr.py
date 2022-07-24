@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.CompositionExpr import CompoExpr
+from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 
@@ -11,13 +11,13 @@ class ColExpr:
         self.inherit_from = inherit_from
 
     def new_expr(self, new_str) -> str:
-        from pysdql.core.dtypes.ColumnUnit import ColUnit
-        if type(self.unit1) == ColExpr or type(self.unit1) == ColUnit:
+        from pysdql.core.dtypes.ColEl import ColEl
+        if type(self.unit1) == ColExpr or type(self.unit1) == ColEl:
             u1_str = self.unit1.new_expr(new_str)
         else:
             u1_str = f'{self.unit1}'
 
-        if type(self.unit2) == ColExpr or type(self.unit2) == ColUnit:
+        if type(self.unit2) == ColExpr or type(self.unit2) == ColEl:
             u2_str = self.unit2.new_expr(new_str)
         else:
             u2_str = f'{self.unit2}'
@@ -27,7 +27,7 @@ class ColExpr:
     def sum(self):
         tmp_name = f'agg_val'
         if self.inherit_from:
-            result = VarExpr(tmp_name, CompoExpr(self.inherit_from.iter_expr, self.inherit_from.iter_expr.val))
+            result = VarExpr(tmp_name, IterStmt(self.inherit_from.iter_expr, self.inherit_from.iter_expr.val))
             self.inherit_from.history_name.append(tmp_name)
             self.inherit_from.operations.append(OpExpr('colexpr_aggr_sum', result))
         return VarExpr(tmp_name, inherit_from=self.inherit_from)

@@ -2,9 +2,18 @@ from datetime import datetime, timedelta
 
 import pysdql
 
-from pysdql.core.dtypes.ConditionalUnit import CondUnit
+from pysdql.core.dtypes.CondExpr import CondExpr
 
 if __name__ == '__main__':
+    # query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == {}'
+    # pysdql.db_driver(db_path=r'T:/sdql').run(query)
+
+    # query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == {<> -> 1}'
+    # pysdql.db_driver(db_path=r'T:/sdql').run(query)
+
+    query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == 0'
+    pysdql.db_driver(db_path=r'T:/sdql').run(query)
+
     # d1 = datetime.strptime('1998-12-01', "%Y-%m-%d")
     # d3 = d1 - timedelta(days=87)
     # print(d3.strftime("%Y-%m-%d"))
@@ -38,18 +47,18 @@ if __name__ == '__main__':
 
     #
 
-    count = 0
-    with open(r'T:/UG4-Proj/datasets/lineitem.tbl', 'r') as f:
-        line = f.readline()
-        while line:
-            line_list = line.split('|')
-
-            if 0.06 <= float(line_list[6]) <= 0.08:
-                count += 1
-
-            line = f.readline()
-        else:
-            print(count)
+    # count = 0
+    # with open(r'T:/UG4-Proj/datasets/lineitem.tbl', 'r') as f:
+    #     line = f.readline()
+    #     while line:
+    #         line_list = line.split('|')
+    #
+    #         if 0.06 <= float(line_list[6]) <= 0.08:
+    #             count += 1
+    #
+    #         line = f.readline()
+    #     else:
+    #         print(count)
 
 
 

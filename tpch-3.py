@@ -28,20 +28,25 @@ if __name__ == '__main__':
     var1 = 'BUILDING'
     var2 = '1995-03-22'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-3')
-
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
-    r = customer.merge(orders, on=(customer['c_custkey'] == orders['o_custkey']))
-    r = r.merge(lineitem, on=(r['o_orderkey'] == lineitem['l_orderkey']))
+    sub_c = customer[customer['c_mktsegment'] == var1].rename('sub_c')
+    sub_o = orders[orders['o_orderdate'] < var2].rename('sub_o')
+    sub_l = lineitem[lineitem['l_shipdate'] > var2].rename('sub_l')
 
-    r = r[(r['c_mktsegment'] == var1)
-          & (r['o_orderdate'] < var2)
-          & (r['l_shipdate'] > var2)]
+    # 1M - 43s (without sub-table)
+    # 1M - 28s (with sub-table)
+    # r = sub_c.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
+    # r = r.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
+
+    # 1M - 73s (without sub-table)
+    # 1M - 24s (with sub-table)
+    r = sub_c.merge(sub_o, on=(sub_c['c_custkey'] == sub_o['o_custkey']))
+    r = r.merge(sub_l, on=(r['o_orderkey'] == sub_l['l_orderkey']))
 
     r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
-        .aggr(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+        .agg(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
-    db_driver.run(r).export().to()
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-3').run(r).export().to()

@@ -29,6 +29,6 @@ if __name__ == '__main__':
                  & (lineitem['l_discount'] > var3) & (lineitem['l_discount'] < var4)
                  & (lineitem['l_quantity'] < var5)]
 
-    r = r.aggr(revenue=(r['l_extendedprice'] * r['l_discount'], 'sum'))
+    r = r.aggregate(revenue=(r['l_extendedprice'] * r['l_discount'], 'sum'))
 
     db_driver.run(r).export().to()

@@ -1,8 +1,8 @@
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
-from pysdql.core.dtypes.CompositionExpr import CompoExpr
-from pysdql.core.dtypes.ConditionalExpr import CondExpr
-from pysdql.core.dtypes.DictionaryExpr import DictExpr
+from pysdql.core.dtypes.IterStmt import IterStmt
+from pysdql.core.dtypes.CondStmt import CondStmt
+from pysdql.core.dtypes.DictExpr import DictExpr
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
 
@@ -28,9 +28,9 @@ class CaseExpr:
         next_then_case = DictExpr({f'concat({iter_expr.key}, {trec})': 1})
         next_else_case = DictExpr({f'concat({iter_expr.key}, {erec})': 1})
 
-        output = VarExpr(next_name, CompoExpr(iter_expr, CondExpr(conditions=self.when,
-                                                                  then_case=next_then_case,
-                                                                  else_case=next_else_case,
-                                                                  new_iter=iter_expr.key)))
+        output = VarExpr(next_name, IterStmt(iter_expr, CondStmt(conditions=self.when,
+                                                                 then_case=next_then_case,
+                                                                 else_case=next_else_case,
+                                                                 new_iter=iter_expr.key)))
 
         return output

@@ -72,6 +72,6 @@ if __name__ == '__main__':
 
     r = r[['supp_nation', 'cust_nation', 'l_year', 'volume']].rename('shiping')
 
-    r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).aggr(revenue=(r['volume'], 'sum'))
+    r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).aggregate(revenue=(r['volume'], 'sum'))
 
     db_driver.run(r).export('tpch-7.sdql').to('tpch-7.out')
