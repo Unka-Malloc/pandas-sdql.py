@@ -1,5 +1,5 @@
 from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.HavingExpr import HavExpr
+from pysdql.core.dtypes.HavExpr import HavExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DictExpr import DictExpr

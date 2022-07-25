@@ -310,24 +310,12 @@ class relation:
         :return:
         """
         if type(key) == list and type(value) == list:
-            if len(key) != len(value):
-                raise ValueError()
-
-            next_name = self.gen_tmp_name()
-
-            compo = IterStmt(self.iter_expr,
-                             DictExpr({f'concat({self.iter_expr.key}, {RecExpr(dict(zip(key, value)))})': 1}))
-
-            output = VarExpr(next_name, compo)
-
-            self.name = next_name
-            self.history_name.append(next_name)
-            self.operations.append(OpExpr('relation_setitem_list_loopfusion', output))
+            return self.insert_col_list(key, value)
 
         if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
-            return self.set_col(key, value)
+            return self.insert_col(key, value)
 
-    def set_col(self, key, value):
+    def insert_col(self, key, value):
         if type(value) == CaseExpr:
             tmp_name = self.gen_tmp_name()
 
@@ -343,6 +331,21 @@ class relation:
             return self.col_rename(from_col=value, to_col=ColEl(relation=self, col_name=key))
         if type(value) == ExternalExpr:
             return self.col_rename(from_col=value, to_col=ColEl(relation=self, col_name=key))
+
+    def insert_col_list(self, key, value):
+        if len(key) != len(value):
+            raise ValueError()
+
+        next_name = self.gen_tmp_name()
+
+        compo = IterStmt(self.iter_expr,
+                         DictExpr({f'concat({self.iter_expr.key}, {RecExpr(dict(zip(key, value)))})': 1}))
+
+        output = VarExpr(next_name, compo)
+
+        self.name = next_name
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('relation_setitem_list_loopfusion', output))
 
     def keep_cols(self):
         tmp_dict = {}
