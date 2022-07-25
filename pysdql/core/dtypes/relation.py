@@ -505,7 +505,7 @@ class relation:
             if dict_val == 'max':
                 tmp_dict[f'{aggr_prefix}_max'] = f'promote[mxpr]({self.iter_expr.key}.{aggr_prefix})'
                 result_dict[f'{aggr_prefix}_max'] = f'{aggr_tuple_iter_expr.val}.{aggr_prefix}_max'
-                result_str = f'{aggr_tuple_name}.{aggr_prefix}_max'
+                result_str = f'promote[real]({aggr_tuple_name}.{aggr_prefix}_max)'
 
         agg_tuple = VarExpr(name=aggr_tuple_name,
                             data=IterStmt(self.iter_expr, RecExpr(tmp_dict)))
