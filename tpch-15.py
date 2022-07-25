@@ -28,8 +28,6 @@ MAX(total_revenue)
 FROM
 revenue
 )
-ORDER BY
-s_suppkey;
 """
 import pysdql
 
@@ -50,6 +48,8 @@ if __name__ == '__main__':
     max_revenue = revenue0.agg({revenue0['total_revenue']: 'max'}).rename('max_revenue')
 
     r = supplier.merge(revenue0, on=(supplier['s_suppkey'] == revenue0['supplier_no'])
-                                    & (revenue0['total_revenue'].promote('mxpr') == max_revenue))
+                                    & (revenue0['total_revenue'] == max_revenue))
+
+    r = r[['s_suppkey', 's_name', 's_address', 's_phone', 'total_revenue']]
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-15').run(r).export().to()
