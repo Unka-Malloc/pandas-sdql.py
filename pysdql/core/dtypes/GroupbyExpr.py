@@ -4,7 +4,7 @@ from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.ColEl import ColEl
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.DictExpr import DictExpr
-from pysdql.core.dtypes.HavUnit import HavUnit
+from pysdql.core.dtypes.HavEl import HavUnit
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.RecordExpr import RecExpr
