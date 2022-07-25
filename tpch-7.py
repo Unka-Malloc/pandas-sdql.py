@@ -42,8 +42,6 @@ if __name__ == '__main__':
     var1 = 'PERU'
     var2 = 'MOROCCO'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql')
-
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
@@ -63,7 +61,7 @@ if __name__ == '__main__':
 
     sub_l = lineitem[(lineitem['l_shipdate'] >= '1995-01-01') & (lineitem['l_shipdate'] <= '1996-12-31')].rename('sub_l')
 
-    r = r.merge(sub_l, on=r['s_suppkey'] == sub_l['l_suppkey'])
+    r = r.merge(sub_l, on=(r['o_orderkey'] == sub_l['l_orderkey']) & (r['s_suppkey'] == sub_l['l_suppkey']))
 
     r[['supp_nation', 'cust_nation', 'volume', 'l_year']] = [r['n1_name'],
                                                              r['n2_name'],
@@ -72,6 +70,6 @@ if __name__ == '__main__':
 
     r = r[['supp_nation', 'cust_nation', 'l_year', 'volume']].rename('shiping')
 
-    r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).aggregate(revenue=(r['volume'], 'sum'))
+    r = r.groupby(['supp_nation', 'cust_nation', 'l_year']).agg(revenue=(r['volume'], 'sum'))
 
-    db_driver.run(r).export('tpch-7.sdql').to('tpch-7.out')
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-7').run(r).export().to()

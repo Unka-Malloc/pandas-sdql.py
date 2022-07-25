@@ -194,7 +194,7 @@ class relation:
             return self.get_col(col_name=item)
 
     def selection_external(self, item):
-        cond_expr = CondStmt(conditions=item,
+        cond_expr = CondStmt(conditions=item.new_expr(self.iter_expr.key),
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}))
         compo_expr = IterStmt(iter_expr=self.iter_expr,
@@ -412,6 +412,13 @@ class relation:
         return GroupbyExpr(name=var_name,
                            groupby_from=self,
                            groupby_cols=cols)
+
+    def aggregate(self, aggr_func=None, *aggr_args, **aggr_kwargs):
+        if aggr_func:
+            if type(aggr_func) == dict:
+                return self.agg_dict_parse(aggr_func)
+        if aggr_kwargs:
+            return self.agg_kwargs_parse(aggr_kwargs)
 
     def agg(self, aggr_func=None, *aggr_args, **aggr_kwargs):
         """

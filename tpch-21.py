@@ -65,10 +65,11 @@ if __name__ == '__main__':
     sub_o = orders[(orders['o_orderstatus'] == 'F')].rename('sub_o')
     r = r.merge(sub_o, on=(r['l1_orderkey'] == sub_o['o_orderkey']))
 
+    r = r[r['l1_orderkey'].exists(l2['l2_orderkey'], cond=r['l1_suppkey'] != l2['l2_suppkey'])]
+
     sub_l3 = l3[(l3['l3_receiptdate'] > l3['l3_commitdate'])].rename('sub_l3')
 
-    r = r[r['l1_orderkey'].exists(l2['l2_orderkey'], r['l1_suppkey'] != l2['l2_suppkey'])]
-    r = r[r['l1_orderkey'].not_exists(sub_l3['l3_orderkey'], r['l1_suppkey'] != sub_l3['l3_suppkey'])]
+    r = r[r['l1_orderkey'].not_exists(sub_l3['l3_orderkey'], cond=r['l1_suppkey'] != sub_l3['l3_suppkey'])]
 
     r = r.groupby(['s_name']).agg(numwait=('*', 'count'))
 

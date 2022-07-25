@@ -21,8 +21,6 @@ if __name__ == '__main__':
     var4 = round(discount + 0.01, 2)
     var5 = 24
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-6')
-
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
 
     r = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)
@@ -31,4 +29,4 @@ if __name__ == '__main__':
 
     r = r.aggregate(revenue=(r['l_extendedprice'] * r['l_discount'], 'sum'))
 
-    db_driver.run(r).export().to()
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-6').run(r).export().to()

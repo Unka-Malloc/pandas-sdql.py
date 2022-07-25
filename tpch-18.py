@@ -32,7 +32,7 @@ group by
 import pysdql
 
 if __name__ == '__main__':
-    var1 = 231
+    var1 = 251
 
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
