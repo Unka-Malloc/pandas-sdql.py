@@ -35,9 +35,9 @@ if __name__ == '__main__':
     r = r.merge(part_agg, on=(r['l_partkey'] == part_agg['agg_partkey'])
                              & (r['l_quantity'] < part_agg['avg_quantity']))
 
-    r = r.agg(avg_yearly=(lineitem['l_extendedprice'] / 7.0, 'sum'))
+    r = r.agg(avg_yearly=(r['l_extendedprice'] / 7.0, 'sum'))
 
-    # r = r.agg(value=(lineitem['l_extendedprice'], 'sum'))
+    # r = r.agg(value=(r['l_extendedprice'], 'sum'))
     # r['avg_yearly'] = r['value'] / 7.0
     # r = r[['avg_yearly']]
 

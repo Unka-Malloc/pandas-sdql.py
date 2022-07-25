@@ -40,7 +40,7 @@ import pysdql
 if __name__ == '__main__':
     var1 = 'Brand#54'
     var2 = 'Brand#22'
-    var3 = 'Brand#12'
+    var3 = 'Brand#33'
     var4 = 1
     var4_1 = var4 + 10
     var5 = 18
@@ -51,37 +51,31 @@ if __name__ == '__main__':
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
 
-    a1 = (part['p_brand'] == var1) \
-         & (part['p_container'].isin(('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG'))) \
-         & (part['p_size'] >= 1) & (part['p_size'] <= 5)
+    r = lineitem.merge(part, on=(lineitem['l_partkey'] == part['p_partkey']))
 
-    a2 = (part['p_brand'] == var2) \
-         & (part['p_container'].isin(('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK'))) \
-         & (part['p_size'] >= 1) & (part['p_size'] <= 10)
+    r = r[((r['p_brand'] == var1)
+           & (r['p_container'].isin(['SM CASE', 'SM BOX', 'SM PACK', 'SM PKG']))
+           & (r['p_size'] >= 1) & (r['p_size'] <= 5)
+           & (r['l_quantity'] >= var4)
+           & (r['l_quantity'] <= var4_1)
+           & (r['l_shipmode'].isin(['AIR', 'AIR REG']))
+           & (r['l_shipinstruct'] == 'DELIVER IN PERSON')
+           )
+          | ((r['p_brand'] == var2)
+             & (r['p_container'].isin(['MED BAG', 'MED BOX', 'MED PKG', 'MED PACK']))
+             & (r['p_size'] >= 1) & (r['p_size'] <= 10)
+             & (r['l_quantity'] >= var5) & (r['l_quantity'] <= var5_1)
+             & (r['l_shipmode'].isin(['AIR', 'AIR REG']))
+             & (r['l_shipinstruct'] == 'DELIVER IN PERSON')
+             )
+          | ((r['p_brand'] == var3)
+             & (r['p_container'].isin(['LG CASE', 'LG BOX', 'LG PACK', 'LG PKG']))
+             & (r['p_size'] >= 1) & (r['p_size'] <= 15)
+             & (r['l_quantity'] >= var6)
+             & (r['l_quantity'] <= var6_1)
+             & (r['l_shipmode'].isin(['AIR', 'AIR REG']))
+             & (r['l_shipinstruct'] == 'DELIVER IN PERSON'))]
 
-    a3 = (part['p_brand'] == 'Brand#13') \
-         & (part['p_container'].isin(('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG'))) \
-         & (part['p_size'] >= 1) & (part['p_size'] <= 15)
-
-    sub_p = part[a1 | a2 | a3].rename('sub_p')
-
-    b1 = (lineitem['l_quantity'] >= var4) & (lineitem['l_quantity'] <= var4_1) \
-         & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
-         & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
-
-    b2 = (lineitem['l_quantity'] >= var5) & (lineitem['l_quantity'] <= var5_1) \
-         & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
-         & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
-
-    b3 = (lineitem['l_quantity'] >= var6) \
-         & (lineitem['l_quantity'] <= var6_1) \
-         & (lineitem['l_shipmode'].isin(('AIR', 'AIR REG'))) \
-         & (lineitem['l_shipinstruct'] == 'DELIVER IN PERSON')
-
-    sub_l = lineitem[b1 | b2 | b3].rename('sub_l')
-
-    r = sub_l.merge(sub_p, on=(sub_l['l_partkey'] == sub_p['p_partkey']))
-
-    r = r.aggregate(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r = r.agg(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-19').run(r).export().to()

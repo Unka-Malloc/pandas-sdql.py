@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     sub_s = supplier[supplier['s_comment'].contains('Customer', 'Complaints')].rename('sub_s')
 
-    sub_p = part[(part['p_brand'] != 'Brand#21')
-                 & (~part['p_type'].str.startswith('SMALL ANODIZED'))
+    sub_p = part[(part['p_brand'] != var1)
+                 & (~part['p_type'].str.startswith(var2))
                  & (part['p_size'].isin(var3))].rename('sub_p')
 
     r = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey'])
@@ -49,4 +49,4 @@ if __name__ == '__main__':
     # COUNT (DISTINCT value) ?
     r = r.groupby(['p_brand', 'p_type', 'p_size']).agg(supplier_cnt=(r['ps_suppkey'], 'sum'))
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(r, block=True)
+    pysdql.db_driver(db_path=r'T:/sdql').run(r, block=False).export().to()

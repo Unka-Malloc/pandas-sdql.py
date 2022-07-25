@@ -193,18 +193,22 @@ class ColEl:
         return self
 
     def startswith(self, pattern: str):
+        # A%
         return ExternalExpr(self, 'StrStartsWith', pattern)
 
     def endswith(self, pattern: str):
+        # %B
         return ExternalExpr(self, 'StrEndsWith', pattern)
 
     def contains(self, *args):
+        # %A%
         return ExternalExpr(self, 'StrContains', args)
 
     def not_contains(self, *args):
         return ExternalExpr(self, 'not_StrContains', args)
 
     def substring(self, start, end):
+        # substring
         return ExternalExpr(self, 'SubString', (start, end))
 
     def exists(self, on, *args):
@@ -219,4 +223,8 @@ class ColEl:
     def promote(self, func):
         self.follow_promotion = f'promote[{func}]'
         return self
+
+    def contains_in_order(self, *args):
+        # %A%B%
+        pass
 

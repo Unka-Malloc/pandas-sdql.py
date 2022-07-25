@@ -37,8 +37,6 @@ if __name__ == '__main__':
     var1 = '1993-08-01'
     var2 = '1993-11-01'  # var1 + 3 month
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-10')
-
     customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
     orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
     lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
@@ -54,4 +52,4 @@ if __name__ == '__main__':
     r = r.groupby(['c_custkey', 'c_name', 'c_acctbal', 'c_phone', 'n_name', 'c_address', 'c_comment']).agg(
         revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
 
-    db_driver.run(r).export().to()
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-10').run(r).export().to()

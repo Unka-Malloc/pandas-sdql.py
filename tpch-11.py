@@ -35,12 +35,6 @@ if __name__ == '__main__':
     supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
     nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
 
-    # agg_val = pysdql.merge(partsupp, supplier, nation,
-    #                        on=(partsupp['ps_suppkey'] == supplier['s_suppkey'])
-    #                           & (supplier['s_nationkey'] == nation['n_nationkey'])
-    #                        )[(nation['n_name'] == ':1')] \
-    #     .aggr({(partsupp['ps_supplycost'] * partsupp['ps_availqty'] * ':2'): 'sum'})[0]
-
     sub_n = nation[(nation['n_name'] == var1)].rename('sub_n')
 
     r1 = sub_n.merge(supplier, on=(sub_n['n_nationkey'] == supplier['s_nationkey'])).rename('r1')
@@ -53,6 +47,6 @@ if __name__ == '__main__':
     r = r2.groupby(['ps_partkey']).filter(lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val)
 
     # SELECT GROUPBY AGGREGATION
-    r = r.groupby(['ps_partkey']).aggregate(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
+    r = r.groupby(['ps_partkey']).agg(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-11').run(r).export().to()

@@ -4,6 +4,8 @@ class ExternalExpr:
         self.func = ext_func
         self.args = args
 
+        self.with_cond = None
+
     def new_expr(self, new_str) -> str:
         if self.func == 'Year':
             return f'ext(`{self.func}`, {self.col.new_expr(new_str)})'

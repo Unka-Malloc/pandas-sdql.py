@@ -31,6 +31,6 @@ if __name__ == '__main__':
     r = customer.merge(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
     c_orders = r.groupby(['c_custkey']).agg(c_count=(r['o_orderkey'].right, 'count')).rename('c_orders')
 
-    s = c_orders.groupby(['c_count']).aggregate(custdist=('*', 'count'))
+    s = c_orders.groupby(['c_count']).agg(custdist=('*', 'count'))
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-13').run(s).export().to()

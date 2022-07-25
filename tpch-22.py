@@ -57,7 +57,7 @@ if __name__ == '__main__':
     r = r[['cntrycode', 'c_acctbal']]
 
     custsale = r.rename('custsale')
-    custsale = custsale.groupby(['cntrycode']).agg(numcust=('*', 'count'),
-                                                   totacctbal=(custsale['c_acctbal'], 'sum'),)
+    s = custsale.groupby(['cntrycode']).agg(numcust=('*', 'count'),
+                                                   totacctbal=(custsale['c_acctbal'], 'sum'))
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-22').run(custsale).export().to()
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-22').run(s).export().to()
