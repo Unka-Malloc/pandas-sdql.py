@@ -178,6 +178,9 @@ class GroupbyExpr:
                 if aggr_flag == 'count':
                     aggr_tuple_dict[aggr_key] = f'{self.iter_for_agg.val}'
                     result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                if aggr_flag == 'count_distinct':
+                    aggr_tuple_dict[aggr_key] = 1
+                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
                 if aggr_flag == 'avg':
                     aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {self.iter_for_agg.val}'
                     aggr_tuple_dict[f'{aggr_key}_count'] = f'{self.iter_for_agg.val}'

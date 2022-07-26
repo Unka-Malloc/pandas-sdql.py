@@ -204,6 +204,10 @@ class ColEl:
         # %A%
         return ExternalExpr(self, 'StrContains', args)
 
+    def contains_in_order(self, *args):
+        # %A%B%
+        return ExternalExpr(self, 'StrContains_in_order', args)
+
     def not_contains(self, *args):
         return ExternalExpr(self, 'not_StrContains', args)
 
@@ -211,8 +215,8 @@ class ColEl:
         # substring
         return ExternalExpr(self, 'SubString', (start, end))
 
-    def exists(self, on, *args):
-        return ExistExpr(self, on, conds=args)
+    # def exists(self, on, *args):
+    #     return ExistExpr(self, on, conds=args)
 
     def exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond)
@@ -223,8 +227,4 @@ class ColEl:
     def promote(self, func):
         self.follow_promotion = f'promote[{func}]'
         return self
-
-    def contains_in_order(self, *args):
-        # %A%B%
-        pass
 

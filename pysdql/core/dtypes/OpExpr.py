@@ -47,6 +47,9 @@ class OpExpr:
                 'relation_agg_dict_agg_result_value': 37,
                 'relation_selection_not_exists_groupby': 38,
                 'relation_selection_not_exists_output': 39,
+                'relation_selection_isin_invert': 40,
+                'relation_drop_duplicates_1st': 41,
+                'relation_drop_duplicates_2nd': 42,
                 }
 
     @property
