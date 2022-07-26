@@ -145,6 +145,31 @@ class relation:
                         cols=self.cols,
                         inherit_from=self)
 
+    def drop_duplicates(self, cols):
+        return self.projection(cols)
+        # tmp_dict = {}
+        # for i in cols:
+        #     tmp_dict[i] = f'{self.iter_expr.key}.{i}'
+        #
+        # iter_expr_1st = IterStmt(iter_expr=self.iter_expr,
+        #                          any_expr=DictExpr({RecExpr(tmp_dict): f'promote[mnpr](1)'}))
+        #
+        # var_name_1 = self.gen_tmp_name()
+        #
+        # self.history_name.append(var_name_1)
+        # self.operations.append(OpExpr('relation_drop_duplicates_1st', VarExpr(var_name_1, iter_expr_1st)))
+        #
+        # iter_expr_2nd = IterStmt(iter_expr=self.iter_expr,
+        #                          any_expr=DictExpr({RecExpr(tmp_dict): 1}))
+        #
+        # var_name_2 = self.gen_tmp_name()
+        #
+        # self.operations.append(OpExpr('relation_drop_duplicates_2nd', VarExpr(var_name_2, iter_expr_2nd)))
+        #
+        # result = relation(name=var_name_2,
+        #                   inherit_from=self)
+        # return result
+
     def projection(self, cols):
         tmp_dict = {}
         for i in cols:
@@ -178,16 +203,29 @@ class relation:
         cond_expr = CondStmt(conditions=cond_unit,
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}))
-        compo_expr = IterStmt(iter_expr=[self.iter_expr, r2.iter_expr],
-                              any_expr=cond_expr)
+        iter_stmt = IterStmt(iter_expr=[self.iter_expr, r2.iter_expr],
+                             any_expr=cond_expr)
 
-        var_name = self.gen_tmp_name()
+        if isin_expr.isinvert:
+            check_empty = CondStmt(conditions=CondExpr(f'{r2}', '==', '{ }'),
+                                   then_case=self.name,
+                                   else_case=iter_stmt)
 
-        result = relation(name=var_name,
-                          inherit_from=self)
+            var_name = self.gen_tmp_name()
+            result = relation(name=var_name,
+                              inherit_from=self)
 
-        self.operations.append(OpExpr('relation_selection_isin', VarExpr(var_name, compo_expr)))
-        return result
+            self.operations.append(OpExpr('relation_selection_isin_invert', VarExpr(var_name, check_empty)))
+
+            return result
+        else:
+            var_name = self.gen_tmp_name()
+            result = relation(name=var_name,
+                              inherit_from=self)
+
+            self.operations.append(OpExpr('relation_selection_isin', VarExpr(var_name, iter_stmt)))
+
+            return result
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -198,7 +236,8 @@ class relation:
                              then_case=DictExpr({self.iter_expr.key: 1}),
                              else_case=DictExpr({}))
         compo_expr = IterStmt(iter_expr=self.iter_expr,
-                              any_expr=cond_expr)
+                              any_expr=cond_expr,
+                              tmp_vars=item.vars_str)
 
         var_name = self.gen_tmp_name()
 
@@ -261,7 +300,8 @@ class relation:
             tmp_rec = RecExpr({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
             step2 = VarExpr(next_name,
                             IterStmt(self.iter_expr,
-                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0), DictExpr({self.iter_expr.key: 1}), DictExpr({})))
+                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0),
+                                              DictExpr({self.iter_expr.key: 1}), DictExpr({})))
                             )
             self.history_name.append(next_name)
             self.operations.append(OpExpr('relation_selection_exists_output', step2))
@@ -767,9 +807,7 @@ class relation:
         return relation(name=next_name,
                         inherit_from=self)
 
-    def sub_query(self, other, super_key: str, sub_key: str):
-        if type(other) == relation:
-            for o in other.operations:
-                print(o.op_str, o.op_obj, type(o.op_obj))
+    def join(self, right, how, left_on, right_on):
+        print(self.name, right.name)
+        print(self.cols, right.cols)
 
-        return self

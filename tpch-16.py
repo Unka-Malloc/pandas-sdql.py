@@ -36,17 +36,19 @@ if __name__ == '__main__':
     part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
     partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
 
-    sub_s = supplier[supplier['s_comment'].contains('Customer', 'Complaints')].rename('sub_s')
+    sub_s = supplier[supplier['s_comment'].contains_in_order('Customer', 'Complaints')].rename('sub_s')
 
     sub_p = part[(part['p_brand'] != var1)
-                 & (~part['p_type'].str.startswith(var2))
+                 & (~part['p_type'].startswith(var2))
                  & (part['p_size'].isin(var3))].rename('sub_p')
 
     r = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey'])
 
     r = r[~(r['ps_suppkey'].isin(sub_s['s_suppkey']))]
 
-    # COUNT (DISTINCT value) ?
-    r = r.groupby(['p_brand', 'p_type', 'p_size']).agg(supplier_cnt=(r['ps_suppkey'], 'sum'))
+    r = r.drop_duplicates(['p_brand', 'p_type', 'p_size', 'ps_suppkey'])
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(r, block=False).export().to()
+    # COUNT DISTINCT
+    r = r.groupby(['p_brand', 'p_type', 'p_size']).agg(supplier_cnt=(r['ps_suppkey'], 'count_distinct'))
+
+    pysdql.db_driver(db_path=r'T:/sdql').run(r).export().to()
