@@ -10,7 +10,7 @@ class OpExpr:
         return {'relation_data': 0,
                 'relation_selection': 1,
                 'groupby_nested_dict': 2,
-                'groupby_result': 3,
+                'groupby_grouped_dict': 3,
                 'groupby_aggregate_parse_nested_dict': 4,
                 'groupby_aggregate_result': 5,
                 'relation_aggregate_kwargs_aggr_tuple': 6,
@@ -51,6 +51,11 @@ class OpExpr:
                 'relation_drop_duplicates_1st': 41,
                 'relation_drop_duplicates_2nd': 42,
                 }
+
+    @property
+    def opuid(self):
+        ref_id = self.op_ref_dict[self.op_str]
+        return hash((ref_id, self.op_obj))
 
     @property
     def expr(self):

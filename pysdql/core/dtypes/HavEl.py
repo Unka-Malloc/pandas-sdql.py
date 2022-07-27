@@ -2,11 +2,11 @@ from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.HavExpr import HavExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
-from pysdql.core.dtypes.RecordExpr import RecExpr
+from pysdql.core.dtypes.RecEl import RecEl
 
 
 class HavUnit:
@@ -51,13 +51,13 @@ class HavUnit:
             agg_dict['val'] = f'({self.new_expr(tmp_key)} * {tmp_val})'
 
         hvmp = VarExpr(tmp_name, IterStmt([self.iter_expr, tmp_iter_expr],
-                                          DictExpr({RecExpr(tmp_dict):
-                                                         RecExpr(agg_dict)})))
+                                          DictEl({RecEl(tmp_dict):
+                                                         RecEl(agg_dict)})))
         self.groupby_expr.history_name.append(tmp_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_hvmp', hvmp))
 
         hvr = VarExpr(result_name, IterStmt(result_iter_expr,
-                                            CondStmt(result_cond, DictExpr({RecExpr(result_dict): 1}), DictExpr({}))))
+                                            CondStmt(result_cond, DictEl({RecEl(result_dict): 1}), DictEl({}))))
         self.groupby_expr.history_name.append(result_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_hvr', hvr))
 
@@ -81,7 +81,7 @@ class HavUnit:
 
         fhvr = VarExpr(new_name,
                        IterStmt([r_iter_expr, new_iter_expr],
-                                CondStmt(new_cond, DictExpr({r_key: 1}), DictExpr({}))))
+                                CondStmt(new_cond, DictEl({r_key: 1}), DictEl({}))))
         self.groupby_expr.history_name.append(new_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_fhvr', fhvr))
 

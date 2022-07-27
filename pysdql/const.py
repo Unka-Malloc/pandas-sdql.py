@@ -17,7 +17,7 @@ PARTSUPP_LOAD = 'let partsupp = load[{<ps_partkey: int, ps_suppkey: int, ps_avai
 
 # Primary Key: C_CUSTKEY
 # CUSTOMER_COLS = ['C_CUSTKEY', 'C_NAME', 'C_ADDRESS', 'C_NATIONKEY', 'C_PHONE',
-                 # 'C_ACCTBAL', 'C_MKTSEGMENT', 'C_COMMENT']
+#                  'C_ACCTBAL', 'C_MKTSEGMENT', 'C_COMMENT']
 
 CUSTOMER_COLS = ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']
 CUSTOMER_LOAD = 'let customer = load[{<c_custkey: int, c_name: string, c_address: string, c_nationkey: int, c_phone: string, c_acctbal: real, c_mktsegment: string, c_comment: string> -> int}]("datasets/tuned/customer.tbl")'

@@ -3,11 +3,11 @@ import string
 from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.ColEl import ColEl
 from pysdql.core.dtypes.IterStmt import IterStmt
-from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.HavEl import HavUnit
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.RecordExpr import RecExpr
+from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.SetExpr import SetExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
@@ -39,7 +39,7 @@ class GroupbyExpr:
         # let tmpa = sum (<l_k, l_v> in lmp) { < l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus > -> { l_k -> l_v } }
         self.groupby_nested_dict = self.get_nested_dict()
         # let tmp = sum (<ta_k, ta_v> in tmpa) { < l_returnflag=ta_k.l_returnflag, l_linestatus=ta_k.l_linestatus, group=ta_v > }
-        self.groupby_result = self.get_result()
+        self.groupby_result = self.get_grouped_dict()
 
         # let tmpb = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus > -> < sum_qty=g_k.l_quantity * g_v, sum_base_price=g_k.l_extendedprice * g_v, sum_disc_price=(g_k.l_extendedprice * (1 - g_k.l_discount)) * g_v, sum_charge=((g_k.l_extendedprice * (1 - g_k.l_discount)) * (1 + g_k.l_tax)) * g_v, avg_qty_sum=g_k.l_quantity * g_v, avg_qty_count=g_v, avg_price_sum=g_k.l_extendedprice * g_v, avg_price_count=g_v, avg_disc_sum=g_k.l_discount * g_v, avg_disc_count=g_v, count_order=g_v > }
         self.groupby_aggr_parse_nested_dict = None
@@ -73,18 +73,18 @@ class GroupbyExpr:
         for c in self.groupby_cols:
             tmp_dict[c] = f'{self.last_iter.key}.{c}'
 
-        tmp_key = RecExpr(tmp_dict)
-        tmp_val = DictExpr({self.last_iter.key: self.last_iter.val})
+        tmp_key = RecEl(tmp_dict)
+        tmp_val = DictEl({self.last_iter.key: self.last_iter.val})
 
         nested_dict = VarExpr(name=self.nested_dict_name,
-                              data=IterStmt(self.last_iter, DictExpr({tmp_key: tmp_val})))
+                              data=IterStmt(self.last_iter, DictEl({tmp_key: tmp_val})))
 
         self.history_name.append(self.nested_dict_name)
         self.operations.append(OpExpr('groupby_nested_dict', nested_dict))
 
         return nested_dict
 
-    def get_result(self):
+    def get_grouped_dict(self):
         #  sum(<t_k, t_v> in tmp) { <l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus, group=t_v> }
         tmp_dict = {}
         for c in self.groupby_cols:
@@ -92,10 +92,10 @@ class GroupbyExpr:
         tmp_dict['group'] = f'{self.nested_dict_iter_expr.val}'
 
         result = VarExpr(name=self.name,
-                         data=IterStmt(self.nested_dict_iter_expr, DictExpr({RecExpr(tmp_dict): 1})))
+                         data=IterStmt(self.nested_dict_iter_expr, DictEl({RecEl(tmp_dict): 1})))
 
         self.history_name.append(self.name)
-        self.operations.append(OpExpr('groupby_result', result))
+        self.operations.append(OpExpr('groupby_grouped_dict', result))
 
         return result
 
@@ -194,9 +194,9 @@ class GroupbyExpr:
                     pass
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt(self.iter_for_agg,
-                                                  DictExpr(
-                                                       {RecExpr(self.cols_in_rec(self.iter_for_agg.key)):
-                                                            RecExpr(aggr_tuple_dict)})
+                                                  DictEl(
+                                                       {RecEl(self.cols_in_rec(self.iter_for_agg.key)):
+                                                            RecEl(aggr_tuple_dict)})
                                                   )
                                     )
 
@@ -207,7 +207,7 @@ class GroupbyExpr:
         next_name = f'agg_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
-                         data=IterStmt(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+                         data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
         self.groupby_aggr_result = result
         self.history_name.append(next_name)
         self.operations.append(OpExpr('groupby_optimized_agg_result', result))
@@ -278,9 +278,9 @@ class GroupbyExpr:
 
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt([self.iter_expr, aggr_tmp_iter_expr],
-                                                  DictExpr(
-                                                       {RecExpr(self.cols_in_rec()):
-                                                            RecExpr(tmp_dict)})
+                                                  DictEl(
+                                                       {RecEl(self.cols_in_rec()):
+                                                            RecEl(tmp_dict)})
                                                   )
                                     )
 
@@ -291,7 +291,7 @@ class GroupbyExpr:
         next_name = f'aggr_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
-                         data=IterStmt(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+                         data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
         self.groupby_aggr_result = result
         self.history_name.append(next_name)
         self.operations.append(OpExpr('groupby_aggregate_result', result))
@@ -349,9 +349,9 @@ class GroupbyExpr:
 
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt([self.iter_expr, aggr_tmp_iter_expr],
-                                                  DictExpr(
-                                                       {RecExpr(self.cols_in_rec()):
-                                                            RecExpr(aggr_tuple_dict)})
+                                                  DictEl(
+                                                       {RecEl(self.cols_in_rec()):
+                                                            RecEl(aggr_tuple_dict)})
                                                   )
                                     )
 
@@ -362,7 +362,7 @@ class GroupbyExpr:
         next_name = f'aggr_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
-                         data=IterStmt(aggr_tuple_iter_expr, DictExpr({RecExpr(result_dict): 1})))
+                         data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
         self.groupby_aggr_result = result
         self.history_name.append(next_name)
         self.operations.append(OpExpr('groupby_aggregate_result', result))
