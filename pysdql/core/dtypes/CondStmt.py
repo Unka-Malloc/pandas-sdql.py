@@ -1,5 +1,5 @@
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.DictEl import DictEl
 
 
 class CondStmt:

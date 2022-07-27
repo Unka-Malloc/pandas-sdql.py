@@ -6,8 +6,8 @@ from pysdql.core.api import (
     relation,
     IterStmt,
     CondStmt,
-    DictExpr,
-    RecExpr,
+    DictEl,
+    RecEl,
     VarExpr,
     OpExpr,
     ConcatExpr,
@@ -72,19 +72,19 @@ def merge(*args, on=None, name='R', optimize=False, by_cols=False, by_relation=F
 
     if by_cols:
         if on:
-            result = VarExpr(name, IterStmt(ie_list, CondStmt(on, DictExpr({concat_cols(ik_list, icol_list): 1}),
-                                                              DictExpr({}))))
+            result = VarExpr(name, IterStmt(ie_list, CondStmt(on, DictEl({concat_cols(ik_list, icol_list): 1}),
+                                                              DictEl({}))))
             op_list.append(OpExpr('pysdql_merge_on_by_cols', result))
         else:
-            result = VarExpr(name, IterStmt(ie_list, DictExpr({concat_cols(ik_list, icol_list): 1})))
+            result = VarExpr(name, IterStmt(ie_list, DictEl({concat_cols(ik_list, icol_list): 1})))
             op_list.append(OpExpr('pysdql_merge_by_cols', result))
     else:
         iv_str = " * ".join(iv_list)
         if on:
-            result = VarExpr(name, IterStmt(ie_list, CondStmt(on, DictExpr({concat(ik_list): iv_str}), DictExpr({}))))
+            result = VarExpr(name, IterStmt(ie_list, CondStmt(on, DictEl({concat(ik_list): iv_str}), DictEl({}))))
             op_list.append(OpExpr('pysdql_merge_on_by_concatexpr', result))
         else:
-            result = VarExpr(name, IterStmt(ie_list, DictExpr({concat(ik_list): iv_str})))
+            result = VarExpr(name, IterStmt(ie_list, DictEl({concat(ik_list): iv_str})))
             op_list.append(OpExpr('pysdql_merge_by_concatexpr', result))
 
     return relation(name=name,
@@ -111,7 +111,7 @@ def concat_cols(keys: list, cols: list):
         for c in cols_dict[k]:
             tmp_dict[f'{c}'] = f'{k}.{c}'
 
-    return RecExpr(tmp_dict)
+    return RecEl(tmp_dict)
 
 
 def month(date: str, m: int):

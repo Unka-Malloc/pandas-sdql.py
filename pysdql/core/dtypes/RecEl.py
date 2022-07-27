@@ -1,4 +1,4 @@
-class RecExpr:
+class RecEl:
     def __init__(self, kv_pair: dict):
         self.data = kv_pair
 

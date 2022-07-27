@@ -32,6 +32,12 @@ class IterEl:
     def __repr__(self):
         return self.expr
 
+    def rename(self, data):
+        if type(data) == str:
+            self.name = data
+        if type(data) == tuple:
+            self.kv_pair = data
+
     def dup(self, other) -> bool:
         """
         Detect Duplication Between Iteration Elements

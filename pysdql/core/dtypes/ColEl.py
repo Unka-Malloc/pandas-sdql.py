@@ -1,13 +1,14 @@
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
-from pysdql.core.dtypes.RecordExpr import RecExpr
-from pysdql.core.dtypes.DictExpr import DictExpr
+from pysdql.core.dtypes.RecEl import RecEl
+from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.IsinExpr import IsinExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
+
 
 class ColEl:
     def __init__(self, relation, col_name: str, promoted=None):
@@ -20,6 +21,7 @@ class ColEl:
         self.name = col_name
         self.promoted = promoted
         self.follow_promotion = None
+        self.data_type = ''
 
     @property
     def year(self):
@@ -28,11 +30,13 @@ class ColEl:
 
     @property
     def month(self):
-        return
+        return ExternalExpr(col=self,
+                            ext_func='Month')
 
     @property
     def day(self):
-        return
+        return ExternalExpr(col=self,
+                            ext_func='Day')
 
     def new_expr(self, new_str) -> str:
         return f'{new_str}.{self.name}'
@@ -190,6 +194,22 @@ class ColEl:
 
     @property
     def str(self):
+        self.data_type = 'str'
+        return self
+
+    @property
+    def date(self):
+        self.data_type = 'date  '
+        return self
+
+    @property
+    def int(self):
+        self.data_type = 'int'
+        return self
+
+    @property
+    def real(self):
+        self.data_type = 'real'
         return self
 
     def startswith(self, pattern: str):
@@ -227,4 +247,3 @@ class ColEl:
     def promote(self, func):
         self.follow_promotion = f'promote[{func}]'
         return self
-
