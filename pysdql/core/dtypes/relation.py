@@ -21,6 +21,7 @@ from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.GroupbyExpr import GroupbyExpr
 from pysdql.core.dtypes.LoadExpr import LoadExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.JoinExpr import JoinExpr
 
 
 class relation:
@@ -300,7 +301,7 @@ class relation:
             tmp_rec = RecEl({main_col.name: f'{self.iter_expr.key}.{main_col.name}'})
             step2 = VarExpr(next_name,
                             IterStmt(self.iter_expr,
-                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '>', 0),
+                                     CondStmt(CondExpr(f'{exists_name}({tmp_rec})', '!=', 0),
                                               DictEl({self.iter_expr.key: 1}), DictEl({})))
                             )
             self.history_name.append(next_name)
@@ -675,7 +676,7 @@ class relation:
         else:
             result = VarExpr(merged_name, IterStmt([self.iter_expr, right.iter_expr],
                                                    DictEl({f'concat({self.iter_expr.key}, {right.iter_expr.key})':
-                                                                 f'{self.iter_expr.val} * {right.iter_expr.val}'})))
+                                                               f'{self.iter_expr.val} * {right.iter_expr.val}'})))
             self.history_name.append(merged_name)
             self.operations.append(OpExpr('pysdql_merge_by_concatexpr', result))
             new_cols = self.cols + right.cols
@@ -715,7 +716,7 @@ class relation:
         new_name = self.gen_merged_name()
         result = VarExpr(new_name, IterStmt([self.iter_expr, part_iter],
                                             DictEl({f'concat({self.iter_expr.key}, {part_key})':
-                                                          f'{self.iter_expr.val} * {part_val}'})))
+                                                        f'{self.iter_expr.val} * {part_val}'})))
         self.history_name.append(new_name)
         self.operations.append(OpExpr('relation_optimized_merge_result', result))
         '''
@@ -809,6 +810,6 @@ class relation:
                         inherit_from=self)
 
     def join(self, right, how, left_on, right_on):
-        print(self.name, right.name)
-        print(self.cols, right.cols)
-
+        return JoinExpr(left=self, right=right,
+                        how=how,
+                        left_key=left_on, right_key=right_on)

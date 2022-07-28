@@ -42,7 +42,30 @@ class ColEl:
         return f'{new_str}.{self.name}'
 
     @property
+    def from_1Dtuple(self):
+        from pysdql.core.dtypes.relation import relation
+        if type(self.relation) == relation:
+            return True
+        else:
+            return False
+
+    @property
+    def from_LRtuple(self):
+        from pysdql.core.dtypes.JoinExpr import JoinExpr
+        if type(self.relation) == JoinExpr:
+            return True
+        else:
+            return False
+
+    @property
     def expr(self):
+        if self.from_LRtuple:
+            if self.name in self.relation.left.cols:
+                return f'{self.relation.key}.left.{self.name}'
+            if self.name in self.relation.right.cols:
+                return f'{self.relation.key}.right.{self.name}'
+            else:
+                raise ValueError()
         if self.follow_promotion:
             return f'{self.follow_promotion}({self.relation.key}.{self.name})'
         return f'{self.relation.key}.{self.name}'
@@ -51,7 +74,7 @@ class ColEl:
         return self.expr
 
     def __hash__(self):
-        return hash((self.relation.iter_expr.key, self.name))
+        return hash((self.relation.key, self.name))
 
     def __lt__(self, other) -> CondExpr:
         """
