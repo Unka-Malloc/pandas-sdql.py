@@ -28,11 +28,15 @@ if __name__ == '__main__':
 
     sub_o = orders[~orders['o_comment'].contains_in_order(var1, var2)].rename('sub_o')
 
-    # LEFT OUTER JOIN ?
+    # LEFT OUTER JOIN
     r = customer.join(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
 
-    # c_orders = r.groupby(['c_custkey']).agg(c_count=(r['o_orderkey'], 'count')).rename('c_orders')
+    r = r.groupby(['c_custkey']).agg(c_count=(r['o_orderkey'], 'count'))
 
-    # s = c_orders.groupby(['c_count']).agg(custdist=('*', 'count'))
+    c_orders = r.rename('c_orders')
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-13').run(sub_o, block=False).export().to()
+    s = c_orders.groupby(['c_count']).agg(custdist=('*', 'count'))
+
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-13').run(s, block=False).export().to()
+
+    # run interpret progs/tpch/q13_unfused.sdql

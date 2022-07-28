@@ -2,6 +2,7 @@ import string
 
 from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.ColEl import ColEl
+from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.HavEl import HavUnit
@@ -39,12 +40,28 @@ class GroupbyExpr:
         # let tmpa = sum (<l_k, l_v> in lmp) { < l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus > -> { l_k -> l_v } }
         self.groupby_nested_dict = self.get_nested_dict()
         # let tmp = sum (<ta_k, ta_v> in tmpa) { < l_returnflag=ta_k.l_returnflag, l_linestatus=ta_k.l_linestatus, group=ta_v > }
-        self.groupby_result = self.get_grouped_dict()
+        self.groupby_grouped_dict = self.get_grouped_dict()
 
         # let tmpb = sum (<t_k, t_v> in tmp) sum (<g_k, g_v> in t_k.group) { < l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus > -> < sum_qty=g_k.l_quantity * g_v, sum_base_price=g_k.l_extendedprice * g_v, sum_disc_price=(g_k.l_extendedprice * (1 - g_k.l_discount)) * g_v, sum_charge=((g_k.l_extendedprice * (1 - g_k.l_discount)) * (1 + g_k.l_tax)) * g_v, avg_qty_sum=g_k.l_quantity * g_v, avg_qty_count=g_v, avg_price_sum=g_k.l_extendedprice * g_v, avg_price_count=g_v, avg_disc_sum=g_k.l_discount * g_v, avg_disc_count=g_v, count_order=g_v > }
         self.groupby_aggr_parse_nested_dict = None
         # let agg_r = sum (<tb_k, tb_v> in tmpb) { < l_returnflag=tb_k.l_returnflag, l_linestatus=tb_k.l_linestatus, sum_qty=tb_v.sum_qty, sum_base_price=tb_v.sum_base_price, sum_disc_price=tb_v.sum_disc_price, sum_charge=tb_v.sum_charge, avg_qty=(tb_v.avg_qty_sum / tb_v.avg_qty_count), avg_price=(tb_v.avg_price_sum / tb_v.avg_price_count), avg_disc=(tb_v.avg_disc_sum / tb_v.avg_disc_count), count_order=tb_v.count_order > } in
         self.groupby_aggr_result = None
+
+    @property
+    def group_from_1Dtuple(self):
+        from pysdql.core.dtypes.relation import relation
+        if type(self.groupby_from) == relation:
+            return True
+        else:
+            return False
+
+    @property
+    def group_from_LRtuple(self):
+        from pysdql.core.dtypes.JoinExpr import JoinExpr
+        if type(self.groupby_from) == JoinExpr:
+            return True
+        else:
+            return False
 
     def cols_in_rec(self, key=None) -> dict:
         if key is None:
@@ -68,6 +85,8 @@ class GroupbyExpr:
                 return tmp_name
 
     def get_nested_dict(self):
+        if self.group_from_LRtuple:
+            return None
         # let tmp = sum (<l_k, l_v> in lineitem) { <l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus> -> {l_k -> l_v} } in
         tmp_dict = {}
         for c in self.groupby_cols:
@@ -85,6 +104,8 @@ class GroupbyExpr:
         return nested_dict
 
     def get_grouped_dict(self):
+        if self.group_from_LRtuple:
+            return None
         #  sum(<t_k, t_v> in tmp) { <l_returnflag=t_k.l_returnflag, l_linestatus=t_k.l_linestatus, group=t_v> }
         tmp_dict = {}
         for c in self.groupby_cols:
@@ -99,25 +120,81 @@ class GroupbyExpr:
 
         return result
 
-    def aggr(self, aggr_func=None, *aggr_args, **aggr_kwargs):
-        """
-        Aggregation
-        :param aggr_func:
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        if aggr_func:
-            if type(aggr_func) == str:
-                return self.aggregate_str_parse(aggr_func)
-            if type(aggr_func) == dict:
-                return self.aggregate_dict_parse(aggr_func)
-        if aggr_args:
+    def aggLR(self, agg_func=None, agg_args=None, agg_kwargs=None):
+        #     print(self.operations)
+        #     print(self.groupby_from.iter_expr)
+        #     print(agg_func, agg_args, agg_kwargs)
+        if agg_func:
+            if type(agg_func) == str:
+                return self.LR_agg_str_parse(agg_func)
+            if type(agg_func) == dict:
+                return self.LR_agg_dict_parse(agg_func)
+        if agg_args:
             pass
-        if aggr_kwargs:
-            return self.aggregate_kwargs_parse(aggr_kwargs)
+        if agg_kwargs:
+            return self.LR_agg_kwargs_parse(agg_kwargs)
+
+    def LR_agg_str_parse(self, agg_func):
+        pass
+
+    def LR_agg_dict_parse(self, agg_dict):
+        pass
+
+    def LR_agg_kwargs_parse(self, agg_dict):
+        # print(self.operations)
+        # print(self.iter_for_agg)
+        # print(self.groupby_cols)
+        # print(agg_dict)
+
+        agg_tuple_name = self.gen_tmp_name()
+        agg_tuple_iter_expr = IterExpr(agg_tuple_name)
+
+        case_then_dict = {}
+        case_else_dict = {}
+        result_dict = {}
+        tmp_var_list = []
+
+        for c in self.groupby_cols:
+            result_dict[c] = f'{agg_tuple_iter_expr.key}.{c}'
+
+        for agg_key in agg_dict:
+            agg_val = agg_dict[agg_key]
+            agg_col = agg_val[0]
+            agg_flag = agg_val[1]
+            if agg_flag == 'count':
+                # self.iter_for_agg.val
+                tmp_var_list.append(
+                    str(VarExpr(f'eir_{agg_col.name}', CondStmt(CondExpr(self.groupby_from.right_field, '!=', RecEl({})), 1, 0))))
+                # agg_tuple_dict[agg_key] = f'eir_{agg_col.name}'
+                case_then_dict[agg_key] = f'promote[nullable[int]]({self.iter_for_agg.val})'
+                case_else_dict[agg_key] = f'promote[nullable[int]](0)'
+                result_dict[agg_key] = f'promote[int]({agg_tuple_iter_expr.val}.{agg_key})'
+        # tmp_vars=' '.join(tmp_var_list)
+
+        small_cond = CondStmt(CondExpr(self.groupby_from.right_field, '!=', RecEl({})),
+                              DictEl({RecEl(self.cols_in_rec(self.groupby_from.left_field)): RecEl(case_then_dict)}),
+                              DictEl({RecEl(self.cols_in_rec(self.groupby_from.left_field)): RecEl(case_else_dict)}))
+        nested_agg_tuple = VarExpr(agg_tuple_name, IterStmt(self.iter_for_agg, small_cond))
+
+        self.history_name.append(agg_tuple_name)
+        self.operations.append(OpExpr('', nested_agg_tuple))
+
+        next_name = self.gen_tmp_name()
+
+        result = VarExpr(next_name, IterStmt(agg_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
+        self.history_name.append(next_name)
+        self.operations.append(OpExpr('', result))
+
+        from pysdql import relation
+        output_cols = list(agg_dict.keys())
+        return relation(name=next_name,
+                        cols=output_cols,
+                        inherit_from=self)
+
 
     def agg(self, agg_func=None, *agg_args, **agg_kwargs):
+        if self.group_from_LRtuple:
+            return self.aggLR(agg_func, agg_args, agg_kwargs)
         if agg_func:
             if type(agg_func) == str:
                 return self.optimized_agg_str_parse(agg_func)
@@ -131,11 +208,11 @@ class GroupbyExpr:
     def optimized_agg_str_parse(self, agg_str):
         pass
 
-    def optimized_agg_dict_parse(self, agg_func):
+    def optimized_agg_dict_parse(self, agg_dict):
         pass
 
     def optimized_agg_kwargs_parse(self, agg_dict):
-        if self.groupby_result:
+        if self.groupby_grouped_dict:
             self.operations.pop()
             self.history_name.pop()
         if self.groupby_nested_dict:
@@ -171,6 +248,8 @@ class GroupbyExpr:
                     aggr_calc = agg_dict[aggr_key][0].new_expr(f'{self.iter_for_agg.key}')
                 else:
                     aggr_calc = agg_dict[aggr_key][0]
+                if self.group_from_LRtuple:
+                    aggr_calc = agg_dict[aggr_key][0]
                 aggr_flag = agg_dict[aggr_key][1]
                 if aggr_flag == 'sum':
                     aggr_tuple_dict[aggr_key] = f'{aggr_calc} * {self.iter_for_agg.val}'
@@ -192,11 +271,12 @@ class GroupbyExpr:
                     result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
                 if aggr_flag == 'max':
                     pass
+
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt(self.iter_for_agg,
                                                   DictEl(
-                                                       {RecEl(self.cols_in_rec(self.iter_for_agg.key)):
-                                                            RecEl(aggr_tuple_dict)})
+                                                      {RecEl(self.cols_in_rec(self.iter_for_agg.key)):
+                                                           RecEl(aggr_tuple_dict)})
                                                   )
                                     )
 
@@ -279,8 +359,8 @@ class GroupbyExpr:
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt([self.iter_expr, aggr_tmp_iter_expr],
                                                   DictEl(
-                                                       {RecEl(self.cols_in_rec()):
-                                                            RecEl(tmp_dict)})
+                                                      {RecEl(self.cols_in_rec()):
+                                                           RecEl(tmp_dict)})
                                                   )
                                     )
 
@@ -350,8 +430,8 @@ class GroupbyExpr:
         parse_nested_dict = VarExpr(name=aggr_tuple_name,
                                     data=IterStmt([self.iter_expr, aggr_tmp_iter_expr],
                                                   DictEl(
-                                                       {RecEl(self.cols_in_rec()):
-                                                            RecEl(aggr_tuple_dict)})
+                                                      {RecEl(self.cols_in_rec()):
+                                                           RecEl(aggr_tuple_dict)})
                                                   )
                                     )
 

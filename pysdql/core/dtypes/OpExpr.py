@@ -50,6 +50,8 @@ class OpExpr:
                 'relation_selection_isin_invert': 40,
                 'relation_drop_duplicates_1st': 41,
                 'relation_drop_duplicates_2nd': 42,
+                'joinexpr_get_left_joint_dict_right_group_dict': 43,
+                'joinexpr_get_left_joint_dict_left_group_dict': 44,
                 }
 
     @property
