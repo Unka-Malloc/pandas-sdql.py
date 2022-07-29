@@ -10,6 +10,23 @@ class ColExpr:
         self.unit2 = unit2
         self.inherit_from = inherit_from
 
+        self.isvar = self.init_var()
+
+    def init_var(self):
+        from pysdql.core.dtypes.ColEl import ColEl
+        if type(self.unit1) == ColEl or type(self.unit1) == ColExpr:
+            if self.unit1.isvar:
+                if type(self.unit2) == ColEl or type(self.unit1) == ColExpr:
+                    if self.unit2.isvar:
+                        return True
+                if type(self.unit2) in (int, float):
+                    return True
+        elif type(self.unit1) in (int, float):
+            if type(self.unit2) == ColEl or type(self.unit2) == ColExpr:
+                if self.unit2.isvar:
+                    return True
+        return False
+
     def new_expr(self, new_str) -> str:
         from pysdql.core.dtypes.ColEl import ColEl
         if type(self.unit1) == ColExpr or type(self.unit1) == ColEl:

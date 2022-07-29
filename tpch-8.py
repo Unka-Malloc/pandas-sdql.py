@@ -36,53 +36,81 @@ group by
 	o_year
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+import pandas as pd  # get answer in pandas
+import numpy as np  # for numpy.select(), must use together with pandas
+# import pysdql as pd  # get answer in pysdql
+# import pysdqlnp as np  # for pysdqlnp.select(), must use together with pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'MOROCCO'
     var2 = 'MIDDLE EAST'
     var3 = 'SMALL ANODIZED COPPER'
 
-    db_driver = pysdql.db_driver(db_path=r'T:/sdql', name='tpch-8')
-
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
-    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
-    region = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/region.tbl', header=pysdql.REGION_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
+    customer = pd.read_table(rf'{data_path}/customer.tbl', sep='|', index_col=False, header=None, names=pysdql.CUSTOMER_COLS)
+    region = pd.read_table(rf'{data_path}/region.tbl', sep='|', index_col=False, header=None, names=pysdql.REGION_COLS)
 
     n1_cols = ['n1_nationkey', 'n1_name', 'n1_regionkey', 'n1_comment']
     n2_cols = ['n2_nationkey', 'n2_name', 'n2_regionkey', 'n2_comment']
-    n1 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n1_cols, name='n1')
-    n2 = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=n2_cols, name='n2')
+    n1 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n1_cols)
+    n2 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n2_cols)
 
-    sub_r = region[(region['r_name'] == var2)].rename('sub_r')
-    sub_o = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] <= '1996-12-31')].rename('sub_o')
+    n1.columns.name = 'n1'
+    n2.columns.name = 'n2'
 
-    r1 = n1.merge(sub_r, on=n1['n1_regionkey'] == sub_r['r_regionkey']).rename('r1')
+    sub_r = region[(region['r_name'] == var2)]
+    sub_r.columns.name = 'sub_r'
 
-    r2 = part.merge(lineitem, on=part['p_partkey'] == lineitem['l_partkey'])
-    r2 = r2.merge(orders, on=r2['l_orderkey'] == orders['o_orderkey'])
-    r2 = r2.merge(customer, on=r2['o_custkey'] == customer['c_custkey']).rename('r2')
+    sub_o = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] <= '1996-12-31')]
+    sub_o.columns.name = 'sub_o'
 
-    r = r1.merge(r2, on=r1['n1_nationkey'] == r2['c_nationkey'])
-    r = r.merge(supplier, on=r['l_suppkey'] == supplier['s_suppkey'])
-    r = r.merge(n2, on=r['s_nationkey'] == n2['n2_nationkey'])
+    r1 = n1.merge(sub_r, left_on='n1_regionkey', right_on='r_regionkey')
+    r1.columns.name = 'r1'
 
-    r[['o_year', 'volume', 'nation']] = [r['o_orderdate'].year,
-                                         r['l_extendedprice'] * (1 - r['l_discount']),
-                                         r['n2_name']]
+    r2 = part.merge(lineitem, left_on='p_partkey', right_on='l_partkey')
+    r2 = r2.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+    r2 = r2.merge(customer, left_on='o_custkey', right_on='c_custkey')
 
-    all_nations = r[['o_year', 'volume', 'nation']].rename('all_nations')
+    r2.columns.name = 'r2'
 
-    all_nations['value1'] = all_nations.case(all_nations['nation'] == var1, all_nations['volume'], 0)
+    r = r1.merge(r2, left_on='n1_nationkey', right_on='c_nationkey')
+    r = r.merge(supplier, left_on='l_suppkey', right_on='s_suppkey')
+    r = r.merge(n2, left_on='s_nationkey', right_on='n2_nationkey')
 
-    s = all_nations.groupby(['o_year']).aggregate(value2=(all_nations['value1'], 'sum'),
-                                                  value3=(all_nations['volume'], 'sum'))
+    r['o_year'] = pd.DatetimeIndex(r['o_orderdate']).year
+    r['volume'] = r['l_extendedprice'] * (1 - r['l_discount'])
+    r['nation'] = r['n2_name']
+
+    all_nations = r[['o_year', 'volume', 'nation']]
+
+    all_nations.columns.name = 'all_nations'
+
+    all_nations['value1'] = np.select(
+        [
+            all_nations['nation'] == var1
+        ],
+        [
+            all_nations['volume']
+        ], default=0)
+
+    s = all_nations.groupby(['o_year'], as_index=False).agg(value2=('value1', 'sum'),
+                                                            value3=('volume', 'sum'))
     s['mkt_share'] = s['value2'] / s['value3']
 
     s = s[['o_year', 'mkt_share']]
 
-    # 1M - 266s
+    print(s)
 
-    db_driver.run(s).export().to()
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-8').run(s).export().to()

@@ -7,12 +7,14 @@ from pysdql.core.dtypes.api import (
 
     RecEl,
     DictEl,
+    CondExpr,
     CondStmt,
     IterStmt,
     VarExpr,
     OpExpr,
 
     ConcatExpr,
+    CaseExpr,
 
     sdict,
     srecord
@@ -22,6 +24,7 @@ from pysdql.core.util.api import (
     read_tbl,
     tune_tbl,
     load_tbl,
+    read_table,
 
     # data_parser
     get_tbl_type,

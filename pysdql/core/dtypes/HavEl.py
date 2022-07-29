@@ -61,7 +61,7 @@ class HavUnit:
         self.groupby_expr.history_name.append(result_name)
         self.groupby_expr.operations.append(OpExpr('havexpr_hvr', hvr))
 
-        r_name = self.groupby_expr.groupby_from.name
+        r_name = self.groupby_expr.groupby_from.ori_name
         r_iter_expr = self.groupby_expr.groupby_from.iter_expr
         r_key = r_iter_expr.key
         r_val = r_iter_expr.val

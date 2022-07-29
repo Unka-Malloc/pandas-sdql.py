@@ -28,7 +28,7 @@ class JoinExpr:
         # jdict = relation(name=next_name, inherit_from=left).inherit(right)
         # self.next_relation = jdict
 
-        self.name = f'{how}_join_{left.name[0]}_{right.name[0]}'
+        self.name = f'{how}_join_{left.ori_name[0]}_{right.ori_name[0]}'
         self.iter_expr = IterExpr(self.name)
         self.history_name = self.left.history_name + self.right.history_name
         self.operations = self.right.operations + self.left.operations
@@ -58,7 +58,7 @@ class JoinExpr:
                 return tmp_name
 
     def get_left_joint_dict(self):
-        right_group_name = f'{self.right.name}_right_group'
+        right_group_name = f'{self.right.ori_name}_right_group'
         right_group_iter_expr = IterExpr(right_group_name)
         if self.more_cond:
             right_group_dict = None
@@ -75,8 +75,8 @@ class JoinExpr:
         # left_group_name = f'{self.left.name}_left_group'
         left_group_name = self.name
         right_group_nested_dict = f'{right_group_name}(<{self.right_key}={self.left.iter_expr.key}.{self.left_key}>)'
-        right_group_nested_dict_key = f'rgnd_{self.right.name[0]}_k'
-        right_group_nested_dict_val = f'rgnd_{self.right.name[0]}_v'
+        right_group_nested_dict_key = f'rgnd_{self.right.ori_name[0]}_k'
+        right_group_nested_dict_val = f'rgnd_{self.right.ori_name[0]}_v'
         right_group_nested_dict_iter_expr = f'sum(<{right_group_nested_dict_key}, {right_group_nested_dict_val}> in {right_group_nested_dict})'
 
         if self.more_cond:
@@ -109,7 +109,7 @@ class JoinExpr:
     def get_cross_joint_dict(self):
         return self
 
-    def groupby(self, cols):
+    def groupby(self, cols, as_index=False):
         if type(cols) != list:
             raise TypeError()
 

@@ -52,6 +52,7 @@ class OpExpr:
                 'relation_drop_duplicates_2nd': 42,
                 'joinexpr_get_left_joint_dict_right_group_dict': 43,
                 'joinexpr_get_left_joint_dict_left_group_dict': 44,
+                'colel_sum': 45,
                 }
 
     @property

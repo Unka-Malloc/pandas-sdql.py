@@ -30,53 +30,57 @@ group by
 	o_year
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'cornflower'
 
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
-    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
-    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
+    partsupp = pd.read_table(rf'{data_path}/partsupp.tbl', sep='|', index_col=False, header=None, names=pysdql.PARTSUPP_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
+    nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
     # part_p
-    sub_p = part[part['p_name'].str.startswith(var1)].rename('sub_p')
+    sub_p = part[part['p_name'].str.startswith(var1)]
+    sub_p.columns.name = 'sub_p'
 
-    # 1M - hash join - 385s
-    # hash join (part, partsupp)
-    r1 = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey']).rename('r1')
-    # hash join (supplier, nation)
-    r2 = supplier.merge(nation, on=(supplier['s_nationkey'] == nation['n_nationkey']))
-    # hash join ((supplier, nation), (part, partsupp))
-    r2 = r2.merge(r1, on=r2['s_suppkey'] == r1['ps_suppkey']).rename('r2')
-    # hash join ((supplier, nation, part, partsupp), lineitem)
-    r = r2.merge(lineitem, on=(r2['s_suppkey'] == lineitem['l_suppkey']) & (r2['ps_suppkey'] == lineitem['l_suppkey']))
-    # hash join ((supplier, nation, part, partsupp, lineitem), orders)
-    r = r.merge(orders, on=r['l_orderkey'] == orders['o_orderkey']).rename('r')
+    # optimized hash join (part, partsupp)
+    r1 = sub_p.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
+    r1.columns.name = 'r1'
+    # optimized hash join (supplier, nation)
+    r2 = supplier.merge(nation, left_on='s_nationkey', right_on='n_nationkey')
+    # optimized hash join ((supplier, nation), (part, partsupp))
+    r2 = r2.merge(r1, left_on='s_suppkey', right_on='ps_suppkey')
+    r2.columns.name = 'r2'
+    # optimized hash join ((supplier, nation, part, partsupp), lineitem)
+    r = r2.merge(lineitem, how='inner', left_on=['s_suppkey', 'ps_suppkey'], right_on=['l_suppkey', 'l_suppkey'])
+    # optimized hash join ((supplier, nation, part, partsupp, lineitem), orders)
+    r = r.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
 
-    # # 1M - optimized -384s
-    # # optimized hash join (part, partsupp)
-    # r1 = sub_p.merge(partsupp, left_on='p_partkey', right_on='ps_partkey').rename('r1')
-    # # optimized hash join (supplier, nation)
-    # r2 = supplier.merge(nation, left_on='s_nationkey', right_on='n_nationkey')
-    # # optimized hash join ((supplier, nation), (part, partsupp))
-    # r2 = r2.merge(r1, left_on='s_suppkey', right_on='ps_suppkey').rename('r2')
-    # # optimized hash join ((supplier, nation, part, partsupp), lineitem)
-    # r = r2.merge(lineitem, on=(r2['s_suppkey'] == lineitem['l_suppkey']) & (r2['ps_suppkey'] == lineitem['l_suppkey']))
-    # # optimized hash join ((supplier, nation, part, partsupp, lineitem), orders)
-    # r = r.merge(orders, left_on='l_orderkey', right_on='o_orderkey').rename('r')
+    r['nation'] = r['n_name']
+    r['o_year'] = pd.DatetimeIndex(r['o_orderdate']).year
+    r['amount'] = r['l_extendedprice'] * (1 - r['l_discount']) - r['ps_supplycost'] * r['l_quantity']
 
-    r[['nation', 'o_year', 'amount']] = [r['n_name'],
-                                         r['o_orderdate'].year,
-                                         r['l_extendedprice'] * (1 - r['l_discount']) - r['ps_supplycost'] * r['l_quantity']]
+    profit = r[['nation', 'o_year', 'amount']]
+    profit.columns.name = 'profit'
 
-    profit = r[['nation', 'o_year', 'amount']].rename('profit')
+    s = profit.groupby(['nation', 'o_year'], as_index=False).agg(sum_profit=('amount', 'sum'))
 
-    s = profit.groupby(['nation', 'o_year']).agg(sum_profit=(profit['amount'], 'sum'))
+    print(s)
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-9').run(s).export().to()
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-9').run(s).export().to()
 
 
 

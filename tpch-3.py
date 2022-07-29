@@ -24,29 +24,50 @@ order by
 """
 import pysdql
 
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
+
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'BUILDING'
     var2 = '1995-03-22'
 
-    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
+    customer = pd.read_table(rf'{data_path}/customer.tbl', sep='|', index_col=False, header=None, names=pysdql.CUSTOMER_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
 
-    sub_c = customer[customer['c_mktsegment'] == var1].rename('sub_c')
-    sub_o = orders[orders['o_orderdate'] < var2].rename('sub_o')
-    sub_l = lineitem[lineitem['l_shipdate'] > var2].rename('sub_l')
+    sub_c = customer[customer['c_mktsegment'] == var1]
+    sub_c.columns.name = 'sub_c'
+
+    sub_o = orders[orders['o_orderdate'] < var2]
+    sub_o.columns.name = 'sub_o'
+
+    sub_l = lineitem[lineitem['l_shipdate'] > var2]
+    sub_l.columns.name = 'sub_l'
 
     # 1M - 43s (without sub-table)
     # 1M - 28s (with sub-table)
-    # r = sub_c.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
-    # r = r.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
+    r = sub_c.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
+    r = r.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
 
     # 1M - 73s (without sub-table)
     # 1M - 24s (with sub-table)
-    r = sub_c.merge(sub_o, on=(sub_c['c_custkey'] == sub_o['o_custkey']))
-    r = r.merge(sub_l, on=(r['o_orderkey'] == sub_l['l_orderkey']))
+    # r = sub_c.merge(sub_o, on=(sub_c['c_custkey'] == sub_o['o_custkey']))
+    # r = r.merge(sub_l, on=(r['o_orderkey'] == sub_l['l_orderkey']))
 
-    r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority']) \
-        .agg(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r['value'] = r['l_extendedprice'] * (1 - r['l_discount'])
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-3').run(r).export().to()
+    r = r.groupby(['l_orderkey', 'o_orderdate', 'o_shippriority'], as_index=False) \
+        .agg(revenue=('value', 'sum'))
+
+    print(r)
+
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-3').run(r).export().to()

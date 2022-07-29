@@ -58,13 +58,15 @@ class ExternalExpr:
                 return f'!({tmp_str})'
             else:
                 return tmp_str
+        if self.func == 'StrIndexOf':
+            return f'ext(`StrIndexOf`, {self.col.new_expr(new_str)}, "{self.args[0]}", {self.args[1]})'
 
     @property
     def expr(self):
         if self.func == 'Year':
             return f'ext(`Year`, {self.col})'
         if self.func == 'StrStartsWith':
-            return f'ext(`StrStartsWith`, {self.col}, "{self.args}")'
+            return f'ext(`StrStartsWith`, {self.col.relation.iter_expr.key}.{self.col.name}, "{self.args}")'
         if self.func == 'StrEndsWith':
             return f'ext(`StrEndsWith`, {self.col}, "{self.args}")'
         if self.func == 'StrContains':

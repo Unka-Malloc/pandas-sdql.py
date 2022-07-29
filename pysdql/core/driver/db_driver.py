@@ -116,13 +116,18 @@ class db_driver:
         self.logger.info('========================================================')
         return output
 
-    def run(self, query, show=True, skip_banner=False, verbose=False, mute=False, block=False):
+    def run(self, query, show=False, skip_banner=False, verbose=False, mute=False, block=False):
+        if not os.path.exists(self.db_path):
+            return self
+
         t1 = time.time()
 
         if type(query) == relation or type(query) == GroupbyExpr:
             query = query.sdql_expr
         elif type(query) == str:
             query = query
+        else:
+            return self
 
         self.data = query
 
@@ -141,6 +146,9 @@ class db_driver:
         return self
 
     def export(self, file_name='', data=None):
+        if not self.data:
+            return self
+
         if file_name:
             file_name = file_name
         else:
@@ -168,6 +176,8 @@ class db_driver:
         return self
 
     def red(self, file_name=''):
+        if not self.output:
+            return
         if file_name:
             file_name = file_name
         else:

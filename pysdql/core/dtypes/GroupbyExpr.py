@@ -1,3 +1,4 @@
+import random
 import string
 
 from pysdql.core.dtypes.ColExpr import ColExpr
@@ -35,6 +36,7 @@ class GroupbyExpr:
         self.iter_expr = IterExpr(self.name)
         self.last_iter = self.groupby_from.iter_expr
         self.nested_dict_name = self.gen_tmp_name()
+        # print(self.nested_dict_name)
         self.nested_dict_iter_expr = IterExpr(self.nested_dict_name)
 
         # let tmpa = sum (<l_k, l_v> in lmp) { < l_returnflag=l_k.l_returnflag, l_linestatus=l_k.l_linestatus > -> { l_k -> l_v } }
@@ -80,9 +82,11 @@ class GroupbyExpr:
 
         dup_list = [self.name, self.groupby_from.name] + self.history_name + self.groupby_from.history_name + noname
 
-        for tmp_name in name_list:
-            if tmp_name not in dup_list:
-                return tmp_name
+        for the_name in name_list:
+            if the_name not in dup_list:
+                return the_name
+        else:
+            return f'tmp_{random.randint(0, 10000000)}'
 
     def get_nested_dict(self):
         if self.group_from_LRtuple:
@@ -160,11 +164,18 @@ class GroupbyExpr:
         for agg_key in agg_dict:
             agg_val = agg_dict[agg_key]
             agg_col = agg_val[0]
+            if type(agg_col) == ColEl:
+                agg_calc = agg_col.name
+            if type(agg_col) == str:
+                agg_calc = agg_col
+            else:
+                agg_calc = agg_col
             agg_flag = agg_val[1]
             if agg_flag == 'count':
                 # self.iter_for_agg.val
                 tmp_var_list.append(
-                    str(VarExpr(f'eir_{agg_col.name}', CondStmt(CondExpr(self.groupby_from.right_field, '!=', RecEl({})), 1, 0))))
+                    str(VarExpr(f'eir_{agg_calc}',
+                                CondStmt(CondExpr(self.groupby_from.right_field, '!=', RecEl({})), 1, 0))))
                 # agg_tuple_dict[agg_key] = f'eir_{agg_col.name}'
                 case_then_dict[agg_key] = f'promote[nullable[int]]({self.iter_for_agg.val})'
                 case_else_dict[agg_key] = f'promote[nullable[int]](0)'
@@ -190,7 +201,6 @@ class GroupbyExpr:
         return relation(name=next_name,
                         cols=output_cols,
                         inherit_from=self)
-
 
     def agg(self, agg_func=None, *agg_args, **agg_kwargs):
         if self.group_from_LRtuple:
@@ -248,6 +258,8 @@ class GroupbyExpr:
                     aggr_calc = agg_dict[aggr_key][0].new_expr(f'{self.iter_for_agg.key}')
                 else:
                     aggr_calc = agg_dict[aggr_key][0]
+                if type(agg_dict[aggr_key][0]) == str:
+                    aggr_calc = f'{self.iter_for_agg.key}.{agg_dict[aggr_key][0]}'
                 if self.group_from_LRtuple:
                     aggr_calc = agg_dict[aggr_key][0]
                 aggr_flag = agg_dict[aggr_key][1]
@@ -260,7 +272,7 @@ class GroupbyExpr:
                 if aggr_flag == 'count_distinct':
                     aggr_tuple_dict[aggr_key] = 1
                     result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
-                if aggr_flag == 'avg':
+                if aggr_flag == 'avg' or aggr_flag == 'mean':
                     aggr_tuple_dict[f'{aggr_key}_sum'] = f'{aggr_calc} * {self.iter_for_agg.val}'
                     aggr_tuple_dict[f'{aggr_key}_count'] = f'{self.iter_for_agg.val}'
                     result_dict[aggr_key] = f'({aggr_tuple_iter_expr.val}.{aggr_key}_sum ' \
@@ -268,7 +280,7 @@ class GroupbyExpr:
                 if aggr_flag == 'min':
                     promoted_cols[aggr_key] = 'promote[mnpr]'
                     aggr_tuple_dict[aggr_key] = f'promote[mnpr]({aggr_calc}) * promote[mnpr]({self.iter_for_agg.val})'
-                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                    result_dict[aggr_key] = f'promote[real]({aggr_tuple_iter_expr.val}.{aggr_key})'
                 if aggr_flag == 'max':
                     pass
 

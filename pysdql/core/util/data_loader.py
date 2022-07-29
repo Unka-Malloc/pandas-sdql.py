@@ -15,21 +15,21 @@ def load_tbl(file_path: str, col_names: list, col_types=None, name=None):
     return relation(name=name, data=LoadExpr(col_names, col_types, file_path), cols=col_names)
 
 
-def read_tbl(path: str, header: list, col_types=None, name=None, sep='|', by_load=True):
+def read_tbl(path: str, names: list, col_types=None, r_name=None, sep='|', by_load=True):
     if '.tbl' not in path:
         raise TypeError()
 
-    if name is None:
-        name = str(os.path.basename(path)).removesuffix('.tbl')
+    if r_name is None:
+        r_name = str(os.path.basename(path)).removesuffix('.tbl')
 
     if by_load:
         if col_types is None:
             from pysdql.core.util.data_parser import get_tbl_type
             col_types = get_tbl_type(path, sep)
         return load_tbl(file_path=path,
-                        col_names=header,
+                        col_names=names,
                         col_types=col_types,
-                        name=name)
+                        name=r_name)
 
     with open(path, 'r') as tbl:
         line = tbl.readline()
@@ -44,22 +44,69 @@ def read_tbl(path: str, header: list, col_types=None, name=None, sep='|', by_loa
             if line[-1] == '\n':
                 del line_list[-1]
 
-            if not len(header) == len(line_list):
+            if not len(names) == len(line_list):
                 raise ValueError(f'Incorrect number of columns: \n'
-                                 f'length of header = {len(header)} \n'
+                                 f'length of header = {len(names)} \n'
                                  f'length of data = {len(line_list)} \n'
                                  f'in line {count}: {line}')
 
             # create a dictionary
-            rec = srecord(dict(zip(header, line_list)))
+            rec = srecord(dict(zip(names, line_list)))
 
             # operation end
 
             line = tbl.readline()
         else:
-            return relation(name=name,
-                            data=sdict({rec: 1}, name),
-                            cols=header)
+            return relation(name=r_name,
+                            data=sdict({rec: 1}, r_name),
+                            cols=names)
+
+
+def read_table(path: str, names: list, col_types=None, r_name=None, sep='|', by_load=True, index_col=False, header=None):
+    if '.tbl' not in path:
+        raise TypeError()
+
+    if r_name is None:
+        r_name = str(os.path.basename(path)).removesuffix('.tbl')
+
+    if by_load:
+        if col_types is None:
+            from pysdql.core.util.data_parser import get_tbl_type
+            col_types = get_tbl_type(path, sep)
+        return load_tbl(file_path=path,
+                        col_names=names,
+                        col_types=col_types,
+                        name=r_name)
+
+    with open(path, 'r') as tbl:
+        line = tbl.readline()
+        count = 0
+        while line:
+            count += 1
+            # operation start
+
+            # remove '\n'
+            line_list = line.split(sep)
+
+            if line[-1] == '\n':
+                del line_list[-1]
+
+            if not len(names) == len(line_list):
+                raise ValueError(f'Incorrect number of columns: \n'
+                                 f'length of header = {len(names)} \n'
+                                 f'length of data = {len(line_list)} \n'
+                                 f'in line {count}: {line}')
+
+            # create a dictionary
+            rec = srecord(dict(zip(names, line_list)))
+
+            # operation end
+
+            line = tbl.readline()
+        else:
+            return relation(name=r_name,
+                            data=sdict({rec: 1}, r_name),
+                            cols=names)
 
 
 def tune_tbl(file_path, sep='|', name=None):
