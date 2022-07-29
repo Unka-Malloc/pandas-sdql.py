@@ -44,6 +44,8 @@ class ColEl:
 
     def new_expr(self, new_str) -> str:
         if self.isvar:
+            if self.promoted:
+                f'promote[real]({self.var_name})'
             return f'{self.var_name}'
         return f'{new_str}.{self.name}'
 
@@ -66,6 +68,8 @@ class ColEl:
     @property
     def expr(self):
         if self.isvar:
+            if self.promoted:
+                f'promote[real]({self.var_name})'
             return self.var_name
         if self.from_LRtuple:
             if self.name in self.relation.left.cols:
@@ -196,6 +200,7 @@ class ColEl:
         return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.relation)
 
     def isin(self, vals, ext=None):
+        # print(f'{self.expr} is in {vals}')
         if type(vals) == ColEl:
             return IsinExpr(self, vals)
 
@@ -271,6 +276,10 @@ class ColEl:
         # substring
         return ExternalExpr(self, 'SubString', (start, end))
 
+    def slice(self, start, end):
+        # substring
+        return ExternalExpr(self, 'SubString', (start, end))
+
     def find(self, pattern, start=0):
         return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
@@ -289,9 +298,35 @@ class ColEl:
 
     def sum(self):
         tmp_name = f'{self.name}_sum'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr, f'{self.relation.key}.{self.name}'))
+        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr, f'{self.relation.key}.{self.name} * {self.relation.val}'))
         self.relation.history_name.append(tmp_name)
         self.relation.operations.append(OpExpr('colel_sum', tmp_var))
+
+        self.isvar = True
+        self.var_name = tmp_name
+
+        return self
+
+    def max(self):
+        tmp_name = f'{self.name}_max'
+        tmp_iter = IterStmt(self.relation.iter_expr, f'promote[mxpr]({self.relation.key}.{self.name})')
+        tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
+        self.relation.history_name.append(tmp_name)
+        self.relation.operations.append(OpExpr('colel_max', tmp_var))
+
+        self.isvar = True
+        self.var_name = tmp_name
+
+        return self
+
+    def mean(self):
+        tmp_name = f'{self.name}_mean'
+        tmp_rec = RecEl({f'{self.name}_sum': f'{self.relation.key}.{self.name} * {self.relation.val}',
+                         f'{self.name}_count': f'{self.relation.val}'})
+        tuple_var = VarExpr(f'{self.name}_sumcount', IterStmt(self.relation.iter_expr, f'{tmp_rec}'))
+        tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.name}_sumcount.{self.name}_sum / {self.name}_sumcount.{self.name}_count')
+        self.relation.history_name.append(tmp_name)
+        self.relation.operations.append(OpExpr('colel_mean', tmp_var))
 
         self.isvar = True
         self.var_name = tmp_name

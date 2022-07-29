@@ -26,29 +26,48 @@ group by
 	p_size
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'Brand#21'
     var2 = 'SMALL ANODIZED'
     var3 = (48, 33, 18, 16, 8, 3, 10, 42)
 
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', names=pysdql.SUPPLIER_COLS)
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', names=pysdql.PART_COLS)
-    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', names=pysdql.PARTSUPP_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
+    partsupp = pd.read_table(rf'{data_path}/partsupp.tbl', sep='|', index_col=False, header=None, names=pysdql.PARTSUPP_COLS)
 
-    sub_s = supplier[supplier['s_comment'].contains_in_order('Customer', 'Complaints')].rename('sub_s')
+    supplier['var1_index'] = supplier['s_comment'].str.find('Customer')
+    supplier['var2_index'] = supplier['s_comment'].str.find('Complaints')
+
+    sub_s = supplier[(supplier['var1_index'] != -1) & (supplier['var2_index'] != -1)
+                     & (supplier['var1_index'] < supplier['var2_index'])]
+    sub_s.columns.name = 'sub_s'
 
     sub_p = part[(part['p_brand'] != var1)
-                 & (~part['p_type'].startswith(var2))
-                 & (part['p_size'].isin(var3))].rename('sub_p')
+                 & (~part['p_type'].str.startswith(var2))
+                 & (part['p_size'].isin(var3))]
+    sub_p.columns.name = 'sub_p'
 
-    r = sub_p.merge(partsupp, on=sub_p['p_partkey'] == partsupp['ps_partkey'])
+    r = sub_p.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
 
     r = r[~(r['ps_suppkey'].isin(sub_s['s_suppkey']))]
 
     r = r.drop_duplicates(['p_brand', 'p_type', 'p_size', 'ps_suppkey'])
 
     # COUNT DISTINCT
-    r = r.groupby(['p_brand', 'p_type', 'p_size']).agg(supplier_cnt=(r['ps_suppkey'], 'count_distinct'))
+    r = r.groupby(['p_brand', 'p_type', 'p_size'], as_index=False).agg(supplier_cnt=('ps_suppkey', 'count'))
 
-    pysdql.db_driver(db_path=r'T:/sdql').run(r).export().to()
+    print(r)
+
+    pysdql.db_driver(db_path=sdql_database_path).run(r).export().to()

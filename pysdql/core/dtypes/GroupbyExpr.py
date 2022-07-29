@@ -264,8 +264,10 @@ class GroupbyExpr:
                     aggr_calc = agg_dict[aggr_key][0]
                 aggr_flag = agg_dict[aggr_key][1]
                 if aggr_flag == 'sum':
-                    aggr_tuple_dict[aggr_key] = f'{aggr_calc} * {self.iter_for_agg.val}'
-                    result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                    # aggr_tuple_dict[aggr_key] = f'{aggr_calc} * {self.iter_for_agg.val}'
+                    # result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
+                    aggr_tuple_dict[aggr_key] = f'promote[nullable[real]]({aggr_calc} * {self.iter_for_agg.val})'
+                    result_dict[aggr_key] = f'promote[real]({aggr_tuple_iter_expr.val}.{aggr_key})'
                 if aggr_flag == 'count':
                     aggr_tuple_dict[aggr_key] = f'{self.iter_for_agg.val}'
                     result_dict[aggr_key] = f'{aggr_tuple_iter_expr.val}.{aggr_key}'
