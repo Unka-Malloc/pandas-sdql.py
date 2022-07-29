@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
@@ -23,6 +24,9 @@ class ColEl:
         self.follow_promotion = None
         self.data_type = ''
 
+        self.isvar = False
+        self.var_name = ''
+
     @property
     def year(self):
         return ExternalExpr(col=self,
@@ -39,6 +43,8 @@ class ColEl:
                             ext_func='Day')
 
     def new_expr(self, new_str) -> str:
+        if self.isvar:
+            return f'{self.var_name}'
         return f'{new_str}.{self.name}'
 
     @property
@@ -59,6 +65,8 @@ class ColEl:
 
     @property
     def expr(self):
+        if self.isvar:
+            return self.var_name
         if self.from_LRtuple:
             if self.name in self.relation.left.cols:
                 return f'{self.relation.key}.left.{self.name}'
@@ -216,13 +224,18 @@ class ColEl:
             return tmp_cond
 
     @property
+    def dt(self):
+        self.data_type = 'date'
+        return self
+
+    @property
     def str(self):
         self.data_type = 'str'
         return self
 
     @property
     def date(self):
-        self.data_type = 'date  '
+        self.data_type = 'date'
         return self
 
     @property
@@ -258,6 +271,9 @@ class ColEl:
         # substring
         return ExternalExpr(self, 'SubString', (start, end))
 
+    def find(self, pattern, start=0):
+        return ExternalExpr(self, 'StrIndexOf', (pattern, start))
+
     # def exists(self, on, *args):
     #     return ExistExpr(self, on, conds=args)
 
@@ -269,4 +285,15 @@ class ColEl:
 
     def promote(self, func):
         self.follow_promotion = f'promote[{func}]'
+        return self
+
+    def sum(self):
+        tmp_name = f'{self.name}_sum'
+        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr, f'{self.relation.key}.{self.name}'))
+        self.relation.history_name.append(tmp_name)
+        self.relation.operations.append(OpExpr('colel_sum', tmp_var))
+
+        self.isvar = True
+        self.var_name = tmp_name
+
         return self

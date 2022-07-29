@@ -26,27 +26,45 @@ group by
 		)
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'PERU'
     var2 = 0.0001
 
-    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
-    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
+    partsupp = pd.read_table(rf'{data_path}/partsupp.tbl', sep='|', index_col=False, header=None, names=pysdql.PARTSUPP_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
-    sub_n = nation[(nation['n_name'] == var1)].rename('sub_n')
+    sub_n = nation[(nation['n_name'] == var1)]
+    sub_n.columns.name = 'sub_n'
 
-    r1 = sub_n.merge(supplier, on=(sub_n['n_nationkey'] == supplier['s_nationkey'])).rename('r1')
+    r1 = sub_n.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+    r1.columns.name = 'r1'
 
-    r2 = r1.merge(partsupp, r1['s_suppkey'] == partsupp['ps_suppkey']).rename('r2')
+    r2 = r1.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
+    r2.columns.name = 'r2'
 
     agg_val = (r2['ps_supplycost'] * r2['ps_availqty'] * var2).sum()
 
     # GOURPBY HAVING
     r = r2.groupby(['ps_partkey']).filter(lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val)
 
+    r['value'] = r['ps_supplycost'] * r['ps_availqty']
+
     # SELECT GROUPBY AGGREGATION
-    r = r.groupby(['ps_partkey']).agg(value=(r['ps_supplycost'] * r['ps_availqty'], 'sum'))
+    r = r.groupby(['ps_partkey'], as_index=False).agg(value=('value', 'sum'))
+
+    print(r)
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-11').run(r).export().to()

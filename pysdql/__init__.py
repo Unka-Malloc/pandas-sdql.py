@@ -14,6 +14,7 @@ from pysdql.core.api import (
 
     # data_loader
     read_tbl,
+    read_table,
     tune_tbl,
     load_tbl,
 
@@ -124,3 +125,11 @@ def month(date: str, m: int):
         date_list[1] = f'{new_m}'
     print(f'{"-".join(date_list)}')
     return f'{"-".join(date_list)}'
+
+
+def set_option(*args):
+    return
+
+
+def DatetimeIndex(col):
+    return col

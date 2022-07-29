@@ -18,25 +18,39 @@ group by
 	c_count
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'special'
     var2 = 'requests'
 
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
-    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', header=pysdql.CUSTOMER_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
+    customer = pd.read_table(rf'{data_path}/customer.tbl', sep='|', index_col=False, header=None, names=pysdql.CUSTOMER_COLS)
 
-    sub_o = orders[~orders['o_comment'].contains_in_order(var1, var2)].rename('sub_o')
+    orders['var1_index'] = orders['o_comment'].str.find(var1)
+    orders['var2_index'] = orders['o_comment'].str.find(var2)
+
+    sub_o = orders[~((orders['var1_index'] != -1) & (orders['var2_index'] != -1) & (orders['var1_index'] < orders['var2_index']))]
+    sub_o.columns.name = 'sub_o'
 
     # LEFT OUTER JOIN
-    r = customer.join(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
+    r = customer.merge(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
 
-    r = r.groupby(['c_custkey']).agg(c_count=(r['o_orderkey'], 'count'))
+    c_orders = r.groupby(['c_custkey'], as_index=False).agg(c_count=('o_orderkey', 'count'))
+    c_orders.columns.name = 'c_orders'
 
-    c_orders = r.rename('c_orders')
+    s = c_orders.groupby(['c_count'], as_index=False).agg(custdist=('c_custkey', 'count'))
 
-    s = c_orders.groupby(['c_count']).agg(custdist=('*', 'count'))
+    print(s)
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-13').run(s, block=False).export().to()
-
-    # run interpret progs/tpch/q13_unfused.sdql
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-13').run(s).export().to()

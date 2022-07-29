@@ -19,22 +19,49 @@ where
 group by
 	o_orderpriority
 """
-from datetime import datetime, timedelta
-
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+# import numpy as np  # use numpy.select() must use together with pandas
+import pysdql as pd  # get answer in pysdql
+import pysdqlnp as np  # use pysdqlnp.select() must use together with pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = '1996-05-01'
     var2 = '1996-08-01'  # var1 + 3 month
 
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', header=pysdql.ORDERS_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None,names=pysdql.LINEITEM_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
 
-    sub_l = lineitem[(lineitem['l_commitdate'] < lineitem['l_receiptdate'])].rename('sub_l')
-    sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)].rename('sub_o')
+    sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)]
+    sub_o.columns.name = 'sub_o'
 
-    r = sub_o[sub_o['o_orderkey'].exists(sub_l['l_orderkey'])]
+    r = sub_o.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
 
-    r = r.groupby(['o_orderpriority']).agg(order_count=('*', 'count'))
+    r['exists'] = np.select(
+        [
+            (r['l_commitdate'] < r['l_receiptdate'])
+        ],
+        [
+            1
+        ],
+        default=0)
+
+    # r = sub_o[sub_o['o_orderkey'].exists(sub_l['l_orderkey'])]
+
+    r = r.groupby(['o_orderpriority', 'o_orderkey'], as_index=False).agg(exists=('exists', 'sum'))
+    r = r[r['exists'] > 0]
+
+    r = r.groupby(['o_orderpriority'], as_index=False).agg(order_count=('o_orderkey', 'count'))
+
+    print(r)
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-4').run(r).export().to()

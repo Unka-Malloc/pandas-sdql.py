@@ -40,39 +40,65 @@ where
 """
 import pysdql
 
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
+
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 14
     var2 = 'BRASS'
     var3 = 'EUROPE'
 
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', header=pysdql.PART_COLS)
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', header=pysdql.SUPPLIER_COLS)
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', header=pysdql.LINEITEM_COLS)
-    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', header=pysdql.PARTSUPP_COLS)
-    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', header=pysdql.NATION_COLS)
-    region = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/region.tbl', header=pysdql.REGION_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
+    partsupp = pd.read_table(rf'{data_path}/partsupp.tbl', sep='|', index_col=False, header=None, names=pysdql.PARTSUPP_COLS)
+    nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
+    region = pd.read_table(rf'{data_path}/region.tbl', sep='|', index_col=False, header=None, names=pysdql.REGION_COLS)
 
-    sub_r = region[region['r_name'] == var3].rename('sub_r')
+    sub_r = region[region['r_name'] == var3]
+    sub_r.columns.name = 'sub_r'
 
-    r1 = nation.merge(sub_r, on=nation['n_regionkey'] == sub_r['r_regionkey'])
-    r1 = r1.merge(supplier, on=r1['n_nationkey'] == supplier['s_nationkey'])
-    r1 = r1.merge(partsupp, on=r1['s_suppkey'] == partsupp['ps_suppkey'])
-    r1 = r1.groupby(['ps_partkey', 'ps_suppkey']).agg(min_partkey=r1['ps_partkey'],
-                                                      min_suppkey=r1['ps_suppkey'],
-                                                      min_supplycost=(r1['ps_supplycost'], 'min')).rename('r1')
+    r1 = partsupp.merge(supplier, left_on='ps_suppkey', right_on='s_suppkey')
+    r1 = r1.merge(nation, left_on='s_nationkey', right_on='n_nationkey')
+    r1 = r1.merge(sub_r, left_on='n_regionkey', right_on='r_regionkey')
+    r1 = r1.groupby(['ps_partkey', 'ps_suppkey'], as_index=False).agg(min_supplycost=('ps_supplycost', 'min'))
+
+    r1['min_partkey'] = r1['ps_partkey']
+    r1['min_suppkey'] = r1['ps_suppkey']
+
+    r1 = r1[['min_partkey', 'min_suppkey', 'min_supplycost']]
+
+    r1.columns.name = 'r1'
 
     sub_p = part[part['p_size'] == var1]
-    sub_p = sub_p[sub_p['p_type'].endswith(var2)].rename('sub_p')
+    sub_p = sub_p[sub_p['p_type'].str.endswith(var2)]
 
-    r2 = nation.merge(sub_r, on=nation['n_regionkey'] == sub_r['r_regionkey'])
-    r2 = r2.merge(supplier, on=r2['n_nationkey'] == supplier['s_nationkey'])
-    r2 = r2.merge(partsupp, on=r2['s_suppkey'] == partsupp['ps_suppkey'])
-    r2 = r2.merge(sub_p, on=r2['ps_partkey'] == sub_p['p_partkey'], name='r2')
+    sub_p.columns.name = 'sub_p'
 
-    r = r1.merge(r2, on=(r1['min_partkey'] == r2['ps_partkey'])
-                        & (r1['min_suppkey'] == r2['ps_suppkey'])
-                        & (r1['min_supplycost'] == r2['ps_supplycost']))
+    r2 = nation.merge(sub_r, left_on='n_regionkey', right_on='r_regionkey')
+    r2 = r2.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+    r2 = r2.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
+    r2 = r2.merge(sub_p, left_on='ps_partkey', right_on='p_partkey')
+
+    r2.columns.name = 'r2'
+
+    r = r1.merge(r2,
+                 left_on=['min_partkey', 'min_suppkey', 'min_supplycost'],
+                 right_on=['ps_partkey', 'ps_suppkey', 'ps_supplycost'])
+
+    r.columns.name = 'r'
 
     r = r[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-2').run(r)
+    print(r)
+
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-2').run(r).export().to()
