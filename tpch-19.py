@@ -36,8 +36,19 @@ where
 	)
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+import pandas as pd  # get answer in pandas
+# import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'Brand#54'
     var2 = 'Brand#22'
     var3 = 'Brand#33'
@@ -48,10 +59,10 @@ if __name__ == '__main__':
     var6 = 26
     var6_1 = var6 + 10
 
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', names=pysdql.LINEITEM_COLS)
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', names=pysdql.PART_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
 
-    r = lineitem.merge(part, on=(lineitem['l_partkey'] == part['p_partkey']))
+    r = lineitem.merge(part, left_on='l_partkey', right_on='p_partkey')
 
     r = r[((r['p_brand'] == var1)
            & (r['p_container'].isin(['SM CASE', 'SM BOX', 'SM PACK', 'SM PKG']))
@@ -76,6 +87,11 @@ if __name__ == '__main__':
              & (r['l_shipmode'].isin(['AIR', 'AIR REG']))
              & (r['l_shipinstruct'] == 'DELIVER IN PERSON'))]
 
-    r = r.agg(revenue=((r['l_extendedprice'] * (1 - r['l_discount'])), 'sum'))
+    r['tmp_val'] = r['l_extendedprice'] * (1 - r['l_discount'])
+    r['revenue'] = r['tmp_val'].sum()
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-19').run(r).export().to()
+    r = r[['revenue']].drop_duplicates()
+
+    print(r)
+
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-19').run(r).export().to()

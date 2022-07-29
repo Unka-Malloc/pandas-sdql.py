@@ -42,40 +42,58 @@ where
 	and n_name = ':3'
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = 'orange'
     var2 = '1995-01-01'
     var2_1 = '1996-01-01'  # var2 + 1 year
     var3 = 'UNITED STATES'
 
-    lineitem = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/lineitem.tbl', names=pysdql.LINEITEM_COLS)
-    part = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/part.tbl', names=pysdql.PART_COLS)
-    partsupp = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/partsupp.tbl', names=pysdql.PARTSUPP_COLS)
-    supplier = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/supplier.tbl', names=pysdql.SUPPLIER_COLS)
-    nation = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/nation.tbl', names=pysdql.NATION_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
+    part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
+    partsupp = pd.read_table(rf'{data_path}/partsupp.tbl', sep='|', index_col=False, header=None, names=pysdql.PARTSUPP_COLS)
+    supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
+    nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
-    sub_l = lineitem[(lineitem['l_shipdate'] >= var2) & (lineitem['l_shipdate'] < var2_1)].rename('sub_l')
-    agg_lineitem = sub_l.groupby(['l_partkey', 'l_suppkey']) \
-        .aggregate(agg_partkey=sub_l['l_partkey'],
-                   agg_suppkey=sub_l['l_suppkey'],
-                   agg_quantity=(0.5 * sub_l['l_quantity'], 'sum')) \
-        .rename('agg_lineitem')
+    sub_l = lineitem[(lineitem['l_shipdate'] >= var2) & (lineitem['l_shipdate'] < var2_1)]
+    sub_l.columns.name = 'sub_l'
 
-    r = partsupp.merge(agg_lineitem, on=(partsupp['ps_partkey'] == agg_lineitem['agg_partkey'])
-                                        & (partsupp['ps_suppkey'] == agg_lineitem['agg_suppkey'])
-                                        & (partsupp['ps_availqty'] > agg_lineitem['agg_quantity']))
+    agg_lineitem = sub_l.groupby(['l_partkey', 'l_suppkey'], as_index=False).agg(tmp_val=('l_quantity', 'sum'))
 
-    sub_p = part[part['p_name'].startswith(var1)].rename('sub_p')
+    agg_lineitem['agg_partkey'] = agg_lineitem['l_partkey']
+    agg_lineitem['agg_suppkey'] = agg_lineitem['l_suppkey']
+    agg_lineitem['agg_quantity'] = agg_lineitem['tmp_val'] * 0.5
+
+    agg_lineitem.columns.name = 'agg_lineitem'
+
+    r = partsupp.merge(agg_lineitem, left_on=['ps_partkey', 'ps_suppkey'], right_on=['agg_partkey', 'agg_suppkey'])
+    r = r[r['ps_availqty'] > r['agg_quantity']]
+
+    sub_p = part[part['p_name'].str.startswith(var1)]
+    sub_p.columns.name = 'sub_p'
 
     r = r[(r['ps_partkey'].isin(sub_p['p_partkey']))]
 
-    sub_n = nation[(nation['n_name'] == var3)].rename('sub_n')
+    sub_n = nation[(nation['n_name'] == var3)]
+    sub_n.columns.name = 'sub_n'
 
-    s = supplier.merge(sub_n, on=supplier['s_nationkey'] == sub_n['n_nationkey'])
+    s = supplier.merge(sub_n, left_on='s_nationkey', right_on='n_nationkey')
 
     s = s[(s['s_suppkey'].isin(r['ps_suppkey']))]
 
     s = s[['s_name', 's_address']]
+
+    print(s)
 
     pysdql.db_driver(db_path=r'T:/sdql', name='tpch-20').run(s).export().to()

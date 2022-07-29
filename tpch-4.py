@@ -54,9 +54,6 @@ if __name__ == '__main__':
             1
         ],
         default=0)
-
-    # r = sub_o[sub_o['o_orderkey'].exists(sub_l['l_orderkey'])]
-
     r = r.groupby(['o_orderpriority', 'o_orderkey'], as_index=False).agg(exists=('exists', 'sum'))
     r = r[r['exists'] > 0]
 

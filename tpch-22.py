@@ -36,28 +36,55 @@ group by
 	cntrycode
 """
 import pysdql
+# Try replace pysdql with pandas to get result in pandas!
+import pandas as pd  # get answer in pandas
+import numpy as np  # for numpy.select(), must use together with pandas
+# import pysdql as pd  # get answer in pysdql
+# import pysdqlnp as np  # for pysdqlnp.select(), must use together with pysdql
+
+# display all columns
+pd.set_option('display.max_columns', None)
+# display all rows
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
+    data_path = 'T:/UG4-Proj/datasets'
+    sdql_database_path = r'T:/sdql'
+
     var1 = ('16', '12', '18', '14', '30', '27', '25')
 
-    customer = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/customer.tbl', names=pysdql.CUSTOMER_COLS)
-    orders = pysdql.read_tbl(path=r'T:/UG4-Proj/datasets/orders.tbl', names=pysdql.ORDERS_COLS)
+    customer = pd.read_table(rf'{data_path}/customer.tbl', sep='|', index_col=False, header=None, names=pysdql.CUSTOMER_COLS)
+    orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
 
     sub_c = customer[(customer['c_acctbal'] > 0.00)
-                     & (customer['c_phone'].substring(0, 2).isin(var1))]
+                     & (customer['c_phone'].str.slice(0, 2).isin(var1))]
+    sub_c.columns.name = 'sub_c'
 
-    avg_acctbal = sub_c.agg({sub_c['c_acctbal']: 'avg'}).rename('avg_acctbal')
+    avg_acctbal = sub_c['c_acctbal'].mean()
 
-    r = customer[customer['c_phone'].substring(0, 2).isin(var1)]
+    r = customer[customer['c_phone'].str.slice(0, 2).isin(var1)]
+
     r = r[r['c_acctbal'] > avg_acctbal]
-    r = r[r['c_custkey'].not_exists(orders['o_custkey'])]
 
-    r['cntrycode'] = customer['c_phone'].substring(0, 2)
+    r = r.merge(orders, how='cross')
+    r['exists'] = np.select(
+        [
+            (r['o_custkey'] == r['c_custkey'])
+        ],
+        [
+            1
+        ],
+        default=0)
+    r = r.groupby(pysdql.CUSTOMER_COLS, as_index=False).agg(exists=('exists', 'sum'))
+    r = r[r['exists'] == 0]
 
-    r = r[['cntrycode', 'c_acctbal']]
+    r['cntrycode'] = r['c_phone'].str.slice(0, 2)
 
-    custsale = r.rename('custsale')
-    s = custsale.groupby(['cntrycode']).agg(numcust=('*', 'count'),
-                                                   totacctbal=(custsale['c_acctbal'], 'sum'))
+    custsale = r[['cntrycode', 'c_acctbal']]
+    custsale.columns.name = 'custsale'
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-22').run(s).export().to()
+    custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'), totacctbal=('c_acctbal', 'sum'))
+
+    print(custsale)
+
+    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-22').run(custsale).export().to()

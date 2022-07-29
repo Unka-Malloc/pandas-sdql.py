@@ -1,4 +1,5 @@
 import os
+import random
 import string
 
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
@@ -65,8 +66,6 @@ class relation:
         else:
             self.promoted_cols = promoted_cols
 
-        self.new_name = self.ori_name
-
     @property
     def columns(self):
         return self
@@ -77,6 +76,8 @@ class relation:
 
     @name.setter
     def name(self, val):
+        if type(val) != str:
+            raise TypeError('name should be string')
         self.rename(val)
 
     @property
@@ -111,15 +112,17 @@ class relation:
     def gen_tmp_name(self, noname=None):
         if noname is None:
             noname = []
-        name_list = [f'{str(self.name[0]).lower()}mp', 'tmp']
+        name_list = [f'{str(self.ori_name[0]).lower()}mp', 'tmp']
         for i in list(string.ascii_lowercase):
             name_list.append(f'tmp{i}')
 
-        dup_list = [self.name] + self.history_name + noname
+        dup_list = [self.ori_name] + self.history_name + noname
 
         for tmp_name in name_list:
             if tmp_name not in dup_list:
                 return tmp_name
+        else:
+            return f'tmp_{random.randint(0, 10000000)}'
 
     def selection(self, item: CondExpr):
         """let rmp = if (is_empty) then Rm0 else sum (<r0_k, r0_v> in Rm0) sum (<ps_k, ps_v> in part_s) if ((!((r0_k.ps_suppkey == ps_k.s_suppkey)))) then { r0_k -> 1 } else {  } """
@@ -161,30 +164,34 @@ class relation:
                         cols=self.cols,
                         inherit_from=self)
 
-    def drop_duplicates(self, cols):
-        return self.projection(cols)
-        # tmp_dict = {}
-        # for i in cols:
-        #     tmp_dict[i] = f'{self.iter_expr.key}.{i}'
-        #
-        # iter_expr_1st = IterStmt(iter_expr=self.iter_expr,
-        #                          any_expr=DictExpr({RecExpr(tmp_dict): f'promote[mnpr](1)'}))
-        #
-        # var_name_1 = self.gen_tmp_name()
-        #
-        # self.history_name.append(var_name_1)
-        # self.operations.append(OpExpr('relation_drop_duplicates_1st', VarExpr(var_name_1, iter_expr_1st)))
-        #
-        # iter_expr_2nd = IterStmt(iter_expr=self.iter_expr,
-        #                          any_expr=DictExpr({RecExpr(tmp_dict): 1}))
-        #
-        # var_name_2 = self.gen_tmp_name()
-        #
-        # self.operations.append(OpExpr('relation_drop_duplicates_2nd', VarExpr(var_name_2, iter_expr_2nd)))
-        #
-        # result = relation(name=var_name_2,
-        #                   inherit_from=self)
-        # return result
+    def drop_duplicates(self, cols=None):
+        if cols is None:
+            return self
+        var_name_1 = self.gen_tmp_name()
+        var_1_iter_expr = IterExpr(var_name_1)
+
+        tmp_dict = {}
+        tmp_dict_var_2 = {}
+        for i in cols:
+            tmp_dict[i] = f'{self.iter_expr.key}.{i}'
+            tmp_dict_var_2[i] = f'{var_1_iter_expr.key}.{i}'
+
+        iter_expr_1st = IterStmt(iter_expr=self.iter_expr,
+                                 any_expr=DictEl({RecEl(tmp_dict): DictEl({self.iter_expr.key: self.iter_expr.val})}))
+
+        self.history_name.append(var_name_1)
+        self.operations.append(OpExpr('relation_drop_duplicates_1st', VarExpr(var_name_1, iter_expr_1st)))
+
+        iter_expr_2nd = IterStmt(iter_expr=var_1_iter_expr,
+                                 any_expr=DictEl({RecEl(tmp_dict_var_2): 1}))
+
+        var_name_2 = self.gen_tmp_name()
+        self.history_name.append(var_name_2)
+        self.operations.append(OpExpr('relation_drop_duplicates_2nd', VarExpr(var_name_2, iter_expr_2nd)))
+
+        return relation(name=var_name_2,
+                        cols=self.cols,
+                        inherit_from=self)
 
     def projection(self, cols):
         tmp_dict = {}
@@ -356,7 +363,7 @@ class relation:
             return self.selection_external(item)
         if type(item) == ExistExpr:
             return self.selection_exists(item)
-        print(item)
+        # print(item)
 
     def __setitem__(self, key, value):
         """
@@ -373,7 +380,6 @@ class relation:
 
     def insert_col(self, key, value):
         if type(value) == CaseExpr:
-
             tmp_name = self.gen_tmp_name()
 
             self.cols.append(key)
@@ -385,7 +391,6 @@ class relation:
             # relation(name=tmp_name,
             #          cols=self.cols + [key],
             #          inherit_from=self)
-
             self.ori_name = tmp_name
             return self
         if type(value) == ColEl or type(value) == ColExpr:
@@ -423,16 +428,16 @@ class relation:
         """
 
         # print(f'rename column from {from_col} to {to_col}')
+        if type(from_col) == ColEl or type(from_col) == ColExpr:
+            if from_col.isvar:
+                next_name = self.gen_tmp_name()
+                output = VarExpr(next_name, DictEl({RecEl({to_col.name: from_col}): 1}))
 
-        if from_col.isvar:
-            next_name = self.gen_tmp_name()
-            output = VarExpr(next_name, DictEl({RecEl({to_col.name: from_col}): 1}))
+                self.ori_name = next_name
+                self.history_name.append(next_name)
+                self.operations.append(OpExpr('relation_rename_col', output))
 
-            self.ori_name = next_name
-            self.history_name.append(next_name)
-            self.operations.append(OpExpr('relation_rename_col', output))
-
-            return self
+                return self
 
         next_name = self.gen_tmp_name()
 
@@ -656,7 +661,6 @@ class relation:
         :return: pysdql.Relation
         """
         new_r = self.from_cols(col_list=[col_name])
-        print(new_r)
         return new_r.agg(aggr_func, *args, **kwargs)
 
     def access(self):
@@ -681,7 +685,7 @@ class relation:
             merged_name = name
         else:
             merged_name = self.gen_merged_name()
-        
+
         if how == 'cross':
             result = VarExpr(merged_name, IterStmt([self.iter_expr, right.iter_expr],
                                                    DictEl({f'concat({self.iter_expr.key}, {right.iter_expr.key})':
@@ -759,10 +763,11 @@ class relation:
             # for i in self.using_col:
             #     print(i)
 
-            part_name = f'part_{right.ori_name[0]}'
+            part_name = f'part_{right.ori_name}'
             part_key = 'p_k'
             part_val = 'p_v'
             part_iter = f'sum(<{part_key}, {part_val}> in {part_name}(<{right_on}={self.iter_expr.key}.{left_on}>))'
+
             part_var = VarExpr(part_name, IterStmt(right.iter_expr, DictEl(part_dict)))
             new_r.history_name.append(part_name)
             new_r.operations.append(OpExpr('relation_optimized_merge_part_right', part_var))
