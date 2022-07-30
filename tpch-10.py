@@ -33,8 +33,8 @@ order by
 """
 import pysdql
 # Try replace pysdql with pandas to get result in pandas!
-import pandas as pd  # get answer in pandas
-# import pysdql as pd  # get answer in pysdql
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
 
 # display all columns
 pd.set_option('display.max_columns', None)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     r['value'] = r['l_extendedprice'] * (1 - r['l_discount'])
 
-    r = r.groupby(['c_custkey', 'c_name', 'c_acctbal', 'c_phone', 'n_name', 'c_address', 'c_comment'], as_index=False)\
+    r = r.groupby(['c_custkey', 'c_name', 'c_acctbal', 'n_name', 'c_address', 'c_phone', 'c_comment'], as_index=False) \
         .agg(revenue=('value', 'sum'))
 
     print(r)
