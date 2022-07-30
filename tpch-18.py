@@ -31,8 +31,8 @@ group by
 """
 import pysdql
 # Try replace pysdql with pandas to get result in pandas!
-# import pandas as pd  # get answer in pandas
-import pysdql as pd  # get answer in pysdql
+import pandas as pd  # get answer in pandas
+# import pysdql as pd  # get answer in pysdql
 
 # display all columns
 pd.set_option('display.max_columns', None)
@@ -50,7 +50,6 @@ if __name__ == '__main__':
     lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
 
     agg_l = lineitem.groupby(['l_orderkey'], as_index=False).filter(lambda x: x['l_quantity'].sum() > var1)
-    agg_l = agg_l.drop_duplicates(['l_orderkey'])
     agg_l.columns.name = 'agg_l'
 
     r = customer.merge(orders, left_on='c_custkey', right_on='o_custkey')
