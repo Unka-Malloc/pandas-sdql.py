@@ -38,14 +38,13 @@ if __name__ == '__main__':
     var1 = '1996-05-01'
     var2 = '1996-08-01'  # var1 + 3 month
 
-    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None,names=pysdql.LINEITEM_COLS)
+    lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
     orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
 
     sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)]
     sub_o.columns.name = 'sub_o'
 
     r = sub_o.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
-
     r['exists'] = np.select(
         [
             (r['l_commitdate'] < r['l_receiptdate'])
@@ -61,4 +60,4 @@ if __name__ == '__main__':
 
     print(r)
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-4').run(r).export().to()
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-4').run(r).export().to()
