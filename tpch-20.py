@@ -77,20 +77,21 @@ if __name__ == '__main__':
 
     agg_lineitem.columns.name = 'agg_lineitem'
 
-    r = partsupp.merge(agg_lineitem, left_on=['ps_partkey', 'ps_suppkey'], right_on=['agg_partkey', 'agg_suppkey'])
-    r = r[r['ps_availqty'] > r['agg_quantity']]
+    r2 = partsupp.merge(agg_lineitem, left_on=['ps_partkey', 'ps_suppkey'], right_on=['agg_partkey', 'agg_suppkey'])
+    r2 = r2[r2['ps_availqty'] > r2['agg_quantity']]
 
     sub_p = part[part['p_name'].str.startswith(var1)]
     sub_p.columns.name = 'sub_p'
 
-    r = r[(r['ps_partkey'].isin(sub_p['p_partkey']))]
+    r1 = r2[(r2['ps_partkey'].isin(sub_p['p_partkey']))]
+    r1.columns.name = 'r1'
 
     sub_n = nation[(nation['n_name'] == var3)]
     sub_n.columns.name = 'sub_n'
 
     s = supplier.merge(sub_n, left_on='s_nationkey', right_on='n_nationkey')
 
-    s = s[(s['s_suppkey'].isin(r['ps_suppkey']))]
+    s = s[(s['s_suppkey'].isin(r1['ps_suppkey']))]
 
     s = s[['s_name', 's_address']]
 
