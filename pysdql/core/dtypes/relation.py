@@ -26,7 +26,7 @@ from pysdql.core.dtypes.JoinExpr import JoinExpr
 
 
 class relation:
-    def __init__(self, name, data=None, cols=None, inherit_from=None, operations=None, promoted_cols=None):
+    def __init__(self, name=None, data=None, cols=None, inherit_from=None, operations=None, promoted_cols=None):
         """
         If you need an optimizer, give it to relation and pass to all classes
         :param name:
@@ -38,7 +38,10 @@ class relation:
         if cols is None:
             cols = []
 
-        self.ori_name = name
+        if name is None:
+            self.ori_name = 'A_relation_without_name'
+        else:
+            self.ori_name = name
         self.cols = cols
         self.data = data
 

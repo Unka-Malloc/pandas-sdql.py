@@ -4,6 +4,7 @@ from pysdql.core.api import (
 
     # dtypes
     relation,
+    relation as DataFrame,
     IterStmt,
     CondStmt,
     DictEl,

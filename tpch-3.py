@@ -53,15 +53,8 @@ if __name__ == '__main__':
     sub_l = lineitem[lineitem['l_shipdate'] > var2]
     sub_l.columns.name = 'sub_l'
 
-    # 1M - 43s (without sub-table)
-    # 1M - 28s (with sub-table)
     r = sub_c.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
     r = r.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
-
-    # 1M - 73s (without sub-table)
-    # 1M - 24s (with sub-table)
-    # r = sub_c.merge(sub_o, on=(sub_c['c_custkey'] == sub_o['o_custkey']))
-    # r = r.merge(sub_l, on=(r['o_orderkey'] == sub_l['l_orderkey']))
 
     r['value'] = r['l_extendedprice'] * (1 - r['l_discount'])
 

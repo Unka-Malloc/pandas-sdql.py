@@ -96,4 +96,4 @@ if __name__ == '__main__':
 
     print(s)
 
-    pysdql.db_driver(db_path=r'T:/sdql', name='tpch-20').run(s).export().to()
+    pysdql.db_driver(db_path=sdql_database_path, name='tpch-20').run(s).export().to()
