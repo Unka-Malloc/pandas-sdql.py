@@ -49,13 +49,14 @@ if __name__ == '__main__':
     orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
     lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
 
-    agg_l = lineitem.groupby(['l_orderkey']).filter(lambda x: x['l_quantity'].sum() > var1)
+    agg_l = lineitem.groupby(['l_orderkey'], as_index=False).filter(lambda x: x['l_quantity'].sum() > var1)
+    agg_l = agg_l.drop_duplicates(['l_orderkey'])
     agg_l.columns.name = 'agg_l'
 
-    sub_o = orders[(orders['o_orderkey'].isin(agg_l['l_orderkey']))]
-
-    r = customer.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
+    r = customer.merge(orders, left_on='c_custkey', right_on='o_custkey')
     r = r.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
+
+    r = r[(r['o_orderkey'].isin(agg_l['l_orderkey']))]
 
     r = r.groupby(['c_name', 'c_custkey', 'o_orderkey', 'o_orderdate', 'o_totalprice'], as_index=False)\
         .agg(l_quantity_sum=('l_quantity', 'sum'))

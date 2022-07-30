@@ -31,8 +31,8 @@ group by
 """
 import pysdql
 # Try replace pysdql with pandas to get result in pandas!
-import pandas as pd  # get answer in pandas
-# import pysdql as pd  # get answer in pysdql
+# import pandas as pd  # get answer in pandas
+import pysdql as pd  # get answer in pysdql
 
 # display all columns
 pd.set_option('display.max_columns', None)
