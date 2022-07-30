@@ -6,6 +6,8 @@ from pysdql.core.util.type_checker import (
     is_str,
 )
 
+from pysdql.core.util.data_str import remove_suffix
+
 
 def get_tbl_type(file_path, sep='|'):
     output = []
@@ -13,7 +15,8 @@ def get_tbl_type(file_path, sep='|'):
         line = file.readline()
         line = file.readline()
 
-        line = line.removesuffix('\n')
+        # line = line.removesuffix('\n')
+        line = remove_suffix(line, '\n')
 
         # remove '\n'
         line_list = line.split(sep)
@@ -37,7 +40,8 @@ def get_load(file_path, cols, name='', sep='|'):
     path = r'datasets/tuned/'
     file_name = str(os.path.basename(file_path))
     if not name:
-        name = file_name.removesuffix('.tbl')
+        # name = file_name.removesuffix('.tbl')
+        name = remove_suffix(file_name, '.tbl')
 
     output = get_tbl_type(file_path, sep)
 

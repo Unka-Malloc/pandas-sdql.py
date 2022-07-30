@@ -7,6 +7,12 @@ from pysdql.core.dtypes.api import (
 )
 
 
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
+
+
 def load_tbl(file_path: str, col_names: list, col_types=None, name=None):
     from pysdql.core.dtypes.LoadExpr import LoadExpr
     if len(col_names) != len(col_types):
@@ -20,7 +26,8 @@ def read_tbl(path: str, names: list, col_types=None, r_name=None, sep='|', by_lo
         raise TypeError()
 
     if r_name is None:
-        r_name = str(os.path.basename(path)).removesuffix('.tbl')
+        # r_name = str(os.path.basename(path)).removesuffix('.tbl')
+        r_name = remove_suffix(os.path.basename(path), '.tbl')
 
     if by_load:
         if col_types is None:
@@ -62,12 +69,14 @@ def read_tbl(path: str, names: list, col_types=None, r_name=None, sep='|', by_lo
                             cols=names)
 
 
-def read_table(path: str, names: list, col_types=None, r_name=None, sep='|', by_load=True, index_col=False, header=None):
+def read_table(path: str, names: list, col_types=None, r_name=None, sep='|', by_load=True, index_col=False,
+               header=None):
     if '.tbl' not in path:
         raise TypeError()
 
     if r_name is None:
-        r_name = str(os.path.basename(path)).removesuffix('.tbl')
+        # r_name = str(os.path.basename(path)).removesuffix('.tbl')
+        r_name = remove_suffix(str(os.path.basename(path)), '.tbl')
 
     if by_load:
         if col_types is None:
@@ -111,7 +120,8 @@ def read_table(path: str, names: list, col_types=None, r_name=None, sep='|', by_
 
 def tune_tbl(file_path, sep='|', name=None):
     if name is None:
-        name = str(os.path.basename(file_path)).removesuffix('.tbl')
+        name = remove_suffix(str(os.path.basename(file_path)), '.tbl')
+        # name = str(os.path.basename(file_path)).removesuffix('.tbl')
 
     output_list = []
 
