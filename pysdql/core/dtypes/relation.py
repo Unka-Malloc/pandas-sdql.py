@@ -923,3 +923,9 @@ class relation:
         return JoinExpr(left=self, right=right,
                         how=how,
                         left_key=left_on, right_key=right_on)
+
+    @property
+    def loading(self):
+        expr_str = f'let {self.name} = {self.data}\n' \
+                   f'true'
+        return expr_str
