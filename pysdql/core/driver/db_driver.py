@@ -194,4 +194,4 @@ class db_driver:
         return self.red(file_name)
 
     def __repr__(self):
-        return ''.join(self.output)
+        return '\n'.join(self.output)

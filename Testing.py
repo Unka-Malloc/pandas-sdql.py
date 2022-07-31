@@ -1,18 +1,21 @@
 from datetime import datetime, timedelta
 
-import pysdql
+import pysdql as pd
 
 from pysdql.core.dtypes.CondExpr import CondExpr
 
 if __name__ == '__main__':
+    lineitem = pd.read_table(rf'T:/UG4-Proj/datasets/lineitem.tbl', sep='|', index_col=False, header=None, names=pd.LINEITEM_COLS)
+    pd.db_driver(db_path=r'T:/sdql').run(lineitem.count())
+
     # query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == {}'
     # pysdql.db_driver(db_path=r'T:/sdql').run(query)
 
     # query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == {<> -> 1}'
     # pysdql.db_driver(db_path=r'T:/sdql').run(query)
 
-    query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == 0'
-    pysdql.db_driver(db_path=r'T:/sdql').run(query)
+    # query = 'let R = {<name="Apple"> -> {<name="Apple", initial="A"> -> 1}} in R(<name="Elephant">) == 0'
+    # pysdql.db_driver(db_path=r'T:/sdql').run(query)
 
     # d1 = datetime.strptime('1998-12-01', "%Y-%m-%d")
     # d3 = d1 - timedelta(days=87)
