@@ -3,6 +3,8 @@ from pysdql.core.driver.api import (
 )
 
 from pysdql.core.dtypes.api import (
+    DataFrame,
+
     relation,
 
     RecEl,

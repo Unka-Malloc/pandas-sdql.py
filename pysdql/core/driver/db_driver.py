@@ -8,9 +8,12 @@ from pysdql.core.dtypes.relation import relation
 
 
 class db_driver:
-    def __init__(self, db_path, name='', script_path=None):
+    def __init__(self, db_path='', name='', script_path=None):
         self.db_path = db_path
         self.script_path = script_path
+
+        if not self.db_path:
+            self.db_path = os.getenv('SDQL_HOME').replace('\\', '/')
 
         if self.script_path is None:
             self.script_path = os.getcwd() + fr'{os.sep}output'
@@ -175,7 +178,7 @@ class db_driver:
 
         return self
 
-    def red(self, file_name=''):
+    def to(self, file_name=''):
         if not self.output:
             return
         if file_name:
@@ -190,8 +193,7 @@ class db_driver:
             f.write(''.join(self.output))
         return self
 
-    def to(self, file_name=''):
-        return self.red(file_name)
+
 
     def __repr__(self):
         return '\n'.join(self.output)

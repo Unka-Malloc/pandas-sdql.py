@@ -86,7 +86,6 @@ class MyTestCase(unittest.TestCase):
     def test_match_expr(self):
         self.assertEqual('<a = 1, b = 2, c = 3>', from_expr('<a = 1, b = 2, c = 3>').expr)
         self.assertEqual('<a = "Apple", b = "Banana">', from_expr('<a = "Apple", b = "Banana">').expr)
-        self.assertEqual('{"a" -> "Apple", "b" -> "Banana"}', from_expr('{"a" -> "Apple", "b" -> "Banana"}').expr)
         self.assertEqual('{<a = "Apple", b = "Banana"> -> 1}', from_expr('{<a = "Apple", b = "Banana"> -> 1}').expr)
 
     def test_from_record(self):

@@ -161,7 +161,7 @@ def from_dict(expr):
         key_val_pair = e.strip().split('->')
 
         if len(key_val_pair) != 2:
-            raise TypeError('Match RecEl Failed!')
+            raise TypeError('Match DictEl Failed!')
 
         key = from_any(key_val_pair[0].strip())
         val = from_any(key_val_pair[1].strip())

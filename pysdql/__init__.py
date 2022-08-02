@@ -3,8 +3,10 @@ from pysdql.core.api import (
     db_driver,
 
     # dtypes
+    DataFrame,
+
     relation,
-    relation as DataFrame,
+
     IterStmt,
     CondStmt,
     DictEl,
