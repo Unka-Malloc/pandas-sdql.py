@@ -11,3 +11,4 @@ from pysdql.core.dtypes.SDict import sdict
 from pysdql.core.dtypes.SRecord import srecord
 from pysdql.core.dtypes.LoadExpr import LoadExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
+from pysdql.core.dtypes.DataFrame import DataFrame
