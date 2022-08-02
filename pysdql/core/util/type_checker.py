@@ -1,6 +1,5 @@
 import re
 
-
 def is_neg_int(data: str):
     if data[0] == '-':
         return True
