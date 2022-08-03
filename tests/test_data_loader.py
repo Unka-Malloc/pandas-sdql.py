@@ -15,7 +15,7 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(
             ['ID', 'Name', 'Age', 'Birthday', 'Grade'],
-            pysdql.read_csv(r't1.csv', names=['ID', 'Name', 'Age', 'Birthday', 'Grade']))
+            list(pysdql.read_csv(r't1.csv', names=['ID', 'Name', 'Age', 'Birthday', 'Grade']).columns))
 
 
 

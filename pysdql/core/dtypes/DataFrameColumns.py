@@ -36,3 +36,6 @@ class DataFrameColumns:
 
     def __add__(self, other):
         return self.columns + other
+
+    def append(self, val):
+        self.columns.append(val)
