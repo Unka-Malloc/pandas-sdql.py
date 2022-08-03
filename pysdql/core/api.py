@@ -23,10 +23,11 @@ from pysdql.core.dtypes.api import (
 )
 from pysdql.core.util.api import (
     # data_loader
-    read_tbl,
+    read_csv,
+    # read_tbl,
     tune_tbl,
-    load_tbl,
-    read_table,
+    # load_tbl,
+    # read_table,
 
     # data_parser
     get_tbl_type,

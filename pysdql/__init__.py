@@ -16,10 +16,11 @@ from pysdql.core.api import (
     ConcatExpr,
 
     # data_loader
-    read_tbl,
-    read_table,
+    read_csv,
+    # read_tbl,
+    # read_table,
     tune_tbl,
-    load_tbl,
+    # load_tbl,
 
     # data_parser
     get_tbl_type,
