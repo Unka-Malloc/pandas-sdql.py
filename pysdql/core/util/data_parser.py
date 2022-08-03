@@ -9,6 +9,23 @@ from pysdql.core.util.type_checker import (
 from pysdql.core.util.data_str import remove_suffix
 
 
+def get_dtype(names: list, data: list) -> dict:
+    dtype = dict(zip(names, data))
+    for k in dtype.keys():
+        v = dtype[k]
+        if is_int(v):
+            dtype[k] = 'int'
+        elif is_float(v):
+            dtype[k] = 'real'
+        elif is_date(v):
+            dtype[k] = 'date'
+        elif is_str(v):
+            dtype[k] = 'string'
+        else:
+            raise ValueError(f'type ? ({k}, {v})')
+    return dtype
+
+
 def get_tbl_type(file_path, sep='|'):
     output = []
     with open(file_path, 'r') as file:

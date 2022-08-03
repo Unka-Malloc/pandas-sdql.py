@@ -1,10 +1,15 @@
+from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
+from pysdql.core.dtypes.VarExpr import VarExpr
+from pysdql.core.dtypes.OpExpr import OpExpr
+from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.SemiRing import SemiRing
 
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None):
+    def __init__(self, data=None, index=None, columns=None, name=None, load=None, mutable=True, op_seq=None):
+        self.__default_name = 'R'
         self.__data = data
         self.__index = index
         if columns:
@@ -12,12 +17,35 @@ class DataFrame(SemiRing):
         else:
             if data:
                 self.__columns = list(data.keys())
-        self.__columns = columns
-        self.__name = ''
+            else:
+                self.__columns = columns
+        if name:
+            self.__name = name
+        else:
+            self.__name = self.__default_name
+
+        if op_seq:
+            self.__op_seq = op_seq
+        else:
+            self.__op_seq = OpSeq()
+
+        self.mutable = True
+
+        if data:
+            self.operations.push(OpExpr('', VarExpr(self.name, data)))
+            self.mutable = False
+
+        if load:
+            self.operations.push(OpExpr('', VarExpr(self.name, load)))
+            self.mutable = False
+
+    @property
+    def operations(self):
+        return self.__op_seq
 
     @property
     def columns(self):
-        return self
+        return DataFrameColumns(self, self.__columns)
 
     @property
     def name(self):
@@ -25,7 +53,14 @@ class DataFrame(SemiRing):
 
     @name.setter
     def name(self, val):
-        self.__name = val
+        allow_set_name = True
+        if not self.mutable:
+            if self.__name != self.__default_name:
+                allow_set_name = False
+
+        if allow_set_name:
+            self.operations.push(OpExpr('', VarExpr(val, self.__name)))
+            self.__name = val
 
     @property
     def data(self):
@@ -49,3 +84,12 @@ class DataFrame(SemiRing):
         if self.name:
             return self.name
         return self.data.expr
+
+    def __repr__(self):
+        return self.expr
+
+    def pop(self):
+        self.operations.pop()
+
+    def push(self, val):
+        self.operations.push(val)

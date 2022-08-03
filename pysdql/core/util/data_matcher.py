@@ -25,7 +25,7 @@ def match_real(data):
     :param data:
     :return:
     """
-    reg_exp = r'[+-]?[0-9]\.[0-9]+([E][+-]?[0-9]+)?$'
+    reg_exp = r'[+-]?[0-9]+\.[0-9]+([E][+-]?[0-9]+)?$'
     return re.match(reg_exp, data) is not None
 
 
@@ -148,7 +148,7 @@ def from_record(expr):
 
         expr_dict[key] = val
 
-    return RecEl(expr_dict)
+    return RecEl(expr_dict, mutable=False)
 
 
 def from_dict(expr):
@@ -168,7 +168,7 @@ def from_dict(expr):
 
         expr_dict[key] = val
 
-    return DictEl(expr_dict)
+    return DictEl(expr_dict, mutable=False)
 
 
 def from_expr(expr: str):

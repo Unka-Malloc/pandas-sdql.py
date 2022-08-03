@@ -3,8 +3,6 @@ from pysdql.core.util.type_checker import (
     is_int,
     is_float,
     is_str,
-
-    rmv_neg,
 )
 
 
@@ -19,7 +17,7 @@ class srecord:
         for k in data.keys():
             v = data[k]
             if is_date(v):
-                v = rmv_neg(v)
+                v = str(v).replace('-', '')
             if is_int(v):
                 v = int(v)
             if is_float(v):

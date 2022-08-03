@@ -25,6 +25,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(False, match_int('-0.0'))
 
     def test_match_real(self):
+        self.assertEqual(True, match_real('100.01'))
         self.assertEqual(True, match_real('0.01'))
         self.assertEqual(True, match_real('+0.01'))
         self.assertEqual(True, match_real('-0.01'))

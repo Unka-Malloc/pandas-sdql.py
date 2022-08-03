@@ -61,6 +61,10 @@ class OpExpr:
         return hash((ref_id, self.op_obj))
 
     @property
+    def name(self):
+        return self.op_obj.name
+
+    @property
     def expr(self):
         return f'{self.op_obj}'
 
