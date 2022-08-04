@@ -202,8 +202,8 @@ class ColEl:
     def isin(self, vals, ext=None):
         # print(f'{self.expr} is in {vals}')
         if type(vals) == ColEl:
-            tmp_no_dup = vals.relation.drop_duplicates([vals.__name]).rename(f'no_dup_{vals.__name}')
-            tmp_col_el = tmp_no_dup[vals.__name]
+            tmp_no_dup = vals.relation.drop_duplicates([vals.name]).rename(f'no_dup_{vals.name}')
+            tmp_col_el = tmp_no_dup[vals.name]
             return IsinExpr(self, tmp_col_el)
 
         if type(vals) == list or type(vals) == tuple:
