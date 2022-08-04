@@ -66,7 +66,7 @@ class ExternalExpr:
         if self.func == 'Year':
             return f'ext(`Year`, {self.col})'
         if self.func == 'StrStartsWith':
-            return f'ext(`StrStartsWith`, {self.col.relation.iter_expr.key}.{self.col.name}, "{self.args}")'
+            return f'ext(`StrStartsWith`, {self.col.relation.iter_expr.key}.{self.col.__name}, "{self.args}")'
         if self.func == 'StrEndsWith':
             return f'ext(`StrEndsWith`, {self.col}, "{self.args}")'
         if self.func == 'StrContains':

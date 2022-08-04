@@ -67,7 +67,7 @@ if __name__ == '__main__':
     nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
     sub_l = lineitem[(lineitem['l_shipdate'] >= var2) & (lineitem['l_shipdate'] < var2_1)]
-    sub_l.columns.name = 'sub_l'
+    sub_l.columns.__name = 'sub_l'
 
     agg_lineitem = sub_l.groupby(['l_partkey', 'l_suppkey'], as_index=False).agg(tmp_val=('l_quantity', 'sum'))
 
@@ -75,19 +75,19 @@ if __name__ == '__main__':
     agg_lineitem['agg_suppkey'] = agg_lineitem['l_suppkey']
     agg_lineitem['agg_quantity'] = agg_lineitem['tmp_val'] * 0.5
 
-    agg_lineitem.columns.name = 'agg_lineitem'
+    agg_lineitem.columns.__name = 'agg_lineitem'
 
     r2 = partsupp.merge(agg_lineitem, left_on=['ps_partkey', 'ps_suppkey'], right_on=['agg_partkey', 'agg_suppkey'])
     r2 = r2[r2['ps_availqty'] > r2['agg_quantity']]
 
     sub_p = part[part['p_name'].str.startswith(var1)]
-    sub_p.columns.name = 'sub_p'
+    sub_p.columns.__name = 'sub_p'
 
     r1 = r2[(r2['ps_partkey'].isin(sub_p['p_partkey']))]
-    r1.columns.name = 'r1'
+    r1.columns.__name = 'r1'
 
     sub_n = nation[(nation['n_name'] == var3)]
-    sub_n.columns.name = 'sub_n'
+    sub_n.columns.__name = 'sub_n'
 
     s = supplier.merge(sub_n, left_on='s_nationkey', right_on='n_nationkey')
 

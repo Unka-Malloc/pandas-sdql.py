@@ -52,12 +52,12 @@ if __name__ == '__main__':
 
     sub_s = supplier[(supplier['var1_index'] != -1) & (supplier['var2_index'] != -1)
                      & (supplier['var1_index'] < supplier['var2_index'])]
-    sub_s.columns.name = 'sub_s'
+    sub_s.columns.__name = 'sub_s'
 
     sub_p = part[(part['p_brand'] != var1)
                  & (~part['p_type'].str.startswith(var2))
                  & (part['p_size'].isin(var3))]
-    sub_p.columns.name = 'sub_p'
+    sub_p.columns.__name = 'sub_p'
 
     r = sub_p.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
 

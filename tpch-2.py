@@ -65,7 +65,7 @@ if __name__ == '__main__':
     region = pd.read_table(rf'{data_path}/region.tbl', sep='|', index_col=False, header=None, names=pysdql.REGION_COLS)
 
     sub_r = region[region['r_name'] == var3]
-    sub_r.columns.name = 'sub_r'
+    sub_r.columns.__name = 'sub_r'
 
     r1 = partsupp.merge(supplier, left_on='ps_suppkey', right_on='s_suppkey')
     r1 = r1.merge(nation, left_on='s_nationkey', right_on='n_nationkey')
@@ -77,25 +77,25 @@ if __name__ == '__main__':
 
     r1 = r1[['min_partkey', 'min_suppkey', 'min_supplycost']]
 
-    r1.columns.name = 'r1'
+    r1.columns.__name = 'r1'
 
     sub_p = part[part['p_size'] == var1]
     sub_p = sub_p[sub_p['p_type'].str.endswith(var2)]
 
-    sub_p.columns.name = 'sub_p'
+    sub_p.columns.__name = 'sub_p'
 
     r2 = nation.merge(sub_r, left_on='n_regionkey', right_on='r_regionkey')
     r2 = r2.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
     r2 = r2.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
     r2 = r2.merge(sub_p, left_on='ps_partkey', right_on='p_partkey')
 
-    r2.columns.name = 'r2'
+    r2.columns.__name = 'r2'
 
     r = r1.merge(r2,
                  left_on=['min_partkey', 'min_suppkey', 'min_supplycost'],
                  right_on=['ps_partkey', 'ps_suppkey', 'ps_supplycost'])
 
-    r.columns.name = 'r'
+    r.columns.__name = 'r'
 
     r = r[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 

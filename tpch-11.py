@@ -47,13 +47,13 @@ if __name__ == '__main__':
     nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
     sub_n = nation[(nation['n_name'] == var1)]
-    sub_n.columns.name = 'sub_n'
+    sub_n.columns.__name = 'sub_n'
 
     r1 = sub_n.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
-    r1.columns.name = 'r1'
+    r1.columns.__name = 'r1'
 
     r2 = r1.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
-    r2.columns.name = 'r2'
+    r2.columns.__name = 'r2'
 
     agg_val = (r2['ps_supplycost'] * r2['ps_availqty'] * var2).sum()
 

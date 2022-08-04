@@ -4,13 +4,13 @@ from pysdql.core.dtypes.IterEl import IterEl
 
 
 class IterExpr:
-    def __init__(self, r_name, key=None, val=None):
-        self.r_name = r_name
-        self.given_key = key
-        self.given_val = val
+    def __init__(self, name, key=None, val=None):
+        self.__name = name
+        self.__key = key
+        self.__val = val
 
     @property
-    def n_e_dict(self):
+    def ref_dict(self):
         d = {"tmp": "t", "tmpa": "ta", "tmpb": "tb", "tmpc": "tc", "tmpd": "td", "tmpe": "te", "tmpf": "tf",
              "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
              "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
@@ -21,7 +21,7 @@ class IterExpr:
         return d
 
     @staticmethod
-    def hard_code_n_e_dict():
+    def hard_code_ref_dict():
         tmp_list = []
         for i in list(string.ascii_lowercase):
             tmp_list.append(f'"tmp{i}": "t{i}"')
@@ -29,68 +29,48 @@ class IterExpr:
         print(f'{{ {tmp_str} }}')
 
     @property
-    def element(self):
-        return self.gen_iter_el()
+    def iter_el(self):
+        if self.__key and self.__val:
+            return IterEl((self.__key, self.__val))
 
-    @property
-    def name(self):
-        return self.element.name
+        if self.__name in self.ref_dict.keys():
+            tmp_name = self.ref_dict[self.__name]
+        else:
+            tmp_name = str(self.__name[0]).lower()
 
-    @property
-    def key(self):
-        if self.given_key:
-            return self.given_key
-        return self.element.key
-
-    @property
-    def val(self):
-        if self.given_val:
-            return self.given_val
-        return self.element.val
-
-    @property
-    def kv_pair(self):
-        if self.given_key and self.given_val:
-            return f'<{self.given_key}, {self.given_val}>'
-        return f'<{self.key}, {self.val}>'
-
-    def gen_iter_el(self) -> IterEl:
-
-        if self.r_name in self.n_e_dict.keys():
-            tmp_name = self.n_e_dict[self.r_name]
-            return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
-
-        if any(c.isdigit() for c in self.r_name):
-            tmp_name = str(self.r_name[0]).lower()
-            for i in self.r_name:
-                if i.isdigit():
-                    return IterEl((f'{tmp_name}{i}_k', f'{tmp_name}{i}_v'))
-
-        special_char = '_'
-        tmp_name = ''
-        for i in special_char:
-            if i in self.r_name:
-                tmp_list = str(self.r_name).split('_')
+        sp_char = '_'
+        short_tmp_name = ''
+        for i in sp_char:
+            if i in self.__name:
+                tmp_list = str(self.__name).split('_')
                 for j in tmp_list:
-                    tmp_name += j[0]
-                return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
+                    if j.isdigit():
+                        continue
+                    short_tmp_name += j[0]
+        tmp_name += short_tmp_name[1:]
 
-        for i in self.r_name:
-            if i.isdigit():
-                tmp_name = str(self.r_name[0]).lower()
-                return IterEl((f'{tmp_name}{i}_k', f'{tmp_name}{i}_v'))
+        short_tmp_name = ''
+        if any(c.isdigit() for c in self.__name):
+            for i in self.__name:
+                if i.isdigit():
+                    short_tmp_name += i
+        tmp_name += short_tmp_name
 
-        tmp_name = str(self.r_name[0]).lower()
         return IterEl((f'{tmp_name}_k', f'{tmp_name}_v'))
 
     @property
+    def key(self):
+        return self.__key
+
+    @property
+    def val(self):
+        return self.__val
+
+    @property
     def expr(self):
-        if self.given_key and self.given_val:
-            return f'sum (<{self.given_key}, {self.given_val}> in {self.r_name})'
-        return f'sum ({self.element.expr} in {self.r_name})'
+        if self.__key and self.__val:
+            return f'sum (<{self.__key}, {self.__val}> in {self.__name})'
+        return f'sum ({self.iter_el} in {self.__name})'
 
     def __repr__(self):
         return self.expr
-
-    def merge(self, other):
-        return f'{self} {other}'

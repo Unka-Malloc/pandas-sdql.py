@@ -9,25 +9,27 @@ class MyTestCase(unittest.TestCase):
 
     @property
     def kv_pair(self):
-        return IterEl(data=('k', 'v'))
-
-    def test_element_name(self):
-        self.assertEqual('x', self.element.name)
+        return IterEl(data=('r_k', 'r_v'))
 
     def test_element_key(self):
-        self.assertEqual('x.key', self.element.key)
+        self.assertEqual('x_k', self.element.key)
 
     def test_element_val(self):
-        self.assertEqual('x.val', self.element.val)
-
-    def test_kv_pair_name(self):
-        self.assertEqual('<k, v>', self.kv_pair.expr)
+        self.assertEqual('x_v', self.element.val)
 
     def test_kv_pair_key(self):
         self.assertEqual('k', self.kv_pair.key)
 
     def test_kv_pair_val(self):
         self.assertEqual('v', self.kv_pair.val)
+
+    def test_rename(self):
+        el = IterEl(data='x')
+        el.rename('r')
+        print(el.expr)
+        # self.assertEqual('r_k', self.element.key)
+        # self.assertEqual('r_v', self.element.val)
+
 
 
 if __name__ == '__main__':
