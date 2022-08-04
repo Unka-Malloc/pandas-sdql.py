@@ -41,13 +41,13 @@ if __name__ == '__main__':
     orders['var2_index'] = orders['o_comment'].str.find(var2)
 
     sub_o = orders[~((orders['var1_index'] != -1) & (orders['var2_index'] != -1) & (orders['var1_index'] < orders['var2_index']))]
-    sub_o.columns.__name = 'sub_o'
+    sub_o.columns.name = 'sub_o'
 
     # LEFT OUTER JOIN
     r = customer.merge(sub_o, how='left', left_on='c_custkey', right_on='o_custkey')
 
     c_orders = r.groupby(['c_custkey'], as_index=False).agg(c_count=('o_orderkey', 'count'))
-    c_orders.columns.__name = 'c_orders'
+    c_orders.columns.name = 'c_orders'
 
     s = c_orders.groupby(['c_count'], as_index=False).agg(custdist=('c_custkey', 'count'))
 

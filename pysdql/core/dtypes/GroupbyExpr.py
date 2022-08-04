@@ -80,7 +80,7 @@ class GroupbyExpr:
         for i in list(string.ascii_lowercase):
             name_list.append(f'tmp{i}')
 
-        dup_list = [self.name, self.groupby_from.__name] + self.history_name + self.groupby_from.history_name + noname
+        dup_list = [self.name, self.groupby_from.name] + self.history_name + self.groupby_from.history_name + noname
 
         for the_name in name_list:
             if the_name not in dup_list:
@@ -165,7 +165,7 @@ class GroupbyExpr:
             agg_val = agg_dict[agg_key]
             agg_col = agg_val[0]
             if type(agg_col) == ColEl:
-                agg_calc = agg_col.__name
+                agg_calc = agg_col.name
             if type(agg_col) == str:
                 agg_calc = agg_col
             else:
@@ -240,8 +240,8 @@ class GroupbyExpr:
         for k in agg_dict.keys():
             v = agg_dict[k]
             if type(v) == ColEl:
-                if v.__name in tmp_cols:
-                    tmp_cols.remove(v.__name)
+                if v.name in tmp_cols:
+                    tmp_cols.remove(v.name)
 
         for c in tmp_cols:
             result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
@@ -252,7 +252,7 @@ class GroupbyExpr:
         for aggr_key in agg_dict.keys():
             aggr_val = agg_dict[aggr_key]
             if type(aggr_val) == ColEl:
-                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{agg_dict[aggr_key].__name}'
+                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{agg_dict[aggr_key].name}'
             if type(aggr_val) == tuple:
                 if type(agg_dict[aggr_key][0]) == ColEl or type(agg_dict[aggr_key][0]) == ColExpr:
                     aggr_calc = agg_dict[aggr_key][0].new_expr(f'{self.iter_for_agg.key}')
@@ -298,7 +298,7 @@ class GroupbyExpr:
         self.history_name.append(aggr_tuple_name)
         self.operations.append(OpExpr('groupby_optimized_agg_parse_nested_dict', parse_nested_dict))
 
-        next_name = f'agg_{self.groupby_from.__name}'
+        next_name = f'agg_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
                          data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
@@ -356,7 +356,7 @@ class GroupbyExpr:
             dict_val = aggr_func[aggr_key]
             aggr_calc = aggr_key
             if type(aggr_key) == ColEl or type(aggr_key) == ColExpr:
-                aggr_calc = f'{aggr_key.__name}'
+                aggr_calc = f'{aggr_key.name}'
             if dict_val == 'sum':
                 tmp_dict[f'{aggr_calc}_sum'] = f'{aggr_tmp_iter_key}.{aggr_calc} * {self.iter_expr.val}'
                 result_dict[f'{aggr_calc}_sum'] = f'{aggr_tuple_iter_expr.val}.{aggr_calc}_sum'
@@ -382,7 +382,7 @@ class GroupbyExpr:
         self.history_name.append(aggr_tuple_name)
         self.operations.append(OpExpr('groupby_aggregate_parse_nested_dict', parse_nested_dict))
 
-        next_name = f'aggr_{self.groupby_from.__name}'
+        next_name = f'aggr_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
                          data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
@@ -408,8 +408,8 @@ class GroupbyExpr:
         for k in aggr_dict.keys():
             v = aggr_dict[k]
             if type(v) == ColEl:
-                if v.__name in tmp_cols:
-                    tmp_cols.remove(v.__name)
+                if v.name in tmp_cols:
+                    tmp_cols.remove(v.name)
 
         for c in tmp_cols:
             result_dict[c] = f'{aggr_tuple_iter_expr.key}.{c}'
@@ -422,7 +422,7 @@ class GroupbyExpr:
         for aggr_key in aggr_dict.keys():
             aggr_val = aggr_dict[aggr_key]
             if type(aggr_val) == ColEl:
-                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{aggr_dict[aggr_key].__name}'
+                result_dict[aggr_key] = f'{aggr_tuple_iter_expr.key}.{aggr_dict[aggr_key].name}'
             if type(aggr_val) == tuple:
                 if type(aggr_dict[aggr_key][0]) == ColEl or type(aggr_dict[aggr_key][0]) == ColExpr:
                     aggr_calc = aggr_dict[aggr_key][0].new_expr(f'{aggr_tmp_iter_key}')
@@ -453,7 +453,7 @@ class GroupbyExpr:
         self.history_name.append(aggr_tuple_name)
         self.operations.append(OpExpr('groupby_aggregate_parse_nested_dict', parse_nested_dict))
 
-        next_name = f'aggr_{self.groupby_from.__name}'
+        next_name = f'aggr_{self.groupby_from.name}'
 
         result = VarExpr(name=next_name,
                          data=IterStmt(aggr_tuple_iter_expr, DictEl({RecEl(result_dict): 1})))
@@ -471,7 +471,7 @@ class GroupbyExpr:
         output = func(HavUnit(groupby_expr=self))
 
         from pysdql import relation
-        return relation(name=output.__name,
+        return relation(name=output.name,
                         inherit_from=self)
 
     @property
@@ -498,7 +498,7 @@ class GroupbyExpr:
             raise TypeError('Only inherit from pysdql.Relation or GroupbyExpr')
 
         # Inherit variable names
-        self.history_name += [other.__name] + other.history_name
+        self.history_name += [other.name] + other.history_name
 
         # Inherit operations
         if not self.operations:

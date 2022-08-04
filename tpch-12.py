@@ -54,7 +54,7 @@ if __name__ == '__main__':
                      & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
                      & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
                      & (lineitem['l_receiptdate'] >= var3) & (lineitem['l_receiptdate'] < var4)]
-    sub_l.columns.__name = 'sub_l'
+    sub_l.columns.name = 'sub_l'
 
     r = orders.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
 

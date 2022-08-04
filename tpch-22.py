@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     sub_c = customer[(customer['c_acctbal'] > 0.00)
                      & (customer['c_phone'].str.slice(0, 2).isin(var1))]
-    sub_c.columns.__name = 'sub_c'
+    sub_c.columns.name = 'sub_c'
 
     avg_acctbal = sub_c['c_acctbal'].mean()
 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     r['cntrycode'] = r['c_phone'].str.slice(0, 2)
 
     custsale = r[['cntrycode', 'c_acctbal']]
-    custsale.columns.__name = 'custsale'
+    custsale.columns.name = 'custsale'
 
     custsale = custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'), totacctbal=('c_acctbal', 'sum'))
 
