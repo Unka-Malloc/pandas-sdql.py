@@ -152,7 +152,7 @@ def read_csv(filepath_or_buffer, sep=',', header=None, names=None, index_col=Fal
 
         dtype = get_dtype(names, line_list)
 
-        return pysdql.DataFrame(columns=names, name=obj_name, load=LoadExpr(dtype, filepath_or_buffer), mutable=False)
+        return pysdql.DataFrame(columns=names, name=obj_name, data=LoadExpr(dtype, filepath_or_buffer), mutable=False)
 
 
 def tune_tbl(file_path, sep='|', name=None):

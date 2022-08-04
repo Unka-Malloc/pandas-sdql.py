@@ -1,4 +1,6 @@
 from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
+from pysdql.core.dtypes.IterEl import IterEl
+from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
@@ -8,58 +10,60 @@ from pysdql.core.dtypes.SemiRing import SemiRing
 
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None, name=None, load=None, mutable=True, op_seq=None):
+    def __init__(self, data=None, index=None, columns=None, name=None, mutable=True, operations=OpSeq()):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
-        if columns:
-            self.__columns = columns
-        else:
-            if data:
-                self.__columns = list(data.keys())
-            else:
-                self.__columns = columns
-        if name:
-            self.__name = name
-        else:
-            self.__name = self.__default_name
+        self.__columns = columns
+        self.__name = name
+        self.__operations = operations
 
-        if op_seq:
-            self.__op_seq = op_seq
-        else:
-            self.__op_seq = OpSeq()
+        self.operations.push(OpExpr('', self.variable))
 
-        self.mutable = True
+    @property
+    def mutable(self):
+        if self.__data:
+            return False
+        return True
 
-        if data:
-            self.operations.push(OpExpr('', VarExpr(self.name, data)))
-            self.mutable = False
-
-        if load:
-            self.operations.push(OpExpr('', VarExpr(self.name, load)))
-            self.mutable = False
+    @property
+    def variable(self):
+        if self.__data:
+            return VarExpr(self.name, self.__data)
+        return VarExpr(self.name, DictEl({}))
 
     @property
     def operations(self):
-        return self.__op_seq
+        return self.__operations
 
     @property
     def columns(self):
-        return DataFrameColumns(self, self.__columns)
+        if self.__columns:
+            return DataFrameColumns(self, self.__columns)
+        else:
+            if self.__data:
+                self.__columns = list(self.__data.keys())
+                return DataFrameColumns(self, self.__columns)
+            else:
+                return DataFrameColumns(self, [])
 
     @property
     def name(self):
-        return self.__name
+        if self.__name:
+            return self.__name
+        return self.__default_name
 
     @name.setter
     def name(self, val):
-        allow_set_name = True
-        if not self.mutable:
-            if self.__name != self.__default_name:
-                allow_set_name = False
+        allow_set_name = False
+        if self.mutable:
+            allow_set_name = True
+        else:
+            if self.name == self.__default_name:
+                allow_set_name = True
 
         if allow_set_name:
-            self.operations.push(OpExpr('', VarExpr(val, self.__name)))
+            self.operations.push(OpExpr('', VarExpr(val, self.name)))
             self.__name = val
 
     @property
@@ -74,10 +78,18 @@ class DataFrame(SemiRing):
         rec_dict = {}
         for i in range(data_size):
             tmp_dict = {}
-            for k in self.__columns:
+            for k in columns_names:
                 tmp_dict[k] = self.__data[k][i]
             rec_dict[RecEl(tmp_dict)] = 1
         return DictEl(rec_dict)
+
+    @property
+    def iter_expr(self):
+        return IterExpr(self.name)
+
+    @property
+    def sdql_expr(self):
+        return self.operations.expr
 
     @property
     def expr(self) -> str:

@@ -17,7 +17,9 @@ class OpSeq:
             raise ValueError(f'Only accept OpExpr.')
 
     def peak(self):
-        return self.stack[-1]
+        if len(self.stack) >= 1:
+            return self.stack[-1]
+        return
 
     @property
     def size(self):
@@ -25,8 +27,10 @@ class OpSeq:
 
     @property
     def expr(self):
-        expr_str = f'\n'.join([f'{i}' for i in self.stack])
-        expr_str += f'\n{self.peak().name}'
+        expr_str = ''
+        if len(self.stack) >= 1:
+            expr_str = f'\n'.join([f'{i}' for i in self.stack])
+            expr_str += f'\n{self.peak().name}'
         return expr_str
 
     def __repr__(self):

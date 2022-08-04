@@ -54,16 +54,16 @@ if __name__ == '__main__':
 
     # part_p
     sub_p = part[part['p_name'].str.contains(var1)]
-    sub_p.columns.name = 'sub_p'
+    sub_p.columns.__name = 'sub_p'
 
     # optimized hash join (part, partsupp)
     r1 = sub_p.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
-    r1.columns.name = 'r1'
+    r1.columns.__name = 'r1'
     # optimized hash join (supplier, nation)
     r2 = supplier.merge(nation, left_on='s_nationkey', right_on='n_nationkey')
     # optimized hash join ((supplier, nation), (part, partsupp))
     r2 = r2.merge(r1, left_on='s_suppkey', right_on='ps_suppkey')
-    r2.columns.name = 'r2'
+    r2.columns.__name = 'r2'
     # optimized hash join ((supplier, nation, part, partsupp), lineitem)
     r = r2.merge(lineitem, how='inner', left_on=['s_suppkey', 'ps_suppkey'], right_on=['l_suppkey', 'l_suppkey'])
     # optimized hash join ((supplier, nation, part, partsupp, lineitem), orders)
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     r['amount'] = r['l_extendedprice'] * (1 - r['l_discount']) - r['ps_supplycost'] * r['l_quantity']
 
     profit = r[['nation', 'o_year', 'amount']]
-    profit.columns.name = 'profit'
+    profit.columns.__name = 'profit'
 
     s = profit.groupby(['nation', 'o_year'], as_index=False).agg(sum_profit=('amount', 'sum'))
 

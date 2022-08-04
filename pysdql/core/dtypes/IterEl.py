@@ -1,49 +1,48 @@
 class IterEl:
     def __init__(self, data):
-        self.name = None
-        self.kv_pair = None
+        self.__name = None
+        self.__key_val = None
 
         if type(data) == str:
-            self.name = data
-        if type(data) == tuple:
-            self.kv_pair = data
+            self.__name = data
+        elif type(data) == tuple:
+            self.__key_val = data
+        else:
+            raise ValueError('Only accept "<k, v>" or "x"')
 
     @property
     def key(self) -> str:
-        if self.kv_pair:
-            return self.kv_pair[0]
-        if self.name:
-            return f'{self.name}.key'
+        if self.__key_val:
+            return self.__key_val[0]
+        if self.__name:
+            return f'{self.__name}_k'
 
     @property
     def val(self) -> str:
-        if self.kv_pair:
-            return self.kv_pair[1]
-        if self.name:
-            return f'{self.name}.val'
+        if self.__key_val:
+            return self.__key_val[1]
+        if self.__name:
+            return f'{self.__name}_v'
 
     @property
     def expr(self) -> str:
-        if self.kv_pair:
-            return f'<{self.key}, {self.val}>'
-        if self.name:
-            return self.name
+        return f'<{self.key}, {self.val}>'
 
     def __repr__(self):
         return self.expr
 
     def rename(self, data):
         if type(data) == str:
-            self.name = data
+            self.__name = data
         if type(data) == tuple:
-            self.kv_pair = data
+            self.__key_val = data
 
     def dup(self, other) -> bool:
         """
         Detect Duplication Between Iteration Elements
         :return:
         """
-        if not type(other) == IterEl:
+        if type(other) != IterEl:
             raise TypeError('Only detect duplications between IterEl objects')
 
         if self.expr == other.expr:

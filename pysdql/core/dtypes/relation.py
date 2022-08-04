@@ -434,7 +434,7 @@ class relation:
         if type(from_col) == ColEl or type(from_col) == ColExpr:
             if from_col.isvar:
                 next_name = self.gen_tmp_name()
-                output = VarExpr(next_name, DictEl({RecEl({to_col.name: from_col}): 1}))
+                output = VarExpr(next_name, DictEl({RecEl({to_col.__name: from_col}): 1}))
 
                 self.ori_name = next_name
                 self.history_name.append(next_name)
@@ -444,7 +444,7 @@ class relation:
 
         next_name = self.gen_tmp_name()
 
-        tmp_concat_expr = ConcatExpr(self.iter_expr.key, RecEl({to_col.name: from_col.new_expr(self.iter_expr.key)}))
+        tmp_concat_expr = ConcatExpr(self.iter_expr.key, RecEl({to_col.__name: from_col.new_expr(self.iter_expr.key)}))
         tmp_dict_expr = DictEl({tmp_concat_expr: 1})
 
         output = VarExpr(next_name, IterStmt(self.iter_expr, tmp_dict_expr))
@@ -809,7 +809,7 @@ class relation:
             for i in tmp_key_dict.keys():
                 new_key_dict[i] = f'{self.iter_expr.key}.{tmp_key_dict[i]}'
 
-            part_name = f'part_{right.name}'
+            part_name = f'part_{right.__name}'
             part_key = 'p_k'
             part_val = 'p_v'
             part_iter = f'sum(<{part_key}, {part_val}> in {part_name}({RecEl(new_key_dict)}))'
@@ -849,7 +849,7 @@ class relation:
             raise TypeError('Only inherit from pysdql.Relation or GroupbyExpr')
 
         # Inherit variable names
-        self.history_name += [other.name] + other.history_name
+        self.history_name += [other.__name] + other.history_name
 
         # Inherit operations
         if not self.operations:

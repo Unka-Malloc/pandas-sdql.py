@@ -43,7 +43,7 @@ class HavUnit:
         tmp_name = 'hvmp'
         tmp_key = 'g_k'
         tmp_val = 'g_v'
-        tmp_iter_expr = IterExpr(r_name=f'{self.iter_expr.key}.group', key=tmp_key, val=tmp_val)
+        tmp_iter_expr = IterExpr(name=f'{self.iter_expr.key}.group', key=tmp_key, val=tmp_val)
         result_iter_expr = IterExpr(tmp_name, result_key, result_val)
 
         agg_dict = {}
