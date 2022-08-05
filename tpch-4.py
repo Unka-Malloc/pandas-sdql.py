@@ -42,7 +42,7 @@ if __name__ == '__main__':
     orders = pd.read_table(rf'{data_path}/orders.tbl', sep='|', index_col=False, header=None, names=pysdql.ORDERS_COLS)
 
     sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)]
-    sub_o.columns.name = 'sub_o'
+    sub_o.columns.field = 'sub_o'
 
     r = sub_o.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
     r['exists'] = np.select(
