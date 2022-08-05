@@ -62,8 +62,8 @@ if __name__ == '__main__':
     n1 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n1_cols)
     n2 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n2_cols)
 
-    n1.columns.name = 'n1'
-    n2.columns.name = 'n2'
+    n1.columns.field = 'n1'
+    n2.columns.field = 'n2'
 
     sub_n = n1.merge(n2, how='cross')
     r = sub_n[(sub_n['n1_name'] == var1) & (sub_n['n2_name'] == var2)
@@ -83,7 +83,7 @@ if __name__ == '__main__':
 
     r = r[['supp_nation', 'cust_nation', 'l_year', 'volume']]
 
-    r.columns.name = 'shiping'
+    r.columns.field = 'shiping'
 
     r = r.groupby(['supp_nation', 'cust_nation', 'l_year'], as_index=False).agg(revenue=('volume', 'sum'))
 

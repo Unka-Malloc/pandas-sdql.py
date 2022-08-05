@@ -60,16 +60,14 @@ class IterExpr:
 
     @property
     def key(self):
-        return self.__key
+        return self.iter_el.key
 
     @property
     def val(self):
-        return self.__val
+        return self.iter_el.val
 
     @property
     def expr(self):
-        if self.__key and self.__val:
-            return f'sum (<{self.__key}, {self.__val}> in {self.__name})'
         return f'sum ({self.iter_el} in {self.__name})'
 
     def __repr__(self):

@@ -36,7 +36,7 @@ if __name__ == '__main__':
     part = pd.read_table(rf'{data_path}/part.tbl', sep='|', index_col=False, header=None, names=pysdql.PART_COLS)
 
     sub_l = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)]
-    sub_l.columns.name = 'sub_l'
+    sub_l.columns.field = 'sub_l'
 
     r = sub_l.merge(part, left_on='l_partkey', right_on='p_partkey')
 

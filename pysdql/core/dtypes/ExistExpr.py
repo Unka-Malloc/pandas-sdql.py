@@ -3,8 +3,8 @@ class ExistExpr:
         self.main_col = main_col
         self.sub_col = sub_col
 
-        self.main_r = main_col.relation
-        self.sub_r = sub_col.relation
+        self.main_r = main_col.dataframe
+        self.sub_r = sub_col.dataframe
 
         self.conds = conds
 

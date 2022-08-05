@@ -62,7 +62,7 @@ class OpExpr:
 
     @property
     def name(self):
-        return self.op_obj.name
+        return self.op_obj.field
 
     @property
     def expr(self):

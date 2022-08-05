@@ -45,13 +45,13 @@ if __name__ == '__main__':
     lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
 
     sub_c = customer[customer['c_mktsegment'] == var1]
-    sub_c.columns.name = 'sub_c'
+    sub_c.columns.field = 'sub_c'
 
     sub_o = orders[orders['o_orderdate'] < var2]
-    sub_o.columns.name = 'sub_o'
+    sub_o.columns.field = 'sub_o'
 
     sub_l = lineitem[lineitem['l_shipdate'] > var2]
-    sub_l.columns.name = 'sub_l'
+    sub_l.columns.field = 'sub_l'
 
     r = sub_c.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
     r = r.merge(sub_l, left_on='o_orderkey', right_on='l_orderkey')
