@@ -144,15 +144,15 @@ class DataFrame(SemiRing):
             return self.name
         return self.data.expr
 
+    def __repr__(self):
+        return self.expr
+
     @property
     def sdql_expr(self):
         return self.operations.expr
 
     def __str__(self):
         return self.sdql_expr
-
-    def __repr__(self):
-        return self.expr
 
     @property
     def structure(self) -> str:

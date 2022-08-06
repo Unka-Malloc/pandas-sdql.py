@@ -1,5 +1,6 @@
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
+from pysdql.core.dtypes.ValExpr import ValExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.RecEl import RecEl
@@ -336,13 +337,12 @@ class ColEl:
 
     def sum(self):
         tmp_name = f'{self.field}_sum'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr, f'{self.dataframe.key}.{self.field} * {self.dataframe.val}'))
+        tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
+                                             f'{self.dataframe.key}.{self.field} * {self.dataframe.val}'))
         self.dataframe.push(OpExpr('colel_sum', tmp_var))
 
-        self.isvar = True
-        self.var_name = tmp_name
+        return ValExpr(tmp_name, self.dataframe.operations)
 
-        return self
         # tmp_name = f'{self.field}_sum'
         # tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr, f'{self.dataframe.key}.{self.field} * {self.dataframe.val}'))
         # self.dataframe.history_name.append(tmp_name)
@@ -354,7 +354,12 @@ class ColEl:
         # return self
 
     def count(self):
-        return
+        tmp_name = f'{self.field}_count'
+        tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
+                                             f'{self.dataframe.val}'))
+        self.dataframe.push(OpExpr('colel_count', tmp_var))
+
+        return ValExpr(tmp_name, self.dataframe.operations)
 
     def mean(self):
         tmp_name = f'{self.field}_mean'
@@ -362,25 +367,46 @@ class ColEl:
                          f'{self.field}_count': f'{self.dataframe.val}'})
         tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
         tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
-        self.dataframe.history_name.append(tmp_name)
-        self.dataframe.operations.append(OpExpr('colel_mean', tmp_var))
+        self.dataframe.push(OpExpr('colel_mean', tmp_var))
 
-        self.isvar = True
-        self.var_name = tmp_name
+        return ValExpr(tmp_name, self.dataframe.operations)
 
-        return self
+        # tmp_name = f'{self.field}_mean'
+        # tmp_rec = RecEl({f'{self.field}_sum': f'{self.dataframe.key}.{self.field} * {self.dataframe.val}',
+        #                  f'{self.field}_count': f'{self.dataframe.val}'})
+        # tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
+        # tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
+        # self.dataframe.history_name.append(tmp_name)
+        # self.dataframe.operations.append(OpExpr('colel_mean', tmp_var))
+        #
+        # self.isvar = True
+        # self.var_name = tmp_name
+        #
+        # return self
 
     def min(self):
-        return
+        tmp_name = f'{self.field}_min'
+        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mnpr]({self.dataframe.key}.{self.field})')
+        tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
+        self.dataframe.push(OpExpr('colel_min', tmp_var))
+
+        return ValExpr(tmp_name, self.dataframe.operations)
 
     def max(self):
         tmp_name = f'{self.field}_max'
         tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.key}.{self.field})')
         tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        self.dataframe.history_name.append(tmp_name)
-        self.dataframe.operations.append(OpExpr('colel_max', tmp_var))
+        self.dataframe.push(OpExpr('colel_max', tmp_var))
 
-        self.isvar = True
-        self.var_name = tmp_name
+        return ValExpr(tmp_name, self.dataframe.operations)
 
-        return self
+        # tmp_name = f'{self.field}_max'
+        # tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.key}.{self.field})')
+        # tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
+        # self.dataframe.history_name.append(tmp_name)
+        # self.dataframe.operations.append(OpExpr('colel_max', tmp_var))
+        #
+        # self.isvar = True
+        # self.var_name = tmp_name
+        #
+        # return self
