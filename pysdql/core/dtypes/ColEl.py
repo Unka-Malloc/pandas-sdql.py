@@ -52,7 +52,7 @@ class ColEl:
 
     @property
     def from_1DT(self):
-        if self.dataframe.type == '1DT':
+        if self.dataframe.structure == '1DT':
             return True
         else:
             return False
@@ -64,7 +64,7 @@ class ColEl:
 
     @property
     def from_LRT(self):
-        if self.dataframe.type == 'LRT':
+        if self.dataframe.structure == 'LRT':
             return True
         else:
             return False
@@ -76,13 +76,13 @@ class ColEl:
 
     @property
     def from_GRP(self):
-        if self.dataframe.type == 'GRP':
+        if self.dataframe.structure == 'GRP':
             return True
         else:
             return False
 
     @property
-    def record(self):
+    def key(self):
         if self.from_1DT:
             return self.dataframe.key
         if self.from_LRT:
@@ -93,6 +93,15 @@ class ColEl:
         if self.from_GRP:
             if self.field in self.dataframe.groupby.columns:
                 return self.dataframe.key
+
+    @property
+    def val(self):
+        if self.from_1DT:
+            return self.dataframe.val
+        if self.from_LRT:
+            return self.dataframe.val
+        if self.from_GRP:
+            return 1
 
     @property
     def expr(self) -> str:
@@ -322,9 +331,6 @@ class ColEl:
     def find(self, pattern, start=0):
         return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
-    # def exists(self, on, *args):
-    #     return ExistExpr(self, on, conds=args)
-
     def exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond)
 
@@ -338,7 +344,7 @@ class ColEl:
     def sum(self):
         tmp_name = f'{self.field}_sum'
         tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
-                                             f'{self.dataframe.key}.{self.field} * {self.dataframe.val}'))
+                                             f'{self.key}.{self.field} * {self.val}'))
         self.dataframe.push(OpExpr('colel_sum', tmp_var))
 
         return ValExpr(tmp_name, self.dataframe.operations)
@@ -356,15 +362,15 @@ class ColEl:
     def count(self):
         tmp_name = f'{self.field}_count'
         tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
-                                             f'{self.dataframe.val}'))
+                                             f'{self.val}'))
         self.dataframe.push(OpExpr('colel_count', tmp_var))
 
         return ValExpr(tmp_name, self.dataframe.operations)
 
     def mean(self):
         tmp_name = f'{self.field}_mean'
-        tmp_rec = RecEl({f'{self.field}_sum': f'{self.dataframe.key}.{self.field} * {self.dataframe.val}',
-                         f'{self.field}_count': f'{self.dataframe.val}'})
+        tmp_rec = RecEl({f'{self.field}_sum': f'{self.key}.{self.field} * {self.val}',
+                         f'{self.field}_count': f'{self.val}'})
         tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
         tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
         self.dataframe.push(OpExpr('colel_mean', tmp_var))
@@ -386,7 +392,7 @@ class ColEl:
 
     def min(self):
         tmp_name = f'{self.field}_min'
-        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mnpr]({self.dataframe.key}.{self.field})')
+        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mnpr]({self.key}.{self.field})')
         tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
         self.dataframe.push(OpExpr('colel_min', tmp_var))
 
@@ -394,7 +400,7 @@ class ColEl:
 
     def max(self):
         tmp_name = f'{self.field}_max'
-        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.key}.{self.field})')
+        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.key}.{self.field})')
         tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
         self.dataframe.push(OpExpr('colel_max', tmp_var))
 
