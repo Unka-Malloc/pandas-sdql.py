@@ -12,7 +12,7 @@ class OpSeq:
     def push(self, val):
         if type(val) == OpExpr:
             self.stack.append(val)
-            self.names.append(val.field)
+            self.names.append(val.name)
         else:
             raise ValueError(f'Only accept OpExpr.')
 
