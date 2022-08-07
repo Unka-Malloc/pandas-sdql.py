@@ -22,6 +22,20 @@ If `mutable == True`: intermediate step
 
 else if `mutable == False`: data collection
 
+Split `expr` and `sdql_expr`
+
+`expr => __str__()`: `str(x) | print(x)`
+
+`sdql_expr => __repr__()`: `repr(x) | eval(x)`
+
+### Abstract Interface
+
+`SemiRing`:
+1. `expr`
+2. `__str__`
+3. `sdql_expr`
+4. `__repr__`
+
 ## Discussion
 
 ### to_csv
@@ -85,3 +99,54 @@ Refactor `DataFrame.name`
 Refactor `VarExpr, ValExpr`
 Refactor `IterEl, IterExpr`
 Refactor `ColEl, ColExpr`
+
+#### 2022-08-05
+Refactor `ValExpr`
+
+Refactor `ColEl`
+
+#### 2022-08-06
+Refactor `DataFrame`
+
+Add `DataFrameStruct`:
+
+1. `1DT` Singleton Dictionary: 
+
+`{<a_i = v_i> -> 1}`
+
+2. `LRT` Left Join: 
+
+`{<left = <l_i=lv_i>, right = <r_i=rv_i>> -> v}`
+
+3. `GRP` Group By:
+
+`{<a_i = v_i> -> {k -> v}}`
+
+
+
+Refactor `ColEl`
+
+#### 2022-08-07
+Refactor `DataFrame`
+1. `__str__`
+2. `__repr__`
+
+Refactor `ColEl`:
+1. `sum()`
+2. `count()`
+3. `mean()`
+4. `min()`
+5. `max()`
+
+#### 2022-08-08
+Refactor `ColEl`:
+
+1. `from_1DT`
+2. `from_LRT`
+3. `from_GRP`
+
+4. `key`
+5. `val`
+
+6. `sum, count, mean, min, max` 
+`return` `ValExpr(operations)`
