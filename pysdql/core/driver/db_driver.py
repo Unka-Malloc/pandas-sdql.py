@@ -193,7 +193,5 @@ class db_driver:
             f.write(''.join(self.output))
         return self
 
-
-
     def __repr__(self):
         return '\n'.join(self.output)
