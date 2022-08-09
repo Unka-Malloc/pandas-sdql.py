@@ -1,7 +1,13 @@
+import string
+
+from pysdql.core.dtypes.IterStmt import IterStmt
+from pysdql.core.dtypes.ConcatExpr import ConcatExpr
+from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColEl import ColEl
+from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
-from pysdql.core.dtypes.IterEl import IterEl
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -17,6 +23,10 @@ from pysdql.core.util.type_checker import (
     is_str
 )
 
+from pysdql.core.util.data_interpreter import (
+    to_scalar
+)
+
 
 class DataFrame(SemiRing):
     def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=OpSeq()):
@@ -30,7 +40,8 @@ class DataFrame(SemiRing):
 
         self.__structure = DataFrameStruct('1DT')
 
-        self.operations.push(OpExpr('', self.variable))
+        if self.variable:
+            self.operations.push(OpExpr('', self.variable))
 
     @property
     def data(self):
@@ -105,8 +116,41 @@ class DataFrame(SemiRing):
             self.__name = val
 
     @property
+    def tmp_name_list(self):
+        return ['tmp_a', 'tmp_b', 'tmp_c', 'tmp_d', 'tmp_e', 'tmp_f', 'tmp_g',
+                'tmp_h', 'tmp_i', 'tmp_j', 'tmp_k', 'tmp_l', 'tmp_m', 'tmp_n',
+                'tmp_o', 'tmp_p', 'tmp_q', 'tmp_r', 'tmp_s', 'tmp_t',
+                'tmp_u', 'tmp_v', 'tmp_w', 'tmp_x', 'tmp_y', 'tmp_z']
+
+    @staticmethod
+    def hard_code_tmp_name():
+        name_list = []
+        for i in list(string.ascii_lowercase):
+            name_list.append(f'tmp_{i}')
+        print(name_list)
+
+    def gen_tmp_name(self, noname=None):
+        if noname is None:
+            noname = [self.name] + self.history_name
+
+        for tmp_name in self.tmp_name_list:
+            if tmp_name not in noname:
+                return tmp_name
+        else:
+            for i in range(1024):
+                tmp_name = f'tmp_{i}'
+                if tmp_name not in noname:
+                    return tmp_name
+            else:
+                raise ValueError('Failed to generate tmp name!')
+
+    @property
     def operations(self):
         return self.__operations
+
+    @property
+    def history_name(self):
+        return self.operations.names
 
     def pop(self):
         self.operations.pop()
@@ -124,7 +168,8 @@ class DataFrame(SemiRing):
     def variable(self):
         if self.__data:
             return VarExpr(self.name, self.__data)
-        return VarExpr(self.name, DictEl({}))
+        else:
+            return None
 
     @property
     def iter_expr(self):
@@ -164,4 +209,41 @@ class DataFrame(SemiRing):
 
     def __getitem__(self, item):
         if type(item) == str:
-            return ColEl(self, item)
+            return self.get_col(col_name=item)
+
+    def get_col(self, col_name):
+        if col_name in self.columns:
+            return ColEl(self, col_name)
+
+    def __setitem__(self, key, value):
+        if key in self.columns:
+            if type(value) in (bool, int, float, str):
+                return self.rename_col_scalar(key, value)
+            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+                return self.rename_col_expr(key, value)
+        else:
+            if type(value) in (bool, int, float, str):
+                return self.insert_col_scalar(key, value)
+            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+                return self.insert_col_expr(key, value)
+
+    def rename_col_scalar(self, key, value):
+        pass
+
+    def rename_col_expr(self, key, value):
+        pass
+
+    def insert_col_scalar(self, key, value):
+        next_name = self.gen_tmp_name()
+        next_df = DataFrame(name=next_name, operations=self.operations)
+
+        value = to_scalar(value)
+        var = VarExpr(next_name, IterStmt(self.iter_expr,
+                                          DictEl({ConcatExpr(self.iter_expr.key, RecEl({key: value}))
+                                                  : 1})))
+
+        next_df.push(OpExpr('', var))
+
+    def insert_col_expr(self, key, value):
+        pass
+

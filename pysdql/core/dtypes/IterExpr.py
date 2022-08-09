@@ -11,14 +11,14 @@ class IterExpr:
 
     @property
     def ref_dict(self):
-        d = {"tmp": "t", "tmpa": "ta", "tmpb": "tb", "tmpc": "tc", "tmpd": "td", "tmpe": "te", "tmpf": "tf",
-             "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
-             "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
-             "tmps": "ts", "tmpt": "tt", "tmpu": "tu", "tmpv": "tv", "tmpw": "tw", "tmpx": "tx",
-             "tmpy": "ty", "tmpz": "tz",
-             "lineitem": "lin", "part": "par", "supplier": "sup", "partsupp": "psup",
-             "customer": "cus", "orders": "ord", "nation": "nat", "region": "reg"}
-        return d
+        return {
+            # "tmp": "t", "tmpa": "ta", "tmpb": "tb", "tmpc": "tc", "tmpd": "td", "tmpe": "te", "tmpf": "tf",
+            # "tmpg": "tg", "tmph": "th", "tmpi": "ti", "tmpj": "tj", "tmpk": "tk", "tmpl": "tl",
+            # "tmpm": "tm", "tmpn": "tn", "tmpo": "to", "tmpp": "tp", "tmpq": "tq", "tmpr": "tr",
+            # "tmps": "ts", "tmpt": "tt", "tmpu": "tu", "tmpv": "tv", "tmpw": "tw", "tmpx": "tx",
+            # "tmpy": "ty", "tmpz": "tz",
+            "lineitem": "lin", "part": "par", "supplier": "sup", "partsupp": "psup",
+            "customer": "cus", "orders": "ord", "nation": "nat", "region": "reg"}
 
     @staticmethod
     def hard_code_ref_dict():

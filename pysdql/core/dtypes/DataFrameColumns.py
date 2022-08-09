@@ -5,11 +5,11 @@ class DataFrameColumns:
 
     @property
     def name(self):
-        return self.df.field
+        return self.df.name
 
     @name.setter
     def name(self, val):
-        self.df.field = val
+        self.df.name = val
 
     def __len__(self):
         return len(self.columns)
@@ -30,6 +30,9 @@ class DataFrameColumns:
         if item in self.columns:
             return True
         return False
+
+    def __str__(self):
+        return str(self.columns)
 
     def __repr__(self):
         return str(self.columns)
