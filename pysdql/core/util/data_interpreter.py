@@ -7,12 +7,11 @@ def is_date(data: str):
         return re.match(reg_exp, data) is not None
 
 
-def to_bool(data: str) -> str:
-    if type(data) == bool:
-        if data:
-            return 'true'
-        else:
-            return 'false'
+def to_bool(data: bool) -> str:
+    if data:
+        return 'true'
+    else:
+        return 'false'
 
 
 def to_date(data: str) -> str:
@@ -22,7 +21,7 @@ def to_date(data: str) -> str:
     year = date_list[0]
     month = date_list[1]
     day = date_list[2]
-    return f'date({year}-{month}-{day})'
+    return f'date({year}{month}{day})'
 
 
 def to_scalar(data) -> str:
