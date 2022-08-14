@@ -119,6 +119,15 @@ from pysdql.core.util.type_checker import is_header
 #                             data=sdict({rec: 1}, r_name),
 #                             cols=names)
 
+def read_table(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, load=True):
+    return read_csv(filepath_or_buffer=filepath_or_buffer,
+                    sep=sep,
+                    header=header,
+                    names=names,
+                    index_col=index_col,
+                    dtype=dtype,
+                    load=load)
+
 
 def read_csv(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, load=True):
     if names is None:

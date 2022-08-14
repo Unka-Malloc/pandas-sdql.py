@@ -182,6 +182,7 @@ def from_expr(expr: str):
     if match_real(expr):
         return float(expr)
     if match_string(expr):
+        # remove_sides('any_char') == strip('any_char')
         return remove_sides(expr, '"')
     if match_record(expr):
         return from_record(expr)
