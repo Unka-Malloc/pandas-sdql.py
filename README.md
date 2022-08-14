@@ -22,6 +22,10 @@ If `mutable == True`: intermediate step
 
 else if `mutable == False`: data collection
 
+Only `data_matcher.from_expr()` will set `mutable == False`
+1. `from_record()`
+2. `from_dict()`
+
 Split `expr` and `sdql_expr`
 
 `expr => __str__()`: `str(x) | print(x)`

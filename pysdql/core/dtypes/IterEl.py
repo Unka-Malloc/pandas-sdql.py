@@ -8,7 +8,7 @@ class IterEl:
         elif type(data) == tuple:
             self.__key_val = data
         else:
-            raise ValueError('Only accept "<k, v>" or "x"')
+            raise ValueError('Only accept (k, v) or "x"')
 
     @property
     def key(self) -> str:
