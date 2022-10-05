@@ -15,7 +15,7 @@ class DictIR(SemiRing):
                 expr_list.append(f'{k}: {self.data[k]}')
         else:
             for k in self.data.keys():
-                expr_list.append(f'{to_scalar(k)}: {to_scalar(self.data[k])}')
+                expr_list.append(f'"{to_scalar(k)}": {to_scalar(self.data[k])}')
         return f"{{{', '.join(expr_list)}}}"
 
     def __repr__(self):

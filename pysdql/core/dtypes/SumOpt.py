@@ -21,14 +21,13 @@ class SumOpt:
         self.var_cols = {}
 
         self.is_groupby_agg = False
+        self.groupby_agg_expr = None
 
     @property
     def expr(self):
+        if self.is_groupby_agg:
+            return self.groupby_agg_expr
         return f'{self.sum_on.name}.sum(lambda p: {self.sum_func} if {self.sum_if} else {self.sum_else}, {self.sum_update})'
-
-    @property
-    def groupby_agg_expr(self):
-        return f''
 
     def __str__(self):
         return self.expr
@@ -77,9 +76,8 @@ class SumOpt:
                         else:
                             groupby_agg_val[k] = v
 
-            sum_func_part1 = DictIR({RecIR(groupby_keys): RecIR(groupby_agg_val)})
+            self.sum_func = DictIR({RecIR(groupby_keys): RecIR(groupby_agg_val)})
 
-            sum_func_part2
-
-            self.sum_func =
+            self.groupby_agg_expr = f'{self.sum_on.name}.sum(lambda p: {self.sum_func} if {self.sum_if} else {self.sum_else}, {self.sum_update})' \
+                                    f'.sum(lambda p: {{p[0].concat(p[1]): True}}, {self.sum_update})'
 
