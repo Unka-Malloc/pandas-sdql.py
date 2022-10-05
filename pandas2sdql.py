@@ -19,6 +19,40 @@ def q1():
 
     print(result)
 
+def q3():
+    """
+
+    cu.sum(lambda p:
+        {
+            record({"c_custkey": p[0].c_custkey}):
+            True
+        }
+        if
+            p[0].c_mktsegment == "BUILDING"
+        else
+            None,
+        True)
+    ord.sum(lambda p:
+        {
+            record({"o_orderkey": p[0].o_orderkey,
+                    "o_orderdate": p[0].o_orderdate,
+                    "o_shippriority": p[0].o_shippriority}).concat(cu["o_custkey"]):
+            True
+        }
+        if
+            p[0].o_orderdate < "1995-03-15" and cu["o_custkey"] != None
+        else
+            None,
+        True)
+    li.sum(lambda p:
+        {
+            # There should be an aggregation.
+        }
+        True)
+
+    :return:
+    """
+
 
 def q6():
     # replaced by read_csv() in the future,
@@ -35,7 +69,7 @@ def q6():
 
     result = (li_filt.l_extendedprice * li_filt.l_discount).sum()
 
-    result.optimize()
+    print(result)
 
 
 if __name__ == '__main__':
