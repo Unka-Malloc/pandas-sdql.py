@@ -1,5 +1,6 @@
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
+from pysdql.core.dtypes.SumExpr import SumExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 
 
@@ -42,12 +43,26 @@ class ColExpr:
         return f'({u1_str} {self.op} {u2_str})'
 
     def sum(self):
-        tmp_name = f'agg_val'
-        if self.inherit_from:
-            result = VarExpr(tmp_name, IterStmt(self.inherit_from.iter_expr, self.inherit_from.iter_expr.val))
-            self.inherit_from.history_name.append(tmp_name)
-            self.inherit_from.operations.append(OpExpr('colexpr_aggr_sum', result))
-        return VarExpr(tmp_name, inherit_from=self.inherit_from)
+        # tmp_name = f'{self.inherit_from.name}_sum'
+        sum_expr = SumExpr(sum_on=self.inherit_from,
+                           sum_func=self.expr,
+                           sum_if=None,
+                           sum_else=0.0,
+                           sum_update=True)
+        op_expr = OpExpr(op_obj=sum_expr,
+                         op_on=self.inherit_from,
+                         op_iter=True,
+                         iter_on=self.inherit_from,
+                         ret_type=float)
+        self.inherit_from.push(op_expr)
+        return self.inherit_from
+
+        # tmp_name = f'agg_val'
+        # if self.inherit_from:
+        #     result = VarExpr(tmp_name, IterStmt(self.inherit_from.iter_expr, self.inherit_from.iter_expr.val))
+        #     self.inherit_from.history_name.append(tmp_name)
+        #     self.inherit_from.operations.append(OpExpr('colexpr_aggr_sum', result))
+        # return VarExpr(tmp_name, inherit_from=self.inherit_from)
 
     def inherit(self, other):
         if self.inherit_from:
