@@ -1,5 +1,8 @@
 import string
 
+from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
+from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
@@ -9,6 +12,9 @@ from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
+from pysdql.core.dtypes.SumExpr import SumExpr
+from pysdql.core.dtypes.SumOpt import SumOpt
+from pysdql.core.dtypes.VarCol import VarCol
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
@@ -27,21 +33,24 @@ from pysdql.core.util.data_interpreter import (
     to_scalar
 )
 
+from varname import varname
+
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=OpSeq()):
+    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
         self.__columns = columns
         self.__dtype = dtype
         self.__name = name
-        self.__operations = operations
+        self.__var_name = varname()
+        self.__operations = operations if operations else OpSeq()
 
         self.__structure = DataFrameStruct('1DT')
 
-        if self.variable:
-            self.operations.push(OpExpr('', self.variable))
+        # if self.variable:
+        #     self.operations.push(OpExpr('', self.variable))
 
     @property
     def data(self):
@@ -100,6 +109,8 @@ class DataFrame(SemiRing):
     def name(self):
         if self.__name:
             return self.__name
+        if self.__var_name:
+            return self.__var_name
         return self.__default_name
 
     @name.setter
@@ -177,11 +188,32 @@ class DataFrame(SemiRing):
 
     @property
     def key(self):
-        return self.iter_expr.key
+        return 'p[0]'
+        # return self.iter_expr.key
 
     @property
     def val(self):
-        return self.iter_expr.val
+        return 'p[1]'
+        # return self.iter_expr.val
+
+    def optimize(self):
+        sum_opt = SumOpt(self)
+        opt_name = self.name
+        for op_expr in self.operations:
+            opt_name += op_expr.get_op_name_suffix()
+
+            if op_expr.op_type == CondExpr:
+                sum_opt.add_cond(op_expr.op)
+            if op_expr.op_type == SumExpr:
+                sum_opt.merge(op_expr.op)
+            if op_expr.op_type == VarCol:
+                sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
+            if op_expr.op_type == GroupByAgg:
+                sum_opt.groupby_agg(op_expr.op)
+
+        output = f'{opt_name} = {sum_opt.expr}'
+
+        print(output)
 
     @property
     def expr(self) -> str:
@@ -194,7 +226,7 @@ class DataFrame(SemiRing):
 
     @property
     def sdql_expr(self):
-        return self.operations.expr
+        return self.optimize()
 
     def __str__(self):
         return self.sdql_expr
@@ -210,10 +242,22 @@ class DataFrame(SemiRing):
     def __getitem__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)
+        if type(item) == CondExpr:
+            self.operations.push(OpExpr(op_obj=item,
+                                        op_on=self,
+                                        op_iter=False))
+            return self
+
+    def __getattr__(self, item):
+        if type(item) == str:
+            return self.get_col(col_name=item)
 
     def get_col(self, col_name):
         if col_name in self.columns:
             return ColEl(self, col_name)
+
+        # unsafe
+        return ColEl(self, col_name)
 
     def __setitem__(self, key, value):
         if key in self.columns:
@@ -234,16 +278,23 @@ class DataFrame(SemiRing):
         pass
 
     def insert_col_scalar(self, key, value):
-        next_name = self.gen_tmp_name()
-        next_df = DataFrame(name=next_name, operations=self.operations)
-
-        value = to_scalar(value)
-        var = VarExpr(next_name, IterStmt(self.iter_expr,
-                                          DictEl({ConcatExpr(self.iter_expr.key, RecEl({key: value}))
-                                                  : 1})))
-
-        next_df.push(OpExpr('', var))
+        pass
+        # next_name = self.gen_tmp_name()
+        # next_df = DataFrame(name=next_name, operations=self.operations)
+        #
+        # value = to_scalar(value)
+        # var = VarExpr(next_name, IterStmt(self.iter_expr,
+        #                                   DictEl({ConcatExpr(self.iter_expr.key, RecEl({key: value}))
+        #                                           : 1})))
+        #
+        # next_df.push(OpExpr('', var))
 
     def insert_col_expr(self, key, value):
-        pass
+        self.operations.push(OpExpr(op_obj=VarCol(col_var=key,
+                                                  col_expr=value),
+                                    op_on=self,
+                                    op_iter=False))
 
+    def groupby(self, cols):
+        return DataFrameGroupBy(groupby_from=self,
+                                groupby_cols=cols)

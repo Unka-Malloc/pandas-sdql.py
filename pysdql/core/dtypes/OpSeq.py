@@ -33,5 +33,14 @@ class OpSeq:
             expr_str += f'\n{self.peak().name}'
         return expr_str
 
+    def __str__(self):
+        return self.expr
+
     def __repr__(self):
         return self.expr
+
+    def __iter__(self):
+        return iter(self.stack)
+
+
+

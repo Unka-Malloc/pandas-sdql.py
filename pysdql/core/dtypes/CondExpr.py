@@ -22,7 +22,9 @@ class CondExpr:
                 m = f'0{m}'
             if len(d) == 1:
                 d = f'0{d}'
-            self.unit1 = f'date({date1.year}{m}{d})'
+            # self.unit1 = f'date({date1.year}{m}{d})'
+            self.unit1 = f'{date1.year}{m}{d}'
+
         if self.is_date(self.unit2):
             date2 = self.parse_date(self.unit2)
             m = str(date2.month)
@@ -31,7 +33,8 @@ class CondExpr:
                 m = f'0{m}'
             if len(d) == 1:
                 d = f'0{d}'
-            self.unit2 = f'date({date2.year}{m}{d})'
+            # self.unit2 = f'date({date2.year}{m}{d})'
+            self.unit2 = f'{date2.year}{m}{d}'
 
     @staticmethod
     def parse_date(data):
@@ -116,12 +119,17 @@ class CondExpr:
         if self.op == '!=':
             return f'({self.unit1} != {self.unit2})'
         if self.op == '&&':
-            return f'({self.unit1} {self.op} {self.unit2})'
+            # return f'({self.unit1} {self.op} {self.unit2})'
+            return f'({self.unit1} and {self.unit2})'
         if self.op == '||':
-            return f'({self.unit1} {self.op} {self.unit2})'
+            # return f'({self.unit1} {self.op} {self.unit2})'
+            return f'({self.unit1} or {self.unit2})'
         if self.op == '~':
             return f'(!({self.unit1}))'
         return f'({self.unit1} {self.op} {self.unit2})'
+
+    def __str__(self):
+        return self.expr
 
     def __repr__(self):
         return self.expr
@@ -158,3 +166,7 @@ class CondExpr:
         return CondExpr(unit1=self,
                         operator='~',
                         unit2=self).inherit(self)
+
+    @property
+    def op_name_suffix(self):
+        return f'_filter'

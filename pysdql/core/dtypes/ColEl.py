@@ -123,7 +123,7 @@ class ColEl:
 
     @property
     def sdql_expr(self) -> str:
-        return ''
+        return f'{self.dataframe.key}.{self.field}'
 
     def __str__(self):
         return self.sdql_expr
