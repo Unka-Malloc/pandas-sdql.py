@@ -17,9 +17,7 @@ def q1():
              count_order=("l_quantity", "count")
              )
 
-    result.optimize()
-
-
+    print(result)
 
 
 def q6():
