@@ -27,7 +27,7 @@ class RecIR(SemiRing):
         expr_list = []
         if self.mutable:
             for k in self.data.keys():
-                expr_list.append(f'{k}: {self.data[k]}')
+                expr_list.append(f'"{k}": {self.data[k]}')
             return f"record({{{', '.join(expr_list)}}})"
         else:
             for k in self.data.keys():

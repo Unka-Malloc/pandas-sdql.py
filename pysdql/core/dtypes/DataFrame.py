@@ -212,8 +212,7 @@ class DataFrame(SemiRing):
                 sum_opt.groupby_agg(op_expr.op)
 
         output = f'{opt_name} = {sum_opt.expr}'
-
-        print(output)
+        return output
 
     @property
     def expr(self) -> str:
