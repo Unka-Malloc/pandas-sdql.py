@@ -7,6 +7,9 @@ from enum import (
 )
 
 from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.Utils import (
+    input_fmt
+)
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
     RecAccessExpr,
@@ -192,33 +195,38 @@ class CondExpr(SDQLIR):
     '''
 
     def __and__(self, other):
-        return CondExpr(unit1=self,
-                        operator=LogicSymbol.AND,
-                        unit2=other)
+        # return CondExpr(unit1=self,
+        #                 operator=LogicSymbol.AND,
+        #                 unit2=other)
+        return MulExpr(self.sdql_ir, input_fmt(other))
 
     def __or__(self, other):
-        return CondExpr(unit1=self,
-                        operator=LogicSymbol.OR,
-                        unit2=other)
+        # return CondExpr(unit1=self,
+        #                 operator=LogicSymbol.OR,
+        #                 unit2=other)
+        return AddExpr(self.sdql_ir, input_fmt(other))
 
     def __invert__(self):
-        return CondExpr(unit1=self,
-                        operator=LogicSymbol.NOT,
-                        unit2=self)
+        # return CondExpr(unit1=self,
+        #                 operator=LogicSymbol.NOT,
+        #                 unit2=self)
+        raise NotImplemented
 
     '''
     Reverse AND, OR
     '''
 
     def __rand__(self, other):
-        return CondExpr(unit1=other,
-                        operator=LogicSymbol.AND,
-                        unit2=self)
+        # return CondExpr(unit1=other,
+        #                 operator=LogicSymbol.AND,
+        #                 unit2=self)
+        return MulExpr(input_fmt(other), self.sdql_ir)
 
     def __ror__(self, other):
-        return CondExpr(unit1=other,
-                        operator=LogicSymbol.OR,
-                        unit2=self)
+        # return CondExpr(unit1=other,
+        #                 operator=LogicSymbol.OR,
+        #                 unit2=self)
+        return AddExpr(input_fmt(other), self.sdql_ir)
 
     '''
     Recursive AND, OR
@@ -245,3 +253,6 @@ class CondExpr(SDQLIR):
     @property
     def op_name_suffix(self):
         return f'_filter'
+
+    def __repr__(self):
+        return repr(self.sdql_ir)

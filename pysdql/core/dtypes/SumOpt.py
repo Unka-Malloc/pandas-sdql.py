@@ -1,3 +1,5 @@
+import json
+
 from pysdql.core.dtypes.DictIR import DictIR
 from pysdql.core.dtypes.RecIR import RecIR
 
@@ -16,18 +18,22 @@ class SumOpt:
         self.sum_else = None
         self.sum_update = True
 
-        self.info = {
-            'sum_on': self.sum_on,
-            'sum_func': self.sum_func,
-            'sum_if': self.sum_if,
-            'sum_else': self.sum_else,
-            'sum_update': self.sum_update
-        }
+
 
         self.var_cols = {}
 
         self.is_groupby_agg = False
         self.groupby_agg_expr = None
+
+    @property
+    def info(self):
+        return {
+            'sum_on': repr(self.sum_on),
+            'sum_if_cond': repr(self.sum_if),
+            'sum_then_func': repr(self.sum_func),
+            'sum_else_func': repr(self.sum_else),
+            'sum_update': repr(self.sum_update)
+        }
 
     @property
     def expr(self):
@@ -36,13 +42,14 @@ class SumOpt:
         return f'{self.sum_on.name}.sum(lambda p: {self.sum_func} if {self.sum_if} else {self.sum_else}, {self.sum_update})'
 
     def __str__(self):
-        return self.expr
+        return json.dumps(self.info, indent=4)
 
     def add_cond(self, cond_if):
         if self.sum_if:
-            self.sum_if = f'{self.sum_if} and {cond_if}'
+            raise NotImplemented
+            # self.sum_if = f'{self.sum_if} and {cond_if}'
         else:
-            self.sum_if = f'{cond_if}'
+            self.sum_if = cond_if
 
     def merge(self, sum_expr):
         if self.sum_on.name == sum_expr.sum_on.name:
@@ -90,3 +97,6 @@ class SumOpt:
     @property
     def sdql_ir(self):
         return 
+
+    def __repr__(self):
+        return repr(self.info)

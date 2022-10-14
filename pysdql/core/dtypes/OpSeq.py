@@ -30,7 +30,6 @@ class OpSeq:
         expr_str = ''
         if len(self.stack) >= 1:
             expr_str = f'\n'.join([f'{i}' for i in self.stack])
-            expr_str += f'\n{self.peak().name}'
         return expr_str
 
     def __str__(self):

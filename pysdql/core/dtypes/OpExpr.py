@@ -149,7 +149,7 @@ class OpExpr:
     #     return f'{self.op_obj}'
 
     def __repr__(self):
-        return str(self.info)
+        return repr(self.info)
     #
     # def __hash__(self):
     #     return hash((self.op_info, self.op_obj))

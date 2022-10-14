@@ -264,32 +264,32 @@ class ColEl(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(AddExpr(self.col, input_fmt(other)))
+        return ColExpr(value=AddExpr(self.col, input_fmt(other)), on=self.R)
 
     def __mul__(self, other):
-        return ColExpr(MulExpr(self.col, input_fmt(other)))
+        return ColExpr(value=MulExpr(self.col, input_fmt(other)), on=self.R)
 
     def __sub__(self, other):
-        return ColExpr(SubExpr(self.col, input_fmt(other)))
+        return ColExpr(value=SubExpr(self.col, input_fmt(other)), on=self.R)
 
     def __truediv__(self, other):
-        return ColExpr(DivExpr(self.col, input_fmt(other)))
+        return ColExpr(value=DivExpr(self.col, input_fmt(other)), on=self.R)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(AddExpr(input_fmt(other), self.col))
+        return ColExpr(value=AddExpr(input_fmt(other), self.col), on=self.R)
 
     def __rmul__(self, other):
-        return ColExpr(MulExpr(input_fmt(other), self.col))
+        return ColExpr(value=MulExpr(input_fmt(other), self.col), on=self.R)
 
     def __rsub__(self, other):
-        return ColExpr(SubExpr(input_fmt(other), self.col))
+        return ColExpr(value=SubExpr(input_fmt(other), self.col), on=self.R)
 
     def __rtruediv__(self, other):
-        return ColExpr(DivExpr(input_fmt(other), self.col))
+        return ColExpr(value=DivExpr(input_fmt(other), self.col), on=self.R)
 
     # def isin(self, vals, ext=None):
     #     # print(f'{self.expr} is in {vals}')

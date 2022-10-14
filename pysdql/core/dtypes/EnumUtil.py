@@ -18,3 +18,10 @@ class MathSymbol(Enum):
     MUL = 3
     DIV = 4
     MOD = 5
+
+
+@unique
+class AggrType(Enum):
+    VAL = 0
+    DICT = 1
+    REC = 2
