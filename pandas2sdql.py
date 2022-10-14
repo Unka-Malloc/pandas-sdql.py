@@ -1,5 +1,10 @@
 from pysdql import DataFrame
 
+from pysdql.core.dtypes.sdql_ir import (
+    PrintAST,
+    GenerateSDQLCode,
+)
+
 
 def q1():
     li = DataFrame()
@@ -70,9 +75,20 @@ def q6():
 
     result = (li_filt.l_extendedprice * li_filt.l_discount).sum()
 
-    print(result.operations)
+    print(result.aggr_expr)
+
+    PrintAST(result.aggr_expr)
+
+    return result
 
 
 if __name__ == '__main__':
     # q1()
     q6()
+
+    # li = DataFrame()
+    # PrintAST((li.l_shipdate >= "1994-01-01") &
+    # (li.l_shipdate < "1995-01-01") &
+    # (li.l_discount >= 0.05) &
+    # (li.l_discount <= 0.07) &
+    # (li.l_quantity < 24))

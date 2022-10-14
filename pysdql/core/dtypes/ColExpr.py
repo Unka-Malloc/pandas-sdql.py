@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -19,6 +20,7 @@ from pysdql.core.dtypes.sdql_ir import (
 
 from pysdql.core.dtypes.EnumUtil import (
     MathSymbol,
+    AggrType
 )
 
 from pysdql.core.dtypes.Utils import (
@@ -27,8 +29,9 @@ from pysdql.core.dtypes.Utils import (
 
 
 class ColExpr(SDQLIR):
-    def __init__(self, value):
+    def __init__(self, value, on):
         self.__value = value
+        self.on = on
         # self.inherit_from = inherit_from
         #
         # self.isvar = self.init_var()
@@ -155,32 +158,51 @@ class ColExpr(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(AddExpr(self.col, input_fmt(other)))
+        return ColExpr(value=AddExpr(self.col, input_fmt(other)), on=self.on)
 
     def __mul__(self, other):
-        return ColExpr(MulExpr(self.col, input_fmt(other)))
+        return ColExpr(value=MulExpr(self.col, input_fmt(other)), on=self.on)
 
     def __sub__(self, other):
-        return ColExpr(SubExpr(self.col, input_fmt(other)))
+        return ColExpr(value=SubExpr(self.col, input_fmt(other)), on=self.on)
 
     def __truediv__(self, other):
-        return ColExpr(DivExpr(self.col, input_fmt(other)))
+        return ColExpr(value=DivExpr(self.col, input_fmt(other)), on=self.on)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(AddExpr(input_fmt(other), self.col))
+        return ColExpr(value=AddExpr(input_fmt(other), self.col), on=self.on)
 
     def __rmul__(self, other):
-        return ColExpr(MulExpr(input_fmt(other), self.col))
+        return ColExpr(value=MulExpr(input_fmt(other), self.col), on=self.on)
 
     def __rsub__(self, other):
-        return ColExpr(SubExpr(input_fmt(other), self.col))
+        return ColExpr(value=SubExpr(input_fmt(other), self.col), on=self.on)
 
     def __rtruediv__(self, other):
-        return ColExpr(DivExpr(input_fmt(other), self.col))
+        return ColExpr(value=DivExpr(input_fmt(other), self.col), on=self.on)
+
+    '''
+    Aggregation Function
+    '''
+
+    def sum(self):
+        aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
+                             aggr_on=self.on,
+                             aggr_op=self.col)
+
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self.on,
+                         op_iter=True,
+                         iter_on=self.on,
+                         ret_type=float)
+
+        self.on.push(op_expr)
+
+        return aggr_expr
 
     @property
     def sdql_ir(self):

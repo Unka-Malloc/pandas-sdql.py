@@ -24,6 +24,13 @@ from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.SemiRing import SemiRing
 
+from pysdql.core.dtypes.sdql_ir import (
+    Expr,
+    MulExpr,
+    AddExpr,
+    CompareExpr,
+)
+
 from pysdql.core.util.type_checker import (
     is_int,
     is_float,
@@ -36,6 +43,11 @@ from pysdql.core.util.data_interpreter import (
 )
 
 from varname import varname
+
+from pysdql.core.dtypes.EnumUtil import (
+    LogicSymbol,
+    MathSymbol,
+)
 
 
 class DataFrame(SemiRing):
@@ -176,7 +188,7 @@ class DataFrame(SemiRing):
 
     @property
     def iter_el(self):
-        return IterEl(str(hash((self.name, self.data, self.columns, self.dtype, ))))
+        return IterEl(str(hash((self.name, ))))
 
     @property
     def el(self):
@@ -190,12 +202,12 @@ class DataFrame(SemiRing):
 
             if op_expr.op_type == CondExpr:
                 sum_opt.add_cond(op_expr.op)
-            if op_expr.op_type == SumExpr:
-                sum_opt.merge(op_expr.op)
-            if op_expr.op_type == VirColEl:
-                sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
-            if op_expr.op_type == GroupByAgg:
-                sum_opt.groupby_agg(op_expr.op)
+            # if op_expr.op_type == SumExpr:
+            #     sum_opt.merge(op_expr.op)
+            # if op_expr.op_type == VirColEl:
+            #     sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
+            # if op_expr.op_type == GroupByAgg:
+            #     sum_opt.groupby_agg(op_expr.op)
 
         return OptStmt(opt_name=opt_name,
                        opt_sum=sum_opt)
@@ -234,6 +246,20 @@ class DataFrame(SemiRing):
     def __getitem__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)
+
+        if type(item) == CompareExpr:
+            return self[CondExpr(unit1=item.leftExpr,
+                                 operator=item.compareType,
+                                 unit2=item.rightExpr)]
+        if type(item) == MulExpr:
+            return self[CondExpr(unit1=item.op1Expr,
+                                 operator=LogicSymbol.AND,
+                                 unit2=item.op2Expr)]
+        if type(item) == AddExpr:
+            return self[CondExpr(unit1=item.op1Expr,
+                                 operator=LogicSymbol.OR,
+                                 unit2=item.op2Expr)]
+
         if type(item) == CondExpr:
             self.operations.push(OpExpr(op_obj=item,
                                         op_on=self,

@@ -750,6 +750,11 @@ class ConstantExpr(Expr):
     def printInnerVals(self):
         return " | " + "value: " + str(self.value) + " | " + "valueType: " + str(self.type)
 
+    def __repr__(self) -> str:
+        if type(self.value) == str:
+            return f'ConstantExpr("{self.value}")'
+        return f'ConstantExpr({self.value})'
+
 
 class VarExpr(Expr):
     def __init__(self, varName: str):
@@ -760,6 +765,9 @@ class VarExpr(Expr):
     def printInnerVals(self):
         return " | " + "name: " + str(self.name)
 
+    def __repr__(self) -> str:
+        return f"VarExpr('{self.name}')"
+
 
 class LetExpr(Expr):
     def __init__(self, varExpr: VarExpr, valExpr: Expr, bodyExpr: Expr):
@@ -767,6 +775,9 @@ class LetExpr(Expr):
         self.varExpr = varExpr
         self.valExpr = valExpr
         self.bodyExpr = bodyExpr
+
+    def __repr__(self):
+        return f'LetExpr({self.varExpr}, {self.valExpr}, {self.bodyExpr})'
 
 
 class SumExpr(Expr):
@@ -840,6 +851,9 @@ class RecAccessExpr(Expr):
     def printInnerVals(self):
         return " | " + "name: " + str(self.name)
 
+    def __repr__(self) -> str:
+        return f"RecAccessExpr({self.recExpr}, '{self.name}')"
+
 
 class IfExpr(Expr):
     def __init__(self, condExpr: Expr, thenBodyExpr: Expr, elseBodyExpr: Expr):
@@ -859,12 +873,18 @@ class AddExpr(Expr):
         self.op1Expr = op1Expr
         self.op2Expr = op2Expr
 
+    def __repr__(self):
+        return f'AddExpr({self.op1Expr}, {self.op2Expr})'
+
 
 class SubExpr(Expr):
     def __init__(self, op1Expr: Expr, op2Expr: Expr):
         super().__init__([op1Expr, op2Expr])
         self.op1Expr = op1Expr
         self.op2Expr = op2Expr
+
+    def __repr__(self):
+        return f'SubExpr({self.op1Expr}, {self.op2Expr})'
 
 
 class MulExpr(Expr):
@@ -873,6 +893,9 @@ class MulExpr(Expr):
         self.op1Expr = op1Expr
         self.op2Expr = op2Expr
 
+    def __repr__(self):
+        return f'MulExpr({self.op1Expr}, {self.op2Expr})'
+
 
 class DivExpr(Expr):
     def __init__(self, op1Expr: Expr, op2Expr: Expr):
@@ -880,6 +903,8 @@ class DivExpr(Expr):
         self.op1Expr = op1Expr
         self.op2Expr = op2Expr
 
+    def __repr__(self):
+        return f'DivExpr({self.op1Expr}, {self.op2Expr})'
 
 class PromoteExpr(Expr):
     def __init__(self, fromType: Type, toType: Type, bodyExpr: Expr):
@@ -905,6 +930,9 @@ class CompareExpr(Expr):
     def printInnerVals(self):
         return " | " + "compareType: " + str(self.compareType)
 
+    def __repr__(self):
+        return f'CompareExpr({self.compareType}, {self.leftExpr}, {self.rightExpr})'
+
 
 class PairAccessExpr(Expr):
     def __init__(self, pairExpr: Expr, index: int):
@@ -915,6 +943,8 @@ class PairAccessExpr(Expr):
     def printInnerVals(self):
         return " | " + "index: " + str(self.index)
 
+    def __repr__(self):
+        return f'PairAccessExpr({self.pairExpr}, {self.index})'
 
 class ConcatExpr(Expr):
     def __init__(self, rec1: Expr, rec2: Expr):

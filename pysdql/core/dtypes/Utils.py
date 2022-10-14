@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.sdql_ir import (
+    Expr,
     ConstantExpr,
 )
 
@@ -20,7 +21,7 @@ def date_fmt(value) -> int:
 
 def is_date(data) -> bool:
     if type(data) == str:
-        pattern = re.compile(r'("\d{4}-\d{2}-\d{2})"')
+        pattern = re.compile(r'(\d{4}-\d{2}-\d{2})')
         if pattern.findall(data.strip()):
             return True
     return False
@@ -33,5 +34,7 @@ def input_fmt(data):
         return ConstantExpr(data)
     elif isinstance(data, SDQLIR):
         return data.sdql_ir
+    elif isinstance(data, Expr):
+        return data
     else:
         raise ValueError()

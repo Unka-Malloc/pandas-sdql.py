@@ -10,6 +10,9 @@ class OptStmt:
         self.opt_name = opt_name
         self.opt_sum = opt_sum
 
+    def __repr__(self):
+        return f'{self.opt_name} = {self.opt_sum}'
+
     @property
     def sdql_ir(self):
         return
