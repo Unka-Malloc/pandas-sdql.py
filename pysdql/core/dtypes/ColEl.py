@@ -1,5 +1,9 @@
+import re
+from datetime import datetime
+
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
+from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.ValExpr import ValExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
@@ -11,22 +15,53 @@ from pysdql.core.dtypes.IsinExpr import IsinExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
 
+from pysdql.core.dtypes.sdql_ir import (
+    CompareSymbol,
+    RecAccessExpr,
+    ConstantExpr,
 
-class ColEl:
-    def __init__(self, dataframe, field: str, promoted=None):
+    AddExpr,
+    MulExpr,
+    SubExpr,
+    DivExpr,
+)
+
+from pysdql.core.dtypes.Utils import (
+    input_fmt,
+)
+
+
+class ColEl(SDQLIR):
+    def __init__(self, relation, field: str, promoted=None):
         """
         ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
-        :param dataframe:
+        :param relation:
         :param field:
         """
-        self.dataframe = dataframe
-        self.field = field
+        self.__relation = relation
+        self.__field = field
         self.promoted = promoted
         self.follow_promotion = None
         self.data_type = ''
 
         self.isvar = False
         self.var_name = ''
+
+    @property
+    def relation(self):
+        return self.__relation
+
+    @property
+    def R(self):
+        return self.__relation
+
+    @property
+    def field(self):
+        return self.__field
+
+    @property
+    def col(self):
+        return RecAccessExpr(self.R.el.k, self.field)
 
     @property
     def year(self):
@@ -52,7 +87,7 @@ class ColEl:
 
     @property
     def from_1DT(self):
-        if self.dataframe.structure == '1DT':
+        if self.relation.structure == '1DT':
             return True
         else:
             return False
@@ -64,7 +99,7 @@ class ColEl:
 
     @property
     def from_LRT(self):
-        if self.dataframe.structure == 'LRT':
+        if self.relation.structure == 'LRT':
             return True
         else:
             return False
@@ -76,54 +111,54 @@ class ColEl:
 
     @property
     def from_GRP(self):
-        if self.dataframe.structure == 'GRP':
+        if self.relation.structure == 'GRP':
             return True
         else:
             return False
 
-    @property
-    def key(self):
-        if self.from_1DT:
-            return self.dataframe.key
-        if self.from_LRT:
-            if self.field in self.dataframe.left.columns:
-                return f'{self.dataframe.key}.left'
-            if self.field in self.dataframe.right.columns:
-                return f'{self.dataframe.key}.right'
-        if self.from_GRP:
-            if self.field in self.dataframe.groupby.columns:
-                return self.dataframe.key
-
-    @property
-    def val(self):
-        if self.from_1DT:
-            return self.dataframe.val
-        if self.from_LRT:
-            return self.dataframe.val
-        if self.from_GRP:
-            return 1
+    # @property
+    # def key(self):
+    #     if self.from_1DT:
+    #         return self.relation.el.k
+    #     if self.from_LRT:
+    #         if self.field in self.relation.left.columns:
+    #             return f'{self.relation.el.k}.left'
+    #         if self.field in self.relation.right.columns:
+    #             return f'{self.relation.el.k}.right'
+    #     if self.from_GRP:
+    #         if self.field in self.relation.groupby.columns:
+    #             return self.relation.el.k
+    #
+    # @property
+    # def val(self):
+    #     if self.from_1DT:
+    #         return self.relation.el.v
+    #     if self.from_LRT:
+    #         return self.relation.el.v
+    #     if self.from_GRP:
+    #         return 1
 
     @property
     def expr(self) -> str:
-        return f'{self.dataframe.key}.{self.field}'
+        return f'{self.relation.el.k}.{self.field}'
         # if self.isvar:
         #     if self.promoted:
         #         f'promote[real]({self.var_name})'
         #     return self.var_name
         # if self.from_LRtuple:
         #     if self.name in self.dataframe.left.cols:
-        #         return f'{self.dataframe.key}.left.{self.name}'
+        #         return f'{self.dataframe.el.k}.left.{self.name}'
         #     if self.name in self.dataframe.right.cols:
-        #         return f'{self.dataframe.key}.right.{self.name}'
+        #         return f'{self.dataframe.el.k}.right.{self.name}'
         #     else:
         #         raise ValueError()
         # if self.follow_promotion:
-        #     return f'{self.follow_promotion}({self.dataframe.key}.{self.name})'
-        # return f'{self.dataframe.key}.{self.name}'
+        #     return f'{self.follow_promotion}({self.dataframe.el.k}.{self.name})'
+        # return f'{self.dataframe.el.k}.{self.name}'
 
     @property
     def sdql_expr(self) -> str:
-        return f'{self.dataframe.key}.{self.field}'
+        return f'{self.relation.el.k}.{self.field}'
 
     def __str__(self):
         return self.sdql_expr
@@ -132,63 +167,11 @@ class ColEl:
         return self.expr
 
     def __hash__(self):
-        return hash((self.dataframe.key, self.dataframe.val, self.dataframe.name, self.field))
+        return hash((self.R.el.k, self.R.el.v, self.R.name, self.field))
 
-    def __lt__(self, other) -> CondExpr:
-        """
-        Less than
-        :param other:
-        :return:
-        """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        return CondExpr(unit1=self, operator='<', unit2=other, isjoin=isjoin)
-        # return f'{self.column} < {other}'
-
-    def __le__(self, other) -> CondExpr:
-        """
-        Less than or Equal
-        :param other:
-        :return:
-        """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        return CondExpr(unit1=self, operator='<=', unit2=other, isjoin=isjoin)
-        # return f'{self.column} <= {other}'
-
-    def __gt__(self, other) -> CondExpr:
-        """
-        Greater than
-        :param other:
-        :return:
-        """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        return CondExpr(unit1=other, operator='<', unit2=self, isjoin=isjoin)
-        # return f'{self.column} > {other}'
-
-    def __ge__(self, other) -> CondExpr:
-        """
-        Greater than or Equal
-        :param other:
-        :return:
-        """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        return CondExpr(unit1=other, operator='<=', unit2=self, isjoin=isjoin)
-        # return f'{self.column} >= {other}'
+    '''
+    Comparison Operations
+    '''
 
     def __eq__(self, other) -> CondExpr:
         """
@@ -196,15 +179,15 @@ class ColEl:
         :param other:
         :return:
         """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        if type(other) == ColEl:
-            if self.promoted:
-                other.follow_promotion = self.promoted
-        return CondExpr(unit1=self, operator='==', unit2=other, isjoin=isjoin)
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        # if type(other) == ColEl:
+        #     if self.promoted:
+        #         other.follow_promotion = self.promoted
+        return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
         # return f'{self.column} == {other}'
 
     def __ne__(self, other) -> CondExpr:
@@ -213,68 +196,131 @@ class ColEl:
         :param other:
         :return:
         """
-        if type(other) == str:
-            other = f'"{other}"'
-        isjoin = False
-        if type(other) == ColEl:
-            isjoin = True
-        return CondExpr(unit1=self, operator='!=', unit2=other, isjoin=isjoin)
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        return CondExpr(unit1=self.col, operator=CompareSymbol.NE, unit2=input_fmt(other))
         # return f'not ({self.column} == {other})'
 
+    def __lt__(self, other) -> CondExpr:
+        """
+        Less than
+        :param other:
+        :return:
+        """
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        return CondExpr(unit1=self.col, operator=CompareSymbol.LT, unit2=input_fmt(other))
+        # return f'{self.column} < {other}'
+
+    def __le__(self, other) -> CondExpr:
+        """
+        Less than or Equal
+        :param other:
+        :return:
+        """
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        return CondExpr(unit1=self.col, operator=CompareSymbol.LTE, unit2=input_fmt(other))
+        # return f'{self.column} <= {other}'
+
+    def __gt__(self, other) -> CondExpr:
+        """
+        Greater than
+        :param other:
+        :return:
+        """
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        return CondExpr(unit1=self.col, operator=CompareSymbol.GT, unit2=input_fmt(other))
+        # return f'{self.column} > {other}'
+
+    def __ge__(self, other) -> CondExpr:
+        """
+        Greater than or Equal
+        :param other:
+        :return:
+        """
+        # if type(other) == str:
+        #     other = f'"{other}"'
+        # isjoin = False
+        # if type(other) == ColEl:
+        #     isjoin = True
+        return CondExpr(unit1=self.col, operator=CompareSymbol.GTE, unit2=input_fmt(other))
+
+    '''
+    Arithmetic Operations
+    '''
+
     def __add__(self, other):
-        return ColExpr(unit1=self, operator='+', unit2=other, inherit_from=self.dataframe)
-
-    def __radd__(self, other):
-        return ColExpr(unit1=other, operator='+', unit2=self, inherit_from=self.dataframe)
-
-    def __sub__(self, other):
-        return ColExpr(unit1=self, operator='-', unit2=other, inherit_from=self.dataframe)
-
-    def __rsub__(self, other):
-        return ColExpr(unit1=other, operator='-', unit2=self, inherit_from=self.dataframe)
+        return ColExpr(AddExpr(self.col, input_fmt(other)))
 
     def __mul__(self, other):
-        return ColExpr(unit1=self, operator='*', unit2=other, inherit_from=self.dataframe)
+        return ColExpr(MulExpr(self.col, input_fmt(other)))
 
-    def __rmul__(self, other):
-        return ColExpr(unit1=other, operator='*', unit2=self, inherit_from=self.dataframe)
+    def __sub__(self, other):
+        return ColExpr(SubExpr(self.col, input_fmt(other)))
 
     def __truediv__(self, other):
-        return ColExpr(unit1=self, operator='/', unit2=other, inherit_from=self.dataframe)
+        return ColExpr(DivExpr(self.col, input_fmt(other)))
+
+    '''
+    Reverse Arithmetic Operations
+    '''
+
+    def __radd__(self, other):
+        return ColExpr(AddExpr(input_fmt(other), self.col))
+
+    def __rmul__(self, other):
+        return ColExpr(MulExpr(input_fmt(other), self.col))
+
+    def __rsub__(self, other):
+        return ColExpr(SubExpr(input_fmt(other), self.col))
 
     def __rtruediv__(self, other):
-        return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.dataframe)
+        return ColExpr(DivExpr(input_fmt(other), self.col))
 
-    def isin(self, vals, ext=None):
-        # print(f'{self.expr} is in {vals}')
-        if type(vals) == ColEl:
-            tmp_no_dup = vals.dataframe.drop_duplicates([vals.field]).rename(f'no_dup_{vals.field}')
-            tmp_col_el = tmp_no_dup[vals.field]
-            return IsinExpr(self, tmp_col_el)
-
-        if type(vals) == list or type(vals) == tuple:
-            if len(vals) == 0:
-                raise ValueError()
-            if len(vals) == 1:
-                return vals[0]
-
-            tmp_list = []
-            for i in vals:
-                if type(i) == str:
-                    i = f'"{i}"'
-                if ext:
-                    tmp_list.append(CondExpr(unit1=ext, operator='==', unit2=i))
-                else:
-                    tmp_list.append(CondExpr(unit1=self, operator='==', unit2=i))
-
-            a = tmp_list.pop()
-            b = tmp_list.pop()
-            tmp_cond = a | b
-            if tmp_list:
-                for i in tmp_list:
-                    tmp_cond |= i
-            # print(tmp_cond)
-            return tmp_cond
+    # def isin(self, vals, ext=None):
+    #     # print(f'{self.expr} is in {vals}')
+    #     if type(vals) == ColEl:
+    #         tmp_no_dup = vals.relation.drop_duplicates([vals.field]).rename(f'no_dup_{vals.field}')
+    #         tmp_col_el = tmp_no_dup[vals.field]
+    #         return IsinExpr(self, tmp_col_el)
+    #
+    #     if type(vals) == list or type(vals) == tuple:
+    #         if len(vals) == 0:
+    #             raise ValueError()
+    #         if len(vals) == 1:
+    #             return vals[0]
+    #
+    #         tmp_list = []
+    #         for i in vals:
+    #             if type(i) == str:
+    #                 i = f'"{i}"'
+    #             if ext:
+    #                 tmp_list.append(CondExpr(unit1=ext, operator=CompareSymbol.EQ, unit2=i))
+    #             else:
+    #                 tmp_list.append(CondExpr(unit1=self, operator=CompareSymbol.EQ, unit2=i))
+    #
+    #         a = tmp_list.pop()
+    #         b = tmp_list.pop()
+    #         tmp_cond = a | b
+    #         if tmp_list:
+    #             for i in tmp_list:
+    #                 tmp_cond |= i
+    #         # print(tmp_cond)
+    #         return tmp_cond
 
     @property
     def dt(self):
@@ -343,14 +389,14 @@ class ColEl:
 
     def sum(self):
         tmp_name = f'{self.field}_sum'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
+        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr,
                                              f'{self.key}.{self.field} * {self.val}'))
-        self.dataframe.push(OpExpr('colel_sum', tmp_var))
+        self.relation.push(OpExpr('colel_sum', tmp_var))
 
-        return ValExpr(tmp_name, self.dataframe.operations)
+        return ValExpr(tmp_name, self.relation.operations)
 
         # tmp_name = f'{self.field}_sum'
-        # tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr, f'{self.dataframe.key}.{self.field} * {self.dataframe.val}'))
+        # tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr, f'{self.dataframe.el.k}.{self.field} * {self.dataframe.el.v}'))
         # self.dataframe.history_name.append(tmp_name)
         # self.dataframe.operations.append(OpExpr('colel_sum', tmp_var))
         #
@@ -361,25 +407,26 @@ class ColEl:
 
     def count(self):
         tmp_name = f'{self.field}_count'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr,
+        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr,
                                              f'{self.val}'))
-        self.dataframe.push(OpExpr('colel_count', tmp_var))
+        self.relation.push(OpExpr('colel_count', tmp_var))
 
-        return ValExpr(tmp_name, self.dataframe.operations)
+        return ValExpr(tmp_name, self.relation.operations)
 
     def mean(self):
         tmp_name = f'{self.field}_mean'
         tmp_rec = RecEl({f'{self.field}_sum': f'{self.key}.{self.field} * {self.val}',
                          f'{self.field}_count': f'{self.val}'})
-        tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
-        tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
-        self.dataframe.push(OpExpr('colel_mean', tmp_var))
+        tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.relation.iter_expr, f'{tmp_rec}'))
+        tmp_var = VarExpr(tmp_name,
+                          f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
+        self.relation.push(OpExpr('colel_mean', tmp_var))
 
-        return ValExpr(tmp_name, self.dataframe.operations)
+        return ValExpr(tmp_name, self.relation.operations)
 
         # tmp_name = f'{self.field}_mean'
-        # tmp_rec = RecEl({f'{self.field}_sum': f'{self.dataframe.key}.{self.field} * {self.dataframe.val}',
-        #                  f'{self.field}_count': f'{self.dataframe.val}'})
+        # tmp_rec = RecEl({f'{self.field}_sum': f'{self.dataframe.el.k}.{self.field} * {self.dataframe.el.v}',
+        #                  f'{self.field}_count': f'{self.dataframe.el.v}'})
         # tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
         # tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
         # self.dataframe.history_name.append(tmp_name)
@@ -392,22 +439,22 @@ class ColEl:
 
     def min(self):
         tmp_name = f'{self.field}_min'
-        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mnpr]({self.key}.{self.field})')
+        tmp_iter = IterStmt(self.relation.iter_expr, f'promote[mnpr]({self.key}.{self.field})')
         tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        self.dataframe.push(OpExpr('colel_min', tmp_var))
+        self.relation.push(OpExpr('colel_min', tmp_var))
 
-        return ValExpr(tmp_name, self.dataframe.operations)
+        return ValExpr(tmp_name, self.relation.operations)
 
     def max(self):
         tmp_name = f'{self.field}_max'
-        tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.key}.{self.field})')
+        tmp_iter = IterStmt(self.relation.iter_expr, f'promote[mxpr]({self.key}.{self.field})')
         tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        self.dataframe.push(OpExpr('colel_max', tmp_var))
+        self.relation.push(OpExpr('colel_max', tmp_var))
 
-        return ValExpr(tmp_name, self.dataframe.operations)
+        return ValExpr(tmp_name, self.relation.operations)
 
         # tmp_name = f'{self.field}_max'
-        # tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.key}.{self.field})')
+        # tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.el.k}.{self.field})')
         # tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
         # self.dataframe.history_name.append(tmp_name)
         # self.dataframe.operations.append(OpExpr('colel_max', tmp_var))
@@ -416,3 +463,7 @@ class ColEl:
         # self.var_name = tmp_name
         #
         # return self
+
+    @property
+    def sdql_ir(self):
+        return self.col

@@ -1,6 +1,12 @@
 from pysdql.core.dtypes.DictIR import DictIR
 from pysdql.core.dtypes.RecIR import RecIR
 
+from pysdql.core.dtypes.sdql_ir import (
+    LetExpr,
+    VarExpr,
+    SumBuilder,
+)
+
 
 class SumOpt:
     def __init__(self, sum_on):
@@ -81,3 +87,6 @@ class SumOpt:
             self.groupby_agg_expr = f'{self.sum_on.name}.sum(lambda p: {self.sum_func} if {self.sum_if} else {self.sum_else}, {self.sum_update})' \
                                     f'.sum(lambda p: {{p[0].concat(p[1]): True}}, {self.sum_update})'
 
+    @property
+    def sdql_ir(self):
+        return 

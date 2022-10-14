@@ -17,9 +17,9 @@ class IsinExpr:
     @property
     def cond(self):
         if self.isinvert:
-            return ~CondExpr(self.unit1, '==', self.unit2, inherit_from=self.unit2.dataframe, isin=True)
+            return ~CondExpr(self.unit1, '==', self.unit2, inherit_from=self.unit2.relation, isin=True)
         else:
-            return CondExpr(self.unit1, '==', self.unit2, inherit_from=self.unit2.dataframe, isin=True)
+            return CondExpr(self.unit1, '==', self.unit2, inherit_from=self.unit2.relation, isin=True)
 
     def __and__(self, other):
         return CondExpr(unit1=self.cond,

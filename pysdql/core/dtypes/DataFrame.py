@@ -3,6 +3,7 @@ import string
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
@@ -12,9 +13,10 @@ from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
+from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.SumExpr import SumExpr
 from pysdql.core.dtypes.SumOpt import SumOpt
-from pysdql.core.dtypes.VarCol import VarCol
+from pysdql.core.dtypes.VirColEl import VirColEl
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
@@ -48,9 +50,6 @@ class DataFrame(SemiRing):
         self.__operations = operations if operations else OpSeq()
 
         self.__structure = DataFrameStruct('1DT')
-
-        # if self.variable:
-        #     self.operations.push(OpExpr('', self.variable))
 
     @property
     def data(self):
@@ -113,18 +112,18 @@ class DataFrame(SemiRing):
             return self.__var_name
         return self.__default_name
 
-    @name.setter
-    def name(self, val):
-        allow_set_name = False
-        if self.mutable:
-            allow_set_name = True
-        else:
-            if self.name == self.__default_name:
-                allow_set_name = True
-
-        if allow_set_name:
-            self.operations.push(OpExpr('', VarExpr(val, self.name)))
-            self.__name = val
+    # @name.setter
+    # def name(self, val):
+    #     allow_set_name = False
+    #     if self.mutable:
+    #         allow_set_name = True
+    #     else:
+    #         if self.name == self.__default_name:
+    #             allow_set_name = True
+    #
+    #     if allow_set_name:
+    #         self.operations.push(OpExpr('', VarExpr(val, self.name)))
+    #         self.__name = val
 
     @property
     def tmp_name_list(self):
@@ -176,25 +175,12 @@ class DataFrame(SemiRing):
         return True
 
     @property
-    def variable(self):
-        if self.__data:
-            return VarExpr(self.name, self.__data)
-        else:
-            return None
+    def iter_el(self):
+        return IterEl(str(hash((self.name, self.data, self.columns, self.dtype, ))))
 
     @property
-    def iter_expr(self):
-        return IterExpr(self.name)
-
-    @property
-    def key(self):
-        return 'p[0]'
-        # return self.iter_expr.key
-
-    @property
-    def val(self):
-        return 'p[1]'
-        # return self.iter_expr.val
+    def el(self):
+        return self.iter_el
 
     def optimize(self):
         sum_opt = SumOpt(self)
@@ -206,13 +192,20 @@ class DataFrame(SemiRing):
                 sum_opt.add_cond(op_expr.op)
             if op_expr.op_type == SumExpr:
                 sum_opt.merge(op_expr.op)
-            if op_expr.op_type == VarCol:
+            if op_expr.op_type == VirColEl:
                 sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
             if op_expr.op_type == GroupByAgg:
                 sum_opt.groupby_agg(op_expr.op)
 
-        output = f'{opt_name} = {sum_opt.expr}'
-        return output
+        return OptStmt(opt_name=opt_name,
+                       opt_sum=sum_opt)
+
+        # output = f'{opt_name} = {sum_opt.expr}'
+        # return output
+
+    @property
+    def sdql_ir(self):
+        return self.optimize().sdql_ir
 
     @property
     def expr(self) -> str:
@@ -289,8 +282,8 @@ class DataFrame(SemiRing):
         # next_df.push(OpExpr('', var))
 
     def insert_col_expr(self, key, value):
-        self.operations.push(OpExpr(op_obj=VarCol(col_var=key,
-                                                  col_expr=value),
+        self.operations.push(OpExpr(op_obj=VirColEl(col_var=key,
+                                                    col_expr=value),
                                     op_on=self,
                                     op_iter=False))
 
