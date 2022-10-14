@@ -222,7 +222,7 @@ class relation:
         unit1 = isin_expr.unit1
         unit2 = isin_expr.unit2
 
-        r2 = unit2.dataframe
+        r2 = unit2.relation
         self.inherit(r2)
 
         cond_unit = CondExpr(unit1, '==', unit2)
@@ -397,9 +397,9 @@ class relation:
             self.ori_name = tmp_name
             return self
         if type(value) == ColEl or type(value) == ColExpr:
-            return self.col_rename(from_col=value, to_col=ColEl(dataframe=self, field=key))
+            return self.col_rename(from_col=value, to_col=ColEl(relation=self, field=key))
         if type(value) == ExternalExpr:
-            return self.col_rename(from_col=value, to_col=ColEl(dataframe=self, field=key))
+            return self.col_rename(from_col=value, to_col=ColEl(relation=self, field=key))
 
     def insert_col_list(self, key, value):
         if len(key) != len(value):
@@ -419,7 +419,7 @@ class relation:
     def keep_cols(self):
         tmp_dict = {}
         for i in self.cols:
-            tmp_dict[i] = ColEl(dataframe=self, field=i)
+            tmp_dict[i] = ColEl(relation=self, field=i)
         return tmp_dict
 
     def col_rename(self, from_col, to_col):

@@ -19,6 +19,7 @@ def q1():
 
     print(result)
 
+
 def q3():
     """
 
@@ -69,9 +70,9 @@ def q6():
 
     result = (li_filt.l_extendedprice * li_filt.l_discount).sum()
 
-    print(result)
+    print(result.operations)
 
 
 if __name__ == '__main__':
-    q1()
-    # q6()
+    # q1()
+    q6()

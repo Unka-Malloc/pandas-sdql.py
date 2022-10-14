@@ -1,56 +1,43 @@
-class IterEl:
-    def __init__(self, data):
-        self.__name = None
-        self.__key_val = None
+from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.sdql_ir import (
+    PairAccessExpr,
+    VarExpr
+)
 
-        if type(data) == str:
-            self.__name = data
-        elif type(data) == tuple:
-            self.__key_val = data
-        else:
-            raise ValueError('Only accept (k, v) or "x"')
 
-    @property
-    def key(self) -> str:
-        if self.__key_val:
-            return self.__key_val[0]
-        if self.__name:
-            return f'{self.__name}_k'
+class IterEl(SDQLIR):
+    def __init__(self, name: str):
+        self.__name = name
+        self.__el = VarExpr(name)
 
     @property
-    def val(self) -> str:
-        if self.__key_val:
-            return self.__key_val[1]
-        if self.__name:
-            return f'{self.__name}_v'
+    def name(self):
+        return self.__name
 
     @property
-    def expr(self) -> str:
-        return f'<{self.key}, {self.val}>'
+    def el(self):
+        return self.__el
 
-    def __repr__(self):
-        return self.expr
+    @property
+    def key(self):
+        return PairAccessExpr(self.el, 0)
 
-    def rename(self, data):
-        if type(data) == str:
-            self.__name = data
-        if type(data) == tuple:
-            self.__key_val = data
+    @property
+    def k(self):
+        return self.key
 
-    def dup(self, other) -> bool:
-        """
-        Detect Duplication Between Iteration Elements
-        :return:
-        """
-        if type(other) != IterEl:
-            raise TypeError('Only detect duplications between IterEl objects')
+    @property
+    def value(self):
+        return PairAccessExpr(self.el, 1)
 
-        if self.expr == other.expr:
-            return True
-        if self.key == other.key:
-            return True
-        if self.val == other.val:
-            return True
+    @property
+    def val(self):
+        return self.value
 
-        return False
+    @property
+    def v(self):
+        return self.value
 
+    @property
+    def sdql_ir(self):
+        return self.el
