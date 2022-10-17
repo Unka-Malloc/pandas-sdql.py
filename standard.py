@@ -27,3 +27,13 @@ def func_tpch_1(li):
         )
 
     results = lineitem_probed.sum(lambda p: {p[0].concat(p[1]): True}, False)
+
+    q1 = LetExpr(lineitem_probed,
+                 SumBuilder(lambda p: IfExpr((p[0].l_shipdate <= ConstantExpr(19980902)), DicConsExpr([(RecConsExpr([("l_returnflag", p[0].l_returnflag), ("l_linestatus", p[0].l_linestatus)]), RecConsExpr([("sum_qty", p[0].l_quantity), ("sum_base_price", p[0].l_extendedprice), ("sum_disc_price", (p[0].l_extendedprice * (ConstantExpr(1.0) - p[0].l_discount))), ("sum_charge", ((p[0].l_extendedprice * (ConstantExpr(1.0) - p[0].l_discount)) * (ConstantExpr(1.0) + p[0].l_tax))), ("count_order", ConstantExpr(1))]))]), ConstantExpr(None)),
+                            li,
+                            False),
+                 LetExpr(results,
+                         SumBuilder(lambda p: DicConsExpr([(ConcatExpr(p[0], p[1]), ConstantExpr(True))]),
+                                    lineitem_probed,
+                                    True),
+                         LetExpr(VarExpr("out"), results, ConstantExpr(True))))

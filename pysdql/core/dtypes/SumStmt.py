@@ -1,4 +1,4 @@
-class SumExpr:
+class SumStmt:
     def __init__(self, sum_on, sum_func, sum_if, sum_else, sum_update):
         self.sum_on = sum_on
         self.sum_func = sum_func
@@ -18,7 +18,7 @@ class SumExpr:
             new_if = f'{self.sum_if} and {cond_if}'
         else:
             new_if = f'{cond_if}'
-        return SumExpr(sum_on=self.sum_on,
+        return SumStmt(sum_on=self.sum_on,
                        sum_func=self.sum_func,
                        sum_if=new_if,
                        sum_else=self.sum_else,

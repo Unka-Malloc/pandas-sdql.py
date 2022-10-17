@@ -766,7 +766,7 @@ class VarExpr(Expr):
         return " | " + "name: " + str(self.name)
 
     def __repr__(self) -> str:
-        return f"VarExpr('{self.name}')"
+        return f"{self.name}"
 
 
 class LetExpr(Expr):
@@ -795,6 +795,9 @@ class SumExpr(Expr):
         if self.bodyExpr == EmptyDicConsExpr:
             self.bodyExpr.parent = self
 
+    def __repr__(self):
+        return f'SumExpr({self.varExpr}, {self.dictExpr}, {self.bodyExpr}, {self.isAssignmentSum})'
+
 
 class DicConsExpr(Expr):
     def __init__(self, initialPairs: List[Tuple[Expr, Expr]]):
@@ -807,6 +810,8 @@ class DicConsExpr(Expr):
             self.exprList.append(p[0])
             self.exprList.append(p[1])
 
+    def __repr__(self):
+        return f'DicConsExpr({self.initialPairs})'
 
 class EmptyDicConsExpr(Expr):
     def __init__(self):
@@ -834,6 +839,9 @@ class RecConsExpr(Expr):
         for p in initialPairs:
             self.exprList.append(p[1])
 
+    def __repr__(self):
+        return f'RecConsExpr({self.initialPairs})'
+
 
 class VecConsExpr(Expr):
     def __init__(self, initialExprs: List[Expr]):
@@ -856,7 +864,7 @@ class RecAccessExpr(Expr):
 
 
 class IfExpr(Expr):
-    def __init__(self, condExpr: Expr, thenBodyExpr: Expr, elseBodyExpr: Expr):
+    def __init__(self, condExpr: Expr, thenBodyExpr: Expr, elseBodyExpr: Expr) -> object:
         super().__init__([condExpr, thenBodyExpr, elseBodyExpr])
         self.condExpr = condExpr
         self.thenBodyExpr = thenBodyExpr
@@ -865,6 +873,9 @@ class IfExpr(Expr):
         self.isInNonParallelSum = False
         if self.elseBodyExpr == EmptyDicConsExpr:
             self.elseBodyExpr.parent = self
+
+    def __repr__(self):
+        return f'IfExpr({self.condExpr}, {self.thenBodyExpr}, {self.elseBodyExpr})'
 
 
 class AddExpr(Expr):
@@ -951,6 +962,9 @@ class ConcatExpr(Expr):
         super().__init__([rec1, rec2])
         self.rec1 = rec1
         self.rec2 = rec2
+
+    def __repr__(self):
+        return f'ConcatExpr({self.rec1}, {self.rec2})'
 
 
 class ExtFuncExpr(Expr):
