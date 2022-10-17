@@ -3,7 +3,7 @@ from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
-from pysdql.core.dtypes.SumExpr import SumExpr
+from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.VarExpr import VarExpr
 
 from pysdql.core.dtypes.sdql_ir import (
@@ -192,7 +192,8 @@ class ColExpr(SDQLIR):
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
                              aggr_on=self.on,
-                             aggr_op=self.col)
+                             aggr_op=self.col,
+                             aggr_else=ConstantExpr(0.0))
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self.on,
@@ -207,3 +208,6 @@ class ColExpr(SDQLIR):
     @property
     def sdql_ir(self):
         return self.col
+
+    def __repr__(self):
+        return repr(self.sdql_ir)

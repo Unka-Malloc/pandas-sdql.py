@@ -1,3 +1,5 @@
+import base64
+import re
 import string
 
 from pysdql.core.dtypes.CondExpr import CondExpr
@@ -14,10 +16,10 @@ from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
-from pysdql.core.dtypes.SumExpr import SumExpr
+from pysdql.core.dtypes.Optimizer import Optimizer
+from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.SumOpt import SumOpt
 from pysdql.core.dtypes.VirColEl import VirColEl
-from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
@@ -29,6 +31,7 @@ from pysdql.core.dtypes.sdql_ir import (
     MulExpr,
     AddExpr,
     CompareExpr,
+    VarExpr, RecAccessExpr,
 )
 
 from pysdql.core.util.type_checker import (
@@ -62,6 +65,11 @@ class DataFrame(SemiRing):
         self.__operations = operations if operations else OpSeq()
 
         self.__structure = DataFrameStruct('1DT')
+
+    @property
+    def var_expr(self):
+        if self.name == 'li':
+            return VarExpr("db->li_dataset")
 
     @property
     def data(self):
@@ -188,29 +196,41 @@ class DataFrame(SemiRing):
 
     @property
     def iter_el(self):
-        return IterEl(str(hash((self.name, ))))
+        # el_name = str(base64.b64encode('lineitem'.encode('utf-8')).decode('utf-8'))
+        # el_name = re.sub('=+/', '', el_name)
+
+        el_name = f'x_{self.name}'
+
+        return IterEl(el_name)
 
     @property
     def el(self):
         return self.iter_el
 
+    def key_access(self, field):
+        return RecAccessExpr(self.iter_el.key, field)
+
+    def val_access(self, field):
+        return RecAccessExpr(self.iter_el.value, field)
+
     def optimize(self):
-        sum_opt = SumOpt(self)
+        opt = Optimizer(self)
         opt_name = self.name
         for op_expr in self.operations:
             opt_name += op_expr.get_op_name_suffix()
 
-            if op_expr.op_type == CondExpr:
-                sum_opt.add_cond(op_expr.op)
-            # if op_expr.op_type == SumExpr:
-            #     sum_opt.merge(op_expr.op)
-            # if op_expr.op_type == VirColEl:
-            #     sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
-            # if op_expr.op_type == GroupByAgg:
-            #     sum_opt.groupby_agg(op_expr.op)
+            opt.input(op_expr)
 
-        return OptStmt(opt_name=opt_name,
-                       opt_sum=sum_opt)
+        return opt.output
+
+        # if op_expr.op_type == CondExpr:
+        #     sum_opt.add_cond(op_expr.op)
+        # if op_expr.op_type == SumExpr:
+        #     sum_opt.merge(op_expr.op)
+        # if op_expr.op_type == VirColEl:
+        #     sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
+        # if op_expr.op_type == GroupByAgg:
+        #     sum_opt.groupby_agg(op_expr.op)
 
         # output = f'{opt_name} = {sum_opt.expr}'
         # return output
@@ -230,7 +250,7 @@ class DataFrame(SemiRing):
 
     @property
     def sdql_expr(self):
-        return self.optimize()
+        return
 
     def __str__(self):
         return self.sdql_expr
@@ -316,3 +336,10 @@ class DataFrame(SemiRing):
     def groupby(self, cols):
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
+
+    @property
+    def name_ops(self) -> str:
+        output = self.name
+        for op_expr in self.operations:
+            output += op_expr.get_op_name_suffix()
+        return output

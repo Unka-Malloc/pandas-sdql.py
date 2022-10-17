@@ -1,3 +1,5 @@
+import base64
+
 from pysdql import DataFrame
 
 from pysdql.core.dtypes.sdql_ir import (
@@ -22,7 +24,12 @@ def q1():
              count_order=("l_quantity", "count")
              )
 
-    print(result)
+    print(result.operations)
+
+    print(result.optimize())
+    PrintAST(result.optimize())
+
+    print(GenerateSDQLCode(result.optimize()))
 
 
 def q3():
@@ -75,16 +82,18 @@ def q6():
 
     result = (li_filt.l_extendedprice * li_filt.l_discount).sum()
 
-    print(result.aggr_expr)
+    print(result.operations)
+    print(result.optimize())
+    PrintAST(result.optimize())
 
-    PrintAST(result.aggr_expr)
+    print(GenerateSDQLCode(result.optimize()))
 
     return result
 
 
 if __name__ == '__main__':
-    # q1()
-    q6()
+    q1()
+    # q6()
 
     # li = DataFrame()
     # PrintAST((li.l_shipdate >= "1994-01-01") &

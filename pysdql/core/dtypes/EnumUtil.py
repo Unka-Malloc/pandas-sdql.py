@@ -25,3 +25,9 @@ class AggrType(Enum):
     VAL = 0
     DICT = 1
     REC = 2
+
+
+@unique
+class LastFunc(Enum):
+    GroupbyAgg = 0
+    Agg = 1
