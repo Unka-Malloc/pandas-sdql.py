@@ -1,24 +1,24 @@
 from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VirColEl import VirColEl
 from pysdql.core.dtypes.sdql_ir import (
-    Expr,
     SumExpr,
     IfExpr,
     VarExpr,
-    ConstantExpr, LetExpr, DicConsExpr, RecConsExpr, SumBuilder, ConcatExpr,
+    ConstantExpr, LetExpr, DicConsExpr, RecConsExpr, SumBuilder, ConcatExpr, MulExpr, DicLookupExpr,
 )
 
-from pysdql.core.dtypes.EnumUtil import LastFunc
+from pysdql.core.dtypes.EnumUtil import LastFunc, OptGoal
 
 
 class Optimizer:
-    def __init__(self, opt_on):
-        self.vir_cols = {
-
-        }
+    def __init__(self, opt_on, opt_goal=None):
+        self.opt_on = opt_on
+        self.opt_goal = opt_goal
 
         self.cond_info = {
             'cond_if': ConstantExpr(None),
@@ -27,6 +27,12 @@ class Optimizer:
         }
 
         self.cond_status = False
+
+        self.col_ins = {
+
+        }
+
+        self.col_proj = []
 
         self.sum_info = {
             'sum_el': opt_on.iter_el.sdql_ir,
@@ -49,6 +55,78 @@ class Optimizer:
         }
 
         self.last_func = None
+
+        self.merge_info = {
+            'merge_left': None,
+            'merge_right': None,
+            'merge_how': 'inner',
+            'merge_left_on': ConstantExpr(None),
+            'merge_right_on': ConstantExpr(None)
+        }
+
+        self.merge_left_info = {
+            'merge_left_sum_el': opt_on.iter_el.sdql_ir,
+            'merge_left_sum_on': opt_on.var_expr,
+            'merge_left_sum_op': ConstantExpr(None),
+
+            'merge_left_let_var': VarExpr(opt_on.name_ops),
+            'merge_left_let_val': ConstantExpr(None),
+            'merge_left_let_next': ConstantExpr(None)
+        }
+
+        self.merge_right_info = {
+            'merge_right_sum_el': opt_on.iter_el.sdql_ir,
+            'merge_right_sum_on': opt_on.var_expr,
+            'merge_right_sum_op': ConstantExpr(None),
+            'merge_right_let_var': VarExpr(opt_on.name_ops),
+            'merge_right_let_val': ConstantExpr(None),
+            'merge_right_let_next': ConstantExpr(None)
+        }
+
+        self.status = {
+            'conditional': False,
+            'column_insertion': False,
+            'column_projection': False
+        }
+
+    @property
+    def has_cond(self):
+        return self.status['conditional']
+
+    @property
+    def has_col_ins(self):
+        return self.status['column_insertion']
+
+    @property
+    def has_col_proj(self):
+        return self.status['column_projection']
+
+    def add_cond(self, cond):
+        if self.cond_info['cond_if'] == ConstantExpr(None):
+            self.cond_info['cond_if'] = cond
+        else:
+            self.cond_info['cond_if'] = MulExpr(self.cond_info['cond_if'], cond)
+
+        self.status['conditional'] = True
+
+    def add_col_ins(self, col_name, col_expr):
+        self.col_ins[col_name] = col_expr
+
+        self.status['column_insertion'] = True
+
+    def add_col_proj(self, rec_tuple):
+        self.col_proj.append(rec_tuple)
+
+        self.status['column_projection'] = True
+
+    def get_cond_ir(self):
+        return self.cond_info['cond_if']
+
+    def get_col_ins_ir(self, col_name: str):
+        return self.col_ins[col_name]
+
+    def get_col_proj_ir(self):
+        return RecConsExpr(self.col_proj)
 
     @property
     def cond_stmt(self):
@@ -74,9 +152,9 @@ class Optimizer:
     def set_groupby_aggr_val_part(self, aggr_dict):
         rec_list = []
 
-        if self.vir_cols:
-            for vir_col in self.vir_cols.keys():
-                vir_col_expr = self.vir_cols[vir_col]
+        if self.col_ins:
+            for vir_col in self.col_ins.keys():
+                vir_col_expr = self.col_ins[vir_col]
                 for k in aggr_dict.keys():
                     v = aggr_dict[k]
                     if v.name == vir_col:
@@ -110,8 +188,9 @@ class Optimizer:
 
     def input(self, op_expr: OpExpr):
         if op_expr.op_type == CondExpr:
-            self.cond_info['cond_if'] = op_expr.op.sdql_ir
+            self.add_cond(op_expr.op.sdql_ir)
 
+            self.cond_info['cond_if'] = op_expr.op.sdql_ir
             self.cond_status = True
         if op_expr.op_type == AggrExpr:
             self.cond_info['cond_then'] = op_expr.op.aggr_op
@@ -120,7 +199,10 @@ class Optimizer:
 
             self.last_func = LastFunc.Agg
         if op_expr.op_type == VirColEl:
-            self.vir_cols[op_expr.op.col_var] = op_expr.op.col_expr
+            self.add_col_ins(col_name=op_expr.op.col_var,
+                             col_expr=op_expr.op.col_expr)
+
+            self.col_ins[op_expr.op.col_var] = op_expr.op.col_expr
         if op_expr.op_type == GroupByAgg:
             groupby_from = op_expr.op.groupby_from
             groupby_cols = op_expr.op.groupby_cols
@@ -148,10 +230,104 @@ class Optimizer:
 
             self.last_func = LastFunc.GroupbyAgg
 
+        if op_expr.op_type == ColProjExpr:
+            for col in op_expr.op.proj_cols:
+                self.add_col_proj((col,
+                                   op_expr.op.proj_on.key_access(col)))
+
+        if op_expr.op_type == MergeExpr:
+            self.merge_info['left'] = op_expr.op.left
+            self.merge_info['right'] = op_expr.op.right
+            self.merge_info['left_on'] = op_expr.op.left_on
+            self.merge_info['right_on'] = op_expr.op.right_on
+            self.merge_info['how'] = op_expr.op.how
+
+    def merge_left_stmt(self, merge_right_stmt):
+        if self.has_cond:
+            part_left_op = IfExpr(condExpr=self.get_cond_ir(),
+                                  thenBodyExpr=DicConsExpr([(
+                                      RecConsExpr([(self.merge_info['left_on'],
+                                                    self.opt_on.key_access(self.merge_info['left_on']))]),
+                                      self.get_col_proj_ir()
+                                  )]),
+                                  elseBodyExpr=ConstantExpr(None))
+        else:
+            part_left_op = DicConsExpr([(
+                self.opt_on.key_access(self.merge_info['left_on']),
+                self.get_col_proj_ir()
+            )])
+
+        self.merge_left_info['merge_left_sum_op'] = part_left_op
+
+        part_left_sum = SumExpr(varExpr=self.merge_left_info['merge_left_sum_el'],
+                                dictExpr=self.merge_left_info['merge_left_sum_on'],
+                                bodyExpr=self.merge_left_info['merge_left_sum_op'])
+
+        self.merge_left_info['merge_left_let_val'] = part_left_sum
+        self.merge_left_info['merge_left_let_next'] = merge_right_stmt
+
+        return LetExpr(varExpr=self.merge_left_info['merge_left_let_var'],
+                       valExpr=self.merge_left_info['merge_left_let_val'],
+                       bodyExpr=self.merge_left_info['merge_left_let_next'])
+
+    def merge_right_stmt(self, merge_next_stmt):
+        merge_left_opt = self.merge_info['left'].get_opt(OptGoal.MergeLeftPart)
+        merge_left_var = merge_left_opt.merge_left_info['merge_left_let_var']
+
+        if self.has_cond:
+            right_op = IfExpr(condExpr=self.get_cond_ir(),
+                              thenBodyExpr=IfExpr(condExpr=DicLookupExpr(dicExpr=merge_left_var,
+                                                                         keyExpr=self.opt_on.key_access(
+                                                                             self.merge_info['right_on']))
+                                                           != ConstantExpr(None),
+                                                  thenBodyExpr=DicConsExpr([(
+                                                      RecConsExpr([(self.merge_info['right_on'],
+                                                                    self.opt_on.key_access(
+                                                                        self.merge_info['right_on']))]),
+                                                      self.get_col_proj_ir()
+                                                  )]),
+                                                  elseBodyExpr=ConstantExpr(None)),
+                              elseBodyExpr=ConstantExpr(None))
+        else:
+            right_op = IfExpr(condExpr=DicLookupExpr(dicExpr=merge_left_var,
+                                                     keyExpr=self.opt_on.key_access(self.merge_info['right_on']))
+                                       != ConstantExpr(None),
+                              thenBodyExpr=DicConsExpr([(
+                                  RecConsExpr([(self.merge_info['right_on'],
+                                                self.opt_on.key_access(self.merge_info['right_on']))]),
+                                  self.get_col_proj_ir()
+                              )]),
+                              elseBodyExpr=ConstantExpr(None))
+
+        self.merge_right_info['merge_right_sum_op'] = right_op
+
+        right_sum = SumExpr(varExpr=self.merge_right_info['merge_right_sum_el'],
+                            dictExpr=self.merge_right_info['merge_right_sum_on'],
+                            bodyExpr=self.merge_right_info['merge_right_sum_op'])
+
+        self.merge_right_info['merge_right_let_val'] = right_sum
+        self.merge_right_info['merge_right_let_next'] = merge_next_stmt
+
+        return LetExpr(varExpr=self.merge_right_info['merge_right_let_var'],
+                       valExpr=self.merge_right_info['merge_right_let_val'],
+                       bodyExpr=self.merge_right_info['merge_right_let_next'])
+
+    @property
+    def info(self):
+        return {
+            'cond': self.get_cond_ir(),
+            'col_proj': self.get_col_proj_ir(),
+        }
+
     @property
     def output(self):
         if self.last_func == LastFunc.Agg:
-            return self.sum_stmt
+            result = VarExpr('result')
+            return LetExpr(result,
+                           self.sum_stmt,
+                           LetExpr(VarExpr('out'),
+                                   result,
+                                   ConstantExpr(True)))
         if self.last_func == LastFunc.GroupbyAgg:
             return self.groupby_aggr_stmt
         else:

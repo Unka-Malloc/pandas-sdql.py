@@ -31,3 +31,13 @@ class AggrType(Enum):
 class LastFunc(Enum):
     GroupbyAgg = 0
     Agg = 1
+
+
+@unique
+class OptGoal(Enum):
+    UnOptimized = 0
+    Aggregation = 1
+    GroupBy = 2
+    GroupByAggregation = 3
+    MergeLeftPart = 4
+    MergeRightPart = 5
