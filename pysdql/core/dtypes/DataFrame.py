@@ -2,6 +2,7 @@ import base64
 import re
 import string
 
+from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
@@ -15,6 +16,7 @@ from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
+from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.SumStmt import SumStmt
@@ -31,7 +33,7 @@ from pysdql.core.dtypes.sdql_ir import (
     MulExpr,
     AddExpr,
     CompareExpr,
-    VarExpr, RecAccessExpr,
+    VarExpr, RecAccessExpr, LetExpr, ConstantExpr,
 )
 
 from pysdql.core.util.type_checker import (
@@ -49,7 +51,7 @@ from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
-    MathSymbol,
+    MathSymbol, OptGoal,
 )
 
 
@@ -66,10 +68,17 @@ class DataFrame(SemiRing):
 
         self.__structure = DataFrameStruct('1DT')
 
+        self.__columns_in = columns
+        self.__columns_out = columns
+
     @property
     def var_expr(self):
         if self.name == 'li':
             return VarExpr("db->li_dataset")
+        if self.name == 'cu':
+            return VarExpr("db->cu_dataset")
+        if self.name == 'ord':
+            return VarExpr("db->ord_dataset")
 
     @property
     def data(self):
@@ -102,6 +111,14 @@ class DataFrame(SemiRing):
                 return DataFrameColumns(self, self.__columns)
             else:
                 return DataFrameColumns(self, [])
+
+    @property
+    def cols_in(self):
+        return self.__columns_in
+
+    @property
+    def cols_out(self):
+        return self.__columns_out
 
     @property
     def dtype(self):
@@ -196,9 +213,6 @@ class DataFrame(SemiRing):
 
     @property
     def iter_el(self):
-        # el_name = str(base64.b64encode('lineitem'.encode('utf-8')).decode('utf-8'))
-        # el_name = re.sub('=+/', '', el_name)
-
         el_name = f'x_{self.name}'
 
         return IterEl(el_name)
@@ -286,6 +300,15 @@ class DataFrame(SemiRing):
                                         op_iter=False))
             return self
 
+        if type(item) == list:
+            self.__columns_out = item
+
+            self.operations.push(OpExpr(op_obj=ColProjExpr(self, item),
+                                        op_on=self,
+                                        op_iter=False))
+
+            return self
+
     def __getattr__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)
@@ -343,3 +366,35 @@ class DataFrame(SemiRing):
         for op_expr in self.operations:
             output += op_expr.get_op_name_suffix()
         return output
+
+    def merge(self, right, how='inner', left_on=None, right_on=None):
+        merge_expr = MergeExpr(left=self,
+                               right=right,
+                               how=how,
+                               left_on=left_on,
+                               right_on=right_on)
+
+        self.push(OpExpr(op_obj=merge_expr,
+                          op_on=self,
+                          op_iter=True))
+
+        right.push(OpExpr(op_obj=merge_expr,
+                          op_on=right,
+                          op_iter=True))
+
+        return right
+
+    def merge_left_stmt(self, merge_right_stmt):
+        return self.get_opt(OptGoal.MergeLeftPart).merge_left_stmt(merge_right_stmt)
+
+    def merge_right_stmt(self, merge_next_stmt):
+        if merge_next_stmt is None:
+            merge_next_stmt = ConstantExpr(None)
+        return self.get_opt(OptGoal.MergeRightPart).merge_right_stmt(merge_next_stmt)
+
+    def get_opt(self, opt_goal):
+        opt = Optimizer(opt_on=self,
+                         opt_goal=opt_goal)
+        for op_expr in self.operations:
+            opt.input(op_expr)
+        return opt

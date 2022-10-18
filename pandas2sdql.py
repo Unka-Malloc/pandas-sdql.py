@@ -7,6 +7,8 @@ from pysdql.core.dtypes.sdql_ir import (
     GenerateSDQLCode,
 )
 
+import pysdql as pd
+
 
 def q1():
     li = DataFrame()
@@ -33,38 +35,32 @@ def q1():
 
 
 def q3():
-    """
+    cu = DataFrame()
+    ord = DataFrame()
+    li = DataFrame()
 
-    cu.sum(lambda p:
-        {
-            record({"c_custkey": p[0].c_custkey}):
-            True
-        }
-        if
-            p[0].c_mktsegment == "BUILDING"
-        else
-            None,
-        True)
-    ord.sum(lambda p:
-        {
-            record({"o_orderkey": p[0].o_orderkey,
-                    "o_orderdate": p[0].o_orderdate,
-                    "o_shippriority": p[0].o_shippriority}).concat(cu["o_custkey"]):
-            True
-        }
-        if
-            p[0].o_orderdate < "1995-03-15" and cu["o_custkey"] != None
-        else
-            None,
-        True)
-    li.sum(lambda p:
-        {
-            # There should be an aggregation.
-        }
-        True)
+    cu_filt = cu[cu.c_mktsegment == "BUILDING"]
+    cu_filt = cu_filt[["c_custkey"]]
 
-    :return:
-    """
+    # print(cu_filt.operations)
+
+    ord_filt = ord[ord.o_orderdate < "1995-03-15"]
+    ord_cu_join = pd.merge(cu_filt, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+    ord_cu_join = ord_cu_join[["o_orderkey", "o_orderdate", "o_shippriority"]]
+
+    # li_filt = li[li.l_shipdate > "1995-03-15"]
+    # li_order_join = pd.merge(ord_cu_join, li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+    # li_order_join["revenue"] = li_order_join.l_extendedprice * (1 - li_order_join.l_discount)
+    #
+    # result = li_order_join \
+    #     .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
+    #     .agg(revenue=("revenue", "sum"))
+
+    # return result
+
+    print(ord_cu_join.operations)
+
+    print(ord_cu_join.merge_right_stmt(None))
 
 
 def q6():
@@ -92,8 +88,9 @@ def q6():
 
 
 if __name__ == '__main__':
-    q1()
-    # q6()
+    # q1()
+    # q3()
+    q6()
 
     # li = DataFrame()
     # PrintAST((li.l_shipdate >= "1994-01-01") &

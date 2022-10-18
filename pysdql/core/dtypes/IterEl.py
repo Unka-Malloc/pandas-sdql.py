@@ -8,7 +8,7 @@ from pysdql.core.dtypes.sdql_ir import (
 class IterEl(SDQLIR):
     def __init__(self, name: str):
         self.__name = name
-        self.__el = VarExpr(name)
+        self.__el = VarExpr(name)  # x = VarExpr('x')
 
     @property
     def name(self):

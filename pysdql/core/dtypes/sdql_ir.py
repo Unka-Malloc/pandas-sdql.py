@@ -831,6 +831,9 @@ class DicLookupExpr(Expr):
         self.dicExpr = dicExpr
         self.keyExpr = keyExpr
 
+    def __repr__(self):
+        return f'DicLookupExpr({self.dicExpr}, {self.keyExpr})'
+
 
 class RecConsExpr(Expr):
     def __init__(self, initialPairs: List[Tuple[str, Expr]]):

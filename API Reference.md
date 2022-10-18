@@ -168,3 +168,9 @@ Therefore, `IterEl` is a neccessary design, which represent the iteration elemen
    2. Constant Part: ConstantExpr(). The constant value is given by the user.
    3. Comparison: 
 
+## Operations Before Merge
+1. Row Selection with Conditionals
+2. Column Projection
+3. Column Rename
+4. Column Insertion
+5. Column Deletion
