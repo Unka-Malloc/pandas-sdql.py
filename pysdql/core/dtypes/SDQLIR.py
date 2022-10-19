@@ -9,4 +9,4 @@ class SDQLIR(metaclass=ABCMeta):
     @property
     @abstractmethod
     def sdql_ir(self):
-        pass
+        return

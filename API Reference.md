@@ -174,3 +174,117 @@ Therefore, `IterEl` is a neccessary design, which represent the iteration elemen
 3. Column Rename
 4. Column Insertion
 5. Column Deletion
+
+# Merge
+- LeftPart
+```python
+from pysdql.core.dtypes.sdql_ir import (
+    IfExpr,
+    ConstantExpr,
+    LetExpr,
+    VarExpr
+)
+
+v1 = VarExpr('')
+
+cond = IfExpr(
+    condExpr=ConstantExpr(None),
+    thenBodyExpr=ConstantExpr(None),
+    elseBodyExpr=ConstantExpr(None)
+)
+
+LetExpr(
+    varExpr=,
+    valExpr=,
+    bodyExpr=
+)
+
+```
+- RightProbe
+```python
+
+```
+
+# Empty Dict
+
+# isAssignSum
+Concat / BuildPartition -> True
+JoinProbe -> False
+
+d = {a -> 1,
+ b -> 2}
+
+sum(x in d) x.val
+
+a -> 1,
+
+out = 1
+
+b -> 2
+
+out = 1 + 2
+
+out = 3
+
+This is the case of updating. 
+
+==============
+
+d = {a -> 1,
+ b -> 2}
+
+sum(x in d) x.val
+
+a -> 1,
+
+out = 1
+
+b -> 2
+
+out = 2
+
+This is the case of assignment. 
+
+===============
+
+sum(r <- R)
+{<r.key, r.val> -> true}
+
+[comment]: <> (concat&#40;<a = 1>, <b = 2>&#41;)
+
+<a=1, b=1> -> true # unique key
+
+<a=2, b=2> -> true
+
+==============
+sum(c <- C)
+{c.key.city -> 1}
+
+{NY -> 100, 
+PA -> 1222}
+
+update:
+
+NY -> 1
+
+NY -> 5
+
+=> NY -> 6
+
+assign
+
+NY -> 1
+
+NY -> 5 (Ignore)
+
+=> NY -> 1
+
+When the key is unique: 
+
+after df.drop_diplicates()
+
+Partition: assignment = True
+
+we only use primary key (left_on)
+
+Probe: update
