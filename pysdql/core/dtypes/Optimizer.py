@@ -152,15 +152,32 @@ class Optimizer:
     def set_groupby_aggr_val_part(self, aggr_dict):
         rec_list = []
 
+        rec_dict = {}
+
         if self.col_ins:
-            for vir_col in self.col_ins.keys():
-                vir_col_expr = self.col_ins[vir_col]
-                for k in aggr_dict.keys():
-                    v = aggr_dict[k]
-                    if v.name == vir_col:
-                        rec_list.append((k, vir_col_expr.sdql_ir))
-                    else:
-                        rec_list.append((k, v))
+            for k in aggr_dict.keys():
+                v = aggr_dict[k]
+                if v.name in self.col_ins.keys():
+                    col_expr = self.col_ins[v.name].sdql_ir
+                else:
+                    col_expr = v
+
+                rec_list.append((k, col_expr))
+
+        # if self.col_ins:
+        #     for vir_col in self.col_ins.keys():
+        #         vir_col_expr = self.col_ins[vir_col]
+        #         for k in aggr_dict.keys():
+        #             v = aggr_dict[k]
+        #             if v.name == vir_col:
+        #                 # rec_dict[k] = vir_col_expr.sdql_ir
+        #                 # rec_list.append((k, vir_col_expr.sdql_ir))
+        #             else:
+        #                 # rec_dict[k] = v
+        #                 # rec_list.append((k, v))
+
+        # for i in rec_dict.keys():
+        #     rec_list.append((i, rec_dict[i]))
 
         self.groupby_aggr_info['aggr_vals'] = RecConsExpr(rec_list)
 
