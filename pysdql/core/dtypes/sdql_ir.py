@@ -813,6 +813,7 @@ class DicConsExpr(Expr):
     def __repr__(self):
         return f'DicConsExpr({self.initialPairs})'
 
+
 class EmptyDicConsExpr(Expr):
     def __init__(self):
         super().__init__(None)
@@ -920,6 +921,7 @@ class DivExpr(Expr):
     def __repr__(self):
         return f'DivExpr({self.op1Expr}, {self.op2Expr})'
 
+
 class PromoteExpr(Expr):
     def __init__(self, fromType: Type, toType: Type, bodyExpr: Expr):
         super().__init__([bodyExpr])
@@ -960,11 +962,16 @@ class PairAccessExpr(Expr):
     def __repr__(self):
         return f'PairAccessExpr({self.pairExpr}, {self.index})'
 
+
 class ConcatExpr(Expr):
     def __init__(self, rec1: Expr, rec2: Expr):
         super().__init__([rec1, rec2])
         self.rec1 = rec1
         self.rec2 = rec2
+
+    #     rec1 + rec2 ?
+
+    #  RecConsExpr([rec1, rec2])
 
     def __repr__(self):
         return f'ConcatExpr({self.rec1}, {self.rec2})'
