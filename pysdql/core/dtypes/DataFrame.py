@@ -71,14 +71,20 @@ class DataFrame(SemiRing):
         self.__columns_in = columns
         self.__columns_out = columns
 
-    @property
-    def var_expr(self):
+        self.__iter_el = IterEl(f'x_{self.name}')
+        self.__var_expr = self.init_var_expr()
+
+    def init_var_expr(self):
         if self.name == 'li':
             return VarExpr("db->li_dataset")
         if self.name == 'cu':
             return VarExpr("db->cu_dataset")
         if self.name == 'ord':
             return VarExpr("db->ord_dataset")
+
+    @property
+    def var_expr(self):
+        return self.__var_expr
 
     @property
     def data(self):
@@ -213,9 +219,7 @@ class DataFrame(SemiRing):
 
     @property
     def iter_el(self):
-        el_name = f'x_{self.name}'
-
-        return IterEl(el_name)
+        return self.__iter_el
 
     @property
     def el(self):
