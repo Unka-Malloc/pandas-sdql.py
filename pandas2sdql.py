@@ -40,11 +40,11 @@ def q3():
     li = DataFrame()
 
     cu_filt = cu[cu.c_mktsegment == "BUILDING"]
-    cu_filt = cu_filt[["c_custkey", 'c_phone']]
+    cu_filt = cu_filt[["c_custkey"]]
 
     # "c_custkey"
 
-    print(cu_filt.operations)
+    # print(cu_filt.operations)
 
     ord_filt = ord[ord.o_orderdate < "1995-03-15"]
     ord_cu_join = pd.merge(cu_filt, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
@@ -54,18 +54,21 @@ def q3():
     li_order_join = pd.merge(ord_cu_join, li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
     li_order_join["revenue"] = li_order_join.l_extendedprice * (1 - li_order_join.l_discount)
 
-    # result = li_order_join \
-    #     .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
-    #     .agg(revenue=("revenue", "sum"))
+    result = li_order_join \
+        .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
+        .agg(revenue=("revenue", "sum"))
 
     # return result
 
-    print(ord_cu_join.operations)
+    # print(ord_cu_join.operations)
 
-    print(ord_cu_join.merge_right_stmt(ConstantExpr('Here is the join partition builder!')))
+    # print(ord_cu_join.merge_probe_stmt())
 
-    # JoinProbeBuilder
+    # print(li_order_join.merge_probe_stmt())
 
+    print(li_order_join.operations)
+
+    print(li_order_join.get_opt().output)
 
 def q6():
     # replaced by read_csv() in the future,
@@ -92,8 +95,8 @@ def q6():
 
 
 if __name__ == '__main__':
-    q1()
-    # q3()
+    # q1()
+    q3()
     # q6()
 
     # li = DataFrame()

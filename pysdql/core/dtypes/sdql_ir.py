@@ -825,6 +825,9 @@ class EmptyDicConsExpr(Expr):
     def printInnerVals(self):
         return " | " + "fromType: " + str(self.fromType) + " | " + "toType: " + str(self.toType)
 
+    def __repr__(self):
+        return f'EmptyDicConsExpr()'
+
 
 class DicLookupExpr(Expr):
     def __init__(self, dicExpr: Expr, keyExpr: Expr):
