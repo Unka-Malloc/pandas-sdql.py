@@ -28,9 +28,11 @@ class AggrType(Enum):
 
 
 @unique
-class LastFunc(Enum):
-    GroupbyAgg = 0
-    Agg = 1
+class LastIterFunc(Enum):
+    Agg = 0
+    GroupbyAgg = 1
+    MergePartition = 2
+    MergeProbe = 3
 
 
 @unique
@@ -39,5 +41,18 @@ class OptGoal(Enum):
     Aggregation = 1
     GroupBy = 2
     GroupByAggregation = 3
-    MergeLeftPart = 4
-    MergeRightPart = 5
+    MergePartition = 4
+    MergeProbe = 5
+
+
+@unique
+class MergeType(Enum):
+    NONE = 0
+    PARTITION = 1
+    PROBE = 2
+
+
+@unique
+class SumIterType(Enum):
+    Assign = 0
+    Update = 1

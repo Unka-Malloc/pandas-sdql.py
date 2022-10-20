@@ -271,7 +271,7 @@ NY -> 5
 
 => NY -> 6
 
-assign
+assign:
 
 NY -> 1
 
@@ -288,3 +288,12 @@ Partition: assignment = True
 we only use primary key (left_on)
 
 Probe: update
+
+
+Dear Amir and Hesam,
+
+It seems like I can’t provide you such a ‘best’ optimization in a short time. I don’t understand why both of you underestimate the complexity and difficulties in building such a compiler. This is not a simple transformation from Pandas to SDQL. This is a combination of parser and optimizer. The parser collect and manage the information provided by users and the optimizer analyze the overall AST context to give the ‘best’ optimized SDQL IR. Actually, SDQL IR in python is far more difficult than SDQL primitive strings. The main reason is that it is not possible to change any of the components if needed, and it is not possible to simply concatenate them back and forth. 
+
+There are two directions to do implementation:
+1.	I simply believe that the other side can give me the best optimization without any consideration.
+2.	I use the best optimization as guideline and try to approach it.

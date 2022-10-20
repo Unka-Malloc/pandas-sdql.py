@@ -51,7 +51,7 @@ from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
-    MathSymbol, OptGoal,
+    MathSymbol, OptGoal, SumIterType,
 )
 
 
@@ -73,6 +73,12 @@ class DataFrame(SemiRing):
 
         self.__iter_el = IterEl(f'x_{self.name}')
         self.__var_expr = self.init_var_expr()
+
+        self.__name_merge_part = f'{self.name}_part'
+        self.__var_merge_part = VarExpr(f'{self.__name_merge_part}')
+
+        self.__name_merge_probe = f'{self.name}_probe'
+        self.__var_merge_probe = VarExpr(f'{self.__name_merge_probe}')
 
     def init_var_expr(self):
         if self.name == 'li':
@@ -154,6 +160,14 @@ class DataFrame(SemiRing):
         if self.__var_name:
             return self.__var_name
         return self.__default_name
+
+    @property
+    def var_part(self):
+        return self.__var_merge_part
+
+    @property
+    def var_probe(self):
+        return self.__var_merge_probe
 
     # @name.setter
     # def name(self, val):
@@ -388,15 +402,18 @@ class DataFrame(SemiRing):
 
         return right
 
-    def merge_left_stmt(self, merge_right_stmt):
-        return self.get_opt(OptGoal.MergeLeftPart).merge_left_stmt(merge_right_stmt)
+    def merge_partition_stmt(self):
+        return self.get_opt(OptGoal.MergePartition).merge_partition_stmt()
 
-    def merge_right_stmt(self, merge_next_stmt):
-        if merge_next_stmt is None:
-            merge_next_stmt = ConstantExpr(None)
-        return self.get_opt(OptGoal.MergeRightPart).merge_right_stmt(merge_next_stmt)
+    def merge_probe_stmt(self, let_next=None, sum_type=SumIterType.Update):
+        isAssign = False
+        if sum_type == SumIterType.Assign:
+            isAssign = True
+        if sum_type == SumIterType.Update:
+            isAssign = False
+        return self.get_opt(OptGoal.MergeProbe).merge_probe_stmt(let_next, isAssign)
 
-    def get_opt(self, opt_goal):
+    def get_opt(self, opt_goal=OptGoal.UnOptimized):
         opt = Optimizer(opt_on=self,
                          opt_goal=opt_goal)
         for op_expr in self.operations:
