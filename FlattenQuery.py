@@ -81,7 +81,390 @@ def q6():
 
     print(q6)
 
+def q10():
+    r = VarExpr("r")
+    na_indexed = VarExpr("na_indexed")
+    cu_indexed = VarExpr("cu_indexed")
+    ord_probed = VarExpr("ord_probed")
+    li_probed = VarExpr("li_probed")
+    results = VarExpr("results")
+
+    cu = VarExpr("db->cu_dataset")
+    ord = VarExpr("db->ord_dataset")
+    li = VarExpr("db->li_dataset")
+    na = VarExpr("db->na_dataset")
+
+    q10 = LetExpr(r, ConstantExpr("R"), LetExpr(na_indexed,
+                                                JoinPartitionBuilder(na, "n_nationkey", lambda p: ConstantExpr(True),
+                                                                     ["n_name"], "phmap::flat_hash_map"),
+                                                LetExpr(cu_indexed, JoinPartitionBuilder(cu, "c_custkey",
+                                                                                         lambda p: ConstantExpr(True),
+                                                                                         ["c_custkey", "c_name",
+                                                                                          "c_acctbal", "c_address",
+                                                                                          "c_nationkey", "c_phone",
+                                                                                          "c_comment"],
+                                                                                         "phmap::flat_hash_map"),
+                                                        LetExpr(ord_probed,
+                                                                JoinProbeBuilder(cu_indexed, ord, "o_custkey",
+                                                                                 lambda p: (((
+                                                                                             p.o_orderdate >= ConstantExpr(
+                                                                                         19931001))) * ((
+                                                                                             p.o_orderdate < ConstantExpr(
+                                                                                         19940101)))),
+                                                                                 lambda indexedDictValue,
+                                                                                        probeDictKey: DicConsExpr([(
+                                                                                                                   probeDictKey.o_orderkey,
+                                                                                                                   RecConsExpr(
+                                                                                                                       [
+                                                                                                                           (
+                                                                                                                           "c_custkey",
+                                                                                                                           indexedDictValue.c_custkey),
+                                                                                                                           (
+                                                                                                                           "c_name",
+                                                                                                                           indexedDictValue.c_name),
+                                                                                                                           (
+                                                                                                                           "c_acctbal",
+                                                                                                                           indexedDictValue.c_acctbal),
+                                                                                                                           (
+                                                                                                                           "c_address",
+                                                                                                                           indexedDictValue.c_address),
+                                                                                                                           (
+                                                                                                                           "c_phone",
+                                                                                                                           indexedDictValue.c_phone),
+                                                                                                                           (
+                                                                                                                           "c_comment",
+                                                                                                                           indexedDictValue.c_comment),
+                                                                                                                           (
+                                                                                                                           "n_name",
+                                                                                                                           na_indexed[
+                                                                                                                               indexedDictValue.c_nationkey].n_name)]))]),
+                                                                                 True), LetExpr(li_probed,
+                                                                                                JoinProbeBuilder(
+                                                                                                    ord_probed, li,
+                                                                                                    "l_orderkey",
+                                                                                                    lambda p: (
+                                                                                                                p.l_returnflag == r),
+                                                                                                    lambda
+                                                                                                        indexedDictValue,
+                                                                                                        probeDictKey: DicConsExpr(
+                                                                                                        [(RecConsExpr([(
+                                                                                                                       "c_custkey",
+                                                                                                                       indexedDictValue.c_custkey),
+                                                                                                                       (
+                                                                                                                       "c_name",
+                                                                                                                       indexedDictValue.c_name),
+                                                                                                                       (
+                                                                                                                       "c_acctbal",
+                                                                                                                       indexedDictValue.c_acctbal),
+                                                                                                                       (
+                                                                                                                       "n_name",
+                                                                                                                       indexedDictValue.n_name),
+                                                                                                                       (
+                                                                                                                       "c_address",
+                                                                                                                       indexedDictValue.c_address),
+                                                                                                                       (
+                                                                                                                       "c_phone",
+                                                                                                                       indexedDictValue.c_phone),
+                                                                                                                       (
+                                                                                                                       "c_comment",
+                                                                                                                       indexedDictValue.c_comment)]),
+                                                                                                          (
+                                                                                                                      probeDictKey.l_extendedprice * (
+                                                                                                                          ConstantExpr(
+                                                                                                                              1.0) - probeDictKey.l_discount)))]),
+                                                                                                    False),
+                                                                                                LetExpr(results,
+                                                                                                        SumBuilder(
+                                                                                                            lambda
+                                                                                                                p: DicConsExpr(
+                                                                                                                [(
+                                                                                                                 RecConsExpr(
+                                                                                                                     [(
+                                                                                                                      "c_custkey",
+                                                                                                                      p[
+                                                                                                                          0].c_custkey),
+                                                                                                                      (
+                                                                                                                      "c_name",
+                                                                                                                      p[
+                                                                                                                          0].c_name),
+                                                                                                                      (
+                                                                                                                      "revenue",
+                                                                                                                      p[
+                                                                                                                          1]),
+                                                                                                                      (
+                                                                                                                      "c_acctbal",
+                                                                                                                      p[
+                                                                                                                          0].c_acctbal),
+                                                                                                                      (
+                                                                                                                      "n_name",
+                                                                                                                      p[
+                                                                                                                          0].n_name),
+                                                                                                                      (
+                                                                                                                      "c_address",
+                                                                                                                      p[
+                                                                                                                          0].c_address),
+                                                                                                                      (
+                                                                                                                      "c_phone",
+                                                                                                                      p[
+                                                                                                                          0].c_phone),
+                                                                                                                      (
+                                                                                                                      "c_comment",
+                                                                                                                      p[
+                                                                                                                          0].c_comment)]),
+                                                                                                                 ConstantExpr(
+                                                                                                                     True))]),
+                                                                                                            li_probed,
+                                                                                                            True),
+                                                                                                        LetExpr(VarExpr(
+                                                                                                            "out"),
+                                                                                                                results,
+                                                                                                                ConstantExpr(
+                                                                                                                    True))))))))
+
+    print(q10)
+
+def q19():
+    brand12 = VarExpr("brand12")
+    brand23 = VarExpr("brand23")
+    brand34 = VarExpr("brand34")
+    smcase = VarExpr("smcase")
+    smbox = VarExpr("smbox")
+    smpack = VarExpr("smpack")
+    smpkg = VarExpr("smpkg")
+    mdbag = VarExpr("mdbag")
+    mdbox = VarExpr("mdbox")
+    mdpack = VarExpr("mdpack")
+    mdpkg = VarExpr("mdpkg")
+    lgcase = VarExpr("lgcase")
+    lgbox = VarExpr("lgbox")
+    lgpack = VarExpr("lgpack")
+    lgpkg = VarExpr("lgpkg")
+    air = VarExpr("air")
+    airreg = VarExpr("airreg")
+    deliverinperson = VarExpr("deliverinperson")
+    pa_indexed = VarExpr("pa_indexed")
+    li_probed = VarExpr("li_probed")
+    results = VarExpr("results")
+
+    li = VarExpr("db->li_dataset")
+    pa = VarExpr("db->pa_dataset")
+    q19 = LetExpr(brand12, ConstantExpr("Brand#12"), LetExpr(brand23, ConstantExpr("Brand#23"),
+                                                             LetExpr(brand34, ConstantExpr("Brand#34"),
+                                                                     LetExpr(smcase, ConstantExpr("SM CASE"),
+                                                                             LetExpr(smbox, ConstantExpr("SM BOX"),
+                                                                                     LetExpr(smpack,
+                                                                                             ConstantExpr("SM PACK"),
+                                                                                             LetExpr(smpkg,
+                                                                                                     ConstantExpr(
+                                                                                                         "SM PKG"),
+                                                                                                     LetExpr(mdbag,
+                                                                                                             ConstantExpr(
+                                                                                                                 "MED BAG"),
+                                                                                                             LetExpr(
+                                                                                                                 mdbox,
+                                                                                                                 ConstantExpr(
+                                                                                                                     "MED BOX"),
+                                                                                                                 LetExpr(
+                                                                                                                     mdpack,
+                                                                                                                     ConstantExpr(
+                                                                                                                         "MED PACK"),
+                                                                                                                     LetExpr(
+                                                                                                                         mdpkg,
+                                                                                                                         ConstantExpr(
+                                                                                                                             "MED PKG"),
+                                                                                                                         LetExpr(
+                                                                                                                             lgcase,
+                                                                                                                             ConstantExpr(
+                                                                                                                                 "LG CASE"),
+                                                                                                                             LetExpr(
+                                                                                                                                 lgbox,
+                                                                                                                                 ConstantExpr(
+                                                                                                                                     "LG BOX"),
+                                                                                                                                 LetExpr(
+                                                                                                                                     lgpack,
+                                                                                                                                     ConstantExpr(
+                                                                                                                                         "LG PACK"),
+                                                                                                                                     LetExpr(
+                                                                                                                                         lgpkg,
+                                                                                                                                         ConstantExpr(
+                                                                                                                                             "LG PKG"),
+                                                                                                                                         LetExpr(
+                                                                                                                                             air,
+                                                                                                                                             ConstantExpr(
+                                                                                                                                                 "AIR"),
+                                                                                                                                             LetExpr(
+                                                                                                                                                 airreg,
+                                                                                                                                                 ConstantExpr(
+                                                                                                                                                     "AIR REG"),
+                                                                                                                                                 LetExpr(
+                                                                                                                                                     deliverinperson,
+                                                                                                                                                     ConstantExpr(
+                                                                                                                                                         "DELIVER IN PERSON"),
+                                                                                                                                                     LetExpr(
+                                                                                                                                                         pa_indexed,
+                                                                                                                                                         JoinPartitionBuilder(
+                                                                                                                                                             pa,
+                                                                                                                                                             "p_partkey",
+                                                                                                                                                             lambda
+                                                                                                                                                                 p: (
+                                                                                                                                                                     (
+                                                                                                                                                                         (
+                                                                                                                                                                                 (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             p.p_brand == brand12)) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == smcase)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == smbox)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == smpack)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == smpkg)))) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size >= ConstantExpr(
+                                                                                                                                                                                                     1))) * (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size <= ConstantExpr(
+                                                                                                                                                                                                     5))))))) + (
+                                                                                                                                                                         (
+                                                                                                                                                                                 (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             p.p_brand == brand23)) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == mdbag)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == mdbox)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == mdpack)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == mdpkg)))) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size >= ConstantExpr(
+                                                                                                                                                                                                     1))) * (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size <= ConstantExpr(
+                                                                                                                                                                                                     10))))))) + (
+                                                                                                                                                                         (
+                                                                                                                                                                                 (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             p.p_brand == brand34)) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == lgcase)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == lgbox)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == lgpack)) + (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_container == lgpkg)))) * (
+                                                                                                                                                                                     (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size >= ConstantExpr(
+                                                                                                                                                                                                     1))) * (
+                                                                                                                                                                                                 (
+                                                                                                                                                                                                         p.p_size <= ConstantExpr(
+                                                                                                                                                                                                     15)))))))),
+                                                                                                                                                             [
+                                                                                                                                                                 "p_brand",
+                                                                                                                                                                 "p_size",
+                                                                                                                                                                 "p_container"]),
+                                                                                                                                                         LetExpr(
+                                                                                                                                                             li_probed,
+                                                                                                                                                             JoinProbeBuilder(
+                                                                                                                                                                 pa_indexed,
+                                                                                                                                                                 li,
+                                                                                                                                                                 "l_partkey",
+                                                                                                                                                                 lambda
+                                                                                                                                                                     p: (
+                                                                                                                                                                         (
+                                                                                                                                                                             (
+                                                                                                                                                                                     p.l_shipinstruct == deliverinperson)) * (
+                                                                                                                                                                             (
+                                                                                                                                                                                     (
+                                                                                                                                                                                         (
+                                                                                                                                                                                                 p.l_shipmode == air)) + (
+                                                                                                                                                                                         (
+                                                                                                                                                                                                 p.l_shipmode == airreg))))),
+                                                                                                                                                                 lambda
+                                                                                                                                                                     indexedDictValue,
+                                                                                                                                                                     probeDictKey: IfExpr(
+                                                                                                                                                                     (
+                                                                                                                                                                             (
+                                                                                                                                                                                 (
+                                                                                                                                                                                         (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     indexedDictValue.p_brand == brand12)) * (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity >= ConstantExpr(
+                                                                                                                                                                                                             1))) * (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity <= ConstantExpr(
+                                                                                                                                                                                                             11))))))) + (
+                                                                                                                                                                                 (
+                                                                                                                                                                                         (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     indexedDictValue.p_brand == brand23)) * (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity >= ConstantExpr(
+                                                                                                                                                                                                             10))) * (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity <= ConstantExpr(
+                                                                                                                                                                                                             20))))))) + (
+                                                                                                                                                                                 (
+                                                                                                                                                                                         (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     indexedDictValue.p_brand == brand34)) * (
+                                                                                                                                                                                             (
+                                                                                                                                                                                                     (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity >= ConstantExpr(
+                                                                                                                                                                                                             20))) * (
+                                                                                                                                                                                                         (
+                                                                                                                                                                                                                 probeDictKey.l_quantity <= ConstantExpr(
+                                                                                                                                                                                                             30)))))))),
+                                                                                                                                                                     (
+                                                                                                                                                                             probeDictKey.l_extendedprice * (
+                                                                                                                                                                             ConstantExpr(
+                                                                                                                                                                                 1.0) - probeDictKey.l_discount)),
+                                                                                                                                                                     ConstantExpr(
+                                                                                                                                                                         None))),
+                                                                                                                                                             LetExpr(
+                                                                                                                                                                 results,
+                                                                                                                                                                 DicConsExpr(
+                                                                                                                                                                     [
+                                                                                                                                                                         (
+                                                                                                                                                                             RecConsExpr(
+                                                                                                                                                                                 [
+                                                                                                                                                                                     (
+                                                                                                                                                                                         "revenue",
+                                                                                                                                                                                         li_probed)]),
+                                                                                                                                                                             ConstantExpr(
+                                                                                                                                                                                 True))]),
+                                                                                                                                                                 LetExpr(
+                                                                                                                                                                     VarExpr(
+                                                                                                                                                                         "out"),
+                                                                                                                                                                     results,
+                                                                                                                                                                     ConstantExpr(
+                                                                                                                                                                         True)))))))))))))))))))))))
+    print(q19)
+
 
 if __name__ == '__main__':
     # q3()
-    q6()
+    # q6()
+    q10()
+    # q19()

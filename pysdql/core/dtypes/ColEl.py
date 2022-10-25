@@ -1,11 +1,11 @@
 import re
 from datetime import datetime
 
+from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.EnumUtil import AggrType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
-from pysdql.core.dtypes.ValExpr import ValExpr
-from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
@@ -46,6 +46,12 @@ class ColEl(SDQLIR):
 
         self.isvar = False
         self.var_name = ''
+
+    def add_const(self, const):
+        self.relation.add_const(const)
+
+    def get_const_var(self, const):
+        return self.relation.get_const_var(const)
 
     @property
     def relation(self):
@@ -187,6 +193,10 @@ class ColEl(SDQLIR):
         # if type(other) == ColEl:
         #     if self.promoted:
         #         other.follow_promotion = self.promoted
+        if type(other) == str:
+            self.add_const(other)
+            return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=self.get_const_var(other))
+
         return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
         # return f'{self.column} == {other}'
 
@@ -264,32 +274,56 @@ class ColEl(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(value=AddExpr(self.col, input_fmt(other)), on=self.R)
+        return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __mul__(self, other):
-        return ColExpr(value=MulExpr(self.col, input_fmt(other)), on=self.R)
+        return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __sub__(self, other):
-        return ColExpr(value=SubExpr(self.col, input_fmt(other)), on=self.R)
+        return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __truediv__(self, other):
-        return ColExpr(value=DivExpr(self.col, input_fmt(other)), on=self.R)
+        return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.R)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(value=AddExpr(input_fmt(other), self.col), on=self.R)
+        return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rmul__(self, other):
-        return ColExpr(value=MulExpr(input_fmt(other), self.col), on=self.R)
+        return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rsub__(self, other):
-        return ColExpr(value=SubExpr(input_fmt(other), self.col), on=self.R)
+        return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rtruediv__(self, other):
-        return ColExpr(value=DivExpr(input_fmt(other), self.col), on=self.R)
+        return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.R)
+
+    def isin(self, vals):
+        if type(vals) == list or type(vals) == tuple:
+            if len(vals) == 0:
+                raise ValueError()
+            if len(vals) == 1:
+                return vals[0]
+
+            tmp_list = []
+            for i in vals:
+                if type(i) == str:
+                    self.add_const(i)
+                    tmp_list.append(CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=self.get_const_var(i)))
+
+            a = tmp_list.pop()
+            b = tmp_list.pop()
+
+            tmp_cond = a | b
+
+            if tmp_list:
+                for i in tmp_list:
+                    tmp_cond |= i
+
+            return tmp_cond
 
     # def isin(self, vals, ext=None):
     #     # print(f'{self.expr} is in {vals}')
@@ -388,81 +422,32 @@ class ColEl(SDQLIR):
         return self
 
     def sum(self):
-        tmp_name = f'{self.field}_sum'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr,
-                                             f'{self.key}.{self.field} * {self.val}'))
-        self.relation.push(OpExpr('colel_sum', tmp_var))
+        aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
+                             aggr_on=self.relation,
+                             aggr_op=self.col,
+                             aggr_else=ConstantExpr(0.0))
 
-        return ValExpr(tmp_name, self.relation.operations)
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self.relation,
+                         op_iter=True,
+                         iter_on=self.relation,
+                         ret_type=float)
 
-        # tmp_name = f'{self.field}_sum'
-        # tmp_var = VarExpr(tmp_name, IterStmt(self.dataframe.iter_expr, f'{self.dataframe.el.k}.{self.field} * {self.dataframe.el.v}'))
-        # self.dataframe.history_name.append(tmp_name)
-        # self.dataframe.operations.append(OpExpr('colel_sum', tmp_var))
-        #
-        # self.isvar = True
-        # self.var_name = tmp_name
-        #
-        # return self
+        self.relation.push(op_expr)
+
+        return aggr_expr
 
     def count(self):
-        tmp_name = f'{self.field}_count'
-        tmp_var = VarExpr(tmp_name, IterStmt(self.relation.iter_expr,
-                                             f'{self.val}'))
-        self.relation.push(OpExpr('colel_count', tmp_var))
-
-        return ValExpr(tmp_name, self.relation.operations)
+        pass
 
     def mean(self):
-        tmp_name = f'{self.field}_mean'
-        tmp_rec = RecEl({f'{self.field}_sum': f'{self.key}.{self.field} * {self.val}',
-                         f'{self.field}_count': f'{self.val}'})
-        tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.relation.iter_expr, f'{tmp_rec}'))
-        tmp_var = VarExpr(tmp_name,
-                          f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
-        self.relation.push(OpExpr('colel_mean', tmp_var))
-
-        return ValExpr(tmp_name, self.relation.operations)
-
-        # tmp_name = f'{self.field}_mean'
-        # tmp_rec = RecEl({f'{self.field}_sum': f'{self.dataframe.el.k}.{self.field} * {self.dataframe.el.v}',
-        #                  f'{self.field}_count': f'{self.dataframe.el.v}'})
-        # tuple_var = VarExpr(f'{self.field}_sumcount', IterStmt(self.dataframe.iter_expr, f'{tmp_rec}'))
-        # tmp_var = VarExpr(tmp_name, f'{tuple_var} in {self.field}_sumcount.{self.field}_sum / {self.field}_sumcount.{self.field}_count')
-        # self.dataframe.history_name.append(tmp_name)
-        # self.dataframe.operations.append(OpExpr('colel_mean', tmp_var))
-        #
-        # self.isvar = True
-        # self.var_name = tmp_name
-        #
-        # return self
+        pass
 
     def min(self):
-        tmp_name = f'{self.field}_min'
-        tmp_iter = IterStmt(self.relation.iter_expr, f'promote[mnpr]({self.key}.{self.field})')
-        tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        self.relation.push(OpExpr('colel_min', tmp_var))
-
-        return ValExpr(tmp_name, self.relation.operations)
+        pass
 
     def max(self):
-        tmp_name = f'{self.field}_max'
-        tmp_iter = IterStmt(self.relation.iter_expr, f'promote[mxpr]({self.key}.{self.field})')
-        tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        self.relation.push(OpExpr('colel_max', tmp_var))
-
-        return ValExpr(tmp_name, self.relation.operations)
-
-        # tmp_name = f'{self.field}_max'
-        # tmp_iter = IterStmt(self.dataframe.iter_expr, f'promote[mxpr]({self.dataframe.el.k}.{self.field})')
-        # tmp_var = VarExpr(tmp_name, f'promote[real]({tmp_iter})')
-        # self.dataframe.history_name.append(tmp_name)
-        # self.dataframe.operations.append(OpExpr('colel_max', tmp_var))
-        #
-        # self.isvar = True
-        # self.var_name = tmp_name
-        #
-        # return self
+        pass
 
     @property
     def sdql_ir(self):

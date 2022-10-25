@@ -195,16 +195,16 @@ class CondExpr(SDQLIR):
     '''
 
     def __and__(self, other):
-        # return CondExpr(unit1=self,
-        #                 operator=LogicSymbol.AND,
-        #                 unit2=other)
-        return MulExpr(self.sdql_ir, input_fmt(other))
+        return CondExpr(unit1=self.sdql_ir,
+                        operator=LogicSymbol.AND,
+                        unit2=input_fmt(other))
+        # return MulExpr(self.sdql_ir, input_fmt(other))
 
     def __or__(self, other):
-        # return CondExpr(unit1=self,
-        #                 operator=LogicSymbol.OR,
-        #                 unit2=other)
-        return AddExpr(self.sdql_ir, input_fmt(other))
+        return CondExpr(unit1=self.sdql_ir,
+                        operator=LogicSymbol.OR,
+                        unit2=input_fmt(other))
+        # return AddExpr(self.sdql_ir, input_fmt(other))
 
     def __invert__(self):
         # return CondExpr(unit1=self,

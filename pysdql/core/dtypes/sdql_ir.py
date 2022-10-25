@@ -766,7 +766,7 @@ class VarExpr(Expr):
         return " | " + "name: " + str(self.name)
 
     def __repr__(self) -> str:
-        return f"{self.name}"
+        return f'VarExpr("{self.name}")'
 
 
 class LetExpr(Expr):

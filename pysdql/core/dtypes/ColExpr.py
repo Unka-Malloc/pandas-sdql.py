@@ -29,9 +29,9 @@ from pysdql.core.dtypes.Utils import (
 
 
 class ColExpr(SDQLIR):
-    def __init__(self, value, on):
+    def __init__(self, value, relation):
         self.__value = value
-        self.on = on
+        self.relation = relation
         # self.inherit_from = inherit_from
         #
         # self.isvar = self.init_var()
@@ -158,32 +158,32 @@ class ColExpr(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(value=AddExpr(self.col, input_fmt(other)), on=self.on)
+        return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __mul__(self, other):
-        return ColExpr(value=MulExpr(self.col, input_fmt(other)), on=self.on)
+        return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __sub__(self, other):
-        return ColExpr(value=SubExpr(self.col, input_fmt(other)), on=self.on)
+        return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __truediv__(self, other):
-        return ColExpr(value=DivExpr(self.col, input_fmt(other)), on=self.on)
+        return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.relation)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(value=AddExpr(input_fmt(other), self.col), on=self.on)
+        return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rmul__(self, other):
-        return ColExpr(value=MulExpr(input_fmt(other), self.col), on=self.on)
+        return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rsub__(self, other):
-        return ColExpr(value=SubExpr(input_fmt(other), self.col), on=self.on)
+        return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rtruediv__(self, other):
-        return ColExpr(value=DivExpr(input_fmt(other), self.col), on=self.on)
+        return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.relation)
 
     '''
     Aggregation Function
@@ -191,17 +191,17 @@ class ColExpr(SDQLIR):
 
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
-                             aggr_on=self.on,
+                             aggr_on=self.relation,
                              aggr_op=self.col,
                              aggr_else=ConstantExpr(0.0))
 
         op_expr = OpExpr(op_obj=aggr_expr,
-                         op_on=self.on,
+                         op_on=self.relation,
                          op_iter=True,
-                         iter_on=self.on,
+                         iter_on=self.relation,
                          ret_type=float)
 
-        self.on.push(op_expr)
+        self.relation.push(op_expr)
 
         return aggr_expr
 
