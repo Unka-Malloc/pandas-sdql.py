@@ -293,10 +293,10 @@ class Optimizer:
                                       merge_left_on_ir,
                                       self.get_col_proj_ir(MergeType.PARTITION)
                                   )]),
-                                  elseBodyExpr=ConstantExpr(None))
+                                  elseBodyExpr=EmptyDicConsExpr())
         else:
             part_left_op = DicConsExpr([(
-                self.opt_on.key_access(self.last_merge_info['left_on']),
+                merge_left_on_ir,
                 self.get_col_proj_ir(MergeType.PARTITION)
             )])
 
@@ -516,7 +516,7 @@ class Optimizer:
                 return self.groupby_aggr_with_merge_stmt
             return self.groupby_aggr_stmt
         if self.last_func == LastIterFunc.MergePartition:
-            return self.merge_partition_stmt
+            return self.merge_partition_stmt()
         if self.last_func == LastIterFunc.MergeProbe:
             return self.merge_probe_stmt()
         else:

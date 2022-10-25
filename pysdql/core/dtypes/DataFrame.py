@@ -56,7 +56,7 @@ from pysdql.core.dtypes.EnumUtil import (
 
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None):
+    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None, is_merged=False):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -80,6 +80,32 @@ class DataFrame(SemiRing):
         self.__name_merge_probe = f'{self.name}_probe'
         self.__var_merge_probe = VarExpr(f'{self.__name_merge_probe}')
 
+        self.__const_var = {}
+
+        self.__is_merged = is_merged
+
+    @property
+    def is_merged(self):
+        return self.__is_merged
+
+    @property
+    def const_var(self):
+        return self.__const_var
+
+    def add_const(self, const):
+        if type(const) == str:
+            if const not in self.__const_var.keys():
+                tmp_var_name = ''.join(re.split(r'[^A-Za-z]', const))
+                self.__const_var[const] = VarExpr(tmp_var_name)
+        else:
+            raise ValueError
+
+    def get_const_var(self, const):
+        return self.__const_var[const]
+
+    def pre_def_var_const(self):
+        pass
+
     def init_var_expr(self):
         if self.name == 'li':
             return VarExpr("db->li_dataset")
@@ -87,6 +113,8 @@ class DataFrame(SemiRing):
             return VarExpr("db->cu_dataset")
         if self.name == 'ord':
             return VarExpr("db->ord_dataset")
+        if self.name == 'pa':
+            return VarExpr("db->pa_dataset")
 
     @property
     def var_expr(self):
@@ -400,7 +428,14 @@ class DataFrame(SemiRing):
                           op_on=right,
                           op_iter=True))
 
-        return right
+        tmp_name = f'{self.name}_{right.name}_join'
+        self.__name_merge_probe = tmp_name
+        self.__var_merge_probe = VarExpr(self.__name_merge_probe)
+
+        tmp_df = DataFrame(name=tmp_name,
+                           is_merged=True)
+
+        return
 
     def merge_partition_stmt(self):
         return self.get_opt(OptGoal.MergePartition).merge_partition_stmt()
