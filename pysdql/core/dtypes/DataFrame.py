@@ -76,9 +76,12 @@ class DataFrame(SemiRing):
         self.__iter_el = IterEl(f'x_{self.name}')
         self.__var_expr = self.init_var_expr()
 
-        self.__var_merge_part = VarExpr(self.name) if self.is_joint else VarExpr(f'{self.name}_part')
-        # self.__var_merge_part = VarExpr(f'{self.name}_part')
-        self.__var_merge_probe = VarExpr(f'{self.name}_probe')
+        if is_joint:
+            self.__var_merge_part = VarExpr(self.name)
+            self.__var_merge_probe = VarExpr(self.name)
+        else:
+            self.__var_merge_part = VarExpr(f'{self.name}_part')
+            self.__var_merge_probe = VarExpr(f'{self.name}_probe')
 
         self.__const_var = {}
 
@@ -99,7 +102,7 @@ class DataFrame(SemiRing):
     def add_const(self, const):
         if type(const) == str:
             if const not in self.__const_var.keys():
-                tmp_var_name = ''.join(re.split(r'[^A-Za-z]', const))
+                tmp_var_name = (''.join(re.split(r'[^A-Za-z0-9]', const))).lower()
                 self.__const_var[const] = VarExpr(tmp_var_name)
         else:
             raise ValueError
@@ -161,7 +164,8 @@ class DataFrame(SemiRing):
             return ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
                     'o_clerk', 'o_shippriority', 'o_comment']
         if self.name == 'cu':
-            return ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']
+            return ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment',
+                    'c_comment']
         if self.name == 'pa':
             return ['p_partkey', 'p_name', 'p_mfgr', 'p_brand', 'p_type', 'p_size', 'p_container', 'p_retailprice',
                     'p_comment']
@@ -506,9 +510,24 @@ class DataFrame(SemiRing):
     def peak(self):
         return self.operations.peak()
 
+    def show_op_seq(self):
+        if self.is_joint:
+            self.partition_side.show_op_seq()
+            self.probe_side.show_op_seq()
+            if self.const_var:
+                print(f'>> {self.name} Constant Variables <<')
+                print(self.const_var)
+            print(f'>> {self.name} Operation Sequence <<')
+            print(self.operations)
+        else:
+            if self.const_var:
+                print(f'>> {self.name} Constant Variables <<')
+                print(self.const_var)
+            print(f'>> {self.name} Operation Sequence <<')
+            print(self.operations)
+
     def show(self):
-        print(f'>> {self.name} Operation Sequence <<')
-        print(self.operations)
+        self.show_op_seq()
         print(f'>> {self.name} Optimizer Output <<')
         print(self.optimize())
         print('>> Done <<')
