@@ -2,6 +2,9 @@ from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.JointFrame import JointFrame
+from pysdql.core.dtypes.JoinPartitionFrame import JoinPartitionFrame
+from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VirColEl import VirColEl
@@ -13,7 +16,7 @@ from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol, EmptyDicConsExpr, RecAccessExpr,
 )
 
-from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType
+from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OperationReturnType
 
 
 class Optimizer:
@@ -36,6 +39,16 @@ class Optimizer:
         self.col_proj = []
 
         self.sum_info = {
+            'sum_el': opt_on.iter_el.sdql_ir,
+            'sum_on': opt_on.var_expr,
+            'sum_op': ConstantExpr(None),
+        }
+
+        self.agg_dict_info = {
+            'cond_if': ConstantExpr(None),
+            'cond_then': ConstantExpr(None),
+            'cond_else': ConstantExpr(None),
+
             'sum_el': opt_on.iter_el.sdql_ir,
             'sum_on': opt_on.var_expr,
             'sum_op': ConstantExpr(None),
@@ -91,6 +104,33 @@ class Optimizer:
             'merge_right_let_val': ConstantExpr(None),
             'merge_right_let_next': ConstantExpr(None)
         }
+
+        self.merge_join_frame_info = {
+            'partition_side': None,
+            'probe_side': None,
+        }
+
+        self.join_partition_info = {
+            'partition_key': None,
+        }
+
+        self.join_probe_info = {
+            'probe_key': None,
+        }
+
+        self.joint_info = {
+            'partition_side': None,
+            'partition_key': None,
+
+            'probe_side': None,
+            'probe_key': None,
+
+            'how': None,
+        }
+
+        self.is_join_partition_side = False
+        self.is_join_probe_side = False
+        self.is_joint = self.opt_on.is_joint
 
         self.status = {
             'conditional': False,
@@ -220,9 +260,14 @@ class Optimizer:
             self.cond_info['cond_if'] = op_expr.op.sdql_ir
             self.cond_status = True
         if op_expr.op_type == AggrExpr:
-            self.cond_info['cond_then'] = op_expr.op.aggr_op
-            self.cond_info['cond_else'] = op_expr.op.aggr_else
-            self.sum_info['sum_op'] = self.cond_stmt
+            if op_expr.ret_type == OperationReturnType.DICT:
+                self.agg_dict_info['cond_if'] = self.cond_info['cond_if']
+                self.agg_dict_info['cond_then'] = op_expr.op.aggr_op
+                self.agg_dict_info['cond_else'] = op_expr.op.aggr_else
+            else:
+                self.cond_info['cond_then'] = op_expr.op.aggr_op
+                self.cond_info['cond_else'] = op_expr.op.aggr_else
+                self.sum_info['sum_op'] = self.cond_stmt
 
             self.last_func = LastIterFunc.Agg
         if op_expr.op_type == VirColEl:
@@ -266,23 +311,76 @@ class Optimizer:
                                    op_expr.op.proj_on.key_access(col)))
 
         if op_expr.op_type == MergeExpr:
-
+            # detect(self) -> partition side
             if op_expr.op.left.name == self.opt_on.name:
-                self.merge_left_info['merge_left_on'] = op_expr.op.left_on
-                self.last_func = LastIterFunc.MergePartition
-            if op_expr.op.right.name == self.opt_on.name:
-                self.merge_right_info['merge_right_on'] = op_expr.op.right_on
-                self.last_func = LastIterFunc.MergeProbe
+                self.is_join_partition_side = True
 
-            self.last_merge_info['left'] = op_expr.op.left
-            self.last_merge_info['right'] = op_expr.op.right
-            self.last_merge_info['left_on'] = op_expr.op.left_on
-            self.last_merge_info['right_on'] = op_expr.op.right_on
-            self.last_merge_info['how'] = op_expr.op.how
+                self.join_partition_info['partition_key'] = op_expr.op.left_on
 
-            if self.opt_on.name == op_expr.op.left.name:
-                partition_key_column = op_expr.op.left_on
-                self.col_proj = [i for i in self.col_proj if i[0] != partition_key_column]
+                self.last_func = LastIterFunc.JoinPartition
+            # detect(self) -> probe side
+            elif op_expr.op.right.name == self.opt_on.name:
+                self.is_join_probe_side = True
+
+                self.join_probe_info['probe_key'] = op_expr.op.right_on
+
+                self.last_func = LastIterFunc.JoinProbe
+            else:
+                if self.is_joint:
+                    self.joint_info['partition_side'] = op_expr.op.left
+                    self.joint_info['partition_key'] = op_expr.op.left_on
+                    self.joint_info['probe_side'] = op_expr.op.right
+                    self.joint_info['probe_key'] = op_expr.op.right_on
+                    self.joint_info['how'] = op_expr.op.how
+
+                    self.last_func = LastIterFunc.Joint
+                else:
+                    raise ValueError(str(op_expr))
+
+    @property
+    def partition_frame(self):
+        if not self.is_join_partition_side:
+            raise ValueError(self.opt_on.operations)
+
+        frame = JoinPartitionFrame(self.opt_on)
+
+        frame.add_key(self.join_partition_info['partition_key'])
+        if self.cond_info['cond_if'].value is not None:
+            frame.add_cond(self.cond_info['cond_if'])
+        frame.add_col_proj(self.col_proj)
+
+        return frame
+
+    @property
+    def probe_frame(self):
+        if not self.is_join_probe_side:
+            raise ValueError()
+
+        frame = JoinProbeFrame(self.opt_on)
+
+        frame.add_key(self.join_probe_info['probe_key'])
+        frame.add_cond(self.cond_info['cond_if'])
+        frame.add_col_proj(self.col_proj)
+
+        return frame
+
+    @property
+    def joint_frame(self):
+        partition_frame = self.joint_info['partition_side'].get_partition_frame()
+        probe_frame = self.joint_info['probe_side'].get_probe_frame()
+
+        tmp_joint_frame = JointFrame(partition=partition_frame,
+                                     probe=probe_frame,
+                                     joint=self.opt_on,
+                                     col_ins=self.col_ins,
+                                     col_proj=self.col_proj,
+                                     groupby_cols=self.groupby_aggr_info['groupby_cols'],
+                                     aggr_dict=self.groupby_aggr_info['aggr_dict'])
+
+        if self.col_proj != tmp_joint_frame.col_proj:
+            raise ValueError(f'Column Projection Not Applied to {self.opt_on.name}')
+
+        return tmp_joint_frame
 
     def merge_partition_stmt(self, let_next=None) -> LetExpr:
         merge_left_on_ir = self.opt_on.key_access(self.last_merge_info['left_on'])
@@ -320,7 +418,7 @@ class Optimizer:
                            bodyExpr=self.merge_left_info['merge_left_let_next'])
 
     def merge_probe_stmt(self, let_next=None, isAssign=False) -> LetExpr:
-        merge_left_opt = self.last_merge_info['left'].get_opt(OptGoal.MergePartition)
+        merge_left_opt = self.last_merge_info['left'].get_opt(OptGoal.JoinPartition)
         merge_left_var = merge_left_opt.merge_left_info['merge_left_let_var']
 
         merge_right_on_ir = self.opt_on.key_access(self.last_merge_info['right_on'])
@@ -489,10 +587,33 @@ class Optimizer:
         return self.last_merge_info['left'].merge_probe_stmt(let_next=next_let)
 
     @property
+    def agg_dict_stmt(self):
+        rec_list = []
+        if self.col_ins:
+            for k in self.agg_dict_info['cond_then'].keys():
+                v = self.agg_dict_info['cond_then'][k]
+                if v in self.col_ins.keys():
+                    col_expr = self.col_ins[v].sdql_ir
+                else:
+                    col_expr = v
+                rec_list.append((k, col_expr))
+
+        self.agg_dict_info['sum_op'] = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+        result = VarExpr('result')
+        return LetExpr(result,
+                       SumExpr(self.agg_dict_info['sum_el'],
+                               self.agg_dict_info['sum_on'],
+                               self.agg_dict_info['sum_op']),
+                       LetExpr(VarExpr('out'),
+                               result,
+                               ConstantExpr(True)))
+
+    @property
     def info(self):
-        if self.opt_goal == OptGoal.MergePartition:
+        if self.opt_goal == OptGoal.JoinPartition:
             col_proj_ir = self.get_col_proj_ir(MergeType.PARTITION)
-        elif self.opt_goal == OptGoal.MergeProbe:
+        elif self.opt_goal == OptGoal.JoinProbe:
             col_proj_ir = self.get_col_proj_ir(MergeType.PROBE)
         else:
             col_proj_ir = self.get_col_proj_ir(MergeType.NONE)
@@ -505,19 +626,28 @@ class Optimizer:
     @property
     def output(self) -> LetExpr:
         if self.last_func == LastIterFunc.Agg:
-            result = VarExpr('result')
-            return LetExpr(result,
-                           self.sum_stmt,
-                           LetExpr(VarExpr('out'),
-                                   result,
-                                   ConstantExpr(True)))
+            op_expr = self.opt_on.peak()
+            if op_expr.ret_type == OperationReturnType.DICT:
+                return self.agg_dict_stmt
+            else:
+                result = VarExpr('result')
+                return LetExpr(result,
+                               self.sum_stmt,
+                               LetExpr(VarExpr('out'),
+                                       result,
+                                       ConstantExpr(True)))
         if self.last_func == LastIterFunc.GroupbyAgg:
-            if self.was_merge_probe and self.is_next_merge_probe:
+            if self.is_joint:
+                print(self.joint_frame)
+                print(self.joint_frame.sdql_ir)
+                return LetExpr(VarExpr('None'), ConstantExpr(None), ConstantExpr(None))
+            elif self.is_next_merge_probe:
                 return self.groupby_aggr_with_merge_stmt
-            return self.groupby_aggr_stmt
-        if self.last_func == LastIterFunc.MergePartition:
+            else:
+                return self.groupby_aggr_stmt
+        if self.last_func == LastIterFunc.JoinPartition:
             return self.merge_partition_stmt()
-        if self.last_func == LastIterFunc.MergeProbe:
+        if self.last_func == LastIterFunc.JoinProbe:
             return self.merge_probe_stmt()
         else:
             raise ValueError()

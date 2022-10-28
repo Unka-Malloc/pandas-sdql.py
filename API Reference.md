@@ -293,3 +293,56 @@ Probe: update
 1. `__or__` for MulExpr() and AddExpr()
 
 {<revenue = ?> -> True}
+
+# Merge
+`is_join_partition_side` >> `join_partition_info`  
+`is_join_probe_side` >> `join_probe_info`  
+`is_joint` >> `joint_info`  
+
+            'partition_side': None,
+            'partition_key': None,
+
+            'probe_side': None,
+            'probe_key': None,
+
+            'how': None,
+
+```
+self.merge_stmt
+
+self.merge_groupby_agg_stmt
+```
+
+```python
+LetExpr(VarExpr("ord_probe"), 
+        SumExpr(VarExpr("x_ord"), 
+                VarExpr("db->ord_dataset"), 
+                IfExpr(CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate'), ConstantExpr(19950315)), 
+                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(VarExpr("cu"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_custkey')), ConstantExpr(None)), 
+                              DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_custkey'), 
+                                            RecConsExpr([('o_orderkey', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderkey')), 
+                                                         ('o_orderdate', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate')), 
+                                                         ('o_shippriority', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_shippriority'))]))]), 
+                              EmptyDicConsExpr()), 
+                       EmptyDicConsExpr()), 
+                False), 
+        ConstantExpr(None))
+```
+
+```python
+LetExpr(VarExpr("li_probe"), 
+        SumExpr(VarExpr("x_li"), 
+                VarExpr("db->li_dataset"), 
+                IfExpr(CompareExpr(CompareSymbol.GT, RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_shipdate'), ConstantExpr(19950315)), 
+                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(VarExpr("cu_ord_join"), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_orderkey')), ConstantExpr(None)), 
+                              DicConsExpr([(RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_orderkey')), 
+                                                         ('o_orderdate', RecAccessExpr(DicLookupExpr(VarExpr("cu_ord_join"), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'o_orderdate')), 'o_orderdate')), 
+                                                         ('o_shippriority', RecAccessExpr(DicLookupExpr(VarExpr("cu_ord_join"), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'o_shippriority')), 'o_shippriority'))]), 
+                                            RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_discount'))))]))]), 
+                              EmptyDicConsExpr()), 
+                       EmptyDicConsExpr()), 
+                False), 
+        LetExpr(VarExpr("result"), 
+                SumExpr(VarExpr("v8"), VarExpr("li_probe"), DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr("v8"), 0), PairAccessExpr(VarExpr("v8"), 1)), ConstantExpr(True))]), True), 
+                LetExpr(VarExpr("out"), VarExpr("result"), ConstantExpr(True))))
+```

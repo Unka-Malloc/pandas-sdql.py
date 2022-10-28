@@ -2,6 +2,7 @@ import base64
 import re
 import string
 
+from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
@@ -16,6 +17,7 @@ from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
+from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
@@ -33,7 +35,7 @@ from pysdql.core.dtypes.sdql_ir import (
     MulExpr,
     AddExpr,
     CompareExpr,
-    VarExpr, RecAccessExpr, LetExpr, ConstantExpr,
+    VarExpr, RecAccessExpr, LetExpr, ConstantExpr, EmptyDicConsExpr,
 )
 
 from pysdql.core.util.type_checker import (
@@ -51,12 +53,12 @@ from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
-    MathSymbol, OptGoal, SumIterType,
+    MathSymbol, OptGoal, SumIterType, AggrType, OperationReturnType,
 )
 
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None, is_merged=False):
+    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None, is_joint=False):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -74,15 +76,17 @@ class DataFrame(SemiRing):
         self.__iter_el = IterEl(f'x_{self.name}')
         self.__var_expr = self.init_var_expr()
 
-        self.__name_merge_part = f'{self.name}_part'
-        self.__var_merge_part = VarExpr(f'{self.__name_merge_part}')
-
-        self.__name_merge_probe = f'{self.name}_probe'
-        self.__var_merge_probe = VarExpr(f'{self.__name_merge_probe}')
+        self.__var_merge_part = VarExpr(self.name) if self.is_joint else VarExpr(f'{self.name}_part')
+        # self.__var_merge_part = VarExpr(f'{self.name}_part')
+        self.__var_merge_probe = VarExpr(f'{self.name}_probe')
 
         self.__const_var = {}
 
-        self.__is_merged = is_merged
+        self.__is_merged = is_joint
+
+    @property
+    def is_joint(self):
+        return self.__is_merged
 
     @property
     def is_merged(self):
@@ -115,6 +119,8 @@ class DataFrame(SemiRing):
             return VarExpr("db->ord_dataset")
         if self.name == 'pa':
             return VarExpr("db->pa_dataset")
+        else:
+            return VarExpr(self.name)
 
     @property
     def var_expr(self):
@@ -143,6 +149,23 @@ class DataFrame(SemiRing):
 
     @property
     def columns(self):
+        if self.name == 'li':
+            return ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
+                    'l_discount',
+                    'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
+                    'l_shipinstruct',
+                    'l_shipmode', 'l_comment']
+        if self.name == 'na':
+            return ['n_nationkey', 'n_name', 'n_regionkey', 'n_comment']
+        if self.name == 'ord':
+            return ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
+                    'o_clerk', 'o_shippriority', 'o_comment']
+        if self.name == 'cu':
+            return ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']
+        if self.name == 'pa':
+            return ['p_partkey', 'p_name', 'p_mfgr', 'p_brand', 'p_type', 'p_size', 'p_container', 'p_retailprice',
+                    'p_comment']
+
         if self.__columns:
             return DataFrameColumns(self, self.__columns)
         else:
@@ -189,26 +212,25 @@ class DataFrame(SemiRing):
             return self.__var_name
         return self.__default_name
 
-    @property
-    def var_part(self):
+    def get_var_part(self):
         return self.__var_merge_part
 
     @property
-    def var_probe(self):
+    def var_part(self):
+        if self.is_merged:
+            return self.get_partition_side().get_var_part()
+        else:
+            return self.__var_merge_part
+
+    def get_var_probe(self):
         return self.__var_merge_probe
 
-    # @name.setter
-    # def name(self, val):
-    #     allow_set_name = False
-    #     if self.mutable:
-    #         allow_set_name = True
-    #     else:
-    #         if self.name == self.__default_name:
-    #             allow_set_name = True
-    #
-    #     if allow_set_name:
-    #         self.operations.push(OpExpr('', VarExpr(val, self.name)))
-    #         self.__name = val
+    @property
+    def var_probe(self):
+        if self.is_merged:
+            return self.get_probe_side().get_var_probe()
+        else:
+            return self.__var_merge_probe
 
     @property
     def tmp_name_list(self):
@@ -268,32 +290,23 @@ class DataFrame(SemiRing):
         return self.iter_el
 
     def key_access(self, field):
+        if self.is_joint:
+            if field in self.partition_side.columns:
+                return self.partition_side.key_access(field)
+            elif field in self.probe_side.columns:
+                return self.probe_side.key_access(field)
         return RecAccessExpr(self.iter_el.key, field)
 
     def val_access(self, field):
         return RecAccessExpr(self.iter_el.value, field)
 
     def optimize(self):
-        opt = Optimizer(self)
-        opt_name = self.name
-        for op_expr in self.operations:
-            opt_name += op_expr.get_op_name_suffix()
+        opt = self.get_opt()
 
+        for op_expr in self.operations:
             opt.input(op_expr)
 
         return opt.output
-
-        # if op_expr.op_type == CondExpr:
-        #     sum_opt.add_cond(op_expr.op)
-        # if op_expr.op_type == SumExpr:
-        #     sum_opt.merge(op_expr.op)
-        # if op_expr.op_type == VirColEl:
-        #     sum_opt.var_cols[op_expr.op.col_var] = op_expr.op.col_expr
-        # if op_expr.op_type == GroupByAgg:
-        #     sum_opt.groupby_agg(op_expr.op)
-
-        # output = f'{opt_name} = {sum_opt.expr}'
-        # return output
 
     @property
     def sdql_ir(self):
@@ -421,24 +434,29 @@ class DataFrame(SemiRing):
                                right_on=right_on)
 
         self.push(OpExpr(op_obj=merge_expr,
-                          op_on=self,
-                          op_iter=True))
+                         op_on=self,
+                         op_iter=True))
 
         right.push(OpExpr(op_obj=merge_expr,
                           op_on=right,
                           op_iter=True))
 
         tmp_name = f'{self.name}_{right.name}_join'
-        self.__name_merge_probe = tmp_name
-        self.__var_merge_probe = VarExpr(self.__name_merge_probe)
 
         tmp_df = DataFrame(name=tmp_name,
-                           is_merged=True)
+                           is_joint=True)
 
-        return
+        tmp_df.__name_merge_probe = tmp_name
+        tmp_df.__var_merge_probe = VarExpr(self.__name_merge_probe)
+
+        tmp_df.push(OpExpr(op_obj=merge_expr,
+                           op_on=self,
+                           op_iter=True))
+
+        return tmp_df
 
     def merge_partition_stmt(self):
-        return self.get_opt(OptGoal.MergePartition).merge_partition_stmt()
+        return self.get_opt(OptGoal.JoinPartition).merge_partition_stmt()
 
     def merge_probe_stmt(self, let_next=None, sum_type=SumIterType.Update):
         isAssign = False
@@ -446,11 +464,98 @@ class DataFrame(SemiRing):
             isAssign = True
         if sum_type == SumIterType.Update:
             isAssign = False
-        return self.get_opt(OptGoal.MergeProbe).merge_probe_stmt(let_next, isAssign)
+        return self.get_opt(OptGoal.JoinProbe).merge_probe_stmt(let_next, isAssign)
 
     def get_opt(self, opt_goal=OptGoal.UnOptimized):
         opt = Optimizer(opt_on=self,
-                         opt_goal=opt_goal)
+                        opt_goal=opt_goal)
         for op_expr in self.operations:
             opt.input(op_expr)
         return opt
+
+    def agg(self, func):
+        if type(func) == dict:
+            return self.agg_by_dict(func)
+
+    def agg_by_dict(self, input_aggr_dict):
+        output_aggr_dict = {}
+
+        for aggr_key in input_aggr_dict.keys():
+            aggr_func = input_aggr_dict[aggr_key]
+
+            if aggr_func == 'sum':
+                output_aggr_dict[aggr_key] = aggr_key
+            if aggr_func == 'count':
+                output_aggr_dict[aggr_key] = 1
+
+        aggr_expr = AggrExpr(aggr_type=AggrType.DICT,
+                             aggr_on=self,
+                             aggr_op=output_aggr_dict,
+                             aggr_else=EmptyDicConsExpr())
+
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self,
+                         op_iter=True,
+                         iter_on=self,
+                         ret_type=OperationReturnType.DICT)
+
+        self.push(op_expr)
+
+        return self
+
+    def peak(self):
+        return self.operations.peak()
+
+    def show(self):
+        print(f'>> {self.name} Operation Sequence <<')
+        print(self.operations)
+        print(f'>> {self.name} Optimizer Output <<')
+        print(self.optimize())
+        print('>> Done <<')
+
+    @property
+    def partition_frame(self):
+        return self.get_opt(OptGoal.JoinPartition).partition_frame
+
+    def get_partition_frame(self):
+        return self.get_opt(OptGoal.JoinPartition).partition_frame
+
+    @property
+    def probe_frame(self):
+        return self.get_opt(OptGoal.JoinProbe).probe_frame
+
+    def get_probe_frame(self):
+        return self.get_opt(OptGoal.JoinProbe).probe_frame
+
+    def get_joint_frame(self):
+        return self.get_opt(OptGoal.Joint).joint_frame
+
+    @property
+    def partition_side(self):
+        if self.is_merged:
+            for op_expr in self.operations:
+                if op_expr.op_type == MergeExpr:
+                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                        return op_expr.op.left
+
+    def get_partition_side(self):
+        if self.is_merged:
+            for op_expr in self.operations:
+                if op_expr.op_type == MergeExpr:
+                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                        return op_expr.op.left
+
+    @property
+    def probe_side(self):
+        if self.is_merged:
+            for op_expr in self.operations:
+                if op_expr.op_type == MergeExpr:
+                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                        return op_expr.op.right
+
+    def get_probe_side(self):
+        if self.is_merged:
+            for op_expr in self.operations:
+                if op_expr.op_type == MergeExpr:
+                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                        return op_expr.op.right

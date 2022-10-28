@@ -108,6 +108,10 @@ LetExpr(result,
 )
 ```
 
+```python
+
+```
+
 # Q10
 ```python
 from pysdql.core.dtypes.sdql_ir import *
