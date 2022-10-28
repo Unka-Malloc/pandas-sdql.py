@@ -10,7 +10,7 @@ class OpExpr:
         self.__info_op = op_obj
         self.__info_op_type = type(op_obj)
         self.__info_on = op_on
-        self.__info_ret_type = None
+        self.__info_ret_type = ret_type
 
     def get_op_name_suffix(self):
         return self.op.op_name_suffix
@@ -81,10 +81,10 @@ class OpExpr:
     def info(self):
         return {
             'iter': self.iter,
-            'op': self.op,
             'op_type': self.op_type,
-            'on': self.op_on,
+            'op': self.op,
             'ret_type': self.ret_type,
+            'on': self.op_on,
         }
 
     # @property

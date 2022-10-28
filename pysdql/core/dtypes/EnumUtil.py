@@ -31,8 +31,9 @@ class AggrType(Enum):
 class LastIterFunc(Enum):
     Agg = 0
     GroupbyAgg = 1
-    MergePartition = 2
-    MergeProbe = 3
+    JoinPartition = 2
+    JoinProbe = 3
+    Joint = 4
 
 
 @unique
@@ -41,8 +42,9 @@ class OptGoal(Enum):
     Aggregation = 1
     GroupBy = 2
     GroupByAggregation = 3
-    MergePartition = 4
-    MergeProbe = 5
+    JoinPartition = 4
+    JoinProbe = 5
+    Joint = 6
 
 
 @unique
@@ -56,3 +58,13 @@ class MergeType(Enum):
 class SumIterType(Enum):
     Assign = 0
     Update = 1
+
+
+@unique
+class OperationReturnType(Enum):
+    BOOL = 0
+    INT = 1
+    FLOAT = 2
+    STRING = 3
+    RECORD = 4
+    DICT = 5

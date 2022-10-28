@@ -10,9 +10,7 @@ from pysdql.core.dtypes.sdql_ir import (
 import pysdql as pd
 
 
-def q1():
-    li = DataFrame()
-
+def q1(li):
     li_filt = li[(li.l_shipdate <= "1998-09-02")]
     li_filt["disc_price"] = li_filt.l_extendedprice * (1 - li_filt.l_discount)
     li_filt["charge"] = li_filt.l_extendedprice * (1 - li_filt.l_discount) * (1 + li_filt.l_tax)
@@ -26,25 +24,14 @@ def q1():
              count_order=("l_quantity", "count")
              )
 
-    print(result.operations)
+    result.show()
 
-    print(result.optimize())
-    PrintAST(result.optimize())
-
-    print(GenerateSDQLCode(result.optimize()))
+    return result.optimize()
 
 
-def q3():
-    cu = DataFrame()
-    ord = DataFrame()
-    li = DataFrame()
-
+def q3(cu, ord, li):
     cu_filt = cu[cu.c_mktsegment == "BUILDING"]
     cu_filt = cu_filt[["c_custkey"]]
-
-    # "c_custkey"
-
-    # print(cu_filt.operations)
 
     ord_filt = ord[ord.o_orderdate < "1995-03-15"]
     ord_cu_join = pd.merge(cu_filt, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
@@ -58,24 +45,21 @@ def q3():
         .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
         .agg(revenue=("revenue", "sum"))
 
-    # return result
-
+    # print('>> cu_filt operations <<')
+    # print(cu_filt.operations)
+    #
+    # print('>> cu_ord_join operations <<')
     # print(ord_cu_join.operations)
+    #
+    # print('>> li_filt operations <<')
+    # print(li_filt.operations)
 
-    # print(ord_cu_join.merge_probe_stmt())
+    # result.show()
 
-    # print(li_order_join.merge_probe_stmt())
-
-    print(li_order_join.operations)
-
-    print(li_order_join.get_opt().output)
+    return result.optimize()
 
 
-def q6():
-    # replaced by read_csv() in the future,
-    # the name of the Dataframe will be set to the name of the csv file by default
-    li = DataFrame()
-
+def q6(li):
     li_filt = li[
         (li.l_shipdate >= "1994-01-01") &
         (li.l_shipdate < "1995-01-01") &
@@ -84,15 +68,13 @@ def q6():
         (li.l_quantity < 24)
         ]
 
-    result = (li_filt.l_extendedprice * li_filt.l_discount).sum()
+    li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
 
-    print(result.operations)
-    print(result.optimize())
-    PrintAST(result.optimize())
+    result = li_filt.agg({'revenue': 'sum'})
 
-    print(GenerateSDQLCode(result.optimize()))
+    result.show()
 
-    return result
+    return result.optimize()
 
 
 def q10(ord, cu, na, li):
@@ -103,8 +85,7 @@ def q10(ord, cu, na, li):
 
     na_proj = na[["n_nationkey", "n_name"]]
     ord_na_join = pd.merge(na_proj, ord_cu_join, left_on="n_nationkey", right_on="c_nationkey", how="inner")
-    ord_na_join = ord_na_join[
-        ["o_orderkey", "c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]]
+    ord_na_join = ord_na_join[["o_orderkey", "c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]]
 
     li_filt = li[(li.l_returnflag == "R")]
 
@@ -116,8 +97,7 @@ def q10(ord, cu, na, li):
         .groupby(["c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]) \
         .agg(sum_revenue=("revenue", "sum"))
 
-    print(result.operations)
-    print(result.optimize())
+    return result.optimize()
 
 
 def q19():
@@ -169,10 +149,10 @@ if __name__ == '__main__':
     na = DataFrame()
     li = DataFrame()
 
-    # q1()
-    # q3()
-    # q6()
-    q10(ord, cu, na, li)
+    # q1(li)
+    q3(cu, ord, li)
+    # q6(li)
+    # q10(ord, cu, na, li)
     # q19()
 
     # li = DataFrame()

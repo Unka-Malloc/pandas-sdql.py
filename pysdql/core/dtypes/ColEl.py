@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
-from pysdql.core.dtypes.EnumUtil import AggrType
+from pysdql.core.dtypes.EnumUtil import AggrType, OperationReturnType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
@@ -67,7 +67,7 @@ class ColEl(SDQLIR):
 
     @property
     def col(self):
-        return RecAccessExpr(self.R.el.k, self.field)
+        return self.relation.key_access(self.field)
 
     @property
     def year(self):
@@ -431,7 +431,7 @@ class ColEl(SDQLIR):
                          op_on=self.relation,
                          op_iter=True,
                          iter_on=self.relation,
-                         ret_type=float)
+                         ret_type=OperationReturnType.FLOAT)
 
         self.relation.push(op_expr)
 
