@@ -30,6 +30,10 @@ class JoinProbeFrame:
         return self.__iter_on
 
     @property
+    def is_joint(self):
+        return self.probe_on.is_joint
+
+    @property
     def var_probe(self):
         return self.__var_probe
 

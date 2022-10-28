@@ -45,6 +45,7 @@ class Optimizer:
         }
 
         self.agg_dict_info = {
+            'aggr_dict': None,
             'cond_if': ConstantExpr(None),
             'cond_then': ConstantExpr(None),
             'cond_else': ConstantExpr(None),
@@ -88,7 +89,7 @@ class Optimizer:
             'merge_left_sum_on': opt_on.var_expr,
             'merge_left_sum_op': ConstantExpr(None),
 
-            'merge_left_let_var': self.opt_on.var_part,
+            'merge_left_let_var': self.opt_on.part_var,
             'merge_left_let_val': ConstantExpr(None),
             'merge_left_let_next': ConstantExpr(None)
         }
@@ -261,6 +262,7 @@ class Optimizer:
             self.cond_status = True
         if op_expr.op_type == AggrExpr:
             if op_expr.ret_type == OperationReturnType.DICT:
+                self.agg_dict_info['aggr_dict'] = op_expr.op.aggr_op
                 self.agg_dict_info['cond_if'] = self.cond_info['cond_if']
                 self.agg_dict_info['cond_then'] = op_expr.op.aggr_op
                 self.agg_dict_info['cond_else'] = op_expr.op.aggr_else
@@ -345,7 +347,7 @@ class Optimizer:
         frame = JoinPartitionFrame(self.opt_on)
 
         frame.add_key(self.join_partition_info['partition_key'])
-        if self.cond_info['cond_if'].value is not None:
+        if type(self.cond_info['cond_if']) != ConstantExpr:
             frame.add_cond(self.cond_info['cond_if'])
         frame.add_col_proj(self.col_proj)
 
@@ -369,13 +371,20 @@ class Optimizer:
         partition_frame = self.joint_info['partition_side'].get_partition_frame()
         probe_frame = self.joint_info['probe_side'].get_probe_frame()
 
+        if self.last_func == LastIterFunc.GroupbyAgg:
+            aggr_dict = self.groupby_aggr_info['aggr_dict']
+        elif self.last_func == LastIterFunc.Agg:
+            aggr_dict = self.agg_dict_info['aggr_dict']
+        else:
+            aggr_dict = None
+
         tmp_joint_frame = JointFrame(partition=partition_frame,
                                      probe=probe_frame,
                                      joint=self.opt_on,
                                      col_ins=self.col_ins,
                                      col_proj=self.col_proj,
                                      groupby_cols=self.groupby_aggr_info['groupby_cols'],
-                                     aggr_dict=self.groupby_aggr_info['aggr_dict'])
+                                     aggr_dict=aggr_dict)
 
         if self.col_proj != tmp_joint_frame.col_proj:
             raise ValueError(f'Column Projection Not Applied to {self.opt_on.name}')
@@ -628,6 +637,8 @@ class Optimizer:
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.opt_on.peak()
             if op_expr.ret_type == OperationReturnType.DICT:
+                if self.is_joint:
+                    return self.joint_frame.sdql_ir
                 return self.agg_dict_stmt
             else:
                 result = VarExpr('result')
@@ -638,11 +649,7 @@ class Optimizer:
                                        ConstantExpr(True)))
         if self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
-                print(self.joint_frame)
-                print(self.joint_frame.sdql_ir)
-                return LetExpr(VarExpr('None'), ConstantExpr(None), ConstantExpr(None))
-            elif self.is_next_merge_probe:
-                return self.groupby_aggr_with_merge_stmt
+                return self.joint_frame.sdql_ir
             else:
                 return self.groupby_aggr_stmt
         if self.last_func == LastIterFunc.JoinPartition:

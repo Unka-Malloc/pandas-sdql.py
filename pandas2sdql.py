@@ -45,16 +45,7 @@ def q3(cu, ord, li):
         .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
         .agg(revenue=("revenue", "sum"))
 
-    # print('>> cu_filt operations <<')
-    # print(cu_filt.operations)
-    #
-    # print('>> cu_ord_join operations <<')
-    # print(ord_cu_join.operations)
-    #
-    # print('>> li_filt operations <<')
-    # print(li_filt.operations)
-
-    # result.show()
+    result.show()
 
     return result.optimize()
 
@@ -95,15 +86,14 @@ def q10(ord, cu, na, li):
 
     result = li_ord_join \
         .groupby(["c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]) \
-        .agg(sum_revenue=("revenue", "sum"))
+        .agg(revenue=("revenue", "sum"))
+
+    result.show()
 
     return result.optimize()
 
 
-def q19():
-    pa = DataFrame()
-    li = DataFrame()
-
+def q19(pa, li):
     pa_filt = pa[
         ((pa.p_brand == "Brand#12")
          & (pa.p_container.isin(["SM CASE", "SM BOX", "SM PACK", "SM PKG"]))
@@ -131,16 +121,13 @@ def q19():
         )
     ]
 
-    print(li_pa_join_filt.operations)
-    print(li_pa_join_filt.optimize())
+    li_pa_join_filt["revenue"] = li_pa_join_filt.l_extendedprice * (1 - li_pa_join_filt.l_discount)
 
-    # li_pa_join_filt["revenue"] = li_pa_join_filt.l_extendedprice * (1 - li_pa_join_filt.l_discount)
-    # result = li_pa_join_filt.revenue.sum()
+    result = li_pa_join_filt.agg({'revenue': 'sum'})
 
-    # print(result.operations)
-    # print(result.optimize())
+    result.show()
 
-    # return result
+    return result.optimize()
 
 
 if __name__ == '__main__':
@@ -148,12 +135,13 @@ if __name__ == '__main__':
     cu = DataFrame()
     na = DataFrame()
     li = DataFrame()
+    pa = DataFrame()
 
     # q1(li)
-    q3(cu, ord, li)
+    # q3(cu, ord, li)
     # q6(li)
-    # q10(ord, cu, na, li)
-    # q19()
+    q10(ord, cu, na, li)
+    # q19(pa, li)
 
     # li = DataFrame()
     # PrintAST((li.l_shipdate >= "1994-01-01") &

@@ -23,7 +23,7 @@ class JoinPartitionFrame:
         return self.__var_partition
 
     @property
-    def var_part(self):
+    def part_var(self):
         return self.__var_partition
 
     @property
@@ -33,7 +33,8 @@ class JoinPartitionFrame:
     @property
     def col_proj_ir(self):
         if self.__col_proj:
-            return RecConsExpr(self.__col_proj)
+            tmp_col_proj = [col for col in self.__col_proj if self.group_key != col[0]]
+            return RecConsExpr(tmp_col_proj)
         else:
             return RecConsExpr([(self.__group_key,
                                  self.__iter_on.key_access(self.__group_key))])
@@ -51,7 +52,16 @@ class JoinPartitionFrame:
         self.__next_probe = val
 
     @property
-    def let_expr(self):
+    def is_joint(self):
+        return self.partition_on.is_joint
+
+    def get_part_expr(self, next_probe=None):
+        if not next_probe:
+            if self.__next_probe:
+                next_probe = self.__next_probe
+            else:
+                next_probe = ConstantExpr('placeholder_partition_next')
+
         if self.has_cond:
             part_left_op = IfExpr(condExpr=self.__iter_cond,
                                   thenBodyExpr=DicConsExpr([(
@@ -70,9 +80,9 @@ class JoinPartitionFrame:
                                 bodyExpr=part_left_op,
                                 isAssignmentSum=True)
 
-        return LetExpr(varExpr=self.__var_partition,
+        return LetExpr(varExpr=self.part_var,
                        valExpr=part_left_sum,
-                       bodyExpr=self.__next_probe)
+                       bodyExpr=next_probe)
 
     @property
     def has_cond(self):
