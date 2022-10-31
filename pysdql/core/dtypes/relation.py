@@ -7,7 +7,7 @@ from pysdql.core.dtypes.ArrayExpr import ArrayExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
-from pysdql.core.dtypes.IsinExpr import IsinExpr
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.ColEl import ColEl
 from pysdql.core.dtypes.CondExpr import CondExpr
@@ -218,9 +218,9 @@ class relation:
         else:
             return ColEl(self, col_name)
 
-    def selection_isin(self, isin_expr: IsinExpr):
-        unit1 = isin_expr.unit1
-        unit2 = isin_expr.unit2
+    def selection_isin(self, isin_expr: IsInExpr):
+        unit1 = isin_expr.col_probe
+        unit2 = isin_expr.col_part
 
         r2 = unit2.relation
         self.inherit(r2)
@@ -360,7 +360,7 @@ class relation:
             return self.get_col(col_name=item)
         if type(item) == list:
             return self.projection(item)
-        if type(item) == IsinExpr:
+        if type(item) == IsInExpr:
             return self.selection_isin(item)
         if type(item) == ExternalExpr:
             return self.selection_external(item)

@@ -7,6 +7,7 @@ from enum import (
 )
 
 from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
 from pysdql.core.dtypes.Utils import (
     input_fmt
 )
@@ -19,14 +20,13 @@ from pysdql.core.dtypes.sdql_ir import (
     AddExpr,
 )
 
-
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
 )
 
 
 class CondExpr(SDQLIR):
-    def __init__(self, unit1, operator, unit2, inherit_from=None, isin=False, isjoin=False):
+    def __init__(self, unit1, operator, unit2):
         self.unit1 = unit1
         self.op = operator
         self.unit2 = unit2
@@ -195,38 +195,50 @@ class CondExpr(SDQLIR):
     '''
 
     def __and__(self, other):
-        return CondExpr(unit1=self.sdql_ir,
+        if isinstance(other, IgnoreExpr):
+            print(other.ignore)
+            return self
+        return CondExpr(unit1=self,
                         operator=LogicSymbol.AND,
-                        unit2=input_fmt(other))
+                        unit2=other)
+        # return CondExpr(unit1=self.sdql_ir,
+        #                 operator=LogicSymbol.AND,
+        #                 unit2=input_fmt(other))
         # return MulExpr(self.sdql_ir, input_fmt(other))
 
     def __or__(self, other):
-        return CondExpr(unit1=self.sdql_ir,
+        return CondExpr(unit1=self,
                         operator=LogicSymbol.OR,
-                        unit2=input_fmt(other))
+                        unit2=other)
+        # return CondExpr(unit1=self.sdql_ir,
+        #                 operator=LogicSymbol.OR,
+        #                 unit2=input_fmt(other))
         # return AddExpr(self.sdql_ir, input_fmt(other))
 
     def __invert__(self):
+        return CondExpr(unit1=self,
+                        operator=LogicSymbol.NOT,
+                        unit2=self)
         # return CondExpr(unit1=self,
         #                 operator=LogicSymbol.NOT,
         #                 unit2=self)
-        raise NotImplemented
+        # raise NotImplemented
 
     '''
     Reverse AND, OR
     '''
 
     def __rand__(self, other):
-        # return CondExpr(unit1=other,
-        #                 operator=LogicSymbol.AND,
-        #                 unit2=self)
-        return MulExpr(input_fmt(other), self.sdql_ir)
+        return CondExpr(unit1=other,
+                        operator=LogicSymbol.AND,
+                        unit2=self)
+        # return MulExpr(input_fmt(other), self.sdql_ir)
 
     def __ror__(self, other):
-        # return CondExpr(unit1=other,
-        #                 operator=LogicSymbol.OR,
-        #                 unit2=self)
-        return AddExpr(input_fmt(other), self.sdql_ir)
+        return CondExpr(unit1=other,
+                        operator=LogicSymbol.OR,
+                        unit2=self)
+        # return AddExpr(input_fmt(other), self.sdql_ir)
 
     '''
     Recursive AND, OR
@@ -238,17 +250,74 @@ class CondExpr(SDQLIR):
     def __ior__(self, other):
         return self | other
 
-    @property
-    def sdql_ir(self):
+    def replace(self, rec, on=None):
+        new_unit1 = self.unit1
+        new_unit2 = self.unit2
+
+        if isinstance(self.unit1, SDQLIR):
+            new_unit1 = self.unit1.replace(rec, on)
+        if isinstance(self.unit2, SDQLIR):
+            new_unit2 = self.unit2.replace(rec, on)
+
+        if isinstance(self.op, CompareSymbol):
+            return CompareExpr(self.op, input_fmt(new_unit1), input_fmt(new_unit2))
         if self.op == LogicSymbol.AND:
-            return MulExpr(self.unit1, self.unit2)
+            return MulExpr(input_fmt(new_unit1), input_fmt(new_unit2))
         if self.op == LogicSymbol.OR:
-            return AddExpr(self.unit1, self.unit2)
+            return AddExpr(input_fmt(new_unit1), input_fmt(new_unit2))
         if self.op == LogicSymbol.NOT:
             raise NotImplemented()
 
+        # if isinstance(self.unit1, SDQLIR):
+        #     if isinstance(self.unit2, SDQLIR):
+        #         if isinstance(self.op, CompareSymbol):
+        #             return CompareExpr(self.op, input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2.replace(rec, on)))
+        #         if self.op == LogicSymbol.AND:
+        #             return MulExpr(input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2.replace(rec, on)))
+        #         if self.op == LogicSymbol.OR:
+        #             return AddExpr(input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2.replace(rec, on)))
+        #         if self.op == LogicSymbol.NOT:
+        #             raise NotImplemented()
+        #     else:
+        #         if isinstance(self.op, CompareSymbol):
+        #             return CompareExpr(self.op, input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2))
+        #         if self.op == LogicSymbol.AND:
+        #             return MulExpr(input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2))
+        #         if self.op == LogicSymbol.OR:
+        #             return AddExpr(input_fmt(self.unit1.replace(rec, on)), input_fmt(self.unit2))
+        #         if self.op == LogicSymbol.NOT:
+        #             raise NotImplemented()
+        # else:
+        #     if isinstance(self.op, CompareSymbol):
+        #         return CompareExpr(self.op, input_fmt(self.unit1), input_fmt(self.unit2))
+        #     if self.op == LogicSymbol.AND:
+        #         return MulExpr(input_fmt(self.unit1), input_fmt(self.unit2))
+        #     if self.op == LogicSymbol.OR:
+        #         return AddExpr(input_fmt(self.unit1), input_fmt(self.unit2))
+        #     if self.op == LogicSymbol.NOT:
+        #         raise NotImplemented()
+
+    @property
+    def sdql_ir(self):
         if isinstance(self.op, CompareSymbol):
-            return CompareExpr(self.op, self.unit1, self.unit2)
+            return CompareExpr(self.op, input_fmt(self.unit1), input_fmt(self.unit2))
+
+        if self.op == LogicSymbol.AND:
+            return MulExpr(input_fmt(self.unit1), input_fmt(self.unit2))
+        if self.op == LogicSymbol.OR:
+            return AddExpr(input_fmt(self.unit1), input_fmt(self.unit2))
+        if self.op == LogicSymbol.NOT:
+            raise NotImplemented()
+
+        # if self.op == LogicSymbol.AND:
+        #     return MulExpr(self.unit1, self.unit2)
+        # if self.op == LogicSymbol.OR:
+        #     return AddExpr(self.unit1, self.unit2)
+        # if self.op == LogicSymbol.NOT:
+        #     raise NotImplemented()
+        #
+        # if isinstance(self.op, CompareSymbol):
+        #     return CompareExpr(self.op, self.unit1, self.unit2)
 
     @property
     def op_name_suffix(self):

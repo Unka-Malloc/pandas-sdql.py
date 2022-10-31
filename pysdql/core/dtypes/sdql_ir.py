@@ -800,7 +800,7 @@ class SumExpr(Expr):
 
 
 class DicConsExpr(Expr):
-    def __init__(self, initialPairs: List[Tuple[Expr, Expr]]):
+    def __init__(self, initialPairs: List[Tuple[Expr, Expr]]) -> object:
         super().__init__([])
         self.fromType = None
         self.toType = None

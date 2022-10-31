@@ -4,19 +4,17 @@ from pysdql.core.dtypes.sdql_ir import LetExpr, VarExpr, IfExpr, DicConsExpr, Re
 
 
 class MergeExpr:
-    def __init__(self, left, right, how, left_on, right_on):
+    def __init__(self, left, right, how, left_on, right_on, joint):
         self.left = left
         self.right = right
         self.how = how
         self.left_on = left_on
         self.right_on = right_on
-
-        self.var_part_left = VarExpr(f'part_{left.name}')
-        self.var_merged = VarExpr(f'{left.name}_merge_{right.name}')
+        self.joint = joint
 
     @property
     def sdql_ir(self):
-        return self.right_on.merge_probe_stmt
+        return
 
     def __repr__(self):
         return str({
@@ -24,7 +22,8 @@ class MergeExpr:
             'right': self.right,
             'how': self.how,
             'left_on': self.left_on,
-            'right_on': self.right_on
+            'right_on': self.right_on,
+            'joint': self.joint.name,
         })
 
     @property

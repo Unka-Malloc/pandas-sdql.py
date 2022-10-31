@@ -11,7 +11,7 @@ from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExpr import ColExpr
-from pysdql.core.dtypes.IsinExpr import IsinExpr
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.CondStmt import CondStmt
 
@@ -27,7 +27,12 @@ from pysdql.core.dtypes.sdql_ir import (
 )
 
 from pysdql.core.dtypes.Utils import (
+    is_date,
     input_fmt,
+)
+
+from pysdql.core.dtypes.EnumUtil import (
+    MathSymbol
 )
 
 
@@ -35,7 +40,7 @@ class ColEl(SDQLIR):
     def __init__(self, relation, field: str, promoted=None):
         """
         ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
-        :param relation:
+        :param relation: DataFrame
         :param field:
         """
         self.__relation = relation
@@ -179,26 +184,36 @@ class ColEl(SDQLIR):
     Comparison Operations
     '''
 
+    def gen_cond_expr(self, operator, unit2):
+        """
+        :param operator: ColEl
+        :param unit2: ColEl | (float, int, str) | date@str
+        :return:
+        """
+        if operator == CompareSymbol.EQ:
+            if type(unit2) == str:
+                self.add_const(unit2)
+                return CondExpr(unit1=self, operator=operator, unit2=unit2)
+            return CondExpr(unit1=self,
+                            operator=operator,
+                            unit2=unit2)
+
+        return CondExpr(unit1=self,
+                        operator=operator,
+                        unit2=unit2)
+
     def __eq__(self, other) -> CondExpr:
         """
         Equal
         :param other:
         :return:
         """
+        return self.gen_cond_expr(operator=CompareSymbol.EQ,
+                                  unit2=other)
         # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        # if type(other) == ColEl:
-        #     if self.promoted:
-        #         other.follow_promotion = self.promoted
-        if type(other) == str:
-            self.add_const(other)
-            return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=self.get_const_var(other))
-
-        return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
-        # return f'{self.column} == {other}'
+        #     self.add_const(other)
+        #     return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=self.get_const_var(other))
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
 
     def __ne__(self, other) -> CondExpr:
         """
@@ -206,13 +221,9 @@ class ColEl(SDQLIR):
         :param other:
         :return:
         """
-        # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        return CondExpr(unit1=self.col, operator=CompareSymbol.NE, unit2=input_fmt(other))
-        # return f'not ({self.column} == {other})'
+        return self.gen_cond_expr(operator=CompareSymbol.NE,
+                                  unit2=other)
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.NE, unit2=input_fmt(other))
 
     def __lt__(self, other) -> CondExpr:
         """
@@ -220,13 +231,9 @@ class ColEl(SDQLIR):
         :param other:
         :return:
         """
-        # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        return CondExpr(unit1=self.col, operator=CompareSymbol.LT, unit2=input_fmt(other))
-        # return f'{self.column} < {other}'
+        return self.gen_cond_expr(operator=CompareSymbol.LT,
+                                  unit2=other)
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.LT, unit2=input_fmt(other))
 
     def __le__(self, other) -> CondExpr:
         """
@@ -234,13 +241,9 @@ class ColEl(SDQLIR):
         :param other:
         :return:
         """
-        # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        return CondExpr(unit1=self.col, operator=CompareSymbol.LTE, unit2=input_fmt(other))
-        # return f'{self.column} <= {other}'
+        return self.gen_cond_expr(operator=CompareSymbol.LTE,
+                                  unit2=other)
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.LTE, unit2=input_fmt(other))
 
     def __gt__(self, other) -> CondExpr:
         """
@@ -248,13 +251,9 @@ class ColEl(SDQLIR):
         :param other:
         :return:
         """
-        # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        return CondExpr(unit1=self.col, operator=CompareSymbol.GT, unit2=input_fmt(other))
-        # return f'{self.column} > {other}'
+        return self.gen_cond_expr(operator=CompareSymbol.GT,
+                                  unit2=other)
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.GT, unit2=input_fmt(other))
 
     def __ge__(self, other) -> CondExpr:
         """
@@ -262,44 +261,65 @@ class ColEl(SDQLIR):
         :param other:
         :return:
         """
-        # if type(other) == str:
-        #     other = f'"{other}"'
-        # isjoin = False
-        # if type(other) == ColEl:
-        #     isjoin = True
-        return CondExpr(unit1=self.col, operator=CompareSymbol.GTE, unit2=input_fmt(other))
+        return self.gen_cond_expr(operator=CompareSymbol.GTE,
+                                  unit2=other)
+        # return CondExpr(unit1=self.col, operator=CompareSymbol.GTE, unit2=input_fmt(other))
 
     '''
     Arithmetic Operations
     '''
 
     def __add__(self, other):
-        return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.R)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.ADD,
+                       unit2=other)
+        # return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __mul__(self, other):
-        return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.R)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.MUL,
+                       unit2=other)
+        # return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __sub__(self, other):
-        return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.R)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.SUB,
+                       unit2=other)
+        # return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __truediv__(self, other):
-        return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.R)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.DIV,
+                       unit2=other)
+        # return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.R)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.R)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.ADD,
+                       unit2=self)
+        # return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rmul__(self, other):
-        return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.R)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.MUL,
+                       unit2=self)
+        # return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rsub__(self, other):
-        return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.R)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.SUB,
+                       unit2=self)
+        # return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rtruediv__(self, other):
-        return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.R)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.DIV,
+                       unit2=self)
+        # return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.R)
 
     def isin(self, vals):
         if type(vals) == list or type(vals) == tuple:
@@ -310,9 +330,8 @@ class ColEl(SDQLIR):
 
             tmp_list = []
             for i in vals:
-                if type(i) == str:
-                    self.add_const(i)
-                    tmp_list.append(CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=self.get_const_var(i)))
+                tmp_list.append(self.gen_cond_expr(operator=CompareSymbol.EQ,
+                                                   unit2=i))
 
             a = tmp_list.pop()
             b = tmp_list.pop()
@@ -324,6 +343,15 @@ class ColEl(SDQLIR):
                     tmp_cond |= i
 
             return tmp_cond
+
+        if type(vals) == ColEl:
+            isin_expr = IsInExpr(col_probe=self, col_part=vals)
+            self.relation.push(OpExpr(op_obj=isin_expr,
+                                      op_on=self.R,
+                                      op_iter=False,
+                                      iter_on=None,
+                                      ret_type=None))
+            return isin_expr
 
     # def isin(self, vals, ext=None):
     #     # print(f'{self.expr} is in {vals}')
@@ -449,6 +477,15 @@ class ColEl(SDQLIR):
     def max(self):
         pass
 
+    def replace(self, rec, on=None):
+        if on is None:
+            return RecAccessExpr(rec, self.field)
+        if on:
+            if self.relation.is_joint:
+                if self.field in self.relation.partition_side.columns:
+                    return RecAccessExpr(rec, self.field)
+        return self.relation.key_access(self.field)
+
     @property
     def sdql_ir(self):
-        return self.col
+        return self.relation.key_access(self.field)

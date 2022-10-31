@@ -137,6 +137,37 @@ LetExpr(building,
 )
 ```
 
+# Q4
+```python
+LetExpr(VarExpr("li_indexed"), 
+        SumExpr(VarExpr("v1"), 
+                VarExpr("db->li_dataset"), 
+                IfExpr(CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_commitdate'), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_receiptdate')), 
+                       DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_orderkey'), ConstantExpr(True))]), 
+                       ConstantExpr(None)), 
+                True), 
+        LetExpr(VarExpr("ord_probed"), 
+                LetExpr(VarExpr("v3"), 
+                        VarExpr("li_indexed"), 
+                        SumExpr(VarExpr("v4"), 
+                                VarExpr("db->ord_dataset"), 
+                                IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(VarExpr("v4"), 0), 'o_orderdate'), ConstantExpr(19930701)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("v4"), 0), 'o_orderdate'), ConstantExpr(19931001))), 
+                                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(VarExpr("v3"), RecAccessExpr(PairAccessExpr(VarExpr("v4"), 0), 'o_orderkey')), ConstantExpr(None)), 
+                                              DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr("v4"), 0), 'o_orderpriority'), 
+                                                            ConstantExpr(1))]), 
+                                              EmptyDicConsExpr()), 
+                                       EmptyDicConsExpr()), 
+                                False)), 
+                LetExpr(VarExpr("results"), 
+                        SumExpr(VarExpr("v6"), 
+                                VarExpr("ord_probed"), 
+                                DicConsExpr([(RecConsExpr([('o_orderpriority', PairAccessExpr(VarExpr("v6"), 0)), 
+                                                           ('order_count', PairAccessExpr(VarExpr("v6"), 1))]), 
+                                              ConstantExpr(True))]), 
+                                True), 
+                        LetExpr(VarExpr("out"), VarExpr("results"), ConstantExpr(True)))))
+```
+
 # Q6
 ```python
 from pysdql.core.dtypes.sdql_ir import *

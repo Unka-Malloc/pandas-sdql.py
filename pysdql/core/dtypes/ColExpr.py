@@ -29,19 +29,23 @@ from pysdql.core.dtypes.Utils import (
 
 
 class ColExpr(SDQLIR):
-    def __init__(self, value, relation):
-        self.__value = value
-        self.relation = relation
+    def __init__(self, unit1, operator, unit2):
+        self.unit1 = unit1
+        self.operator = operator
+        self.unit2 = unit2
+
+        # self.__value = value
+        # self.relation = relation
         # self.inherit_from = inherit_from
         #
         # self.isvar = self.init_var()
 
-    @property
-    def col(self):
-        if isinstance(self.__value, Expr):
-            return self.__value
-        else:
-            raise ValueError()
+    # @property
+    # def col(self):
+    #     if isinstance(self.__value, Expr):
+    #         return self.__value
+    #     else:
+    #         raise ValueError()
 
     # def init_var(self):
     #     from pysdql.core.dtypes.ColEl import ColEl
@@ -131,83 +135,143 @@ class ColExpr(SDQLIR):
     # def __rtruediv__(self, other):
     #     return ColExpr(unit1=other, operator='/', unit2=self, inherit_from=self.inherit_from)
 
-    '''
-    Comparison Operations
-    '''
-
-    def __eq__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
-
-    def __ne__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.NE, unit2=input_fmt(other))
-
-    def __lt__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.LT, unit2=input_fmt(other))
-
-    def __le__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.LTE, unit2=input_fmt(other))
-
-    def __gt__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.GT, unit2=input_fmt(other))
-
-    def __ge__(self, other) -> CondExpr:
-        return CondExpr(unit1=self.col, operator=CompareSymbol.GTE, unit2=input_fmt(other))
+    # '''
+    # Comparison Operations
+    # '''
+    #
+    # def __eq__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.EQ, unit2=input_fmt(other))
+    #
+    # def __ne__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.NE, unit2=input_fmt(other))
+    #
+    # def __lt__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.LT, unit2=input_fmt(other))
+    #
+    # def __le__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.LTE, unit2=input_fmt(other))
+    #
+    # def __gt__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.GT, unit2=input_fmt(other))
+    #
+    # def __ge__(self, other) -> CondExpr:
+    #     return CondExpr(unit1=self.col, operator=CompareSymbol.GTE, unit2=input_fmt(other))
 
     '''
     Arithmetic Operations
     '''
 
     def __add__(self, other):
-        return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.relation)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.ADD,
+                       unit2=other)
+        # return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __mul__(self, other):
-        return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.relation)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.MUL,
+                       unit2=other)
+        # return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __sub__(self, other):
-        return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.relation)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.SUB,
+                       unit2=other)
+        # return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.relation)
 
     def __truediv__(self, other):
-        return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.relation)
+        return ColExpr(unit1=self,
+                       operator=MathSymbol.DIV,
+                       unit2=other)
+        # return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.relation)
 
     '''
     Reverse Arithmetic Operations
     '''
 
     def __radd__(self, other):
-        return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.relation)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.ADD,
+                       unit2=self)
+        # return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rmul__(self, other):
-        return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.relation)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.MUL,
+                       unit2=self)
+        # return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rsub__(self, other):
-        return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.relation)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.SUB,
+                       unit2=self)
+        # return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.relation)
 
     def __rtruediv__(self, other):
-        return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.relation)
+        return ColExpr(unit1=other,
+                       operator=MathSymbol.DIV,
+                       unit2=self)
+        # return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.relation)
 
     '''
     Aggregation Function
     '''
 
     def sum(self):
-        aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
-                             aggr_on=self.relation,
-                             aggr_op=self.col,
-                             aggr_else=ConstantExpr(0.0))
+        raise NotImplemented
+        # aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
+        #                      aggr_on=self.relation,
+        #                      aggr_op=self.col,
+        #                      aggr_else=ConstantExpr(0.0))
+        #
+        # op_expr = OpExpr(op_obj=aggr_expr,
+        #                  op_on=self.relation,
+        #                  op_iter=True,
+        #                  iter_on=self.relation,
+        #                  ret_type=float)
+        #
+        # self.relation.push(op_expr)
+        #
+        # return aggr_expr
 
-        op_expr = OpExpr(op_obj=aggr_expr,
-                         op_on=self.relation,
-                         op_iter=True,
-                         iter_on=self.relation,
-                         ret_type=float)
+    def replace(self, rec, on=None):
+        new_unit1 = self.unit1
+        new_unit2 = self.unit2
 
-        self.relation.push(op_expr)
+        if isinstance(self.unit1, SDQLIR):
+            new_unit1 = self.unit1.replace(rec, on)
+        if isinstance(self.unit2, SDQLIR):
+            new_unit2 = self.unit2.replace(rec, on)
 
-        return aggr_expr
+        if self.operator == MathSymbol.ADD:
+            return AddExpr(op1Expr=input_fmt(new_unit1),
+                           op2Expr=input_fmt(new_unit2))
+        if self.operator == MathSymbol.MUL:
+            return MulExpr(op1Expr=input_fmt(new_unit1),
+                           op2Expr=input_fmt(new_unit2))
+        if self.operator == MathSymbol.SUB:
+            return SubExpr(op1Expr=input_fmt(new_unit1),
+                           op2Expr=input_fmt(new_unit2))
+        if self.operator == MathSymbol.DIV:
+            return DivExpr(op1Expr=input_fmt(new_unit1),
+                           op2Expr=input_fmt(new_unit2))
+        raise NotImplemented
 
     @property
     def sdql_ir(self):
-        return self.col
+        if self.operator == MathSymbol.ADD:
+            return AddExpr(op1Expr=input_fmt(self.unit1),
+                           op2Expr=input_fmt(self.unit2))
+        if self.operator == MathSymbol.MUL:
+            return MulExpr(op1Expr=input_fmt(self.unit1),
+                           op2Expr=input_fmt(self.unit2))
+        if self.operator == MathSymbol.SUB:
+            return SubExpr(op1Expr=input_fmt(self.unit1),
+                           op2Expr=input_fmt(self.unit2))
+        if self.operator == MathSymbol.DIV:
+            return DivExpr(op1Expr=input_fmt(self.unit1),
+                           op2Expr=input_fmt(self.unit2))
+        raise NotImplemented
 
     def __repr__(self):
         return repr(self.sdql_ir)

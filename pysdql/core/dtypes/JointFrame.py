@@ -10,8 +10,18 @@ from pysdql.core.dtypes.sdql_ir import (
 
 class JointFrame:
     def __init__(self, partition: JoinPartitionFrame, probe: JoinProbeFrame, joint, col_ins=None, col_proj=None,
-                 groupby_cols=None,
-                 aggr_dict=None, ):
+                 groupby_cols=None, aggr_dict=None, joint_cond=None):
+        """
+
+        :param partition:
+        :param probe:
+        :param joint:
+        :param col_ins:
+        :param col_proj:
+        :param groupby_cols: list
+        :param aggr_dict: dict
+        :param joint_cond: CondExpr
+        """
         self.__partition_frame = partition
         self.__probe_frame = probe
         self.__op = None
@@ -21,6 +31,7 @@ class JointFrame:
         self.__col_proj = col_proj if col_proj else []
         self.groupby_cols = groupby_cols if groupby_cols else []
         self.aggr_dict = aggr_dict if aggr_dict else {}
+        self.joint_cond = joint_cond
 
     @property
     def joint(self):
@@ -39,6 +50,10 @@ class JointFrame:
 
     @property
     def partition_frame(self):
+        return self.__partition_frame
+
+    @property
+    def part_frame(self):
         return self.__partition_frame
 
     @property
@@ -69,20 +84,29 @@ class JointFrame:
             else:
                 next_op = ConstantExpr('placeholder_probe_next')
 
-        # str: right_on
-        probe_key = self.probe_frame.get_probe_key()
-        probe_cond = self.probe_frame.get_probe_cond()
+        # df: partition side
+        part_on = self.part_frame.get_partition_on()
         # var:
-        part_var = self.partition_frame.get_part_var()
-        # var: joint dict
-        probe_var = self.joint.var_expr
+        part_var = self.part_frame.get_part_var()
+        this_part_col_proj = self.part_frame.get_part_col_proj()
+
         # df: probe side
         probe_on = self.probe_frame.get_probe_on()
+        # var: joint dict
+        probe_var = self.joint.var_expr
 
+        # str: right_on
+        probe_key = self.probe_frame.get_probe_key()
         probe_key_ir = probe_on.key_access(probe_key)
 
-        col_proj_ir = RecConsExpr(self.col_proj) if self.col_proj else RecConsExpr([(probe_key,
-                                                                                     probe_on.key_access(probe_key))])
+        probe_cond = self.probe_frame.get_probe_cond()
+        this_probe_col_proj = self.probe_frame.get_probe_col_proj()
+
+        joint_cond = self.joint_cond
+        joint_col_proj = self.col_proj
+        joint_col_proj_ir = RecConsExpr(self.col_proj) if self.col_proj else RecConsExpr([(probe_key,
+                                                                                           probe_on.key_access(
+                                                                                               probe_key))])
 
         if self.is_groupby_agg_joint:
             # aggr_key_ir
@@ -112,17 +136,14 @@ class JointFrame:
                     val_rec_list.append((k, self.aggr_dict[k]))
             aggr_val_ir = RecConsExpr(val_rec_list)
 
-            if probe_cond:
-                joint_groupby_aggr_op = IfExpr(condExpr=probe_cond,
-                                               thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                                        leftExpr=DicLookupExpr(
-                                                                                            dicExpr=part_var,
-                                                                                            keyExpr=probe_key_ir),
-                                                                                        rightExpr=ConstantExpr(None)),
-                                                                   thenBodyExpr=DicConsExpr([(
-                                                                       aggr_key_ir,
-                                                                       aggr_val_ir
-                                                                   )]),
+            if joint_cond:
+                joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                                    leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                           keyExpr=probe_key_ir),
+                                                                    rightExpr=ConstantExpr(None)),
+                                               thenBodyExpr=IfExpr(condExpr=joint_cond,
+                                                                   thenBodyExpr=DicConsExpr([(aggr_key_ir,
+                                                                                              aggr_val_ir)]),
                                                                    elseBodyExpr=EmptyDicConsExpr()),
                                                elseBodyExpr=EmptyDicConsExpr())
             else:
@@ -134,6 +155,21 @@ class JointFrame:
                                                                           aggr_val_ir
                                                                           )]),
                                                elseBodyExpr=EmptyDicConsExpr())
+
+            if probe_cond:
+                joint_groupby_aggr_op = IfExpr(condExpr=probe_cond,
+                                               thenBodyExpr=joint_groupby_aggr_op,
+                                               elseBodyExpr=EmptyDicConsExpr())
+
+            # else:
+            #     joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+            #                                                         leftExpr=DicLookupExpr(dicExpr=part_var,
+            #                                                                                keyExpr=probe_key_ir),
+            #                                                         rightExpr=ConstantExpr(None)),
+            #                                    thenBodyExpr=DicConsExpr([(aggr_key_ir,
+            #                                                               aggr_val_ir
+            #                                                               )]),
+            #                                    elseBodyExpr=EmptyDicConsExpr())
 
             sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
                                dictExpr=probe_on.var_expr,
@@ -168,28 +204,56 @@ class JointFrame:
                     val_rec_list.append((k, self.aggr_dict[k]))
             aggr_key_ir = RecConsExpr(val_rec_list)
 
-            if probe_cond:
-                joint_aggr_op = IfExpr(condExpr=probe_cond,
-                                               thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                                        leftExpr=DicLookupExpr(
-                                                                                            dicExpr=part_var,
-                                                                                            keyExpr=probe_key_ir),
-                                                                                        rightExpr=ConstantExpr(None)),
-                                                                   thenBodyExpr=DicConsExpr([(
-                                                                       aggr_key_ir,
-                                                                       ConstantExpr(True)
-                                                                   )]),
-                                                                   elseBodyExpr=EmptyDicConsExpr()),
-                                               elseBodyExpr=EmptyDicConsExpr())
+            if joint_cond:
+                part_side = self.partition_frame.partition_on
+                next_joint_cond = joint_cond.replace(rec=DicLookupExpr(part_var, probe_key_ir),
+                                                     on=part_side)
+                joint_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                            leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                   keyExpr=probe_key_ir),
+                                                            rightExpr=ConstantExpr(None)),
+                                       thenBodyExpr=IfExpr(condExpr=next_joint_cond,
+                                                           thenBodyExpr=DicConsExpr([(aggr_key_ir,
+                                                                                      ConstantExpr(True))]),
+                                                           elseBodyExpr=EmptyDicConsExpr()),
+                                       elseBodyExpr=EmptyDicConsExpr())
             else:
                 joint_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                    leftExpr=DicLookupExpr(dicExpr=part_var,
-                                                                                           keyExpr=probe_key_ir),
-                                                                    rightExpr=ConstantExpr(None)),
-                                               thenBodyExpr=DicConsExpr([(aggr_key_ir,
-                                                                          ConstantExpr(True)
-                                                                          )]),
-                                               elseBodyExpr=EmptyDicConsExpr())
+                                                            leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                   keyExpr=probe_key_ir),
+                                                            rightExpr=ConstantExpr(None)),
+                                       thenBodyExpr=DicConsExpr([(aggr_key_ir,
+                                                                  ConstantExpr(True)
+                                                                  )]),
+                                       elseBodyExpr=EmptyDicConsExpr())
+
+            if probe_cond:
+                joint_aggr_op = IfExpr(condExpr=probe_cond,
+                                       thenBodyExpr=joint_aggr_op,
+                                       elseBodyExpr=EmptyDicConsExpr())
+
+            # if probe_cond:
+            #     joint_aggr_op = IfExpr(condExpr=probe_cond,
+            #                            thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+            #                                                                     leftExpr=DicLookupExpr(
+            #                                                                         dicExpr=part_var,
+            #                                                                         keyExpr=probe_key_ir),
+            #                                                                     rightExpr=ConstantExpr(None)),
+            #                                                thenBodyExpr=DicConsExpr([(
+            #                                                    aggr_key_ir,
+            #                                                    ConstantExpr(True)
+            #                                                )]),
+            #                                                elseBodyExpr=EmptyDicConsExpr()),
+            #                            elseBodyExpr=EmptyDicConsExpr())
+            # else:
+            #     joint_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+            #                                                 leftExpr=DicLookupExpr(dicExpr=part_var,
+            #                                                                        keyExpr=probe_key_ir),
+            #                                                 rightExpr=ConstantExpr(None)),
+            #                            thenBodyExpr=DicConsExpr([(aggr_key_ir,
+            #                                                       ConstantExpr(True)
+            #                                                       )]),
+            #                            elseBodyExpr=EmptyDicConsExpr())
 
             sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
                                dictExpr=probe_on.var_expr,
@@ -202,49 +266,176 @@ class JointFrame:
 
             return output
         else:
-            if self.is_passby:
-                next_part_key = self.get_next_part_key()
-                next_part_key_ir = probe_on.key_access(next_part_key)
+            if self.is_next_probe:
+                probe_cols = probe_on.columns
+                # this partition
+                this_part_var = self.part_frame.get_part_var()
+                this_part_key = self.part_frame.get_part_key()
+                this_part_cols = self.part_frame.get_partition_on().columns
+
+                # this probe
+                this_probe_key = probe_key
+                this_probe_key_ir = probe_on.key_access(this_probe_key)
+
+                # next merge
+                next_merge = self.get_next_merge_expr()
+
+                # next partition
+                next_part_frame = self.get_next_part_frame()
+                next_part_col_proj = next_part_frame.get_part_col_proj()
+                next_part_var = next_part_frame.get_part_var()
+                next_part_key = next_merge.left_on
+                next_part_cols = next_part_frame.get_partition_on().columns
+
+                # next probe
+
+                next_probe_key = next_merge.right_on
+
+                iter_key = probe_key
+
+                for left_key, right_key in probe_on.find_cols_as_key_tuple():
+                    if left_key in probe_cols:
+                        iter_key = left_key
+
+                iter_key_ir = probe_on.key_access(iter_key)
+
+                # print(f'We need a probe here: \n'
+                #       f'probe side: {probe_on.name}\n'
+                #       f'1st part_side: {this_part_var}\n'
+                #       f'2nd part_side: {next_part_var}\n'
+                #       f'joint: {self.joint.name}')
+
+                # print(f'''
+                # this_part_var: {this_part_var}
+                # this_part_key: {this_part_key}
+                # this_part_cols: {this_part_cols}
+                #
+                # this_probe_key: {this_probe_key}
+                #
+                # next_part_cols: {next_part_cols}
+                # next_part_var: {next_part_var}
+                # next_part_key: {next_part_key}
+                #
+                # next_probe_key: {next_probe_key}
+
+                # {probe_on.find_cols_as_key_tuple()}
+                # ''')
+
+                val_rec_list = []
+
+                if this_part_col_proj:
+                    for col in this_part_col_proj:
+                        field = col[0]
+                        if field != next_probe_key:
+                            if field in this_part_cols:
+                                val_rec_list.append((field, RecAccessExpr(recExpr=DicLookupExpr(dicExpr=this_part_var,
+                                                                                                keyExpr=this_probe_key_ir),
+                                                                          fieldName=field)))
+                if next_part_col_proj:
+                    for col in next_part_col_proj:
+                        field = col[0]
+                        if field != next_part_key:
+                            if next_probe_key not in probe_cols:
+                                val_rec_list.append((field,
+                                                     RecAccessExpr(recExpr=DicLookupExpr(dicExpr=next_part_var,
+                                                                                         keyExpr=RecAccessExpr(
+                                                                                             recExpr=DicLookupExpr(
+                                                                                                 dicExpr=this_part_var,
+                                                                                                 keyExpr=this_probe_key_ir),
+                                                                                             fieldName=next_probe_key)),
+                                                                   fieldName=field)))
+                            else:
+                                raise NotImplementedError
+                if this_probe_col_proj:
+                    raise NotImplementedError
+                else:
+                    next_col_proj_ir = RecConsExpr([(iter_key, iter_key_ir)])
+
+                iter_val_ir = RecConsExpr(val_rec_list)
+
+                if joint_cond:
+                    part_side = self.partition_frame.partition_on
+                    next_joint_cond = joint_cond.replace(rec=DicLookupExpr(part_var, probe_key_ir),
+                                                         on=part_side).sdql_ir
+
+                    joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                           leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                  keyExpr=probe_key_ir),
+                                                           rightExpr=ConstantExpr(None)),
+                                      thenBodyExpr=IfExpr(condExpr=next_joint_cond,
+                                                          thenBodyExpr=DicConsExpr([(iter_key_ir,
+                                                                                     iter_val_ir)]),
+                                                          elseBodyExpr=EmptyDicConsExpr()),
+                                      elseBodyExpr=EmptyDicConsExpr())
+                else:
+                    joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                           leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                  keyExpr=probe_key_ir),
+                                                           rightExpr=ConstantExpr(None)),
+                                      thenBodyExpr=DicConsExpr([(
+                                          iter_key_ir,
+                                          iter_val_ir
+                                      )]),
+                                      elseBodyExpr=EmptyDicConsExpr())
+                if probe_cond:
+                    joint_op = IfExpr(condExpr=probe_cond,
+                                      thenBodyExpr=joint_op,
+                                      elseBodyExpr=EmptyDicConsExpr())
+
+                output = LetExpr(varExpr=probe_var,
+                                 valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                                 dictExpr=probe_on.var_expr,
+                                                 bodyExpr=joint_op,
+                                                 isAssignmentSum=False),
+                                 bodyExpr=next_op)
+
+                return output
+            if self.is_next_part:
+                iter_key = self.get_next_part_key()
+                next_part_key_ir = probe_on.key_access(iter_key)
                 if self.col_proj:
-                    next_col_proj = [col for col in self.col_proj if col[0] != next_part_key]
+                    next_col_proj = [col for col in self.col_proj if col[0] != iter_key]
                     next_col_proj_ir = RecConsExpr(next_col_proj)
                 else:
-                    next_col_proj_ir = RecConsExpr([(next_part_key, next_part_key_ir)])
+                    next_col_proj_ir = RecConsExpr([(iter_key, next_part_key_ir)])
 
-                inner_expr = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                         leftExpr=DicLookupExpr(dicExpr=part_var,
-                                                                                keyExpr=probe_key_ir),
-                                                         rightExpr=ConstantExpr(None)),
-                                    thenBodyExpr=DicConsExpr([(
-                                        next_part_key_ir,
-                                        next_col_proj_ir
-                                    )]),
-                                    elseBodyExpr=EmptyDicConsExpr())
-            else:
-                inner_expr = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                         leftExpr=DicLookupExpr(dicExpr=part_var,
-                                                                                keyExpr=probe_key_ir),
-                                                         rightExpr=ConstantExpr(None)),
-                                    thenBodyExpr=DicConsExpr([(
-                                        probe_key_ir,
-                                        col_proj_ir
-                                    )]),
-                                    elseBodyExpr=EmptyDicConsExpr())
-            if probe_cond:
-                joint_op = IfExpr(condExpr=probe_cond,
-                                  thenBodyExpr=inner_expr,
-                                  elseBodyExpr=EmptyDicConsExpr())
-            else:
-                joint_op = inner_expr
+                if joint_cond:
+                    part_side = self.partition_frame.partition_on
+                    next_joint_cond = joint_cond.replace(rec=DicLookupExpr(part_var, probe_key_ir),
+                                                         on=part_side).sdql_ir
 
-            output = LetExpr(varExpr=probe_var,
-                             valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
-                                             dictExpr=probe_on.var_expr,
-                                             bodyExpr=joint_op,
-                                             isAssignmentSum=False),
-                             bodyExpr=next_op)
+                    joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                           leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                  keyExpr=probe_key_ir),
+                                                           rightExpr=ConstantExpr(None)),
+                                      thenBodyExpr=IfExpr(condExpr=next_joint_cond,
+                                                          thenBodyExpr=DicConsExpr([(next_part_key_ir,
+                                                                                     next_col_proj_ir)]),
+                                                          elseBodyExpr=EmptyDicConsExpr()),
+                                      elseBodyExpr=EmptyDicConsExpr())
+                else:
+                    joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                           leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                  keyExpr=probe_key_ir),
+                                                           rightExpr=ConstantExpr(None)),
+                                      thenBodyExpr=DicConsExpr([(
+                                          next_part_key_ir,
+                                          next_col_proj_ir
+                                      )]),
+                                      elseBodyExpr=EmptyDicConsExpr())
+                if probe_cond:
+                    joint_op = IfExpr(condExpr=probe_cond,
+                                      thenBodyExpr=joint_op,
+                                      elseBodyExpr=EmptyDicConsExpr())
 
-            return output
+                output = LetExpr(varExpr=probe_var,
+                                 valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                                 dictExpr=probe_on.var_expr,
+                                                 bodyExpr=joint_op,
+                                                 isAssignmentSum=False),
+                                 bodyExpr=next_op)
+
+                return output
 
     def get_joint_expr(self, next_op=None):
         if not next_op:
@@ -253,17 +444,21 @@ class JointFrame:
             else:
                 next_op = ConstantExpr('placeholder_probe_next')
 
-        if self.is_first_joint:
+        if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
+            print(f'{self.joint.name}: neither joint')
             return self.partition_frame.get_part_expr(self.get_probe_expr(next_op))
-        else:
-            if self.partition_frame.is_joint:
-                return self.partition_frame.partition_on.get_joint_frame().get_joint_expr(next_op)
-            else:
-                raise ValueError()
+        if self.partition_frame.is_joint and not self.probe_frame.is_joint:
+            print(f'{self.joint.name}: part joint')
+            return self.partition_frame.partition_on.get_joint_frame().get_joint_expr(next_op)
+        if not self.partition_frame.is_joint and self.probe_frame.is_joint:
+            print(f'{self.joint.name}: probe joint')
+            # return self.get_next_part_frame().get_part_expr(self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op)))
+            return self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op))
+        raise NotImplemented
 
     @property
     def is_first_joint(self):
-        if not self.partition_frame.is_joint and not self.partition_frame.is_joint:
+        if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
             return True
         else:
             return False
@@ -286,30 +481,47 @@ class JointFrame:
         else:
             return False
 
-    def get_next_part_key(self):
+    def get_next_merge_expr(self):
         for op_expr in self.joint.operations:
             if op_expr.op_type == MergeExpr:
-                if self.joint.name == op_expr.op.left.name:
+                if self.joint.name == op_expr.op.left.name or self.joint.name == op_expr.op.right.name:
+                    return op_expr.op
+                if self.joint.name != op_expr.op.joint.name:
+                    return op_expr.op
+        else:
+            raise ValueError()
+
+    def get_next_part_frame(self) -> JoinPartitionFrame:
+        for op_expr in self.joint.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.joint.name == op_expr.op.left.name or self.joint.name == op_expr.op.right.name:
+                    return op_expr.op.left.get_partition_frame()
+        else:
+            raise ValueError()
+
+    def get_next_part_key(self) -> str:
+        for op_expr in self.joint.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.joint.name == op_expr.op.left.name or self.joint.name == op_expr.op.right.name:
                     return op_expr.op.left_on
+        else:
+            raise ValueError()
 
     @property
-    def is_passby(self):
-        probe_on = self.probe_frame.get_probe_on()
-
-        was_last_probe = False
-        is_next_part = False
-
+    def is_next_part(self):
         for op_expr in self.joint.operations:
             if op_expr.op_type == MergeExpr:
-                if probe_on.name == op_expr.op.right.name:
-                    was_last_probe = True
                 if self.joint.name == op_expr.op.left.name:
-                    is_next_part = True
+                    return True
+        return False
 
-        if was_last_probe and is_next_part:
-            return True
-        else:
-            return False
+    @property
+    def is_next_probe(self):
+        for op_expr in self.joint.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.joint.name == op_expr.op.right.name:
+                    return True
+        return False
 
     def __repr__(self):
         return f'''

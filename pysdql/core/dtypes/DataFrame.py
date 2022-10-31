@@ -9,7 +9,7 @@ from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.IterStmt import IterStmt
-from pysdql.core.dtypes.ConcatExpr import ConcatExpr
+# from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColEl import ColEl
 from pysdql.core.dtypes.ColExpr import ColExpr
@@ -29,6 +29,7 @@ from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.SemiRing import SemiRing
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
@@ -70,18 +71,17 @@ class DataFrame(SemiRing):
 
         self.__structure = DataFrameStruct('1DT')
 
-        self.__columns_in = columns
-        self.__columns_out = columns
+        self.__columns_in = columns if columns else []
+        self.__columns_out = columns if columns else []
+        self.__columns_used = []
 
         self.__iter_el = IterEl(f'x_{self.name}')
         self.__var_expr = self.init_var_expr()
 
         if is_joint:
             self.__var_merge_part = VarExpr(self.name)
-            self.__var_merge_probe = VarExpr(self.name)
         else:
             self.__var_merge_part = VarExpr(f'{self.name}_part')
-            self.__var_merge_probe = VarExpr(f'{self.name}_probe')
 
         self.__const_var = {}
 
@@ -181,11 +181,22 @@ class DataFrame(SemiRing):
 
     @property
     def cols_in(self):
-        return self.__columns_in
+        if self.__columns_in:
+            return self.__columns_in
+        return self.columns
 
     @property
     def cols_out(self):
-        return self.__columns_out
+        if self.__columns_out:
+            return self.__columns_out
+        if self.cols_in:
+            return self.cols_in
+        return self.columns
+
+    @property
+    def cols_used(self):
+        self.infer_col_used()
+        return [i for i in list(set(self.__columns_used)) if i in self.cols_in]
 
     @property
     def dtype(self):
@@ -221,20 +232,7 @@ class DataFrame(SemiRing):
 
     @property
     def var_part(self):
-        if self.is_merged:
-            return self.get_partition_side().get_var_part()
-        else:
-            return self.__var_merge_part
-
-    def get_var_probe(self):
-        return self.__var_merge_probe
-
-    @property
-    def var_probe(self):
-        if self.is_merged:
-            return self.get_probe_side().get_var_probe()
-        else:
-            return self.__var_merge_probe
+        return self.__var_merge_part
 
     @property
     def tmp_name_list(self):
@@ -286,7 +284,7 @@ class DataFrame(SemiRing):
         return True
 
     @property
-    def iter_el(self):
+    def iter_el(self) -> IterEl:
         return self.__iter_el
 
     @property
@@ -294,6 +292,7 @@ class DataFrame(SemiRing):
         return self.iter_el
 
     def key_access(self, field):
+        self.__columns_used.append(field)
         if self.is_joint:
             if field in self.partition_side.columns:
                 return self.partition_side.key_access(field)
@@ -365,6 +364,7 @@ class DataFrame(SemiRing):
 
         if type(item) == list:
             self.__columns_out = item
+            self.__columns_used += item
 
             self.operations.push(OpExpr(op_obj=ColProjExpr(self, item),
                                         op_on=self,
@@ -378,6 +378,7 @@ class DataFrame(SemiRing):
 
     def get_col(self, col_name):
         if col_name in self.columns:
+            self.__columns_used.append(col_name)
             return ColEl(self, col_name)
 
         # unsafe
@@ -420,6 +421,7 @@ class DataFrame(SemiRing):
                                     op_iter=False))
 
     def groupby(self, cols):
+        self.__columns_used += cols
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
 
@@ -431,11 +433,17 @@ class DataFrame(SemiRing):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None):
+        tmp_name = f'{self.name}_{right.name}'
+
+        tmp_df = DataFrame(name=tmp_name,
+                           is_joint=True)
+
         merge_expr = MergeExpr(left=self,
                                right=right,
                                how=how,
                                left_on=left_on,
-                               right_on=right_on)
+                               right_on=right_on,
+                               joint=tmp_df)
 
         self.push(OpExpr(op_obj=merge_expr,
                          op_on=self,
@@ -444,14 +452,6 @@ class DataFrame(SemiRing):
         right.push(OpExpr(op_obj=merge_expr,
                           op_on=right,
                           op_iter=True))
-
-        tmp_name = f'{self.name}_{right.name}_join'
-
-        tmp_df = DataFrame(name=tmp_name,
-                           is_joint=True)
-
-        tmp_df.__name_merge_probe = tmp_name
-        tmp_df.__var_merge_probe = VarExpr(self.__name_merge_probe)
 
         tmp_df.push(OpExpr(op_obj=merge_expr,
                            op_on=self,
@@ -510,24 +510,24 @@ class DataFrame(SemiRing):
     def peak(self):
         return self.operations.peak()
 
-    def show_op_seq(self):
+    def show_info(self):
         if self.is_joint:
-            self.partition_side.show_op_seq()
-            self.probe_side.show_op_seq()
-            if self.const_var:
-                print(f'>> {self.name} Constant Variables <<')
-                print(self.const_var)
-            print(f'>> {self.name} Operation Sequence <<')
-            print(self.operations)
-        else:
-            if self.const_var:
-                print(f'>> {self.name} Constant Variables <<')
-                print(self.const_var)
-            print(f'>> {self.name} Operation Sequence <<')
-            print(self.operations)
+            self.partition_side.show_info()
+            self.probe_side.show_info()
+        print(f'>> {self.name} Columns(In) <<')
+        print(self.cols_in)
+        print(f'>> {self.name} Columns(Out) <<')
+        print(self.cols_out)
+        print(f'>> {self.name} Columns(Used) <<')
+        print(self.cols_used)
+        if self.const_var:
+            print(f'>> {self.name} Constant Variables <<')
+            print(self.const_var)
+        print(f'>> {self.name} Operation Sequence <<')
+        print(self.operations)
 
     def show(self):
-        self.show_op_seq()
+        self.show_info()
         print(f'>> {self.name} Optimizer Output <<')
         print(self.optimize())
         print('>> Done <<')
@@ -536,7 +536,14 @@ class DataFrame(SemiRing):
     def partition_frame(self):
         return self.get_opt(OptGoal.JoinPartition).partition_frame
 
+    @property
+    def part_frame(self):
+        return self.get_opt(OptGoal.JoinPartition).partition_frame
+
     def get_partition_frame(self):
+        return self.get_opt(OptGoal.JoinPartition).partition_frame
+
+    def get_part_frame(self):
         return self.get_opt(OptGoal.JoinPartition).partition_frame
 
     @property
@@ -551,30 +558,149 @@ class DataFrame(SemiRing):
 
     @property
     def partition_side(self):
-        if self.is_merged:
-            for op_expr in self.operations:
-                if op_expr.op_type == MergeExpr:
-                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
-                        return op_expr.op.left
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                    return op_expr.op.left
 
     def get_partition_side(self):
-        if self.is_merged:
-            for op_expr in self.operations:
-                if op_expr.op_type == MergeExpr:
-                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
-                        return op_expr.op.left
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                    return op_expr.op.left
 
     @property
     def probe_side(self):
-        if self.is_merged:
-            for op_expr in self.operations:
-                if op_expr.op_type == MergeExpr:
-                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
-                        return op_expr.op.right
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                    return op_expr.op.right
 
     def get_probe_side(self):
-        if self.is_merged:
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
+                    return op_expr.op.right
+
+    def find_agg(self):
+        for op_expr in self.operations:
+            if op_expr.op_type == AggrExpr:
+                return op_expr
+        return None
+
+    def find_groupby_agg(self):
+        for op_expr in self.operations:
+            if op_expr.op_type == GroupByAgg:
+                return op_expr
+        return None
+
+    def find_this_merge(self):
+        if self.is_joint:
             for op_expr in self.operations:
                 if op_expr.op_type == MergeExpr:
-                    if self.name != op_expr.op.left.name and self.name != op_expr.op.right.name:
-                        return op_expr.op.right
+                    if self.name == op_expr.op.joint.name:
+                        return op_expr
+        return None
+
+    def find_next_merge(self):
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                if self.name == op_expr.op.left.name or self.name == op_expr.op.right.name:
+                    return op_expr
+        return None
+
+    def find_cond(self):
+        tmp_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == CondExpr:
+                tmp_list.append(op_expr)
+        if tmp_list:
+            return tmp_list
+        return None
+
+    def find_col_ins(self):
+        tmp_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == VirColEl:
+                tmp_list.append(op_expr)
+        if tmp_list:
+            return tmp_list
+        return None
+
+    def find_col_proj(self):
+        tmp_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == ColProjExpr:
+                tmp_list.append(op_expr)
+        if tmp_list:
+            return tmp_list
+        return None
+
+    def infer_col_used(self):
+        if self.find_next_merge():
+            op_expr = self.find_next_merge()
+            left = op_expr.op.left
+            right = op_expr.op.right
+
+            if self.name == left.name:
+                self.__columns_used.append(op_expr.op.left_on)
+            if self.name == right.name:
+                self.__columns_used.append(op_expr.op.right_on)
+
+            joint_cols_used = op_expr.op.joint.cols_used
+
+            if joint_cols_used:
+                self.__columns_used += joint_cols_used
+
+    def find_cols_as_probe_key(self):
+        cols_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                cols_list.append(op_expr.op.right_on)
+                if self.name != op_expr.op.joint.name:
+                    cols_list += op_expr.op.joint.find_cols_as_probe_key()
+        return list(set(cols_list))
+
+    def find_cols_as_part_key(self):
+        cols_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                cols_list.append(op_expr.op.left_on)
+                if self.name != op_expr.op.joint.name:
+                    cols_list += op_expr.op.joint.find_cols_as_part_key()
+        return list(set(cols_list))
+
+    def find_cols_as_key_tuple(self):
+        cols_list = []
+        for op_expr in self.operations:
+            if op_expr.op_type == MergeExpr:
+                cols_list.append((op_expr.op.left_on, op_expr.op.right_on))
+                if self.name != op_expr.op.joint.name:
+                    cols_list += op_expr.op.joint.find_cols_as_key_tuple()
+        return list(set(cols_list))
+
+    def get_name_ops(self):
+        output = self.name
+        for op_expr in self.operations:
+            output += op_expr.get_op_name_suffix()
+        return output
+
+    # def find_cols_used(self):
+    #     cols_list = []
+    #     if self.find_next_merge():
+    #         op_expr = self.find_next_merge()
+    #         left = op_expr.op.left
+    #         right = op_expr.op.right
+    #
+    #         if self.name == left.name:
+    #             cols_list.append(op_expr.op.left_on)
+    #         if self.name == right.name:
+    #             cols_list.append(op_expr.op.right_on)
+    #
+    #         joint_cols_used = op_expr.op.joint.find_cols_used()
+    #
+    #         if joint_cols_used:
+    #             cols_list += joint_cols_used
+    #
+    #     return cols_list
+
