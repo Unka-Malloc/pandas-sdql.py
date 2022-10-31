@@ -2,6 +2,7 @@ import re
 from datetime import datetime
 
 from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
     ConstantExpr,
@@ -32,9 +33,11 @@ def input_fmt(data):
         return ConstantExpr(date_fmt(data))
     elif type(data) in (bool, int, float, str):
         return ConstantExpr(data)
-    elif isinstance(data, SDQLIR):
-        return data.sdql_ir
     elif isinstance(data, Expr):
         return data
+    elif isinstance(data, SDQLIR):
+        return data.sdql_ir
+    elif isinstance(data, IgnoreExpr):
+        return ConstantExpr(True)
     else:
         raise ValueError()

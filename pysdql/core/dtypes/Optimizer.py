@@ -8,6 +8,7 @@ from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VirColEl import VirColEl
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import (
     SumExpr,
     IfExpr,
@@ -67,7 +68,7 @@ class Optimizer:
             'aggr_on': opt_on.var_expr,
             'aggr_op': ConstantExpr(None),
 
-            'let_var': VarExpr(opt_on.name_ops),
+            'let_var': VarExpr(opt_on.get_name_ops()),
             'let_val': ConstantExpr(None),
             'let_next': ConstantExpr(None),
         }
@@ -127,6 +128,7 @@ class Optimizer:
             'probe_key': None,
 
             'how': None,
+            'joint_cond': None
         }
 
         self.is_join_partition_side = False
@@ -138,6 +140,9 @@ class Optimizer:
             'column_insertion': False,
             'column_projection': False
         }
+
+        self.isin_op = None
+        self.has_isin = False
 
     @property
     def has_cond(self):
@@ -229,6 +234,9 @@ class Optimizer:
                     col_expr = v
 
                 rec_list.append((k, col_expr))
+        else:
+            for k in aggr_dict.keys():
+                rec_list.append((k, aggr_dict[k]))
 
         self.groupby_aggr_info['aggr_vals'] = RecConsExpr(rec_list)
 
@@ -256,9 +264,13 @@ class Optimizer:
 
     def input(self, op_expr: OpExpr):
         if op_expr.op_type == CondExpr:
-            self.add_cond(op_expr.op.sdql_ir)
 
+            self.add_cond(op_expr.op.sdql_ir)
             self.cond_info['cond_if'] = op_expr.op.sdql_ir
+
+            if self.is_joint:
+                self.joint_info['joint_cond'] = op_expr.op
+
             self.cond_status = True
         if op_expr.op_type == AggrExpr:
             if op_expr.ret_type == OperationReturnType.DICT:
@@ -290,7 +302,18 @@ class Optimizer:
 
             self.set_groupby_aggr_aggr_op()
 
-            self.cond_info['cond_then'] = self.groupby_aggr_info['aggr_op']
+            if self.has_isin:
+                ref_var = self.isin_op.get_ref_var()
+                probe_field = self.isin_op.get_probe_field()
+                self.cond_info['cond_then'] = IfExpr(condExpr=CompareExpr(compareType=CompareSymbol.NE,
+                                                                          leftExpr=DicLookupExpr(ref_var,
+                                                                                                 self.opt_on.key_access(
+                                                                                                     probe_field)),
+                                                                          rightExpr=ConstantExpr(None)),
+                                                     thenBodyExpr=self.groupby_aggr_info['aggr_op'],
+                                                     elseBodyExpr=EmptyDicConsExpr())
+            else:
+                self.cond_info['cond_then'] = self.groupby_aggr_info['aggr_op']
             self.cond_info['cond_else'] = EmptyDicConsExpr()
 
             self.set_groupby_aggr_let_val()
@@ -339,11 +362,13 @@ class Optimizer:
                 else:
                     raise ValueError(str(op_expr))
 
+        if op_expr.op_type == IsInExpr:
+            self.isin_op = op_expr.op
+
+            self.has_isin = True
+
     @property
     def partition_frame(self):
-        if not self.is_join_partition_side:
-            raise ValueError(self.opt_on.operations)
-
         frame = JoinPartitionFrame(self.opt_on)
 
         frame.add_key(self.join_partition_info['partition_key'])
@@ -364,6 +389,10 @@ class Optimizer:
         frame.add_cond(self.cond_info['cond_if'])
         frame.add_col_proj(self.col_proj)
 
+        # print(self.join_probe_info['probe_key'])
+        # print(self.cond_info['cond_if'])
+        # print(self.col_proj)
+
         return frame
 
     @property
@@ -371,6 +400,7 @@ class Optimizer:
         partition_frame = self.joint_info['partition_side'].get_partition_frame()
         probe_frame = self.joint_info['probe_side'].get_probe_frame()
 
+        # define aggr_dict
         if self.last_func == LastIterFunc.GroupbyAgg:
             aggr_dict = self.groupby_aggr_info['aggr_dict']
         elif self.last_func == LastIterFunc.Agg:
@@ -378,13 +408,26 @@ class Optimizer:
         else:
             aggr_dict = None
 
+        # define groupby_cols
+        if self.groupby_aggr_info['groupby_cols']:
+            groupby_cols = self.groupby_aggr_info['groupby_cols']
+        else:
+            groupby_cols = None
+
+        # define joint_cond
+        if self.joint_info['joint_cond']:
+            joint_cond = self.joint_info['joint_cond']
+        else:
+            joint_cond = None
+
         tmp_joint_frame = JointFrame(partition=partition_frame,
                                      probe=probe_frame,
                                      joint=self.opt_on,
                                      col_ins=self.col_ins,
                                      col_proj=self.col_proj,
-                                     groupby_cols=self.groupby_aggr_info['groupby_cols'],
-                                     aggr_dict=aggr_dict)
+                                     groupby_cols=groupby_cols,
+                                     aggr_dict=aggr_dict,
+                                     joint_cond=joint_cond)
 
         if self.col_proj != tmp_joint_frame.col_proj:
             raise ValueError(f'Column Projection Not Applied to {self.opt_on.name}')
@@ -650,6 +693,8 @@ class Optimizer:
         if self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
                 return self.joint_frame.sdql_ir
+            if self.has_isin:
+                return self.isin_op.get_ref_ir(self.groupby_aggr_stmt)
             else:
                 return self.groupby_aggr_stmt
         if self.last_func == LastIterFunc.JoinPartition:

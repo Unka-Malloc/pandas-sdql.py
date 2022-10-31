@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.sdql_ir import IfExpr, DicConsExpr, RecConsExpr, EmptyDicConsExpr, SumExpr, LetExpr
+from pysdql.core.dtypes.sdql_ir import IfExpr, DicConsExpr, RecConsExpr, EmptyDicConsExpr, SumExpr, LetExpr, ConstantExpr
 
 
 class JoinPartitionFrame:
@@ -10,6 +10,9 @@ class JoinPartitionFrame:
         self.__iter_on = iter_on
         self.__var_partition = iter_on.get_var_part()
         self.__next_probe = None
+
+    def get_part_col_proj(self):
+        return self.__col_proj
 
     @property
     def group_key(self):
@@ -29,6 +32,9 @@ class JoinPartitionFrame:
     @property
     def cols_out(self):
         return self.__iter_on.cols_out
+
+    def get_partition_on(self):
+        return self.partition_on
 
     @property
     def col_proj_ir(self):
@@ -54,6 +60,9 @@ class JoinPartitionFrame:
     @property
     def is_joint(self):
         return self.partition_on.is_joint
+
+    def get_part_key(self):
+        return self.__group_key
 
     def get_part_expr(self, next_probe=None):
         if not next_probe:
@@ -107,12 +116,12 @@ class JoinPartitionFrame:
     def sdql_ir(self):
         if self.partition_on.is_joint:
             return self.partition_on.get_joint_frame().sdql_ir
-        return repr(self.let_expr)
+        return self.let_expr
 
     def __repr__(self):
         if self.partition_on.is_joint:
             joint_frame = self.partition_on.get_joint_frame()
-            return str(joint_frame)
+            return repr(joint_frame)
 
         return str(
             {

@@ -50,6 +50,23 @@ def q3(cu, ord, li):
     return result.optimize()
 
 
+def q4(li, ord):
+    li_filt = li[li.l_commitdate < li.l_receiptdate]
+    li_proj = li_filt[["l_orderkey"]]
+
+    ord_filt = ord[(ord.o_orderdate >= "1993-07-01")
+                   & (ord.o_orderdate < "1993-10-01")
+                   & ord.o_orderkey.isin(li_proj["l_orderkey"])]
+
+    results = ord_filt \
+        .groupby(["o_orderpriority"]) \
+        .agg(order_count=("o_orderdate", "count"))
+
+    results.show()
+
+    return results.optimize()
+
+
 def q6(li):
     li_filt = li[
         (li.l_shipdate >= "1994-01-01") &
@@ -76,7 +93,8 @@ def q10(ord, cu, na, li):
 
     na_proj = na[["n_nationkey", "n_name"]]
     ord_na_join = pd.merge(na_proj, ord_cu_join, left_on="n_nationkey", right_on="c_nationkey", how="inner")
-    ord_na_join = ord_na_join[["o_orderkey", "c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]]
+    ord_na_join = ord_na_join[
+        ["o_orderkey", "c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"]]
 
     li_filt = li[(li.l_returnflag == "R")]
 
@@ -138,9 +156,10 @@ if __name__ == '__main__':
     pa = DataFrame()
 
     # q1(li)
+    q4(li, ord)
     # q3(cu, ord, li)
     # q6(li)
-    q10(ord, cu, na, li)
+    # q10(ord, cu, na, li)
     # q19(pa, li)
 
     # li = DataFrame()

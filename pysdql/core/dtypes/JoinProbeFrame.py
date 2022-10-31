@@ -7,8 +7,10 @@ class JoinProbeFrame:
         self.__iter_on = iter_on
         self.__iter_op = None
         self.__partition_frame = None
-        self.__var_probe = iter_on.get_var_probe()
         self.__next_op = None
+
+    def get_probe_col_proj(self):
+        return self.__col_proj
 
     def get_probe_key(self):
         return self.__probe_key
@@ -33,10 +35,6 @@ class JoinProbeFrame:
     def is_joint(self):
         return self.probe_on.is_joint
 
-    @property
-    def var_probe(self):
-        return self.__var_probe
-
     def add_key(self, val):
         self.__probe_key = val
 
@@ -55,9 +53,6 @@ class JoinProbeFrame:
     def add_next(self, val):
         self.__next_op = val
 
-    def get_var_probe(self):
-        return self.__var_probe
-
     def __repr__(self):
         if self.probe_on.is_joint:
             joint_frame = self.probe_on.get_joint_frame()
@@ -68,7 +63,6 @@ class JoinProbeFrame:
                 'probe': 'frame',
                 'probe_key': self.__probe_key,
                 'cond': self.__iter_cond,
-                'cols': self.__col_proj,
-                'var': self.__var_probe
+                'cols': self.__col_proj
             }
         )
