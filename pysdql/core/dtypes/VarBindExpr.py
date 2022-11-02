@@ -1,6 +1,7 @@
 from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.sdql_ir import (
-    LetExpr
+    LetExpr,
+    ConstantExpr
 )
 
 
@@ -27,6 +28,8 @@ class VarBindExpr(SDQLIR):
         if type(other) == VarBindExpr:
             return VarBindExpr(self.var_expr, self.var_value, other.sdql_ir)
         if type(other) == LetExpr:
+            return VarBindExpr(self.var_expr, self.var_value, other)
+        if type(other) == ConstantExpr:
             return VarBindExpr(self.var_expr, self.var_value, other)
         raise ValueError()
 

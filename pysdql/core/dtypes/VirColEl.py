@@ -3,6 +3,9 @@ class VirColEl:
         self.col_var = col_var
         self.col_expr = col_expr
 
+    def replace(self, rec, on=None):
+        return self.col_expr.replace(rec, on)
+
     @property
     def expr(self):
         return str({self.col_var: self.col_expr})
