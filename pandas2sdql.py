@@ -155,34 +155,25 @@ def q15(li, su):
     return result.optimize()
 
 
-def q16_pandas(ps, pa, su):
-    pa_filt = pa[
-        (pa.p_brand != "Brand#45") &
-        (pa.p_type.str.startswith("MEDIUM POLISHED") == False) &
-        (
-                (pa.p_size == 49) |
-                (pa.p_size == 14) |
-                (pa.p_size == 23) |
-                (pa.p_size == 45) |
-                (pa.p_size == 19) |
-                (pa.p_size == 3) |
-                (pa.p_size == 36) |
-                (pa.p_size == 9)
-        )]
-    pa_proj = pa_filt[["p_partkey", "p_brand", "p_type", "p_size"]]
+def q18(cu, ord, li):
+    li_aggr = li \
+        .groupby(["l_orderkey"]) \
+        .agg(sum_quantity=("l_quantity", "sum"))
 
-    su_filt = su[
-        su.s_comment.str.contains("Customer") & (su.s_comment.str.find("Customer") + 7) < su.s_comment.str.find(
-            "Complaints")]
-    su_proj = su_filt[["s_suppkey"]]
+    li_filt = li_aggr[li_aggr.sum_quantity > 300].reset_index()
+    li_proj = li_filt[["l_orderkey"]]
 
-    ps_filt = ps[~ps.ps_suppkey.isin(su_proj["s_suppkey"])]
+    ord_filt = ord[ord.o_orderkey.isin(li_proj["l_orderkey"])]
 
-    ps_pa_join = pd.merge(pa_proj, ps_filt, left_on="p_partkey", right_on="ps_partkey", how="inner")
+    cu_proj = cu[["c_custkey", "c_name"]]
+    ord_cu_join = pd.merge(cu_proj, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+    ord_cu_join = ord_cu_join[["o_orderkey", "c_name", "c_custkey", "o_orderdate", "o_totalprice"]]
 
-    result = ps_pa_join \
-        .groupby(["p_brand", "p_type", "p_size"]) \
-        .agg(supplier_cnt=("ps_suppkey", lambda x: x.nunique()))
+    li_ord_join = pd.merge(ord_cu_join, li, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+
+    result = li_ord_join \
+        .groupby(["c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]) \
+        .agg(sum_quantity=("l_quantity", "sum"))
 
     result.show()
 
@@ -240,4 +231,5 @@ if __name__ == '__main__':
     # q6(li)
     # q10(ord, cu, na, li)
     # q19(pa, li)
-    q15(li, su)
+    # q15(li, su)
+    q18(cu, ord, li)
