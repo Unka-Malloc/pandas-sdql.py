@@ -33,13 +33,7 @@ from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
 
-from pysdql.core.dtypes.sdql_ir import (
-    Expr,
-    MulExpr,
-    AddExpr,
-    CompareExpr,
-    VarExpr, RecAccessExpr, LetExpr, ConstantExpr, EmptyDicConsExpr,
-)
+from pysdql.core.dtypes.sdql_ir import *
 
 from pysdql.core.util.type_checker import (
     is_int,
@@ -107,6 +101,11 @@ class DataFrame(SemiRing):
             self.__var_merge_part = VarExpr(vname_part)
             self.add_context_variable(vname_part,
                                       self.__var_merge_part)
+
+        self.unopt_count = 0
+        self.unopt_vars = {}
+        self.unopt_consts = {}
+        self.unopt_list = []
 
     @property
     def is_joint(self):
@@ -405,6 +404,13 @@ class DataFrame(SemiRing):
 
             return self
 
+        if type(item) == IsInExpr:
+            self.operations.push(OpExpr(op_obj=item,
+                                        op_on=self,
+                                        op_iter=True))
+
+            return self
+
     def __getattr__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)
@@ -466,6 +472,8 @@ class DataFrame(SemiRing):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None):
+        if not right:
+            print(self.name)
         next_context_var = {}
         for k in self.context_variable.keys():
             next_context_var[k] = self.context_variable[k]
@@ -793,3 +801,36 @@ class DataFrame(SemiRing):
 
     def get_groupby_agg(self, next_op=None):
         return self.get_opt(OptGoal.GroupByAggregation).get_groupby_aggr_stmt(next_op)
+
+    def reset_index(self):
+        return self
+
+    def unoptimize(self):
+        for op_expr in self.operations:
+            tmp_vname = f'v{self.unopt_count}'
+            tmp_var = VarExpr(tmp_vname)
+
+            if self.unopt_count == 0:
+                last_var = self.var_expr
+                iter_last_var = self.iter_el
+            else:
+                last_vname = f'v{self.unopt_count-1}'
+                last_var = VarExpr(last_vname)
+                iter_last_var = VarExpr(f'x_{last_vname}')
+            iter_last_key = PairAccessExpr(iter_last_var, 0)
+            iter_last_val = PairAccessExpr(iter_last_var, 1)
+            if op_expr.op_type == CondExpr:
+                sum_expr = SumExpr(iter_last_var,
+                                   last_var,
+                                   IfExpr(op_expr.op,
+                                          DicConsExpr([(iter_last_key, iter_last_val)]),
+                                          EmptyDicConsExpr()))
+                self.unopt_list.append(LetExpr(tmp_var,
+                                               sum_expr,
+                                               ConstantExpr(True)))
+            if op_expr.op_type == AggrExpr:
+                pass
+            if op_expr.op_type == GroupByAgg:
+                pass
+
+            self.unopt_count += 1

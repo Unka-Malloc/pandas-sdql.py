@@ -536,6 +536,116 @@ def q16():
 
     print(q16)
 
+def q18():
+    li_aggregated = VarExpr("li_aggregated")
+    li_filtered = VarExpr("li_filtered")
+    cu_indexed = VarExpr("cu_indexed")
+    order_probed = VarExpr("order_probed")
+    li_probed = VarExpr("li_probed")
+    results = VarExpr("results")
+
+    li = VarExpr("db->li_dataset")
+    cu = VarExpr("db->cu_dataset")
+    ord = VarExpr("db->ord_dataset")
+
+    q18 = LetExpr(li_aggregated, SumBuilder(lambda b: DicConsExpr([(b[0].l_orderkey, b[0].l_quantity)]), li, False),
+                  LetExpr(li_filtered, SumBuilder(
+                      lambda z: IfExpr((z[1] > ConstantExpr(300)), DicConsExpr([(z[0], ConstantExpr(True))]),
+                                       ConstantExpr(None)), li_aggregated, True), LetExpr(cu_indexed,
+                                                                                          JoinPartitionBuilder(cu,
+                                                                                                               "c_custkey",
+                                                                                                               lambda
+                                                                                                                   p: ConstantExpr(
+                                                                                                                   True),
+                                                                                                               [
+                                                                                                                   "c_name"]),
+                                                                                          LetExpr(order_probed,
+                                                                                                  JoinProbeBuilder(
+                                                                                                      cu_indexed, ord,
+                                                                                                      "o_custkey",
+                                                                                                      lambda p: (
+                                                                                                                  li_filtered[
+                                                                                                                      p.o_orderkey] != ConstantExpr(
+                                                                                                              None)),
+                                                                                                      lambda
+                                                                                                          indexedDictValue,
+                                                                                                          probeDictKey: DicConsExpr(
+                                                                                                          [(
+                                                                                                           probeDictKey.o_orderkey,
+                                                                                                           RecConsExpr([
+                                                                                                                           (
+                                                                                                                           "c_name",
+                                                                                                                           indexedDictValue.c_name),
+                                                                                                                           (
+                                                                                                                           "o_custkey",
+                                                                                                                           probeDictKey.o_custkey),
+                                                                                                                           (
+                                                                                                                           "o_orderkey",
+                                                                                                                           probeDictKey.o_orderkey),
+                                                                                                                           (
+                                                                                                                           "o_orderdate",
+                                                                                                                           probeDictKey.o_orderdate),
+                                                                                                                           (
+                                                                                                                           "o_totalprice",
+                                                                                                                           probeDictKey.o_totalprice)]))]),
+                                                                                                      True),
+                                                                                                  LetExpr(li_probed,
+                                                                                                          JoinProbeBuilder(
+                                                                                                              order_probed,
+                                                                                                              li,
+                                                                                                              "l_orderkey",
+                                                                                                              lambda
+                                                                                                                  p: ConstantExpr(
+                                                                                                                  True),
+                                                                                                              lambda
+                                                                                                                  indexedDictValue,
+                                                                                                                  probeDictKey: DicConsExpr(
+                                                                                                                  [(
+                                                                                                                   RecConsExpr(
+                                                                                                                       [
+                                                                                                                           (
+                                                                                                                           "c_name",
+                                                                                                                           indexedDictValue.c_name),
+                                                                                                                           (
+                                                                                                                           "o_custkey",
+                                                                                                                           indexedDictValue.o_custkey),
+                                                                                                                           (
+                                                                                                                           "o_orderkey",
+                                                                                                                           indexedDictValue.o_orderkey),
+                                                                                                                           (
+                                                                                                                           "o_orderdate",
+                                                                                                                           indexedDictValue.o_orderdate),
+                                                                                                                           (
+                                                                                                                           "o_totalprice",
+                                                                                                                           indexedDictValue.o_totalprice)]),
+                                                                                                                   RecConsExpr(
+                                                                                                                       [
+                                                                                                                           (
+                                                                                                                           "quantitysum",
+                                                                                                                           probeDictKey.l_quantity)]))])),
+                                                                                                          LetExpr(
+                                                                                                              results,
+                                                                                                              SumBuilder(
+                                                                                                                  lambda
+                                                                                                                      p: DicConsExpr(
+                                                                                                                      [(
+                                                                                                                       ConcatExpr(
+                                                                                                                           p[
+                                                                                                                               0],
+                                                                                                                           p[
+                                                                                                                               1]),
+                                                                                                                       ConstantExpr(
+                                                                                                                           True))]),
+                                                                                                                  li_probed,
+                                                                                                                  True),
+                                                                                                              LetExpr(
+                                                                                                                  VarExpr(
+                                                                                                                      "out"),
+                                                                                                                  results,
+                                                                                                                  ConstantExpr(
+                                                                                                                      True))))))))
+    print(q18)
+
 def q19():
     brand12 = VarExpr("brand12")
     brand23 = VarExpr("brand23")
@@ -782,6 +892,7 @@ if __name__ == '__main__':
     # q4()
     # q6()
     # q10()
-    q15()
+    # q15()
     # q16()
+    q18()
     # q19()

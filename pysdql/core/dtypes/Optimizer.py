@@ -734,11 +734,11 @@ class Optimizer:
             else:
                 # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
+        if self.last_func == LastIterFunc.Joint:
+            return self.joint_frame.sdql_ir
         # if self.last_func == LastIterFunc.JoinPartition:
         #     return self.merge_partition_stmt()
         # if self.last_func == LastIterFunc.JoinProbe:
         #     return self.merge_probe_stmt()
-        if self.last_func == LastIterFunc.Joint:
-            return self.joint_frame.sdql_ir
         else:
             raise ValueError()
