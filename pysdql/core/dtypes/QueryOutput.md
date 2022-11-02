@@ -1,21 +1,29 @@
 # Q1 (Done)
 ```python
-from pysdql.core.dtypes.sdql_ir import *
-
-LetExpr(VarExpr("li_groupby_agg"), 
-        SumExpr(VarExpr("x_li"), 
-                VarExpr("db->li_dataset"), 
-                IfExpr(CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_shipdate'), ConstantExpr(19980902)), 
-                       DicConsExpr([(RecConsExpr([('l_returnflag', RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_returnflag')), 
-                                                  ('l_linestatus', RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_linestatus'))]), 
-                                     RecConsExpr([('sum_qty', RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_quantity')), 
-                                                  ('sum_base_price', RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice')), 
-                                                  ('sum_disc_price', MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_discount')))), ('sum_charge', MulExpr(MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_discount'))), AddExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_tax')))), 
-                                                  ('count_order', ConstantExpr(1))]))]), 
-                       EmptyDicConsExpr()), False), 
-        LetExpr(VarExpr("li_filter_insert_insert_groupby_agg"), 
-                SumExpr(VarExpr("v5"), VarExpr("li_groupby_agg"), DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr("v5"), 0), PairAccessExpr(VarExpr("v5"), 1)), ConstantExpr(True))]), True), 
-                LetExpr(VarExpr("out"), VarExpr("li_filter_insert_insert_groupby_agg"), ConstantExpr(True))))
+li = VarExpr('li')
+x_li = VarExpr('x_li')
+li_groupby_agg = VarExpr('li_groupby_agg')
+li_groupby_agg_concat = VarExpr('li_groupby_agg_concat')
+x_li_groupby_agg = VarExpr('x_li_groupby_agg')
+out = VarExpr('out')
+query = LetExpr(li_groupby_agg, 
+                SumExpr(x_li, 
+                        li, 
+                        IfExpr(CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr(19980902)), 
+                               DicConsExpr([(RecConsExpr([('l_returnflag', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_returnflag')), 
+                                                          ('l_linestatus', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_linestatus'))]), 
+                                             RecConsExpr([('sum_qty', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_quantity')), 
+                                                          ('sum_base_price', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice')), 
+                                                          ('sum_disc_price', MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount')))), 
+                                                          ('sum_charge', MulExpr(MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'))), AddExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_tax')))), 
+                                                          ('count_order', ConstantExpr(1))]))]), 
+                               EmptyDicConsExpr()), 
+                        False), LetExpr(li_groupby_agg_concat, 
+                                        SumExpr(x_li_groupby_agg, 
+                                                li_groupby_agg, 
+                                                DicConsExpr([(ConcatExpr(PairAccessExpr(x_li_groupby_agg, 0), PairAccessExpr(x_li_groupby_agg, 1)), ConstantExpr(True))]), 
+                                                True), 
+                                        LetExpr(out, li_groupby_agg_concat, ConstantExpr(True))))
 ```
 
 # Q3 (Done)
@@ -54,18 +62,20 @@ LetExpr(VarExpr("cu_part"),
 
 # Q6 (Done)
 ```python
-from pysdql.core.dtypes.sdql_ir import *
-
-LetExpr(VarExpr("result"), 
-        SumExpr(VarExpr("x_li"), 
-                VarExpr("db->li_dataset"), 
-                DicConsExpr([(RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice'), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_discount')))]), ConstantExpr(True))]), 
-                False), 
-        LetExpr(VarExpr("out"), VarExpr("result"), ConstantExpr(True)))
-```
-
-```python
-
+li = VarExpr('li')
+x_li = VarExpr('x_li')
+li_groupby_agg = VarExpr('li_groupby_agg')
+li_groupby_agg_concat = VarExpr('li_groupby_agg_concat')
+out = VarExpr('out')
+query = LetExpr(out, 
+                SumExpr(x_li, 
+                        li, 
+                        IfExpr(MulExpr(MulExpr(MulExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr(19940101)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr(19950101))), CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'), ConstantExpr(0.05))), CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'), ConstantExpr(0.07))), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_quantity'), ConstantExpr(24))),
+                               DicConsExpr([('revenue', 
+                                             MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount')))]), 
+                               EmptyDicConsExpr()), 
+                        False), 
+                ConstantExpr(True))
 ```
 
 # Q10

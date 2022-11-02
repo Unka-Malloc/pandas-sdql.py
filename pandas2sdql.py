@@ -21,8 +21,7 @@ def q1(li):
              sum_base_price=("l_extendedprice", "sum"),
              sum_disc_price=("disc_price", "sum"),
              sum_charge=("charge", "sum"),
-             count_order=("l_quantity", "count")
-             )
+             count_order=("l_quantity", "count"))
 
     result.show()
 
@@ -155,8 +154,8 @@ if __name__ == '__main__':
     li = DataFrame()
     pa = DataFrame()
 
-    # q1(li)
-    q4(li, ord)
+    q1(li)
+    # q4(li, ord)
     # q3(cu, ord, li)
     # q6(li)
     # q10(ord, cu, na, li)
