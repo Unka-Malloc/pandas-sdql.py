@@ -50,13 +50,13 @@ class Optimizer:
             'sum_op': ConstantExpr(None),
         }
 
-        vname_groupby_agg = f'{opt_on.name}_groupby_agg'
-        var_groupby_agg = VarExpr(vname_groupby_agg)
-        self.opt_on.add_context_variable(vname_groupby_agg, var_groupby_agg)
+        self.vname_groupby_agg = f'{opt_on.name}_groupby_agg'
+        self.var_groupby_agg = VarExpr(self.vname_groupby_agg)
+        # self.opt_on.add_context_variable(self.vname_groupby_agg, self.var_groupby_agg)
 
-        vname_groupby_agg_concat = f'{opt_on.name}_groupby_agg_concat'
-        var_groupby_agg_concat = VarExpr(vname_groupby_agg_concat)
-        self.opt_on.add_context_variable(vname_groupby_agg_concat, var_groupby_agg_concat)
+        self.vname_groupby_agg_concat = f'{opt_on.name}_groupby_agg_concat'
+        self.var_groupby_agg_concat = VarExpr(self.vname_groupby_agg_concat)
+        # self.opt_on.add_context_variable(self.vname_groupby_agg_concat, self.var_groupby_agg_concat)
 
         self.groupby_aggr_info = {
             'groupby_cols': [],
@@ -65,12 +65,12 @@ class Optimizer:
             'aggr_keys': RecConsExpr([]),
             'aggr_vals': RecConsExpr([]),
 
-            'aggr_var': var_groupby_agg,
+            'aggr_var': self.var_groupby_agg,
             'aggr_el': opt_on.iter_el.sdql_ir,
             'aggr_on': opt_on.var_expr,
             'aggr_op': ConstantExpr(None),
 
-            'let_var': var_groupby_agg_concat,
+            'let_var': self.var_groupby_agg_concat,
             'let_val': ConstantExpr(None),
             'let_next': ConstantExpr(None),
         }
@@ -258,11 +258,21 @@ class Optimizer:
                                                         dictExpr=self.groupby_aggr_info['aggr_on'],
                                                         bodyExpr=self.groupby_aggr_info['aggr_op'])
 
+    def get_groupby_aggr_stmt(self, next_op=None):
+        self.opt_on.add_context_variable(self.vname_groupby_agg, self.var_groupby_agg)
+        self.opt_on.add_context_variable(self.vname_groupby_agg_concat, self.var_groupby_agg_concat)
+        if next_op is None:
+            return LetExpr(varExpr=self.groupby_aggr_info['aggr_var'],
+                           valExpr=self.groupby_aggr_info['let_val'],
+                           bodyExpr=self.groupby_aggr_info['let_next'])
+        else:
+            return LetExpr(varExpr=self.groupby_aggr_info['aggr_var'],
+                           valExpr=self.groupby_aggr_info['let_val'],
+                           bodyExpr=next_op)
+
     @property
     def groupby_aggr_stmt(self) -> LetExpr:
-        return LetExpr(varExpr=self.groupby_aggr_info['aggr_var'],
-                       valExpr=self.groupby_aggr_info['let_val'],
-                       bodyExpr=self.groupby_aggr_info['let_next'])
+        return self.get_groupby_aggr_stmt()
 
     def input(self, op_expr: OpExpr):
         if op_expr.op_type == CondExpr:
@@ -325,17 +335,17 @@ class Optimizer:
             self.opt_on.add_context_variable(vname_concat, var_concat)
             sum_concat = SumExpr(varExpr=var_concat,
                                  dictExpr=self.groupby_aggr_info['aggr_var'],
-                                 bodyExpr=DicConsExpr([(ConcatExpr(PairAccessExpr(vname_concat, 0), PairAccessExpr(vname_concat, 1)), ConstantExpr(True))]),
+                                 bodyExpr=DicConsExpr([(ConcatExpr(PairAccessExpr(var_concat, 0),
+                                                                   PairAccessExpr(var_concat, 1)),
+                                                        ConstantExpr(True))]),
                                  isAssignmentSum=True)
 
             vname_out = 'out'
             var_out = VarExpr(vname_out)
             self.opt_on.add_context_variable(vname_out, var_out)
-            self.groupby_aggr_info['let_next'] = LetExpr(varExpr=self.groupby_aggr_info['let_var'],
+            self.groupby_aggr_info['let_next'] = LetExpr(varExpr=var_out,
                                                          valExpr=sum_concat,
-                                                         bodyExpr=LetExpr(var_out,
-                                                                          self.groupby_aggr_info['let_var'],
-                                                                          ConstantExpr(True)))
+                                                         bodyExpr=ConstantExpr(True))
 
             self.last_func = LastIterFunc.GroupbyAgg
 
@@ -378,12 +388,12 @@ class Optimizer:
 
     @property
     def partition_frame(self):
-        frame = JoinPartitionFrame(self.opt_on)
+        frame = JoinPartitionFrame(iter_on=self.opt_on,
+                                   col_proj=self.col_proj)
 
         frame.add_key(self.join_partition_info['partition_key'])
         if type(self.cond_info['cond_if']) != ConstantExpr:
             frame.add_cond(self.cond_info['cond_if'])
-        frame.add_col_proj(self.col_proj)
 
         return frame
 
@@ -702,6 +712,7 @@ class Optimizer:
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.opt_on.peak()
             if op_expr.ret_type == OperationReturnType.DICT:
+                # Q19 -> this way, sir
                 if self.is_joint:
                     return self.joint_frame.sdql_ir
                 # Q6 -> this way, sir
@@ -715,15 +726,19 @@ class Optimizer:
                                        ConstantExpr(True)))
         if self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
+                # Q3 -> this way, sir
                 return self.joint_frame.sdql_ir
             if self.has_isin:
+                # Q4 -> this way, sir
                 return self.isin_op.get_ref_ir(self.groupby_aggr_stmt)
             else:
                 # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
-        if self.last_func == LastIterFunc.JoinPartition:
-            return self.merge_partition_stmt()
-        if self.last_func == LastIterFunc.JoinProbe:
-            return self.merge_probe_stmt()
+        # if self.last_func == LastIterFunc.JoinPartition:
+        #     return self.merge_partition_stmt()
+        # if self.last_func == LastIterFunc.JoinProbe:
+        #     return self.merge_probe_stmt()
+        if self.last_func == LastIterFunc.Joint:
+            return self.joint_frame.sdql_ir
         else:
             raise ValueError()

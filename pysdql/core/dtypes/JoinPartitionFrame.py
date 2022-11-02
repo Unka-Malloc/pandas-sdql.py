@@ -2,17 +2,18 @@ from pysdql.core.dtypes.sdql_ir import IfExpr, DicConsExpr, RecConsExpr, EmptyDi
 
 
 class JoinPartitionFrame:
-    def __init__(self, iter_on):
+    def __init__(self, iter_on, col_proj):
         self.__group_key = None
         self.__iter_cond = None
-        self.__col_proj = None
+        self.__col_proj = col_proj if col_proj else []
         self.__iter_el = iter_on.iter_el.sdql_ir
         self.__iter_on = iter_on
         self.__var_partition = iter_on.get_var_part()
         self.__next_probe = None
 
     def get_part_col_proj(self):
-        return self.__col_proj
+        if self.__col_proj:
+            return self.__col_proj
 
     @property
     def group_key(self):
@@ -38,9 +39,13 @@ class JoinPartitionFrame:
 
     @property
     def col_proj_ir(self):
-        if self.__col_proj:
-            tmp_col_proj = [col for col in self.__col_proj if self.group_key != col[0]]
-            return RecConsExpr(tmp_col_proj)
+        col_proj = self.get_part_col_proj()
+        if col_proj:
+            tmp_col_proj = [col for col in col_proj if self.group_key != col[0]]
+            if tmp_col_proj:
+                return RecConsExpr(tmp_col_proj)
+            else:
+                return RecConsExpr(col_proj)
         else:
             return RecConsExpr([(self.__group_key,
                                  self.__iter_on.key_access(self.__group_key))])

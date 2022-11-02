@@ -30,6 +30,8 @@ from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.SemiRing import SemiRing
 from pysdql.core.dtypes.IsInExpr import IsInExpr
+from pysdql.core.dtypes.VarBindExpr import VarBindExpr
+from pysdql.core.dtypes.VarBindSeq import VarBindSeq
 
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
@@ -83,15 +85,10 @@ class DataFrame(SemiRing):
         self.__columns_out = columns if columns else []
         self.__columns_used = []
 
-        self.__iter_el = IterEl(f'x_{self.name}')
+        self.__iter_el = IterEl(f'x_{self.get_name()}')
         self.__var_expr = self.init_var_expr()
 
-        if is_joint:
-            self.__var_merge_part = VarExpr(self.name)
-        else:
-            self.__var_merge_part = VarExpr(f'{self.name}_part')
-
-        self.__const_var = {}
+        self.context_constant = {}
 
         self.__is_merged = is_joint
 
@@ -99,6 +96,17 @@ class DataFrame(SemiRing):
         self.context_constant = context_constant if context_constant else {}
 
         self.init_context_variable()
+
+        if is_joint:
+            vname_part = f'{self.get_name()}'
+            self.__var_merge_part = VarExpr(vname_part)
+            self.add_context_variable(vname_part,
+                                      self.__var_merge_part)
+        else:
+            vname_part = f'{self.get_name()}_part'
+            self.__var_merge_part = VarExpr(vname_part)
+            self.add_context_variable(vname_part,
+                                      self.__var_merge_part)
 
     @property
     def is_joint(self):
@@ -108,20 +116,18 @@ class DataFrame(SemiRing):
     def is_merged(self):
         return self.__is_merged
 
-    @property
-    def const_var(self):
-        return self.__const_var
-
     def add_const(self, const):
         if type(const) == str:
-            if const not in self.__const_var.keys():
-                tmp_var_name = (''.join(re.split(r'[^A-Za-z0-9]', const))).lower()
-                self.__const_var[const] = VarExpr(tmp_var_name)
+            if const not in self.context_constant.keys():
+                tmp_vname = (''.join(re.split(r'[^A-Za-z0-9]', const))).lower()
+                tmp_var = VarExpr(tmp_vname)
+                self.context_constant[const] = tmp_var
+                self.context_variable[tmp_vname] = tmp_var
         else:
             raise ValueError
 
     def get_const_var(self, const):
-        return self.__const_var[const]
+        return self.context_constant[const]
 
     def pre_def_var_const(self):
         pass
@@ -135,8 +141,10 @@ class DataFrame(SemiRing):
             return VarExpr("db->ord_dataset")
         if self.name == 'pa':
             return VarExpr("db->pa_dataset")
-        else:
-            return VarExpr(self.name)
+        if self.name == 'su':
+            return VarExpr('db->su_dataset')
+
+        return VarExpr(self.name)
 
     @property
     def var_expr(self):
@@ -182,6 +190,8 @@ class DataFrame(SemiRing):
         if self.name == 'pa':
             return ['p_partkey', 'p_name', 'p_mfgr', 'p_brand', 'p_type', 'p_size', 'p_container', 'p_retailprice',
                     'p_comment']
+        if self.name == 'su':
+            return ['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']
 
         if self.__columns:
             return DataFrameColumns(self, self.__columns)
@@ -234,6 +244,13 @@ class DataFrame(SemiRing):
 
     @property
     def name(self):
+        if self.__name:
+            return self.__name
+        if self.__var_name:
+            return self.__var_name
+        return self.__default_name
+
+    def get_name(self):
         if self.__name:
             return self.__name
         if self.__var_name:
@@ -323,10 +340,9 @@ class DataFrame(SemiRing):
         query = opt.output
 
         last_list = [self.define_variables(),
-                     self.define_constants(),
-                     f'query = {query}']
+                     f'query = {self.define_constants().get_sdql_ir(query)}']
 
-        return ''.join(last_list)
+        return '\n'.join(last_list)
 
     @property
     def sdql_ir(self):
@@ -450,10 +466,24 @@ class DataFrame(SemiRing):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None):
+        next_context_var = {}
+        for k in self.context_variable.keys():
+            next_context_var[k] = self.context_variable[k]
+        for k in right.context_variable.keys():
+            next_context_var[k] = right.context_variable[k]
+
+        next_context_const = {}
+        for k in self.context_constant.keys():
+            next_context_const[k] = self.context_constant[k]
+        for k in right.context_constant.keys():
+            next_context_const[k] = right.context_constant[k]
+
         tmp_name = f'{self.name}_{right.name}'
 
         tmp_df = DataFrame(name=tmp_name,
-                           is_joint=True)
+                           is_joint=True,
+                           context_variable=next_context_var,
+                           context_constant=next_context_const)
 
         merge_expr = MergeExpr(left=self,
                                right=right,
@@ -538,9 +568,6 @@ class DataFrame(SemiRing):
         print(self.cols_out)
         print(f'>> {self.name} Columns(Used) <<')
         print(self.cols_used)
-        # if self.const_var:
-        #     print(f'>> {self.name} Constant Variables <<')
-        #     print(self.const_var)
         if self.context_variable:
             print(f'>> {self.name} Context Variables <<')
             print(self.context_variable)
@@ -735,11 +762,34 @@ class DataFrame(SemiRing):
     def add_context_variable(self, vname, vobj):
         self.context_variable[vname] = vobj
 
+    def init_context_constant(self):
+        pass
+
     def define_variables(self):
         result = ''
-        for vname in self.context_variable:
-            result += f"{vname} = VarExpr('{vname}')\n"
+        for vname in self.context_variable.keys():
+            if vname == 'li':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'cu':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'ord':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'na':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'pa':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'su':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            else:
+                result += f"{vname} = VarExpr('{vname}')\n"
         return result
 
     def define_constants(self):
-        return ''
+        result_seq = VarBindSeq()
+        for const in self.context_constant.keys():
+            result_seq.push(VarBindExpr(var_expr=self.get_const_var(const),
+                                        var_value=ConstantExpr(const)))
+        return result_seq
+
+    def get_groupby_agg(self, next_op=None):
+        return self.get_opt(OptGoal.GroupByAggregation).get_groupby_aggr_stmt(next_op)

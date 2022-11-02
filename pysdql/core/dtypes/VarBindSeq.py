@@ -35,6 +35,16 @@ class VarBindSeq(SDQLIR):
     def peak(self):
         return self.__seq[-1]
 
+    def get_sdql_ir(self, last_binding):
+        if self.seq:
+            result = self.pop()
+            result = result.concat(last_binding)
+            for binding in reversed(self.seq):
+                result = result.fillin(binding)
+            return result.sdql_ir
+        else:
+            return last_binding
+
     def __repr__(self):
         result = ''
         for expr in self.seq:

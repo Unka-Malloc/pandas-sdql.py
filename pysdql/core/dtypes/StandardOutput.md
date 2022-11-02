@@ -23,114 +23,73 @@ LetExpr(VarExpr("lineitem_probed"),
                 LetExpr(VarExpr("out"), VarExpr("results"), ConstantExpr(True))))
 ```
 
-# Q3
 ```python
-from pysdql.core.dtypes.sdql_ir import *
-
-LetExpr(building, 
-        ConstantExpr("BUILDING"), 
-        LetExpr(customer_indexed, 
-                JoinPartitionBuilder(cu, 
-                                     "c_custkey", 
-                                     lambda p: (p.c_mktsegment == building), 
-                                     []
-                ), 
-                LetExpr(order_probed, 
-                        JoinProbeBuilder(customer_indexed, 
-                                         ord, 
-                                         "o_custkey", 
-                                         lambda p: (p.o_orderdate < ConstantExpr(19950315)), 
-                                         lambda indexedDictValue, probeDictKey: 
-                                         DicConsExpr([(probeDictKey.o_orderkey, 
-                                                       RecConsExpr([("o_orderdate", probeDictKey.o_orderdate), 
-                                                                    ("o_shippriority", probeDictKey.o_shippriority)]))]), 
-                                         True), 
-                        LetExpr(lineitem_probed, 
-                                JoinProbeBuilder(order_probed, 
-                                                 li, 
-                                                 "l_orderkey", 
-                                                 lambda p: (p.l_shipdate > ConstantExpr(19950315)), 
-                                                 lambda indexedDictValue, probeDictKey: 
-                                                 DicConsExpr([(RecConsExpr([("l_orderkey", probeDictKey.l_orderkey), 
-                                                                            ("o_orderdate", indexedDictValue.o_orderdate), 
-                                                                            ("o_shippriority", indexedDictValue.o_shippriority)]), 
-                                                               RecConsExpr([("revenue", (probeDictKey.l_extendedprice * (ConstantExpr(1.0) - probeDictKey.l_discount)))]))])), 
-                                LetExpr(results, 
-                                        SumBuilder(lambda p: DicConsExpr([(ConcatExpr(p[0], p[1]), ConstantExpr(True))]), lineitem_probed, True), 
-                                        LetExpr(VarExpr("out"), results, ConstantExpr(True))
-                                )
-                        )
-                )
-        )
-)
+LetExpr(lineitem_probed, 
+        SumExpr(v1, 
+                li, 
+                IfExpr(CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(v1, 0), 'l_shipdate'), ConstantExpr(19980902)), 
+                       DicConsExpr([(RecConsExpr([('l_returnflag', RecAccessExpr(PairAccessExpr(v1, 0), 'l_returnflag')), 
+                                                  ('l_linestatus', RecAccessExpr(PairAccessExpr(v1, 0), 'l_linestatus'))]), 
+                                     RecConsExpr([('sum_qty', RecAccessExpr(PairAccessExpr(v1, 0), 'l_quantity')), 
+                                                  ('sum_base_price', RecAccessExpr(PairAccessExpr(v1, 0), 'l_extendedprice')),
+                                                  ('sum_disc_price', MulExpr(RecAccessExpr(PairAccessExpr(v1, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount')))), 
+                                                  ('sum_charge', MulExpr(MulExpr(RecAccessExpr(PairAccessExpr(v1, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount'))), AddExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v1, 0), 'l_tax')))), 
+                                                  ('count_order', ConstantExpr(1))]))]), 
+                       ConstantExpr(None)), 
+                False), 
+        LetExpr(results, 
+                SumExpr(v3, 
+                        lineitem_probed, 
+                        DicConsExpr([(ConcatExpr(PairAccessExpr(v3, 0), PairAccessExpr(v3, 1)), ConstantExpr(True))]), 
+                        True), 
+                LetExpr(out, results, ConstantExpr(True))))
 ```
 
+# Q3
 ```python
-from pysdql.core.dtypes.sdql_ir import *
-
 LetExpr(building, 
         ConstantExpr("BUILDING"), 
         LetExpr(customer_indexed, 
                 SumExpr(v1, 
-                        db->cu_dataset, 
+                        cu, 
                         IfExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'c_mktsegment'), building), 
-                               DicConsExpr([(
-                                   RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'), 
-                                   RecConsExpr([('c_custkey', RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'))]))]), 
-                               EmptyDicConsExpr()
-                        ), 
-                        True
-                ), 
+                               DicConsExpr([(RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'), 
+                                             RecConsExpr([('c_custkey', RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'))]))]), 
+                               EmptyDicConsExpr()), 
+                        True), 
                 LetExpr(order_probed, 
                         LetExpr(v3, 
                                 customer_indexed, 
                                 SumExpr(v4, 
-                                        db->ord_dataset, 
+                                        ord, 
                                         IfExpr(CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderdate'), ConstantExpr(19950315)), 
                                                IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(v3, RecAccessExpr(PairAccessExpr(v4, 0), 'o_custkey')), ConstantExpr(None)), 
-                                                      DicConsExpr([(
-                                                              RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderkey'), 
-                                                              RecConsExpr([('o_orderdate', RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderdate')), 
-                                                                           ('o_shippriority', RecAccessExpr(PairAccessExpr(v4, 0), 'o_shippriority'))])
-                                                      )]), 
-                                                      EmptyDicConsExpr()
-                                               ), 
-                                               EmptyDicConsExpr()
-                                        ), 
-                                        True
-                                )
-                        ), 
+                                                      DicConsExpr([(RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderkey'), 
+                                                                    RecConsExpr([('o_orderdate', RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderdate')), 
+                                                                                 ('o_shippriority', RecAccessExpr(PairAccessExpr(v4, 0), 'o_shippriority'))]))]), 
+                                                      EmptyDicConsExpr()), 
+                                               EmptyDicConsExpr()), 
+                                        True)), 
                         LetExpr(lineitem_probed, 
                                 LetExpr(v6, 
                                         order_probed, 
                                         SumExpr(v7, 
-                                                db->li_dataset, 
+                                                li, 
                                                 IfExpr(CompareExpr(CompareSymbol.GT, RecAccessExpr(PairAccessExpr(v7, 0), 'l_shipdate'), ConstantExpr(19950315)), 
                                                        IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), ConstantExpr(None)), 
-                                                              DicConsExpr([(
-                                                                  RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 
-                                                                               ('o_orderdate', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_orderdate')), 
-                                                                               ('o_shippriority', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_shippriority'))]), 
-                                                                  RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(v7, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v7, 0), 'l_discount'))))])
-                                                              )]), 
-                                                              EmptyDicConsExpr()
-                                                       ), 
-                                                       EmptyDicConsExpr()
-                                                ), 
-                                                False
-                                        )
-                                ), 
+                                                              DicConsExpr([(RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 
+                                                                                         ('o_orderdate', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_orderdate')), 
+                                                                                         ('o_shippriority', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_shippriority'))]), 
+                                                                            RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(v7, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v7, 0), 'l_discount'))))]))]), 
+                                                              EmptyDicConsExpr()), 
+                                                       EmptyDicConsExpr()), 
+                                                False)), 
                                 LetExpr(results, 
                                         SumExpr(v9, 
                                                 lineitem_probed, 
                                                 DicConsExpr([(ConcatExpr(PairAccessExpr(v9, 0), PairAccessExpr(v9, 1)), ConstantExpr(True))]), 
                                                 True), 
-                                        LetExpr(out, results, ConstantExpr(True))
-                                )
-                        )
-                )
-        )
-)
+                                        LetExpr(out, results, ConstantExpr(True)))))))
 ```
 
 # Q4
@@ -176,22 +135,6 @@ LetExpr(VarExpr("results"),
                        ConstantExpr(0.0)), 
                 False), 
         LetExpr(VarExpr("out"), VarExpr("results"), ConstantExpr(True)))
-)
-```
-
-```python
-from pysdql.core.dtypes.sdql_ir import *
-
-LetExpr(results, 
-        SumExpr(v1, 
-                db->li_dataset, 
-                IfExpr(MulExpr(MulExpr(MulExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(v1, 0), 'l_shipdate'), ConstantExpr(19940101)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(v1, 0), 'l_shipdate'), ConstantExpr(19950101))), CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount'), ConstantExpr(0.05))), CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount'), ConstantExpr(0.07))), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(v1, 0), 'l_quantity'), ConstantExpr(24.0))), 
-                       MulExpr(RecAccessExpr(PairAccessExpr(v1, 0), 'l_extendedprice'), RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount')), 
-                       ConstantExpr(0.0)), 
-        False
-        ),
-        LetExpr(out, results, ConstantExpr(True))
-)
 ```
 
 # Q10
@@ -274,6 +217,95 @@ LetExpr(VarExpr("r"),
                                                 LetExpr(VarExpr("out"), 
                                                         VarExpr("results"), 
                                                         ConstantExpr(True))))))))
+```
+
+# Q15
+```python
+LetExpr(li_aggr, 
+        SumExpr(v1, 
+                li,
+                IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(v1, 0), 'l_shipdate'), ConstantExpr(19960101)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(v1, 0), 'l_shipdate'), ConstantExpr(19960401))), 
+                       DicConsExpr([(RecAccessExpr(PairAccessExpr(v1, 0), 'l_suppkey'), 
+                                     MulExpr(RecAccessExpr(PairAccessExpr(v1, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v1, 0), 'l_discount'))))]), 
+                       ConstantExpr(None)), 
+                False), 
+        LetExpr(max_revenue, 
+                ConstantExpr(1772627.2087), 
+                LetExpr(su_indexed, 
+                        SumExpr(v3, 
+                                su, 
+                                IfExpr(ConstantExpr(True), 
+                                       DicConsExpr([(RecAccessExpr(PairAccessExpr(v3, 0), 's_suppkey'), 
+                                                     RecConsExpr([('s_name', RecAccessExpr(PairAccessExpr(v3, 0), 's_name')), 
+                                                                  ('s_address', RecAccessExpr(PairAccessExpr(v3, 0), 's_address')), 
+                                                                  ('s_phone', RecAccessExpr(PairAccessExpr(v3, 0), 's_phone'))]))]), 
+                                       EmptyDicConsExpr()), 
+                                True), 
+                        LetExpr(results, 
+                                SumExpr(v5, 
+                                        li_aggr,
+                                        IfExpr(CompareExpr(CompareSymbol.EQ, PairAccessExpr(v5, 1), max_revenue), 
+                                               DicConsExpr([(RecConsExpr([('s_suppkey', PairAccessExpr(v5, 0)), 
+                                                                          ('s_name', RecAccessExpr(DicLookupExpr(su_indexed, PairAccessExpr(v5, 0)), 's_name')), 
+                                                                          ('s_address', RecAccessExpr(DicLookupExpr(su_indexed, PairAccessExpr(v5, 0)), 's_address')),
+                                                                          ('s_phone', RecAccessExpr(DicLookupExpr(su_indexed, PairAccessExpr(v5, 0)), 's_phone')), 
+                                                                          ('total_revenue', PairAccessExpr(v5, 1))]), 
+                                                             ConstantExpr(True))]), 
+                                               ConstantExpr(None)), 
+                                        True), 
+                                LetExpr(out, results, ConstantExpr(True))))))
+```
+
+# Q16
+```python
+LetExpr(brand45, ConstantExpr("Brand#45"), 
+        LetExpr(medpol, ConstantExpr("MEDIUM POLISHED"), 
+                LetExpr(Customer, ConstantExpr("Customer"), 
+                        LetExpr(complaints, ConstantExpr("Complaints"), 
+                                LetExpr(part_indexed, 
+                                        SumExpr(v1, 
+                                                pa, 
+                                                IfExpr(MulExpr(MulExpr(CompareExpr(CompareSymbol.NE, RecAccessExpr(PairAccessExpr(v1, 0), 'p_brand'), brand45), CompareExpr(CompareSymbol.EQ, ExtFuncExpr(ExtFuncSymbol.StartsWith, RecAccessExpr(PairAccessExpr(v1, 0), 'p_type'), medpol, ConstantExpr("Nothing!")), ConstantExpr(False))), AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(49)), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(14))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(23))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(45))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(19))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(3))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(36))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'), ConstantExpr(9)))), 
+                                                       DicConsExpr([(RecAccessExpr(PairAccessExpr(v1, 0), 'p_partkey'), 
+                                                                     RecConsExpr([('p_brand', RecAccessExpr(PairAccessExpr(v1, 0), 'p_brand')), 
+                                                                                  ('p_type', RecAccessExpr(PairAccessExpr(v1, 0), 'p_type')), 
+                                                                                  ('p_size', RecAccessExpr(PairAccessExpr(v1, 0), 'p_size'))]))]), 
+                                                       EmptyDicConsExpr()), 
+                                                True), 
+                                        LetExpr(su_indexed, 
+                                                SumExpr(v3,
+                                                        su,
+                                                        IfExpr(MulExpr(CompareExpr(CompareSymbol.NE, ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(v3, 0), 's_comment'), Customer, ConstantExpr("Nothing!")), MulExpr(ConstantExpr(-1), ConstantExpr(1))), 
+                                                                       CompareExpr(CompareSymbol.GT, ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(v3, 0), 's_comment'), complaints, ConstantExpr("Nothing!")), 
+                                                                                   AddExpr(ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(v3, 0), 's_comment'), Customer, ConstantExpr("Nothing!")), ConstantExpr(7)))), 
+                                                               DicConsExpr([(RecAccessExpr(PairAccessExpr(v3, 0), 's_suppkey'), 
+                                                                             RecConsExpr([('s_suppkey', RecAccessExpr(PairAccessExpr(v3, 0), 's_suppkey'))]))]), 
+                                                               EmptyDicConsExpr()), 
+                                                        True), 
+                                                LetExpr(partsupp_probe, 
+                                                        LetExpr(v5, 
+                                                                part_indexed, 
+                                                                SumExpr(v6, 
+                                                                        ps, 
+                                                                        IfExpr(ConstantExpr(True), 
+                                                                               IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(v5, RecAccessExpr(PairAccessExpr(v6, 0), 'ps_partkey')), ConstantExpr(None)), 
+                                                                                      IfExpr(CompareExpr(CompareSymbol.EQ, DicLookupExpr(su_indexed, RecAccessExpr(PairAccessExpr(v6, 0), 'ps_suppkey')), ConstantExpr(None)), 
+                                                                                             DicConsExpr([(RecConsExpr([('p_brand', RecAccessExpr(DicLookupExpr(v5, RecAccessExpr(PairAccessExpr(v6, 0), 'ps_partkey')), 'p_brand')),
+                                                                                                                        ('p_type', RecAccessExpr(DicLookupExpr(v5, RecAccessExpr(PairAccessExpr(v6, 0), 'ps_partkey')), 'p_type')),
+                                                                                                                        ('p_size', RecAccessExpr(DicLookupExpr(v5, RecAccessExpr(PairAccessExpr(v6, 0), 'ps_partkey')), 'p_size'))]),
+                                                                                                           DicConsExpr([(RecAccessExpr(PairAccessExpr(v6, 0), 'ps_suppkey'), 
+                                                                                                                         ConstantExpr(True))]))]), 
+                                                                                             ConstantExpr(None)), 
+                                                                                      EmptyDicConsExpr()),
+                                                                               EmptyDicConsExpr()),
+                                                                        False)), 
+                                                        LetExpr(results,
+                                                                SumExpr(v8, 
+                                                                        partsupp_probe, 
+                                                                        DicConsExpr([(ConcatExpr(PairAccessExpr(v8, 0), RecConsExpr([('supplier_cnt', ExtFuncExpr(ExtFuncSymbol.DictSize, PairAccessExpr(v8, 1), ConstantExpr("Nothing!"), ConstantExpr("Nothing!")))])), 
+                                                                                      ConstantExpr(True))]), 
+                                                                        False), 
+                                                                LetExpr(out, results, ConstantExpr(True))))))))))
 ```
 
 # Q19

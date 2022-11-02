@@ -1,3 +1,6 @@
+from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.CondExpr import CondExpr
+
 class JoinProbeFrame:
     def __init__(self, iter_on):
         self.__probe_key = None
@@ -8,6 +11,30 @@ class JoinProbeFrame:
         self.__iter_op = None
         self.__partition_frame = None
         self.__next_op = None
+
+    def get_groupby_cols(self):
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == GroupByAgg:
+                return op_expr.op.groupby_cols
+        else:
+            raise ValueError()
+
+    def get_aggr_dict(self):
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == GroupByAgg:
+                return op_expr.op.agg_dict
+        else:
+            raise ValueError()
+
+    def get_cond_after_groupby_agg(self):
+        groupby_agg_located = False
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == GroupByAgg:
+                groupby_agg_located = True
+            if op_expr.op_type == CondExpr:
+                if groupby_agg_located:
+                    return op_expr.op
+        return None
 
     def get_probe_col_proj(self):
         return self.__col_proj
@@ -34,6 +61,13 @@ class JoinProbeFrame:
     @property
     def is_joint(self):
         return self.probe_on.is_joint
+
+    @property
+    def was_groupby_agg(self):
+        for op_expr in self.__iter_on.operations:
+            if op_expr.op_type == GroupByAgg:
+                return True
+        return False
 
     def add_key(self, val):
         self.__probe_key = val

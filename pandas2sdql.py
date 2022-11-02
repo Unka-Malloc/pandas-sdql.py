@@ -110,6 +110,85 @@ def q10(ord, cu, na, li):
     return result.optimize()
 
 
+def q14(li, pa):
+    # # pa_filt = pa[pa.p_type.str.startswith("PROMO")]
+    # # pa_filt = pa_filt.set_index(["p_partkey"])
+
+    # # li_filt = li[(lineitem.l_shipdate >= "1995-09-01") & (li.l_shipdate < "1995-10-01")]
+
+    # # li_filt["A"] = li_filt.apply(lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["l_partkey"] in pa_filt.index else 0, axis=1)
+    # # li_filt["B"] = li_filt.l_extendedprice * (1 - li_filt.l_discount)
+
+    # # result = 100 * li_filt.A.sum() / li_filt.B.sum()
+    # # return result
+
+    li_filt = li[(lineitem.l_shipdate >= "1995-09-01") & (li.l_shipdate < "1995-10-01")]
+    pa_proj = pa[["p_partkey", "p_type"]]
+    li_pa_join = pd.merge(pa_proj, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
+    li_pa_join["A"] = li_pa_join.apply(
+        lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
+    li_pa_join["B"] = li_pa_join.l_extendedprice * (1 - li_pa_join.l_discount)
+
+    result = li_pa_join.A.sum() / li_pa_join.B.sum() * 100
+
+    result.show()
+
+    return result.optimize()
+
+
+def q15(li, su):
+    li_filt = li[(li.l_shipdate >= "1996-01-01") & (li.l_shipdate < "1996-04-01")]
+    li_filt["revenue"] = li_filt.l_extendedprice * (1 - li_filt.l_discount)
+
+    li_aggr = li_filt \
+        .groupby(["l_suppkey"]) \
+        .agg(total_revenue=("revenue", "sum"))
+    li_aggr = li_aggr[li_aggr.total_revenue == 1772627.2087]
+
+    su_proj = su[["s_suppkey", "s_name", "s_address", "s_phone"]]
+    li_su_join = pd.merge(su_proj, li_aggr, left_on="s_suppkey", right_on="l_suppkey", how="inner")
+
+    result = li_su_join[["s_suppkey", "s_name", "s_address", "s_phone", "total_revenue"]]
+
+    result.show()
+
+    return result.optimize()
+
+
+def q16_pandas(ps, pa, su):
+    pa_filt = pa[
+        (pa.p_brand != "Brand#45") &
+        (pa.p_type.str.startswith("MEDIUM POLISHED") == False) &
+        (
+                (pa.p_size == 49) |
+                (pa.p_size == 14) |
+                (pa.p_size == 23) |
+                (pa.p_size == 45) |
+                (pa.p_size == 19) |
+                (pa.p_size == 3) |
+                (pa.p_size == 36) |
+                (pa.p_size == 9)
+        )]
+    pa_proj = pa_filt[["p_partkey", "p_brand", "p_type", "p_size"]]
+
+    su_filt = su[
+        su.s_comment.str.contains("Customer") & (su.s_comment.str.find("Customer") + 7) < su.s_comment.str.find(
+            "Complaints")]
+    su_proj = su_filt[["s_suppkey"]]
+
+    ps_filt = ps[~ps.ps_suppkey.isin(su_proj["s_suppkey"])]
+
+    ps_pa_join = pd.merge(pa_proj, ps_filt, left_on="p_partkey", right_on="ps_partkey", how="inner")
+
+    result = ps_pa_join \
+        .groupby(["p_brand", "p_type", "p_size"]) \
+        .agg(supplier_cnt=("ps_suppkey", lambda x: x.nunique()))
+
+    result.show()
+
+    return result.optimize()
+
+
 def q19(pa, li):
     pa_filt = pa[
         ((pa.p_brand == "Brand#12")
@@ -153,17 +232,12 @@ if __name__ == '__main__':
     na = DataFrame()
     li = DataFrame()
     pa = DataFrame()
+    su = DataFrame()
 
-    q1(li)
+    # q1(li)
     # q4(li, ord)
     # q3(cu, ord, li)
     # q6(li)
     # q10(ord, cu, na, li)
     # q19(pa, li)
-
-    # li = DataFrame()
-    # PrintAST((li.l_shipdate >= "1994-01-01") &
-    # (li.l_shipdate < "1995-01-01") &
-    # (li.l_discount >= 0.05) &
-    # (li.l_discount <= 0.07) &
-    # (li.l_quantity < 24))
+    q15(li, su)
