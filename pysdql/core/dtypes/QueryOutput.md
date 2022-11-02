@@ -105,56 +105,84 @@ query = LetExpr(out,
 
 # Q10
 ```python
-from pysdql.core.dtypes.sdql_ir import *
+na = VarExpr('db->na_dataset')
+x_na = VarExpr('x_na')
+na_part = VarExpr('na_part')
+cu = VarExpr('db->cu_dataset')
+x_cu = VarExpr('x_cu')
+cu_part = VarExpr('cu_part')
+ord = VarExpr('db->ord_dataset')
+x_ord = VarExpr('x_ord')
+ord_part = VarExpr('ord_part')
+cu_ord = VarExpr('cu_ord')
+x_cu_ord = VarExpr('x_cu_ord')
+na_cu_ord = VarExpr('na_cu_ord')
+x_na_cu_ord = VarExpr('x_na_cu_ord')
+li = VarExpr('db->li_dataset')
+x_li = VarExpr('x_li')
+li_part = VarExpr('li_part')
+r = VarExpr('r')
+na_cu_ord_li = VarExpr('na_cu_ord_li')
+x_na_cu_ord_li = VarExpr('x_na_cu_ord_li')
+x_na_cu_ord_li_groupby_agg = VarExpr('x_na_cu_ord_li_groupby_agg')
+out = VarExpr('out')
 
-LetExpr(VarExpr("ord_part"), 
-        SumExpr(VarExpr("x_ord"), 
-                VarExpr("db->ord_dataset"), 
-                IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate'), ConstantExpr(19931001)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate'), ConstantExpr(19940101))), 
-                       DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderkey'), 
-                                     RecConsExpr([('c_custkey', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_custkey')), 
-                                                  ('c_name', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_name')), 
-                                                  ('c_acctbal', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_acctbal')), 
-                                                  ('c_phone', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_phone')), 
-                                                  ('n_name', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'n_name')), 
-                                                  ('c_address', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_address')), 
-                                                  ('c_comment', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_comment'))]))]), 
-                       EmptyDicConsExpr()), 
-                True), LetExpr(VarExpr("ord_probe"), 
-                               SumExpr(VarExpr("x_ord"), 
-                                       VarExpr("db->ord_dataset"), 
-                                       IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate'), ConstantExpr(19931001)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderdate'), ConstantExpr(19940101))), 
-                                              IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(VarExpr("ord_part"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'l_orderkey')), ConstantExpr(None)), 
-                                                     DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'o_orderkey'), 
-                                                                   RecConsExpr([('c_custkey', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_custkey')), 
-                                                                                ('c_name', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_name')), 
-                                                                                ('c_acctbal', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_acctbal')), 
-                                                                                ('c_phone', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_phone')), 
-                                                                                ('n_name', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'n_name')), 
-                                                                                ('c_address', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_address')), 
-                                                                                ('c_comment', RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_comment'))]))]), 
-                                                     EmptyDicConsExpr()), 
-                                              EmptyDicConsExpr()), 
-                                       False), LetExpr(VarExpr("li_probe"), 
-                                                       SumExpr(VarExpr("x_li"), 
-                                                               VarExpr("db->li_dataset"), 
-                                                               IfExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_returnflag'), VarExpr("R")), 
-                                                                      IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(VarExpr("db->li_dataset"), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_orderkey')), ConstantExpr(None)), 
-                                                                             DicConsExpr([(RecConsExpr([('c_custkey', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_custkey')), 'c_custkey')),
-                                                                                                        ('c_name', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_name')), 'c_name')), 
-                                                                                                        ('c_acctbal', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_acctbal')), 'c_acctbal')), 
-                                                                                                        ('c_phone', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_phone')), 'c_phone')), 
-                                                                                                        ('n_name', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'n_name')), 'n_name')), 
-                                                                                                        ('c_address', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_address')), 'c_address')), 
-                                                                                                        ('c_comment', RecAccessExpr(DicLookupExpr(VarExpr("ord_probe"), RecAccessExpr(PairAccessExpr(VarExpr("x_ord"), 0), 'c_comment')), 'c_comment'))]), 
-                                                                                           RecConsExpr([('sum_revenue', MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(VarExpr("x_li"), 0), 'l_discount'))))]))]), 
-                                                                             EmptyDicConsExpr()), 
-                                                                      EmptyDicConsExpr()), 
-                                                               False), 
-                                                       LetExpr(VarExpr("result"), 
-                                                               SumExpr(VarExpr("v5"), 
-                                                                       VarExpr("li_probe"), 
-                                                                       DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr("v5"), 0), PairAccessExpr(VarExpr("v5"), 1)), ConstantExpr(True))]), True), LetExpr(VarExpr("out"), VarExpr("result"), ConstantExpr(True))))))
+query = LetExpr(r, ConstantExpr("R"), 
+                LetExpr(na_part, 
+                        SumExpr(x_na, 
+                                na, 
+                                DicConsExpr([(RecAccessExpr(PairAccessExpr(x_na, 0), 'n_nationkey'), 
+                                              RecConsExpr([('n_name', RecAccessExpr(PairAccessExpr(x_na, 0), 'n_name'))]))]), 
+                                True), 
+                        LetExpr(cu_part, 
+                                SumExpr(x_cu, 
+                                        cu, 
+                                        DicConsExpr([(RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_custkey'), 
+                                                      RecConsExpr([('c_name', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_name')),
+                                                                   ('c_acctbal', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_acctbal')), 
+                                                                   ('c_address', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_address')), 
+                                                                   ('c_nationkey', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_nationkey')),
+                                                                   ('c_phone', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_phone')), 
+                                                                   ('c_comment', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_comment'))]))]),
+                                        True), 
+                                LetExpr(cu_ord,
+                                        SumExpr(x_ord, 
+                                                ord, 
+                                                IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderdate'), ConstantExpr(19931001)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderdate'), ConstantExpr(19940101))), 
+                                                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), ConstantExpr(None)), 
+                                                              DicConsExpr([(RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderkey'), 
+                                                                            RecConsExpr([('c_custkey', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_custkey')),
+                                                                                         ('c_name', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_name')), 
+                                                                                         ('c_acctbal', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_acctbal')), 
+                                                                                         ('c_address', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_address')),
+                                                                                         ('c_phone', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_phone')), 
+                                                                                         ('c_comment', RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_comment')),
+                                                                                         ('n_name', RecAccessExpr(DicLookupExpr(na_part, RecAccessExpr(DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'c_nationkey')), 'n_name'))]))]),
+                                                              EmptyDicConsExpr()),
+                                                       EmptyDicConsExpr()), 
+                                                False), 
+                                        LetExpr(na_cu_ord_li, 
+                                                SumExpr(x_li, 
+                                                        li, 
+                                                        IfExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_returnflag'), r), 
+                                                               IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), ConstantExpr(None)), 
+                                                                      DicConsExpr([(RecConsExpr([('c_custkey', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_custkey')),
+                                                                                                 ('c_name', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_name')), 
+                                                                                                 ('c_acctbal', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_acctbal')), 
+                                                                                                 ('c_phone', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_phone')), 
+                                                                                                 ('n_name', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'n_name')),
+                                                                                                 ('c_address', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_address')), 
+                                                                                                 ('c_comment', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_comment'))]), 
+                                                                                    RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'))))]))]),
+                                                                      EmptyDicConsExpr()),
+                                                               EmptyDicConsExpr()), 
+                                                        False), 
+                                                LetExpr(out, 
+                                                        SumExpr(x_na_cu_ord_li, 
+                                                                na_cu_ord_li, 
+                                                                DicConsExpr([(ConcatExpr(PairAccessExpr(x_na_cu_ord_li, 0), PairAccessExpr(x_na_cu_ord_li, 1)), ConstantExpr(True))]),
+                                                                True), 
+                                                        ConstantExpr(True)))))))
 ```
 
 # Q15

@@ -472,8 +472,6 @@ class DataFrame(SemiRing):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None):
-        if not right:
-            print(self.name)
         next_context_var = {}
         for k in self.context_variable.keys():
             next_context_var[k] = self.context_variable[k]
