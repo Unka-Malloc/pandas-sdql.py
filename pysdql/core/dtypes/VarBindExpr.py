@@ -26,6 +26,8 @@ class VarBindExpr(SDQLIR):
     def concat(self, other):
         if type(other) == VarBindExpr:
             return VarBindExpr(self.var_expr, self.var_value, other.sdql_ir)
+        if type(other) == LetExpr:
+            return VarBindExpr(self.var_expr, self.var_value, other)
         raise ValueError()
 
     def fillin(self, other):

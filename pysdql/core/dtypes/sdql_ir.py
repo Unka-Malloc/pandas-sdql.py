@@ -1011,6 +1011,9 @@ class ExtFuncExpr(Expr):
     def printInnerVals(self):
         return " | " + "type: " + str(self.symbol)
 
+    def __repr__(self):
+        return f'ExtFuncExpr({self.symbol}, {self.inp1}, {self.inp2}, {self.inp3})'
+
 
 # AST Helper Functions #####################################
 

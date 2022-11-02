@@ -1,5 +1,4 @@
-from pysdql.core.dtypes.sdql_ir import VarExpr, LetExpr, ConstantExpr, JoinPartitionBuilder, DicConsExpr, RecConsExpr, \
-    JoinProbeBuilder, SumBuilder, ConcatExpr, IfExpr
+from pysdql.core.dtypes.sdql_ir import *
 
 def q1():
     lineitem_probed = VarExpr("lineitem_probed")
@@ -343,6 +342,200 @@ def q10():
 
     print(q10)
 
+def q15():
+    li_aggr = VarExpr("li_aggr")
+    max_revenue = VarExpr("max_revenue")
+    su_indexed = VarExpr("su_indexed")
+    results = VarExpr("results")
+
+    li = VarExpr("db->li_dataset")
+    su = VarExpr("db->su_dataset")
+
+    q15 = LetExpr(li_aggr, SumBuilder(
+        lambda p: IfExpr((((p[0].l_shipdate >= ConstantExpr(19960101))) * ((p[0].l_shipdate < ConstantExpr(19960401)))),
+                         DicConsExpr(
+                             [(p[0].l_suppkey, (p[0].l_extendedprice * (ConstantExpr(1.0) - p[0].l_discount)))]),
+                         ConstantExpr(None)), li, ), LetExpr(max_revenue, ConstantExpr(1772627.2087),
+                                                             LetExpr(su_indexed, JoinPartitionBuilder(su, "s_suppkey",
+                                                                                                      lambda
+                                                                                                          p: ConstantExpr(
+                                                                                                          True),
+                                                                                                      ["s_name",
+                                                                                                       "s_address",
+                                                                                                       "s_phone"]),
+                                                                     LetExpr(results, SumBuilder(
+                                                                         lambda p: IfExpr((p[1] == max_revenue),
+                                                                                          DicConsExpr([(RecConsExpr(
+                                                                                              [("s_suppkey", p[0]), (
+                                                                                              "s_name",
+                                                                                              su_indexed[p[0]].s_name),
+                                                                                               ("s_address", su_indexed[
+                                                                                                   p[0]].s_address), (
+                                                                                               "s_phone", su_indexed[
+                                                                                                   p[0]].s_phone), (
+                                                                                               "total_revenue", p[1])]),
+                                                                                                        ConstantExpr(
+                                                                                                            True))]),
+                                                                                          ConstantExpr(None)), li_aggr,
+                                                                         True), LetExpr(VarExpr("out"), results,
+                                                                                        ConstantExpr(True))))))
+    print(q15)
+
+def q16():
+    brand45 = VarExpr("brand45")
+    medpol = VarExpr("medpol")
+    Customer = VarExpr("Customer")
+    complaints = VarExpr("complaints")
+    part_indexed = VarExpr("part_indexed")
+    su_indexed = VarExpr("su_indexed")
+    partsupp_probe = VarExpr("partsupp_probe")
+    results = VarExpr("results")
+
+    ps = VarExpr("db->ps_dataset")
+    pa = VarExpr("db->pa_dataset")
+    su = VarExpr("db->su_dataset")
+
+    q16 = LetExpr(brand45, ConstantExpr("Brand#45"), LetExpr(medpol, ConstantExpr("MEDIUM POLISHED"),
+                                                             LetExpr(Customer, ConstantExpr("Customer"),
+                                                                     LetExpr(complaints, ConstantExpr("Complaints"),
+                                                                             LetExpr(part_indexed,
+                                                                                     JoinPartitionBuilder(pa,
+                                                                                                          "p_partkey",
+                                                                                                          lambda p: (((
+                                                                                                                      p.p_brand != brand45)) * (
+                                                                                                                     (
+                                                                                                                                 ExtFuncExpr(
+                                                                                                                                     ExtFuncSymbol.StartsWith,
+                                                                                                                                     p.p_type,
+                                                                                                                                     medpol,
+                                                                                                                                     ConstantExpr(
+                                                                                                                                         "Nothing!")) == ConstantExpr(
+                                                                                                                             False))) * (
+                                                                                                                     (((
+                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                             49))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              14))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              23))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              45))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              19))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              3))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              36))) + (
+                                                                                                                      (
+                                                                                                                                  p.p_size == ConstantExpr(
+                                                                                                                              9)))))),
+                                                                                                          ["p_brand",
+                                                                                                           "p_type",
+                                                                                                           "p_size"]),
+                                                                                     LetExpr(su_indexed,
+                                                                                             JoinPartitionBuilder(su,
+                                                                                                                  "s_suppkey",
+                                                                                                                  lambda
+                                                                                                                      p: (
+                                                                                                                              (
+                                                                                                                              (
+                                                                                                                                          ExtFuncExpr(
+                                                                                                                                              ExtFuncSymbol.FirstIndex,
+                                                                                                                                              p.s_comment,
+                                                                                                                                              Customer,
+                                                                                                                                              ConstantExpr(
+                                                                                                                                                  "Nothing!")) != ConstantExpr(
+                                                                                                                                      -1) * (
+                                                                                                                                              ConstantExpr(
+                                                                                                                                                  1)))) * (
+                                                                                                                              (
+                                                                                                                                          ExtFuncExpr(
+                                                                                                                                              ExtFuncSymbol.FirstIndex,
+                                                                                                                                              p.s_comment,
+                                                                                                                                              complaints,
+                                                                                                                                              ConstantExpr(
+                                                                                                                                                  "Nothing!")) > (
+                                                                                                                                                      ExtFuncExpr(
+                                                                                                                                                          ExtFuncSymbol.FirstIndex,
+                                                                                                                                                          p.s_comment,
+                                                                                                                                                          Customer,
+                                                                                                                                                          ConstantExpr(
+                                                                                                                                                              "Nothing!")) + ConstantExpr(
+                                                                                                                                                  7))))),
+                                                                                                                  []),
+                                                                                             LetExpr(partsupp_probe,
+                                                                                                     JoinProbeBuilder(
+                                                                                                         part_indexed,
+                                                                                                         ps,
+                                                                                                         "ps_partkey",
+                                                                                                         lambda
+                                                                                                             p: ConstantExpr(
+                                                                                                             True),
+                                                                                                         lambda
+                                                                                                             indexedDictValue,
+                                                                                                             probeDictKey: IfExpr(
+                                                                                                             (
+                                                                                                                         su_indexed[
+                                                                                                                             probeDictKey.ps_suppkey] == ConstantExpr(
+                                                                                                                     None)),
+                                                                                                             DicConsExpr(
+                                                                                                                 [(
+                                                                                                                  RecConsExpr(
+                                                                                                                      [(
+                                                                                                                       "p_brand",
+                                                                                                                       indexedDictValue.p_brand),
+                                                                                                                       (
+                                                                                                                       "p_type",
+                                                                                                                       indexedDictValue.p_type),
+                                                                                                                       (
+                                                                                                                       "p_size",
+                                                                                                                       indexedDictValue.p_size)]),
+                                                                                                                  DicConsExpr(
+                                                                                                                      [(
+                                                                                                                       probeDictKey.ps_suppkey,
+                                                                                                                       ConstantExpr(
+                                                                                                                           True))]))]),
+                                                                                                             ConstantExpr(
+                                                                                                                 None)),
+                                                                                                         False),
+                                                                                                     LetExpr(results,
+                                                                                                             SumBuilder(
+                                                                                                                 lambda
+                                                                                                                     p: DicConsExpr(
+                                                                                                                     [(
+                                                                                                                      ConcatExpr(
+                                                                                                                          p[
+                                                                                                                              0],
+                                                                                                                          RecConsExpr(
+                                                                                                                              [
+                                                                                                                                  (
+                                                                                                                                  "supplier_cnt",
+                                                                                                                                  ExtFuncExpr(
+                                                                                                                                      ExtFuncSymbol.DictSize,
+                                                                                                                                      p[
+                                                                                                                                          1],
+                                                                                                                                      ConstantExpr(
+                                                                                                                                          "Nothing!"),
+                                                                                                                                      ConstantExpr(
+                                                                                                                                          "Nothing!")))])),
+                                                                                                                      ConstantExpr(
+                                                                                                                          True))]),
+                                                                                                                 partsupp_probe, ),
+                                                                                                             LetExpr(
+                                                                                                                 VarExpr(
+                                                                                                                     "out"),
+                                                                                                                 results,
+                                                                                                                 ConstantExpr(
+                                                                                                                     True))))))))))
+
+    print(q16)
+
 def q19():
     brand12 = VarExpr("brand12")
     brand23 = VarExpr("brand23")
@@ -584,9 +777,11 @@ def q19():
 
 
 if __name__ == '__main__':
-    q1()
+    # q1()
     # q3()
     # q4()
     # q6()
     # q10()
+    q15()
+    # q16()
     # q19()

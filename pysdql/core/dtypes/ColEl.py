@@ -193,7 +193,7 @@ class ColEl(SDQLIR):
         if operator == CompareSymbol.EQ:
             if type(unit2) == str:
                 self.add_const(unit2)
-                return CondExpr(unit1=self, operator=operator, unit2=unit2)
+                return CondExpr(unit1=self, operator=operator, unit2=self.get_const_var(unit2))
             return CondExpr(unit1=self,
                             operator=operator,
                             unit2=unit2)
