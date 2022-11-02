@@ -63,7 +63,8 @@ class DataFrame(SemiRing):
                  operations=None,
                  is_joint=False,
                  context_variable=None,
-                 context_constant=None):
+                 context_constant=None,
+                 context_unopt=None):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -105,7 +106,7 @@ class DataFrame(SemiRing):
         self.unopt_count = 0
         self.unopt_vars = {}
         self.unopt_consts = {}
-        self.unopt_list = []
+        self.unopt_list = context_unopt if context_unopt else []
 
     @property
     def is_joint(self):
@@ -484,12 +485,15 @@ class DataFrame(SemiRing):
         for k in right.context_constant.keys():
             next_context_const[k] = right.context_constant[k]
 
+        next_context_unopt = self.unopt_list + right.unopt_list
+
         tmp_name = f'{self.name}_{right.name}'
 
         tmp_df = DataFrame(name=tmp_name,
                            is_joint=True,
                            context_variable=next_context_var,
-                           context_constant=next_context_const)
+                           context_constant=next_context_const,
+                           context_unopt=next_context_unopt)
 
         merge_expr = MergeExpr(left=self,
                                right=right,
@@ -587,6 +591,8 @@ class DataFrame(SemiRing):
         self.show_info()
         print(f'>> {self.name} Optimizer Output <<')
         print(self.optimize())
+        print(f'>> {self.name} Recursive Output <<')
+        print(self.unoptimize())
         print('>> Done <<')
 
     @property
@@ -810,9 +816,9 @@ class DataFrame(SemiRing):
 
             if self.unopt_count == 0:
                 last_var = self.var_expr
-                iter_last_var = self.iter_el
+                iter_last_var = self.iter_el.el
             else:
-                last_vname = f'v{self.unopt_count-1}'
+                last_vname = f'v{self.unopt_count - 1}'
                 last_var = VarExpr(last_vname)
                 iter_last_var = VarExpr(f'x_{last_vname}')
             iter_last_key = PairAccessExpr(iter_last_var, 0)
@@ -826,9 +832,43 @@ class DataFrame(SemiRing):
                 self.unopt_list.append(LetExpr(tmp_var,
                                                sum_expr,
                                                ConstantExpr(True)))
+            if op_expr.op_type == VirColEl:
+                sum_expr = SumExpr(iter_last_var,
+                                   last_var,
+                                   DicConsExpr([(ConcatExpr(iter_last_key,
+                                                            RecConsExpr([(op_expr.op.col_var,
+                                                                          op_expr.op.replace(iter_last_key))])
+                                                            ),
+                                                 ConstantExpr(True))]))
+                self.unopt_list.append(LetExpr(tmp_var,
+                                               sum_expr,
+                                               ConstantExpr(True)))
             if op_expr.op_type == AggrExpr:
-                pass
+                dic_cons_list = []
+                for k in op_expr.op.aggr_op.keys():
+                    v = op_expr.op.aggr_op[k]
+                    dic_cons_list.append((k, RecAccessExpr(iter_last_key, v)))
+                sum_expr = SumExpr(iter_last_var,
+                                   last_var,
+                                   DicConsExpr(dic_cons_list))
+                self.unopt_list.append(LetExpr(tmp_var,
+                                               sum_expr,
+                                               ConstantExpr(True)))
             if op_expr.op_type == GroupByAgg:
                 pass
 
             self.unopt_count += 1
+
+        result = ''
+        for i in range(self.unopt_count):
+            result += f"v{i} = VarExpr('v{i}')\n"
+            result += f"x_v{i} = VarExpr('x_v{i}')\n"
+        result += f"out = VarExpr('out')\n"
+
+        last_seq = VarBindSeq()
+        for i in self.unopt_list:
+            last_seq.push(VarBindExpr(i.varExpr, i.valExpr))
+
+        result += f'{last_seq.get_sdql_ir(ConstantExpr(True))}'
+
+        return result
