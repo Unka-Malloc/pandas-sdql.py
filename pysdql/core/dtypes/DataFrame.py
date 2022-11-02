@@ -59,7 +59,15 @@ from pysdql.core.dtypes.EnumUtil import (
 
 
 class DataFrame(SemiRing):
-    def __init__(self, data=None, index=None, columns=None, dtype=None, name=None, operations=None, is_joint=False):
+    def __init__(self, data=None,
+                 index=None,
+                 columns=None,
+                 dtype=None,
+                 name=None,
+                 operations=None,
+                 is_joint=False,
+                 context_variable=None,
+                 context_constant=None):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -86,6 +94,11 @@ class DataFrame(SemiRing):
         self.__const_var = {}
 
         self.__is_merged = is_joint
+
+        self.context_variable = context_variable if context_variable else {}
+        self.context_constant = context_constant if context_constant else {}
+
+        self.init_context_variable()
 
     @property
     def is_joint(self):
@@ -305,11 +318,15 @@ class DataFrame(SemiRing):
 
     def optimize(self):
         opt = self.get_opt()
-
         for op_expr in self.operations:
             opt.input(op_expr)
+        query = opt.output
 
-        return opt.output
+        last_list = [self.define_variables(),
+                     self.define_constants(),
+                     f'query = {query}']
+
+        return ''.join(last_list)
 
     @property
     def sdql_ir(self):
@@ -514,15 +531,22 @@ class DataFrame(SemiRing):
         if self.is_joint:
             self.partition_side.show_info()
             self.probe_side.show_info()
+
         print(f'>> {self.name} Columns(In) <<')
         print(self.cols_in)
         print(f'>> {self.name} Columns(Out) <<')
         print(self.cols_out)
         print(f'>> {self.name} Columns(Used) <<')
         print(self.cols_used)
-        if self.const_var:
-            print(f'>> {self.name} Constant Variables <<')
-            print(self.const_var)
+        # if self.const_var:
+        #     print(f'>> {self.name} Constant Variables <<')
+        #     print(self.const_var)
+        if self.context_variable:
+            print(f'>> {self.name} Context Variables <<')
+            print(self.context_variable)
+        if self.context_constant:
+            print(f'>> {self.name} Context Constant <<')
+            print(self.context_constant)
         print(f'>> {self.name} Operation Sequence <<')
         print(self.operations)
 
@@ -704,3 +728,18 @@ class DataFrame(SemiRing):
     #
     #     return cols_list
 
+    def init_context_variable(self):
+        self.context_variable[self.name] = self.var_expr
+        self.context_variable[self.iter_el.name] = self.iter_el.el
+
+    def add_context_variable(self, vname, vobj):
+        self.context_variable[vname] = vobj
+
+    def define_variables(self):
+        result = ''
+        for vname in self.context_variable:
+            result += f"{vname} = VarExpr('{vname}')\n"
+        return result
+
+    def define_constants(self):
+        return ''

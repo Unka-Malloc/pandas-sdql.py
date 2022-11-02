@@ -761,12 +761,32 @@ class VarExpr(Expr):
         super().__init__([])
         self.name: str = varName
         self.datasetVarName = None
+        # self.isFirstCall = True
 
     def printInnerVals(self):
         return " | " + "name: " + str(self.name)
 
     def __repr__(self) -> str:
-        return f'VarExpr("{self.name}")'
+        # if self.isFirstCall:
+        #     self.isFirstCall = False
+        #     return f"VarExpr('{self.name}')"
+        if self.name == 'db->li_dataset':
+            return 'li'
+        if self.name == 'db->ord_dataset':
+            return 'ord'
+        if self.name == 'db->cu_dataset':
+            return 'cu'
+        if self.name == 'db->na_dataset':
+            return 'na'
+        if self.name == 'db->re_dataset':
+            return 're'
+        if self.name == 'db->su_dataset':
+            return 'su'
+        if self.name == 'db->pa_dataset':
+            return 'pa'
+        if self.name == 'db->ps_dataset':
+            return 'ps'
+        return f'{self.name}'
 
 
 class LetExpr(Expr):

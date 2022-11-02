@@ -2,29 +2,25 @@
 ```python
 from pysdql.core.dtypes.sdql_ir import *
 
-LetExpr(lineitem_probed, 
-        SumBuilder(lambda p: IfExpr((p[0].l_shipdate <= ConstantExpr(19980902)), 
-                                    DicConsExpr([(RecConsExpr([("l_returnflag", p[0].l_returnflag), 
-                                                               ("l_linestatus", p[0].l_linestatus)
-                                                               ]), 
-                                                  RecConsExpr([("sum_qty", p[0].l_quantity), 
-                                                               ("sum_base_price", p[0].l_extendedprice), 
-                                                               ("sum_disc_price", (p[0].l_extendedprice * (ConstantExpr(1.0) - p[0].l_discount))), 
-                                                               ("sum_charge", ((p[0].l_extendedprice * (ConstantExpr(1.0) - p[0].l_discount)) * (ConstantExpr(1.0) + p[0].l_tax))), 
-                                                               ("count_order", ConstantExpr(1))
-                                                               ])
-                                                  )]), 
-                                    ConstantExpr(None)
-                                    ), 
-                   li, 
-                   False
-                   ), 
-        LetExpr(results, 
-                SumBuilder(lambda p: DicConsExpr([(ConcatExpr(p[0], p[1]), ConstantExpr(True))]), 
-                           lineitem_probed, 
-                           True
-                           ), 
-                LetExpr(VarExpr("out"), results, ConstantExpr(True))))
+LetExpr(VarExpr("lineitem_probed"), 
+        SumExpr(VarExpr("v1"), 
+                VarExpr("db->li_dataset"), 
+                IfExpr(CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_shipdate'), ConstantExpr(19980902)), 
+                       DicConsExpr([(RecConsExpr([('l_returnflag', RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_returnflag')), 
+                                                  ('l_linestatus', RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_linestatus'))]), 
+                                     RecConsExpr([('sum_qty', RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_quantity')), 
+                                                  ('sum_base_price', RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_extendedprice')), 
+                                                  ('sum_disc_price', MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount')))), 
+                                                  ('sum_charge', MulExpr(MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount'))), AddExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_tax')))), 
+                                                  ('count_order', ConstantExpr(1))]))]), 
+                       ConstantExpr(None)), 
+                False), 
+        LetExpr(VarExpr("results"), 
+                SumExpr(VarExpr("v3"), 
+                        VarExpr("lineitem_probed"), 
+                        DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr("v3"), 0), PairAccessExpr(VarExpr("v3"), 1)), ConstantExpr(True))]), 
+                        True), 
+                LetExpr(VarExpr("out"), VarExpr("results"), ConstantExpr(True))))
 ```
 
 # Q3
@@ -176,7 +172,8 @@ LetExpr(VarExpr("results"),
         SumExpr(VarExpr("v1"), 
                 VarExpr("db->li_dataset"), 
                 IfExpr(MulExpr(MulExpr(MulExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_shipdate'), ConstantExpr(19940101)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_shipdate'), ConstantExpr(19950101))), CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount'), ConstantExpr(0.05))), CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount'), ConstantExpr(0.07))), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_quantity'), ConstantExpr(24.0))), 
-                       MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_extendedprice'), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount')), ConstantExpr(0.0)), 
+                       MulExpr(RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_extendedprice'), RecAccessExpr(PairAccessExpr(VarExpr("v1"), 0), 'l_discount')), 
+                       ConstantExpr(0.0)), 
                 False), 
         LetExpr(VarExpr("out"), VarExpr("results"), ConstantExpr(True)))
 )

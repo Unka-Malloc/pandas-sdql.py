@@ -9,13 +9,7 @@ from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VirColEl import VirColEl
 from pysdql.core.dtypes.IsInExpr import IsInExpr
-from pysdql.core.dtypes.sdql_ir import (
-    SumExpr,
-    IfExpr,
-    VarExpr,
-    ConstantExpr, LetExpr, DicConsExpr, RecConsExpr, SumBuilder, ConcatExpr, MulExpr, DicLookupExpr, CompareExpr,
-    CompareSymbol, EmptyDicConsExpr, RecAccessExpr,
-)
+from pysdql.core.dtypes.sdql_ir import *
 
 from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OperationReturnType
 
@@ -56,6 +50,14 @@ class Optimizer:
             'sum_op': ConstantExpr(None),
         }
 
+        vname_groupby_agg = f'{opt_on.name}_groupby_agg'
+        var_groupby_agg = VarExpr(vname_groupby_agg)
+        self.opt_on.add_context_variable(vname_groupby_agg, var_groupby_agg)
+
+        vname_groupby_agg_concat = f'{opt_on.name}_groupby_agg_concat'
+        var_groupby_agg_concat = VarExpr(vname_groupby_agg_concat)
+        self.opt_on.add_context_variable(vname_groupby_agg_concat, var_groupby_agg_concat)
+
         self.groupby_aggr_info = {
             'groupby_cols': [],
             'aggr_dict': {},
@@ -63,12 +65,12 @@ class Optimizer:
             'aggr_keys': RecConsExpr([]),
             'aggr_vals': RecConsExpr([]),
 
-            'aggr_var': VarExpr(f'{opt_on.name}_groupby_agg'),
+            'aggr_var': var_groupby_agg,
             'aggr_el': opt_on.iter_el.sdql_ir,
             'aggr_on': opt_on.var_expr,
             'aggr_op': ConstantExpr(None),
 
-            'let_var': VarExpr(opt_on.get_name_ops()),
+            'let_var': var_groupby_agg_concat,
             'let_val': ConstantExpr(None),
             'let_next': ConstantExpr(None),
         }
@@ -318,13 +320,20 @@ class Optimizer:
 
             self.set_groupby_aggr_let_val()
 
+            vname_concat = f'x_{self.opt_on.name}_groupby_agg'
+            var_concat = VarExpr(vname_concat)
+            self.opt_on.add_context_variable(vname_concat, var_concat)
+            sum_concat = SumExpr(varExpr=var_concat,
+                                 dictExpr=self.groupby_aggr_info['aggr_var'],
+                                 bodyExpr=DicConsExpr([(ConcatExpr(PairAccessExpr(vname_concat, 0), PairAccessExpr(vname_concat, 1)), ConstantExpr(True))]),
+                                 isAssignmentSum=True)
+
+            vname_out = 'out'
+            var_out = VarExpr(vname_out)
+            self.opt_on.add_context_variable(vname_out, var_out)
             self.groupby_aggr_info['let_next'] = LetExpr(varExpr=self.groupby_aggr_info['let_var'],
-                                                         valExpr=SumBuilder(lambda p:
-                                                                            DicConsExpr([(ConcatExpr(p[0], p[1]),
-                                                                                          ConstantExpr(True))]),
-                                                                            self.groupby_aggr_info['aggr_var'],
-                                                                            True),
-                                                         bodyExpr=LetExpr(VarExpr("out"),
+                                                         valExpr=sum_concat,
+                                                         bodyExpr=LetExpr(var_out,
                                                                           self.groupby_aggr_info['let_var'],
                                                                           ConstantExpr(True)))
 
@@ -640,26 +649,39 @@ class Optimizer:
 
     @property
     def agg_dict_stmt(self):
-        rec_list = []
-        if self.col_ins:
-            for k in self.agg_dict_info['cond_then'].keys():
-                v = self.agg_dict_info['cond_then'][k]
-                if v in self.col_ins.keys():
-                    col_expr = self.col_ins[v].sdql_ir
+        if len(self.agg_dict_info['cond_then'].keys()) == 1:
+            agg_list = []
+            for agg_key in self.agg_dict_info['cond_then'].keys():
+                v = self.agg_dict_info['cond_then'][agg_key]
+                if self.col_ins:
+                    if v in self.col_ins.keys():
+                        col_expr = self.col_ins[v].sdql_ir
+                    else:
+                        col_expr = v
+                    agg_list.append((agg_key, col_expr))
                 else:
-                    col_expr = v
-                rec_list.append((k, col_expr))
+                    agg_list.append((agg_key, v))
 
-        self.agg_dict_info['sum_op'] = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+            sum_op = DicConsExpr(agg_list)
 
-        result = VarExpr('result')
-        return LetExpr(result,
-                       SumExpr(self.agg_dict_info['sum_el'],
-                               self.agg_dict_info['sum_on'],
-                               self.agg_dict_info['sum_op']),
-                       LetExpr(VarExpr('out'),
-                               result,
-                               ConstantExpr(True)))
+            if self.has_cond:
+                sum_op = IfExpr(self.get_cond_ir(),
+                                sum_op,
+                                EmptyDicConsExpr())
+
+            self.agg_dict_info['sum_op'] = sum_op
+
+            out = VarExpr('out')
+            self.opt_on.add_context_variable(vname='out',
+                                             vobj=out)
+
+            return LetExpr(out,
+                           SumExpr(self.agg_dict_info['sum_el'],
+                                   self.agg_dict_info['sum_on'],
+                                   self.agg_dict_info['sum_op']),
+                           ConstantExpr(True))
+        else:
+            raise NotImplementedError
 
     @property
     def info(self):
@@ -682,6 +704,7 @@ class Optimizer:
             if op_expr.ret_type == OperationReturnType.DICT:
                 if self.is_joint:
                     return self.joint_frame.sdql_ir
+                # Q6 -> this way, sir
                 return self.agg_dict_stmt
             else:
                 result = VarExpr('result')
@@ -696,6 +719,7 @@ class Optimizer:
             if self.has_isin:
                 return self.isin_op.get_ref_ir(self.groupby_aggr_stmt)
             else:
+                # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
         if self.last_func == LastIterFunc.JoinPartition:
             return self.merge_partition_stmt()
