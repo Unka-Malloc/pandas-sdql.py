@@ -406,9 +406,9 @@ class DataFrame(SemiRing):
             return self
 
         if type(item) == IsInExpr:
-            self.operations.push(OpExpr(op_obj=item,
-                                        op_on=self,
-                                        op_iter=True))
+            # self.operations.push(OpExpr(op_obj=item,
+            #                             op_on=self,
+            #                             op_iter=True))
 
             return self
 
@@ -805,6 +805,9 @@ class DataFrame(SemiRing):
 
     def get_groupby_agg(self, next_op=None):
         return self.get_opt(OptGoal.GroupByAggregation).get_groupby_aggr_stmt(next_op)
+
+    def get_having(self, next_op=None):
+        return self.get_opt(OptGoal.GroupByAggregation).isin_op.get_ref_ir(next_op)
 
     def reset_index(self):
         return self
