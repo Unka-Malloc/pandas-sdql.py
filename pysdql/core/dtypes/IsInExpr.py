@@ -32,20 +32,40 @@ class IsInExpr(IgnoreExpr):
                                ConstantExpr(True))])
 
         if opt.has_cond:
+            cond_after_groupby_agg = opt.get_cond_after_groupby_agg()
+            if cond_after_groupby_agg:
+                # vname_having = f'{self.part_on.name}_having'
+                # var_having = self.part_on.context_variable[vname_having]
+                # vname_having_el = f'x_{vname_having}'
+                # var_having_el = VarExpr(vname_having_el)
+                # self.probe_on.add_context_variable(vname_having_el, var_having_el)
+                return opt.get_groupby_agg_having_stmt(next_op)
+            else:
+                cond = opt.get_cond_ir()
+                sum_op = IfExpr(condExpr=cond,
+                                thenBodyExpr=sum_op,
+                                elseBodyExpr=EmptyDicConsExpr())
+                sum_expr = SumExpr(varExpr=self.part_on.iter_el.key,
+                                   dictExpr=self.part_on.var_expr,
+                                   bodyExpr=sum_op,
+                                   isAssignmentSum=True)
+        else:
             cond = opt.get_cond_ir()
             sum_op = IfExpr(condExpr=cond,
                             thenBodyExpr=sum_op,
                             elseBodyExpr=EmptyDicConsExpr())
-
-        sum_expr = SumExpr(varExpr=self.part_on.iter_el.key,
-                           dictExpr=self.part_on.var_expr,
-                           bodyExpr=sum_op,
-                           isAssignmentSum=True)
+            sum_expr = SumExpr(varExpr=self.part_on.iter_el.key,
+                               dictExpr=self.part_on.var_expr,
+                               bodyExpr=sum_op,
+                               isAssignmentSum=True)
 
         let_expr = LetExpr(varExpr=part_var,
                            valExpr=sum_expr,
                            bodyExpr=next_op)
         return let_expr
+
+    def __repr__(self):
+        return f'{self.probe_on.name}.{self.col_probe} in {self.part_on.name}.{self.col_part}'
 
     @property
     def op_name_suffix(self):

@@ -1,5 +1,7 @@
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.IsInExpr import IsInExpr
+
 
 class JoinProbeFrame:
     def __init__(self, iter_on):
@@ -34,6 +36,12 @@ class JoinProbeFrame:
             if op_expr.op_type == CondExpr:
                 if groupby_agg_located:
                     return op_expr.op
+        return None
+
+    def get_isin(self):
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == IsInExpr:
+                return op_expr.op
         return None
 
     def get_probe_col_proj(self):

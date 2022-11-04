@@ -105,6 +105,7 @@ class JointFrame:
                                                                                            probe_on.key_access(
                                                                                                probe_key))])
         # Q3 -> this way, sir
+        # Q18 -> this way, sir
         if self.is_groupby_agg_joint:
             # aggr_key_ir
             key_rec_list = []
@@ -154,9 +155,11 @@ class JointFrame:
                                                elseBodyExpr=EmptyDicConsExpr())
 
             if probe_cond:
-                joint_groupby_aggr_op = IfExpr(condExpr=probe_cond,
-                                               thenBodyExpr=joint_groupby_aggr_op,
-                                               elseBodyExpr=EmptyDicConsExpr())
+                last_cond = self.probe_frame.get_cond_after_groupby_agg()
+                if not last_cond:
+                    joint_groupby_aggr_op = IfExpr(condExpr=probe_cond,
+                                                   thenBodyExpr=joint_groupby_aggr_op,
+                                                   elseBodyExpr=EmptyDicConsExpr())
 
             sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
                                dictExpr=probe_on.var_expr,
@@ -374,7 +377,9 @@ class JointFrame:
 
                 return output
             # Q3 -> this way, sir
+            # Q18 -> this way, sir
             if self.is_next_part:
+
                 iter_key = self.get_next_part_key()
                 next_part_key_ir = probe_on.key_access(iter_key)
                 if self.col_proj:
@@ -420,10 +425,8 @@ class JointFrame:
                                  bodyExpr=next_op)
 
                 return output
+
             if self.probe_frame.was_groupby_agg:
-                # print(self.col_proj)
-                # print(self.probe_frame.get_groupby_cols())
-                # print(self.probe_frame.get_aggr_dict())
 
                 var_part = self.probe_frame.probe_on.get_var_part()
 
@@ -487,15 +490,22 @@ class JointFrame:
             else:
                 next_op = ConstantExpr('placeholder_probe_next')
 
+        print(self.partition_frame.is_joint, self.probe_frame.is_joint)
+        print(self.part_frame.partition_on.name, self.probe_frame.probe_on.name)
+
         # Q15 -> this way, sir
         # Q19 -> this way, sir
         if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
+            isin_expr = self.probe_frame.get_isin()
+            if isin_expr:
+                print(self.probe_frame.probe_on.get_having(next_op))
             if self.probe_frame.was_groupby_agg:
                 tmp_let_expr = self.probe_frame.probe_on.get_groupby_agg()
                 tmp_let_expr = LetExpr(self.probe_frame.get_probe_on().get_var_part(),
                                        tmp_let_expr.valExpr,
                                        self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
                 return tmp_let_expr
+
             # print(f'{self.joint.name}: neither joint')
             return self.partition_frame.get_part_expr(self.get_probe_expr(next_op))
         if self.partition_frame.is_joint and not self.probe_frame.is_joint:

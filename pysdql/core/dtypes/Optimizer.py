@@ -146,9 +146,26 @@ class Optimizer:
         self.isin_op = None
         self.has_isin = False
 
+        self.vname_having = f'{self.opt_on.name}_having'
+        self.var_having = VarExpr(self.vname_having)
+        self.opt_on.add_context_variable(self.vname_having, self.var_having)
+
     @property
     def has_cond(self):
-        return self.status['conditional']
+        for op_expr in self.opt_on.operations:
+            if op_expr.op_type == CondExpr:
+                return True
+        return False
+
+    def get_cond_after_groupby_agg(self):
+        groupby_agg_located = False
+        for op_expr in self.opt_on.operations:
+            if op_expr.op_type == GroupByAgg:
+                groupby_agg_located = True
+            if op_expr.op_type == CondExpr:
+                if groupby_agg_located:
+                    return op_expr.op
+        return None
 
     @property
     def has_col_ins(self):
@@ -247,12 +264,37 @@ class Optimizer:
                                                           self.groupby_aggr_info['aggr_vals'])])
 
     def set_groupby_aggr_let_val(self):
-        if self.cond_status:
-            self.groupby_aggr_info['let_val'] = SumExpr(varExpr=self.groupby_aggr_info['aggr_el'],
-                                                        dictExpr=self.groupby_aggr_info['aggr_on'],
-                                                        bodyExpr=IfExpr(condExpr=self.cond_info['cond_if'],
-                                                                        thenBodyExpr=self.cond_info['cond_then'],
-                                                                        elseBodyExpr=self.cond_info['cond_else']))
+        if self.has_cond:
+
+            # cond_after_groupby_agg = self.get_cond_after_groupby_agg()
+            # if cond_after_groupby_agg:
+            #     vname_groupby_agg_el = f'x_{self.vname_groupby_agg}'
+            #     var_groupby_agg_el = VarExpr(vname_groupby_agg_el)
+            #     self.opt_on.add_context_variable(vname_groupby_agg_el, var_groupby_agg_el)
+            #     vname_having = f'having_{self.opt_on.name}'
+            #     var_having = VarExpr(vname_having)
+            #     self.opt_on.add_context_variable(vname_having, var_having)
+            #     next_op = LetExpr(var_having,
+            #                       SumExpr(varExpr=var_groupby_agg_el,
+            #                               dictExpr=self.var_groupby_agg,
+            #                               bodyExpr=IfExpr(condExpr=cond_after_groupby_agg.replace(
+            #                                   PairAccessExpr(var_groupby_agg_el, 1)),
+            #                                   thenBodyExpr=DicConsExpr(
+            #                                       [(PairAccessExpr(var_groupby_agg_el, 0),
+            #                                         ConstantExpr(True))]),
+            #                                   elseBodyExpr=EmptyDicConsExpr())),
+            #                       ConstantExpr(True))
+
+            if self.get_cond_after_groupby_agg():
+                self.groupby_aggr_info['let_val'] = SumExpr(varExpr=self.groupby_aggr_info['aggr_el'],
+                                                            dictExpr=self.groupby_aggr_info['aggr_on'],
+                                                            bodyExpr=self.groupby_aggr_info['aggr_op'])
+            else:
+                self.groupby_aggr_info['let_val'] = SumExpr(varExpr=self.groupby_aggr_info['aggr_el'],
+                                                            dictExpr=self.groupby_aggr_info['aggr_on'],
+                                                            bodyExpr=IfExpr(condExpr=self.cond_info['cond_if'],
+                                                                            thenBodyExpr=self.cond_info['cond_then'],
+                                                                            elseBodyExpr=self.cond_info['cond_else']))
         else:
             self.groupby_aggr_info['let_val'] = SumExpr(varExpr=self.groupby_aggr_info['aggr_el'],
                                                         dictExpr=self.groupby_aggr_info['aggr_on'],
@@ -261,6 +303,7 @@ class Optimizer:
     def get_groupby_aggr_stmt(self, next_op=None):
         self.opt_on.add_context_variable(self.vname_groupby_agg, self.var_groupby_agg)
         self.opt_on.add_context_variable(self.vname_groupby_agg_concat, self.var_groupby_agg_concat)
+
         if next_op is None:
             return LetExpr(varExpr=self.groupby_aggr_info['aggr_var'],
                            valExpr=self.groupby_aggr_info['let_val'],
@@ -269,6 +312,33 @@ class Optimizer:
             return LetExpr(varExpr=self.groupby_aggr_info['aggr_var'],
                            valExpr=self.groupby_aggr_info['let_val'],
                            bodyExpr=next_op)
+
+    def get_groupby_agg_having_stmt(self, next_op=None):
+        if next_op is None:
+            next_op = ConstantExpr(True)
+
+        cond_after_groupby_agg = self.get_cond_after_groupby_agg()
+        if cond_after_groupby_agg:
+            vname_groupby_agg_el = f'x_{self.vname_groupby_agg}'
+            var_groupby_agg_el = VarExpr(vname_groupby_agg_el)
+            self.opt_on.add_context_variable(vname_groupby_agg_el, var_groupby_agg_el)
+            vname_having = f'{self.opt_on.name}_having'
+            var_having = VarExpr(vname_having)
+            self.opt_on.add_context_variable(vname_having, var_having)
+            having_op = LetExpr(var_having,
+                                SumExpr(varExpr=var_groupby_agg_el,
+                                        dictExpr=self.var_groupby_agg,
+                                        bodyExpr=IfExpr(condExpr=cond_after_groupby_agg.replace(
+                                            PairAccessExpr(var_groupby_agg_el, 1)),
+                                            thenBodyExpr=DicConsExpr(
+                                                [(PairAccessExpr(var_groupby_agg_el, 0),
+                                                  ConstantExpr(True))]),
+                                            elseBodyExpr=EmptyDicConsExpr()),
+                                        isAssignmentSum=True),
+                                next_op)
+            return self.get_groupby_aggr_stmt(having_op)
+        else:
+            raise NotImplementedError
 
     @property
     def groupby_aggr_stmt(self) -> LetExpr:
@@ -731,6 +801,8 @@ class Optimizer:
             if self.has_isin:
                 # Q4 -> this way, sir
                 return self.isin_op.get_ref_ir(self.groupby_aggr_stmt)
+            if self.get_cond_after_groupby_agg():
+                return self.get_groupby_agg_having_stmt()
             else:
                 # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
