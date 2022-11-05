@@ -38,6 +38,12 @@ class JoinProbeFrame:
                     return op_expr.op
         return None
 
+    def has_isin(self):
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == IsInExpr:
+                return True
+        return False
+
     def get_isin(self):
         for op_expr in self.probe_on.operations:
             if op_expr.op_type == IsInExpr:

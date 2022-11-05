@@ -45,7 +45,7 @@ class IsInExpr(IgnoreExpr):
                 sum_op = IfExpr(condExpr=cond,
                                 thenBodyExpr=sum_op,
                                 elseBodyExpr=EmptyDicConsExpr())
-                sum_expr = SumExpr(varExpr=self.part_on.iter_el.key,
+                sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
                                    dictExpr=self.part_on.var_expr,
                                    bodyExpr=sum_op,
                                    isAssignmentSum=True)
@@ -54,7 +54,8 @@ class IsInExpr(IgnoreExpr):
             sum_op = IfExpr(condExpr=cond,
                             thenBodyExpr=sum_op,
                             elseBodyExpr=EmptyDicConsExpr())
-            sum_expr = SumExpr(varExpr=self.part_on.iter_el.key,
+
+            sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
                                dictExpr=self.part_on.var_expr,
                                bodyExpr=sum_op,
                                isAssignmentSum=True)
@@ -63,6 +64,10 @@ class IsInExpr(IgnoreExpr):
                            valExpr=sum_expr,
                            bodyExpr=next_op)
         return let_expr
+
+    def __invert__(self):
+        self.isinvert = True
+        return self
 
     def __repr__(self):
         return f'{self.probe_on.name}.{self.col_probe} in {self.part_on.name}.{self.col_part}'

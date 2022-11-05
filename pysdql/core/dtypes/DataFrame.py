@@ -192,6 +192,8 @@ class DataFrame(SemiRing):
                     'p_comment']
         if self.name == 'su':
             return ['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']
+        if self.name == 'ps':
+            return ['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment']
 
         if self.__columns:
             return DataFrameColumns(self, self.__columns)
@@ -316,6 +318,10 @@ class DataFrame(SemiRing):
     @property
     def iter_el(self) -> IterEl:
         return self.__iter_el
+
+    @property
+    def iter_key(self):
+        return self.iter_el.key
 
     @property
     def el(self):
@@ -791,6 +797,8 @@ class DataFrame(SemiRing):
             elif vname == 'pa':
                 result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
             elif vname == 'su':
+                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            elif vname == 'ps':
                 result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
             else:
                 result += f"{vname} = VarExpr('{vname}')\n"

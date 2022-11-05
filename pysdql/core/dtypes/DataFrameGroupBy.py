@@ -40,6 +40,8 @@ class DataFrameGroupBy:
                 agg_dict[agg_key] = agg_calc
             if agg_flag == 'count':
                 agg_dict[agg_key] = ConstantExpr(1)
+            if callable(agg_flag):
+                agg_dict[agg_key] = ConstantExpr(1)
 
         groupby_agg = GroupByAgg(groupby_from=self.groupby_from,
                                  groupby_cols=self.groupby_cols,

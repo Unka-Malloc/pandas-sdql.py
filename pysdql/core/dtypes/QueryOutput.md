@@ -1,4 +1,4 @@
-# Q1 (Done)
+# Q1
 ```python
 li = VarExpr('db->li_dataset')
 x_li = VarExpr('x_li')
@@ -26,7 +26,7 @@ query = LetExpr(li_groupby_agg,
                                         LetExpr(out, li_groupby_agg_concat, ConstantExpr(True))))
 ```
 
-# Q3 (Done)
+# Q3 
 ```python
 cu = VarExpr('db->cu_dataset')
 x_cu = VarExpr('x_cu')
@@ -87,7 +87,43 @@ query = LetExpr(building,
                                                 ConstantExpr(True))))))
 ```
 
-# Q6 (Done)
+# Q4
+```python
+ord = VarExpr('db->ord_dataset')
+x_ord = VarExpr('x_ord')
+ord_part = VarExpr('ord_part')
+ord_having = VarExpr('ord_having')
+x_ord_groupby_agg = VarExpr('x_ord_groupby_agg')
+out = VarExpr('out')
+ord_groupby_agg = VarExpr('ord_groupby_agg')
+ord_groupby_agg_concat = VarExpr('ord_groupby_agg_concat')
+
+query = LetExpr(li_part, 
+                SumExpr(x_li, 
+                        li, 
+                        IfExpr(CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_commitdate'), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_receiptdate')), 
+                               DicConsExpr([(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey'), ConstantExpr(True))]), 
+                               EmptyDicConsExpr()), 
+                        True), 
+                LetExpr(ord_groupby_agg, 
+                        SumExpr(x_ord, 
+                                ord, 
+                                IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderdate'), ConstantExpr(19930701)), CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderdate'), ConstantExpr(19931001))), 
+                                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(li_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderkey')), ConstantExpr(None)), 
+                                              DicConsExpr([(RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderpriority'), 
+                                                            RecConsExpr([('order_count', ConstantExpr(1))]))]), 
+                                              EmptyDicConsExpr()),
+                                       EmptyDicConsExpr()),
+                                False), 
+                        LetExpr(out, 
+                                SumExpr(x_ord_groupby_agg, 
+                                        ord_groupby_agg, 
+                                        DicConsExpr([(ConcatExpr(PairAccessExpr(x_ord_groupby_agg, 0), PairAccessExpr(x_ord_groupby_agg, 1)), ConstantExpr(True))]), 
+                                        True), 
+                                ConstantExpr(True))))
+```
+
+# Q6
 ```python
 li = VarExpr('db->li_dataset')
 x_li = VarExpr('x_li')
@@ -227,6 +263,61 @@ query = LetExpr(li_part,
                                                EmptyDicConsExpr()), 
                                         True), 
                                 ConstantExpr(True))))
+```
+
+# Q16
+```python
+pa = VarExpr('db->pa_dataset')
+x_pa = VarExpr('x_pa')
+pa_part = VarExpr('pa_part')
+brand45 = VarExpr('brand45')
+mediumpolished = VarExpr('mediumpolished')
+ps = VarExpr('db->ps_dataset')
+x_ps = VarExpr('x_ps')
+ps_part = VarExpr('ps_part')
+pa_ps = VarExpr('pa_ps')
+x_pa_ps = VarExpr('x_pa_ps')
+pa_ps_having = VarExpr('pa_ps_having')
+x_pa_ps_groupby_agg = VarExpr('x_pa_ps_groupby_agg')
+out = VarExpr('out')
+
+query = LetExpr(brand45, ConstantExpr("Brand#45"),
+                LetExpr(mediumpolished, ConstantExpr("MEDIUM POLISHED"), 
+                        LetExpr(complaints, ConstantExpr("Complaints"), 
+                                LetExpr(su_part, 
+                                        SumExpr(x_su, 
+                                                su, 
+                                                IfExpr(CompareExpr(CompareSymbol.GT, ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(x_su, 0), 's_comment'), complaints, ConstantExpr("Nothing!")), 
+                                                                   MulExpr(CompareExpr(CompareSymbol.NE, ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(x_su, 0), 's_comment'), customer, ConstantExpr("Nothing!")), MulExpr(ConstantExpr(-1), ConstantExpr(1))), 
+                                                                           AddExpr(ExtFuncExpr(ExtFuncSymbol.FirstIndex, RecAccessExpr(PairAccessExpr(x_su, 0), 's_comment'), customer, ConstantExpr("Nothing!")), ConstantExpr(7)))), 
+                                                       DicConsExpr([(RecAccessExpr(PairAccessExpr(x_su, 0), 's_suppkey'), ConstantExpr(True))]),
+                                                       EmptyDicConsExpr()), 
+                                                True), 
+                                        LetExpr(pa_part, 
+                                                SumExpr(x_pa, 
+                                                        pa, 
+                                                        IfExpr(MulExpr(MulExpr(CompareExpr(CompareSymbol.NE, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_brand'), brand45), CompareExpr(CompareSymbol.EQ, ExtFuncExpr(ExtFuncSymbol.StartsWith, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_type'), mediumpolished, ConstantExpr("Nothing!")), ConstantExpr(False))), AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(AddExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(49)), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(14))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(23))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(45))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(19))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(3))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(36))), CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'), ConstantExpr(9)))), 
+                                                               DicConsExpr([(RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_partkey'), 
+                                                                             RecConsExpr([('p_brand', RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_brand')), 
+                                                                                          ('p_type', RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_type')), 
+                                                                                          ('p_size', RecAccessExpr(PairAccessExpr(x_pa, 0), 'p_size'))]))]),
+                                                               EmptyDicConsExpr()), 
+                                                        True),
+                                                LetExpr(pa_ps, 
+                                                        SumExpr(x_ps,
+                                                                ps, 
+                                                                IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(pa_part, RecAccessExpr(PairAccessExpr(x_ps, 0), 'ps_partkey')), ConstantExpr(None)), 
+                                                                       IfExpr(CompareExpr(CompareSymbol.EQ, DicLookupExpr(su_part, RecAccessExpr(PairAccessExpr(x_ps, 0), 'ps_suppkey')), ConstantExpr(None)),
+                                                                              DicConsExpr([(RecConsExpr([('p_brand', RecAccessExpr(DicLookupExpr(pa_part, RecAccessExpr(PairAccessExpr(x_ps, 0), 'ps_partkey')), 'p_brand')),
+                                                                                                         ('p_type', RecAccessExpr(DicLookupExpr(pa_part, RecAccessExpr(PairAccessExpr(x_ps, 0), 'ps_partkey')), 'p_type')), 
+                                                                                                         ('p_size', RecAccessExpr(DicLookupExpr(pa_part, RecAccessExpr(PairAccessExpr(x_ps, 0), 'ps_partkey')), 'p_size'))]), 
+                                                                                            RecConsExpr([('supplier_cnt', ConstantExpr(1))]))]), 
+                                                                              EmptyDicConsExpr()),
+                                                                       EmptyDicConsExpr()),
+                                                                False),
+                                                        LetExpr(out, 
+                                                                SumExpr(x_pa_ps, pa_ps, DicConsExpr([(ConcatExpr(PairAccessExpr(x_pa_ps, 0), PairAccessExpr(x_pa_ps, 1)), ConstantExpr(True))]), True), 
+                                                                ConstantExpr(True))))))))
 ```
 
 # Q18

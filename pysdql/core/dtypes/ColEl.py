@@ -17,6 +17,7 @@ from pysdql.core.dtypes.CondStmt import CondStmt
 
 from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol,
+    ExtFuncSymbol,
     RecAccessExpr,
     ConstantExpr,
 
@@ -190,7 +191,7 @@ class ColEl(SDQLIR):
         :param unit2: ColEl | (float, int, str) | date@str
         :return:
         """
-        if operator == CompareSymbol.EQ:
+        if operator == CompareSymbol.EQ or operator == CompareSymbol.NE:
             if type(unit2) == str:
                 self.add_const(unit2)
                 return CondExpr(unit1=self, operator=operator, unit2=self.get_const_var(unit2))
@@ -411,15 +412,19 @@ class ColEl(SDQLIR):
 
     def startswith(self, pattern: str):
         # A%
-        return ExternalExpr(self, 'StrStartsWith', pattern)
+        self.add_const(pattern)
+        return ExternalExpr(self, ExtFuncSymbol.StartsWith, self.get_const_var(pattern))
+        # return ExternalExpr(self, 'StrStartsWith', pattern)
 
     def endswith(self, pattern: str):
         # %B
         return ExternalExpr(self, 'StrEndsWith', pattern)
 
-    def contains(self, *args):
+    def contains(self, pattern):
         # %A%
-        return ExternalExpr(self, 'StrContains', args)
+        self.add_const(pattern)
+        return ExternalExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
+        # return ExternalExpr(self, 'StrContains', args)
 
     def contains_in_order(self, *args):
         # %A%B%
@@ -436,8 +441,10 @@ class ColEl(SDQLIR):
         # substring
         return ExternalExpr(self, 'SubString', (start, end))
 
-    def find(self, pattern, start=0):
-        return ExternalExpr(self, 'StrIndexOf', (pattern, start))
+    def find(self, pattern):
+        self.add_const(pattern)
+        return ExternalExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
+        # return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
     def exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond)

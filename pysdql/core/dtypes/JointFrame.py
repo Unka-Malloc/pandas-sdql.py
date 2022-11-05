@@ -105,7 +105,6 @@ class JointFrame:
                                                                                            probe_on.key_access(
                                                                                                probe_key))])
         # Q3 -> this way, sir
-        # Q18 -> this way, sir
         if self.is_groupby_agg_joint:
             # aggr_key_ir
             key_rec_list = []
@@ -422,7 +421,8 @@ class JointFrame:
                 if isin_expr:
                     joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                            DicLookupExpr(var_having,
-                                                                         probe_on.key_access(isin_expr.col_probe.field)),
+                                                                         probe_on.key_access(
+                                                                             isin_expr.col_probe.field)),
                                                            ConstantExpr(None)),
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=EmptyDicConsExpr()
@@ -438,7 +438,6 @@ class JointFrame:
                 return output
 
             if self.probe_frame.was_groupby_agg:
-
                 var_part = self.probe_frame.probe_on.get_var_part()
 
                 x_vname_part = f'x_{var_part.name}'
@@ -493,6 +492,96 @@ class JointFrame:
                                  bodyExpr=ConstantExpr(True))
 
                 return output
+            if self.probe_frame.has_isin():
+                # aggr_key_ir
+                key_rec_list = []
+                for i in self.groupby_cols:
+                    if i == probe_key:
+                        key_rec_list.append((i, probe_on.key_access(i)))
+                    if i in self.partition_frame.cols_out:
+                        key_rec_list.append((i,
+                                             RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                 keyExpr=probe_on.key_access(
+                                                                                     probe_key)),
+                                                           fieldName=i)))
+                aggr_key_ir = RecConsExpr(key_rec_list)
+
+                # aggr_val_ir
+                val_rec_list = []
+                if self.col_ins:
+                    for k in self.aggr_dict.keys():
+                        v = self.aggr_dict[k]
+                        if v.name in self.col_ins.keys():
+                            col_expr = self.col_ins[v.name].sdql_ir
+                        else:
+                            col_expr = v
+                        val_rec_list.append((k, col_expr))
+                else:
+                    for k in self.aggr_dict.keys():
+                        val_rec_list.append((k, self.aggr_dict[k]))
+                aggr_val_ir = RecConsExpr(val_rec_list)
+
+                joint_groupby_aggr_op = DicConsExpr([(aggr_key_ir,
+                                                      aggr_val_ir
+                                                      )])
+
+                if joint_cond:
+                    joint_groupby_aggr_op = IfExpr(condExpr=joint_cond,
+                                                   thenBodyExpr=DicConsExpr([(aggr_key_ir,
+                                                                              aggr_val_ir)]),
+                                                   elseBodyExpr=EmptyDicConsExpr())
+
+                isin_expr = self.probe_frame.get_isin()
+                if isin_expr:
+                    if isin_expr.isinvert:
+                        joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.EQ,
+                                                                            DicLookupExpr(isin_expr.part_on.var_part,
+                                                                                          probe_on.key_access(
+                                                                                              isin_expr.col_probe.field)),
+                                                                            ConstantExpr(None)),
+                                                       thenBodyExpr=joint_groupby_aggr_op,
+                                                       elseBodyExpr=EmptyDicConsExpr()
+                                                       )
+                    else:
+                        joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                                        DicLookupExpr(isin_expr.part_on.var_part,
+                                                                                      probe_on.key_access(
+                                                                                          isin_expr.col_probe.field)),
+                                                                        ConstantExpr(None)),
+                                                   thenBodyExpr=joint_groupby_aggr_op,
+                                                   elseBodyExpr=EmptyDicConsExpr()
+                                                   )
+
+                joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                                    leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                           keyExpr=probe_key_ir),
+                                                                    rightExpr=ConstantExpr(None)),
+                                               thenBodyExpr=joint_groupby_aggr_op,
+                                               elseBodyExpr=EmptyDicConsExpr())
+
+                sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                   dictExpr=probe_on.var_expr,
+                                   bodyExpr=joint_groupby_aggr_op,
+                                   isAssignmentSum=False)
+
+                vname_concat = f'x_{self.joint.name}'
+                var_concat = VarExpr(vname_concat)
+                self.joint.add_context_variable(vname_concat, var_concat)
+                sum_concat = SumExpr(varExpr=var_concat,
+                                     dictExpr=probe_var,
+                                     bodyExpr=DicConsExpr([(ConcatExpr(PairAccessExpr(var_concat, 0),
+                                                                       PairAccessExpr(var_concat, 1)),
+                                                            ConstantExpr(True))]),
+                                     isAssignmentSum=True)
+
+                var_out = VarExpr('out')
+                self.joint.add_context_variable('out', var_out)
+
+                output = LetExpr(varExpr=probe_var,
+                                 valExpr=sum_expr,
+                                 bodyExpr=LetExpr(var_out, sum_concat, ConstantExpr(True)))
+
+                return output
 
     def get_joint_expr(self, next_op=None):
         if not next_op:
@@ -505,6 +594,7 @@ class JointFrame:
         # print(self.part_frame.partition_on.name, self.probe_frame.probe_on.name)
 
         # Q15 -> this way, sir
+        # Q16 -> this way, sir
         # Q19 -> this way, sir
         if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
             isin_expr = self.probe_frame.get_isin()

@@ -800,6 +800,7 @@ class Optimizer:
         if self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
                 # Q3 -> this way, sir
+                # Q16 -> this way, sir
                 return self.joint_frame.sdql_ir
             if self.has_isin:
                 # Q4 -> this way, sir
