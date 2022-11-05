@@ -20,7 +20,7 @@ class Optimizer:
         self.opt_goal = opt_goal
 
         self.cond_info = {
-            'cond_if': ConstantExpr(None),
+            'cond_if': ConstantExpr(True),
             'cond_then': ConstantExpr(None),
             'cond_else': ConstantExpr(None)
         }
@@ -176,10 +176,10 @@ class Optimizer:
         return self.status['column_projection']
 
     def add_cond(self, cond):
-        if self.cond_info['cond_if'] == ConstantExpr(None):
-            self.cond_info['cond_if'] = cond
-        else:
+        if self.cond_info['cond_if']:
             self.cond_info['cond_if'] = MulExpr(self.cond_info['cond_if'], cond)
+        else:
+            self.cond_info['cond_if'] = cond
 
         self.status['conditional'] = True
 
@@ -239,7 +239,10 @@ class Optimizer:
                        bodyExpr=self.groupby_aggr_info['let_next'])
 
     def set_groupby_aggr_key_part(self, on, cols):
-        self.groupby_aggr_info['aggr_keys'] = RecConsExpr([(i, on.key_access(i)) for i in cols])
+        if len(cols) == 1:
+            self.groupby_aggr_info['aggr_keys'] = on.key_access(cols[0])
+        else:
+            self.groupby_aggr_info['aggr_keys'] = RecConsExpr([(i, on.key_access(i)) for i in cols])
 
     def set_groupby_aggr_val_part(self, aggr_dict):
         rec_list = []

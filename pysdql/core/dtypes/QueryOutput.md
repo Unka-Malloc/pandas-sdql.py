@@ -229,6 +229,76 @@ query = LetExpr(li_part,
                                 ConstantExpr(True))))
 ```
 
+# Q18
+```python
+cu = VarExpr('db->cu_dataset')
+x_cu = VarExpr('x_cu')
+cu_part = VarExpr('cu_part')
+ord = VarExpr('db->ord_dataset')
+x_ord = VarExpr('x_ord')
+ord_part = VarExpr('ord_part')
+cu_ord = VarExpr('cu_ord')
+x_cu_ord = VarExpr('x_cu_ord')
+li = VarExpr('db->li_dataset')
+x_li = VarExpr('x_li')
+li_part = VarExpr('li_part')
+cu_ord_li = VarExpr('cu_ord_li')
+x_cu_ord_li = VarExpr('x_cu_ord_li')
+cu_ord_li_having = VarExpr('cu_ord_li_having')
+x_cu_ord_li_groupby_agg = VarExpr('x_cu_ord_li_groupby_agg')
+out = VarExpr('out')
+
+query = LetExpr(li_groupby_agg, 
+                SumExpr(x_li, 
+                        li, 
+                        DicConsExpr([(RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey'))]), 
+                                      RecConsExpr([('sum_quantity', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_quantity'))]))]), 
+                        False), 
+                LetExpr(li_having, 
+                        SumExpr(x_li_groupby_agg, 
+                                li_groupby_agg, 
+                                IfExpr(CompareExpr(CompareSymbol.GT, RecAccessExpr(PairAccessExpr(x_li_groupby_agg, 1), 'sum_quantity'), ConstantExpr(300)), 
+                                       DicConsExpr([(PairAccessExpr(x_li_groupby_agg, 0), ConstantExpr(True))]), EmptyDicConsExpr()), True), 
+                        LetExpr(cu_part, 
+                                SumExpr(x_cu, 
+                                        cu, 
+                                        DicConsExpr([(RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_custkey'), 
+                                                      RecConsExpr([('c_name', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_name'))]))]), True), 
+                                LetExpr(cu_ord, 
+                                        SumExpr(x_ord, 
+                                                ord, 
+                                                IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(li_having, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderkey')), ConstantExpr(None)), 
+                                                       IfExpr(ConstantExpr(True), 
+                                                              IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(cu_part, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), ConstantExpr(None)), 
+                                                                     DicConsExpr([(RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderkey'), 
+                                                                                   RecConsExpr([('c_name', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_name')), 
+                                                                                                ('c_custkey', RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_custkey')),
+                                                                                                ('o_orderdate', RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderdate')),
+                                                                                                ('o_totalprice', RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_totalprice'))]))]),
+                                                                     EmptyDicConsExpr()), 
+                                                              EmptyDicConsExpr()),
+                                                       EmptyDicConsExpr()), 
+                                                True), 
+                                        LetExpr(cu_ord_li, 
+                                                SumExpr(x_li,
+                                                        li, 
+                                                        IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), ConstantExpr(None)), 
+                                                               DicConsExpr([(RecConsExpr([('c_name', RecAccessExpr(DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_name')), 
+                                                                                          ('c_custkey', RecAccessExpr(DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'c_custkey')), 
+                                                                                          ('o_orderkey', RecAccessExpr(DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'o_orderkey')),
+                                                                                          ('o_orderdate', RecAccessExpr(DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'o_orderdate')), 
+                                                                                          ('o_totalprice', RecAccessExpr(DicLookupExpr(cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'o_totalprice'))]),
+                                                                             RecConsExpr([('sum_quantity', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_quantity'))]))]),
+                                                               EmptyDicConsExpr()),
+                                                        False), 
+                                                LetExpr(out,
+                                                        SumExpr(x_cu_ord_li,
+                                                                cu_ord_li, 
+                                                                DicConsExpr([(ConcatExpr(PairAccessExpr(x_cu_ord_li, 0), PairAccessExpr(x_cu_ord_li, 1)), ConstantExpr(True))]), 
+                                                                True),
+                                                        ConstantExpr(True)))))))
+```
+
 # Q19
 ```python
 pa = VarExpr('db->pa_dataset')
