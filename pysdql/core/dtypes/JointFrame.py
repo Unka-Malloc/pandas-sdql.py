@@ -379,7 +379,6 @@ class JointFrame:
             # Q3 -> this way, sir
             # Q18 -> this way, sir
             if self.is_next_part:
-
                 iter_key = self.get_next_part_key()
                 next_part_key_ir = probe_on.key_access(iter_key)
                 if self.col_proj:
@@ -416,6 +415,18 @@ class JointFrame:
                     joint_op = IfExpr(condExpr=probe_cond,
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=EmptyDicConsExpr())
+
+                isin_expr = self.probe_frame.get_isin()
+                vname_having = f'{isin_expr.part_on.name}_having'
+                var_having = isin_expr.part_on.context_variable[vname_having]
+                if isin_expr:
+                    joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                           DicLookupExpr(var_having,
+                                                                         probe_on.key_access(isin_expr.col_probe.field)),
+                                                           ConstantExpr(None)),
+                                      thenBodyExpr=joint_op,
+                                      elseBodyExpr=EmptyDicConsExpr()
+                                      )
 
                 output = LetExpr(varExpr=probe_var,
                                  valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
@@ -490,15 +501,16 @@ class JointFrame:
             else:
                 next_op = ConstantExpr('placeholder_probe_next')
 
-        print(self.partition_frame.is_joint, self.probe_frame.is_joint)
-        print(self.part_frame.partition_on.name, self.probe_frame.probe_on.name)
+        # print(self.partition_frame.is_joint, self.probe_frame.is_joint)
+        # print(self.part_frame.partition_on.name, self.probe_frame.probe_on.name)
 
         # Q15 -> this way, sir
         # Q19 -> this way, sir
         if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
             isin_expr = self.probe_frame.get_isin()
             if isin_expr:
-                print(self.probe_frame.probe_on.get_having(next_op))
+                return self.probe_frame.probe_on.get_having(
+                    self.partition_frame.get_part_expr(self.get_probe_expr(next_op)))
             if self.probe_frame.was_groupby_agg:
                 tmp_let_expr = self.probe_frame.probe_on.get_groupby_agg()
                 tmp_let_expr = LetExpr(self.probe_frame.get_probe_on().get_var_part(),
