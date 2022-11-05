@@ -251,7 +251,7 @@ out = VarExpr('out')
 query = LetExpr(li_groupby_agg, 
                 SumExpr(x_li, 
                         li, 
-                        DicConsExpr([(RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey'))]), 
+                        DicConsExpr([(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey'), 
                                       RecConsExpr([('sum_quantity', RecAccessExpr(PairAccessExpr(x_li, 0), 'l_quantity'))]))]), 
                         False), 
                 LetExpr(li_having, 
