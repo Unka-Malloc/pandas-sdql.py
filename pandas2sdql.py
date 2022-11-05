@@ -155,6 +155,41 @@ def q15(li, su):
     return result.optimize()
 
 
+def q16(ps, pa, su):
+    pa_filt = pa[
+        (pa.p_brand != "Brand#45") &
+        (pa.p_type.str.startswith("MEDIUM POLISHED") == False) &
+        (
+                (pa.p_size == 49) |
+                (pa.p_size == 14) |
+                (pa.p_size == 23) |
+                (pa.p_size == 45) |
+                (pa.p_size == 19) |
+                (pa.p_size == 3) |
+                (pa.p_size == 36) |
+                (pa.p_size == 9)
+        )
+        ]
+    pa_proj = pa_filt[["p_partkey", "p_brand", "p_type", "p_size"]]
+
+    su_filt = su[
+        su.s_comment.str.contains("Customer") & (su.s_comment.str.find("Customer") + 7) < su.s_comment.str.find(
+            "Complaints")]
+    su_proj = su_filt[["s_suppkey"]]
+
+    ps_filt = ps[~ps.ps_suppkey.isin(su_proj["s_suppkey"])]
+
+    ps_pa_join = pd.merge(pa_proj, ps_filt, left_on="p_partkey", right_on="ps_partkey", how="inner")
+
+    result = ps_pa_join \
+        .groupby(["p_brand", "p_type", "p_size"]) \
+        .agg(supplier_cnt=("ps_suppkey", lambda x: x.nunique()))
+
+    result.show()
+
+    return result.optimize()
+
+
 def q18(cu, ord, li):
     li_aggr = li \
         .groupby(["l_orderkey"]) \
@@ -224,12 +259,16 @@ if __name__ == '__main__':
     li = DataFrame()
     pa = DataFrame()
     su = DataFrame()
+    ps = DataFrame()
 
     # q1(li)
-    # q4(li, ord)
+
     # q3(cu, ord, li)
+    q4(li, ord)
     # q6(li)
     # q10(ord, cu, na, li)
-    # q19(pa, li)
     # q15(li, su)
-    q18(cu, ord, li)
+    # q16(ps, pa, su)
+    # q18(cu, ord, li)
+    # q19(pa, li)
+
