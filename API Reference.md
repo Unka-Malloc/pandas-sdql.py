@@ -175,36 +175,6 @@ Therefore, `IterEl` is a neccessary design, which represent the iteration elemen
 4. Column Insertion
 5. Column Deletion
 
-# Merge
-- LeftPart
-```python
-from pysdql.core.dtypes.sdql_ir import (
-    IfExpr,
-    ConstantExpr,
-    LetExpr,
-    VarExpr
-)
-
-v1 = VarExpr('')
-
-cond = IfExpr(
-    condExpr=ConstantExpr(None),
-    thenBodyExpr=ConstantExpr(None),
-    elseBodyExpr=ConstantExpr(None)
-)
-
-LetExpr(
-    varExpr=,
-    valExpr=,
-    bodyExpr=
-)
-
-```
-- RightProbe
-```python
-
-```
-
 # Empty Dict
 
 # isAssignSum

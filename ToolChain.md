@@ -1,5 +1,6 @@
 ## SDQL IR List
-`[LetExpr,
+`[ConstantExpr, VarExpr,
+LetExpr,
 SumExpr,
 IfExpr,
 CompareExpr, 
@@ -11,13 +12,22 @@ ExtFuncExpr
 ]`
 
 ## pysdql tool chain
-`concat_cond`: Concatenate the new condition to the original condition with `and` \ `or`  
-`add_cond`: Add the new condition to the outer or inner layer of the original condition  
-`replace_cond`: Replace the old condition with a new condition  
+`apply_all`: Ignore `(bool, int, float, str, ConstantExpr, VarExpr)`  
+`gather_all`: Ignore `(bool, int, float, str, ConstantExpr, VarExpr)`  
 
-`replace_dict`: Find all occurrences of the specified dictionary and replace it with a new one.  
-`replace_rec`: Find all occurrences of the specified record and replace it with a new one.  
+`var_eq`: If two varaibles are equivalent, return True, else, return False  
+`const_eq`: If two constants are equivalent, return True, else, return False  
+`sdql_eq`: 
+
+`replace_cond`: Replace the old condition with a new condition  
+`concat_cond`: Concatenate the new condition to the original condition with `and` \ `or`  
+`add_cond`: Add the new condition to the outer or inner layer of the original condition
+
+`replace_var`: Find all occurrences of the specified variable and replace it with a new one.  
 `replace_iter_el`: Find all occurrences of the specified iteration element and replace it with a new one.  
+
+`findall_bindings`: Find all let bindings, return as a list of tuples `[(VarExpr, SumExpr)]`  
+`locate_iter`: Find the iteration on the specified dict and return as a tuple `(VarExpr, SumExpr)`  
 
 `get_ret_type`: Get the type of return value after the iteration.  
 `is_ret_dict`: This iteration returns a dictionary  
