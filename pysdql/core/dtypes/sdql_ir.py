@@ -734,15 +734,15 @@ class ConstantExpr(Expr):
     def __init__(self, value):
         super().__init__(None)
         self.value = value
-        if (type(value) == int):
+        if type(value) == int:
             self.type = IntType()
-        elif (type(value) == float):
+        elif type(value) == float:
             self.type = FloatType()
-        elif (type(value) == bool):
+        elif type(value) == bool:
             self.type = BoolType()
-        elif (type(value) == str):
+        elif type(value) == str:
             self.type = StringType()
-        elif value == None:
+        elif value is None:
             self.type = None
         else:
             print("Error: constant type not supported!")
