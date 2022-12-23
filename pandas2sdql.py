@@ -555,8 +555,8 @@ if __name__ == '__main__':
     su = DataFrame()
     ps = DataFrame()
 
-    # q1(li)
-    q3(cu, ord, li)
+    q1(li)
+    # q3(cu, ord, li)
     # q4(li, ord)
     # q6(li)
     # q10(ord, cu, na, li)
