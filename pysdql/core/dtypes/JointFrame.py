@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.JoinPartitionFrame import JoinPartitionFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
@@ -416,9 +417,9 @@ class JointFrame:
                                       elseBodyExpr=EmptyDicConsExpr())
 
                 isin_expr = self.probe_frame.get_isin()
-                vname_having = f'{isin_expr.part_on.name}_having'
-                var_having = isin_expr.part_on.context_variable[vname_having]
                 if isin_expr:
+                    vname_having = f'{isin_expr.part_on.name}_having'
+                    var_having = isin_expr.part_on.context_variable[vname_having]
                     joint_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                            DicLookupExpr(var_having,
                                                                          probe_on.key_access(
@@ -492,6 +493,7 @@ class JointFrame:
                                  bodyExpr=ConstantExpr(True))
 
                 return output
+
             if self.probe_frame.has_isin():
                 # aggr_key_ir
                 key_rec_list = []
@@ -544,13 +546,13 @@ class JointFrame:
                                                        )
                     else:
                         joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                        DicLookupExpr(isin_expr.part_on.var_part,
-                                                                                      probe_on.key_access(
-                                                                                          isin_expr.col_probe.field)),
-                                                                        ConstantExpr(None)),
-                                                   thenBodyExpr=joint_groupby_aggr_op,
-                                                   elseBodyExpr=EmptyDicConsExpr()
-                                                   )
+                                                                            DicLookupExpr(isin_expr.part_on.var_part,
+                                                                                          probe_on.key_access(
+                                                                                              isin_expr.col_probe.field)),
+                                                                            ConstantExpr(None)),
+                                                       thenBodyExpr=joint_groupby_aggr_op,
+                                                       elseBodyExpr=EmptyDicConsExpr()
+                                                       )
 
                 joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                                     leftExpr=DicLookupExpr(dicExpr=part_var,
@@ -582,6 +584,48 @@ class JointFrame:
                                  bodyExpr=LetExpr(var_out, sum_concat, ConstantExpr(True)))
 
                 return output
+            # Q14 -> this way
+            if self.is_next_calc:
+                rec_list = []
+                for i in self.col_ins:
+                    if isinstance(self.col_ins[i], IfExpr):
+                        prev_if = self.col_ins[i]
+                        next_if = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                              DicLookupExpr(self.part_frame.part_var,
+                                                                            probe_key_ir),
+                                                              ConstantExpr(None)),
+                                         thenBodyExpr=prev_if.thenBodyExpr,
+                                         elseBodyExpr=prev_if.elseBodyExpr)
+                        rec_list.append((i, next_if))
+                    else:
+                        rec_list.append((i, self.col_ins[i]))
+                rec = RecConsExpr(rec_list)
+
+                cond = self.probe_frame.get_probe_cond()
+                if cond:
+                    rec = IfExpr(condExpr=cond,
+                                 thenBodyExpr=rec,
+                                 elseBodyExpr=ConstantExpr(None))
+
+                sum_expr = SumExpr(varExpr=self.probe_frame.get_probe_on().iter_el.el,
+                                   dictExpr=self.probe_frame.get_probe_on_var(),
+                                   bodyExpr=rec,
+                                   isAssignmentSum=False)
+
+                calc_expr = self.get_next_calc()
+
+                var_out = VarExpr('out')
+                self.joint.add_context_variable('out', var_out)
+
+                output = LetExpr(varExpr=probe_var,
+                                 valExpr=sum_expr,
+                                 bodyExpr=LetExpr(var_out, calc_expr, ConstantExpr(True)))
+
+                return output
+
+                # print(self.col_ins)
+                # print(self.probe_frame.get_probe_cond())
+                # print(self.get_next_calc().sdql_ir)
 
     def get_joint_expr(self, next_op=None):
         if not next_op:
@@ -685,6 +729,19 @@ class JointFrame:
                 if self.joint.name == op_expr.op.right.name:
                     return True
         return False
+
+    @property
+    def is_next_calc(self):
+        for op_expr in self.joint.operations:
+            if op_expr.op_type == CalcExpr:
+                return True
+        return False
+
+    def get_next_calc(self):
+        for op_expr in self.joint.operations:
+            if op_expr.op_type == CalcExpr:
+                return op_expr.op
+        return None
 
     def __repr__(self):
         return f'''

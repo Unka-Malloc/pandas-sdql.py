@@ -16,6 +16,9 @@ class ExternalExpr(SDQLIR):
 
         self.isinvert = isinvert
 
+    def replace(self, rec, on=None):
+        return ExternalExpr(self.col.replace(rec, on), self.func, self.args, self.isinvert)
+
     def gen_cond_expr(self, operator, unit2):
         """
         :param operator: ColEl
@@ -123,6 +126,9 @@ class ExternalExpr(SDQLIR):
                                 self.col.sdql_ir,
                                 self.args,
                                 ConstantExpr("Nothing!"))
+
+    def __repr__(self):
+        return str(self.sdql_ir)
 
     # @property
     # def vars_str(self):

@@ -342,6 +342,58 @@ def q10():
 
     print(q10)
 
+def q14():
+    promo = VarExpr("promo")
+    pa_indexed = VarExpr("pa_indexed")
+    li_probed = VarExpr("li_probed")
+    results = VarExpr("results")
+
+    li = VarExpr("db->li_dataset")
+    pa = VarExpr("db->pa_dataset")
+
+    q14=LetExpr(promo, ConstantExpr("PROMO"), LetExpr(pa_indexed, JoinPartitionBuilder(pa, "p_partkey",
+                                                                                   lambda p: ExtFuncExpr(
+                                                                                       ExtFuncSymbol.StartsWith,
+                                                                                       p.p_type, promo,
+                                                                                       ConstantExpr("Nothing!")), []),
+                                                  LetExpr(li_probed, SumBuilder(lambda p: IfExpr((((
+                                                              p[0].l_shipdate >= ConstantExpr(19950901))) * ((
+                                                              p[0].l_shipdate < ConstantExpr(19951001)))), RecConsExpr([
+                                                                                                                           (
+                                                                                                                           "A",
+                                                                                                                           IfExpr(
+                                                                                                                               (
+                                                                                                                                           pa_indexed[
+                                                                                                                                               p[
+                                                                                                                                                   0].l_partkey] != ConstantExpr(
+                                                                                                                                       None)),
+                                                                                                                               (
+                                                                                                                                           p[
+                                                                                                                                               0].l_extendedprice * (
+                                                                                                                                                       ConstantExpr(
+                                                                                                                                                           1.0) -
+                                                                                                                                                       p[
+                                                                                                                                                           0].l_discount)),
+                                                                                                                               ConstantExpr(
+                                                                                                                                   0.0))),
+                                                                                                                           (
+                                                                                                                           "B",
+                                                                                                                           (
+                                                                                                                                       p[
+                                                                                                                                           0].l_extendedprice * (
+                                                                                                                                                   ConstantExpr(
+                                                                                                                                                       1.0) -
+                                                                                                                                                   p[
+                                                                                                                                                       0].l_discount)))]),
+                                                                                                 ConstantExpr(None)),
+                                                                                li, ), LetExpr(results, (
+                                                              (ConstantExpr(100.0) * li_probed.A) / li_probed.B),
+                                                                                               LetExpr(VarExpr("out"),
+                                                                                                       results,
+                                                                                                       ConstantExpr(
+                                                                                                           True))))))
+    print(q14)
+
 def q15():
     li_aggr = VarExpr("li_aggr")
     max_revenue = VarExpr("max_revenue")
@@ -888,11 +940,12 @@ def q19():
 
 if __name__ == '__main__':
     # q1()
-    # q3()
+    q3()
     # q4()
     # q6()
     # q10()
+    # q14()
     # q15()
     # q16()
-    q18()
+    # q18()
     # q19()
