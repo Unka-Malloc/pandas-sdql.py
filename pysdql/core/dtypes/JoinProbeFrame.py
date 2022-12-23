@@ -59,9 +59,6 @@ class JoinProbeFrame:
     def get_probe_cond(self):
         return self.__iter_cond
 
-    def get_probe_var(self):
-        return self.__var_probe
-
     def get_probe_on(self):
         return self.__iter_on
 

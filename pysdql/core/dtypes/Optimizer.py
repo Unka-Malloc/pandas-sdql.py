@@ -1,6 +1,8 @@
 from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.JoinPartitionFrame import JoinPartitionFrame
@@ -459,6 +461,12 @@ class Optimizer:
 
             self.has_isin = True
 
+        if op_expr.op_type == CalcExpr:
+            self.last_func = LastIterFunc.Calculation
+
+        if op_expr.op_type == ExternalExpr:
+            self.cond_info['cond_if'] = op_expr.op
+
     @property
     def partition_frame(self):
         frame = JoinPartitionFrame(iter_on=self.opt_on,
@@ -811,6 +819,8 @@ class Optimizer:
                 # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
         if self.last_func == LastIterFunc.Joint:
+            return self.joint_frame.sdql_ir
+        if self.last_func == LastIterFunc.Calculation:
             return self.joint_frame.sdql_ir
         # if self.last_func == LastIterFunc.JoinPartition:
         #     return self.merge_partition_stmt()

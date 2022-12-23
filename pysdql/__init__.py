@@ -46,6 +46,8 @@ from pysdql.const import (
     REGION_LOAD,
 )
 
+from pysdql.core.query import *
+
 
 def merge(left, right, how='inner', left_on=None, right_on=None):
     return left.merge(right, how=how, left_on=left_on, right_on=right_on)

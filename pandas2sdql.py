@@ -3,6 +3,10 @@ from pysdql.core.dtypes.sdql_ir import (
     GenerateSDQLCode,
 )
 
+import pysdql as pd
+
+from pysdql import DataFrame
+
 
 def q1(li):
     li_filt = li[(li.l_shipdate <= "1998-09-02")]
@@ -37,7 +41,7 @@ def q2(pa, su, ps, na, re):
 
     ps_filt = ps[ps['ps_supplycost'] == ps_min]
 
-    pa_filt = pa[(pa['p_size'] == 14) & (pa['p_type'].str.endswith(var2))]
+    pa_filt = pa[(pa['p_size'] == 14) & (pa['p_type'].str.endswith('BRASS'))]
 
     ps_pa_join = ps_filt.merge(pa_filt, left_on='ps_partkey', right_on='p_partkey ', how='inner')
     ps_pa_join = ps_pa_join[['ps_suppkey']]
@@ -142,7 +146,7 @@ def q7(su, li, ord, cu, n1, n2):
 
     n2_filt = n2[(n2['n_name_2'] == 'GERMANY') | (n2['n_name_2'] == 'FRANCE')]
 
-    n1_n2_join = n1.merge(n2, how='cross')
+    n1_n2_join = n1_filt.merge(n2_filt, how='cross')
 
     n1_n2_join = n1_n2_join[(n1['n_name_1'] == 'FRANCE') & (n2['n_name_2'] == 'GERMANY')
                             | ((n1['n_name_1'] == 'GERMANY') & (n2['n_name_2'] == 'FRANCE'))]
@@ -358,14 +362,13 @@ def q13(ord, cu):
 
 
 def q14(li, pa):
-    li_filt = li[(lineitem.l_shipdate >= "1995-09-01") & (li.l_shipdate < "1995-10-01")]
+    li_filt = li[(li.l_shipdate >= "1995-09-01") & (li.l_shipdate < "1995-10-01")]
     pa_proj = pa[["p_partkey", "p_type"]]
     li_pa_join = pd.merge(pa_proj, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
-    li_pa_join["A"] = li_pa_join.apply(
-        lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
-    li_pa_join["B"] = li_pa_join.l_extendedprice * (1 - li_pa_join.l_discount)
+    li_pa_join["A"] = li_pa_join.apply(lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
+    li_pa_join["B"] = li_pa_join.l_extendedprice * (1.0 - li_pa_join.l_discount)
 
-    result = li_pa_join.A.sum() / li_pa_join.B.sum() * 100
+    result = li_pa_join.A.sum() / li_pa_join.B.sum() * 100.0
 
     result.show()
 
@@ -512,10 +515,11 @@ def q19(pa, li):
 
     return result.optimize()
 
+
 def q20(li, ps, pa):
     li_filt = li[(li['l_shipdate'] >= '1994-01-01') & (li['l_shipdate'] < '1995-01-01')]
 
-    li_agg = sub_l.groupby(['l_partkey', 'l_suppkey'], as_index=False)\
+    li_agg = li_filt.groupby(['l_partkey', 'l_suppkey'], as_index=False) \
         .agg(val=('l_quantity', 'sum'))
 
     li_agg['agg_partkey'] = li_agg['l_partkey']
@@ -552,11 +556,11 @@ if __name__ == '__main__':
     ps = DataFrame()
 
     # q1(li)
-
-    # q3(cu, ord, li)
+    q3(cu, ord, li)
     # q4(li, ord)
     # q6(li)
     # q10(ord, cu, na, li)
+    # q14(li, pa)
     # q15(li, su)
     # q16(ps, pa, su)
     # q18(cu, ord, li)

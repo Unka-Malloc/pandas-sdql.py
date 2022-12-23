@@ -6,6 +6,7 @@ li_groupby_agg = VarExpr('li_groupby_agg')
 li_groupby_agg_concat = VarExpr('li_groupby_agg_concat')
 x_li_groupby_agg = VarExpr('x_li_groupby_agg')
 out = VarExpr('out')
+
 query = LetExpr(li_groupby_agg, 
                 SumExpr(x_li, 
                         li, 
@@ -18,12 +19,13 @@ query = LetExpr(li_groupby_agg,
                                                           ('sum_charge', MulExpr(MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'))), AddExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_tax')))), 
                                                           ('count_order', ConstantExpr(1))]))]), 
                                EmptyDicConsExpr()), 
-                        False), LetExpr(li_groupby_agg_concat, 
-                                        SumExpr(x_li_groupby_agg, 
-                                                li_groupby_agg, 
-                                                DicConsExpr([(ConcatExpr(PairAccessExpr(x_li_groupby_agg, 0), PairAccessExpr(x_li_groupby_agg, 1)), ConstantExpr(True))]), 
-                                                True), 
-                                        LetExpr(out, li_groupby_agg_concat, ConstantExpr(True))))
+                        False), 
+                LetExpr(li_groupby_agg_concat, 
+                        SumExpr(x_li_groupby_agg, 
+                                li_groupby_agg, 
+                                DicConsExpr([(ConcatExpr(PairAccessExpr(x_li_groupby_agg, 0), PairAccessExpr(x_li_groupby_agg, 1)), ConstantExpr(True))]), 
+                                True), 
+                        LetExpr(out, li_groupby_agg_concat, ConstantExpr(True))))
 ```
 
 # Q3 

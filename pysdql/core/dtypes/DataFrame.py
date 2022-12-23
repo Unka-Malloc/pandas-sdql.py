@@ -1,4 +1,6 @@
+import ast
 import base64
+import inspect
 import re
 import string
 
@@ -19,6 +21,7 @@ from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
+from pysdql.core.dtypes.NonNullExpr import NonNullExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.SumStmt import SumStmt
@@ -352,7 +355,10 @@ class DataFrame(SemiRing):
 
     @property
     def sdql_ir(self):
-        return self.optimize().sdql_ir
+        opt = self.get_opt()
+        for op_expr in self.operations:
+            opt.input(op_expr)
+        return opt.output
 
     @property
     def expr(self) -> str:
@@ -439,7 +445,7 @@ class DataFrame(SemiRing):
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
-            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr, IfExpr):
                 return self.insert_col_expr(key, value)
 
     def rename_col_scalar(self, key, value):
@@ -597,8 +603,8 @@ class DataFrame(SemiRing):
         self.show_info()
         print(f'>> {self.name} Optimizer Output <<')
         print(self.optimize())
-        print(f'>> {self.name} Recursive Output <<')
-        print(self.unoptimize())
+        # print(f'>> {self.name} Recursive Output <<')
+        # print(self.unoptimize())
         print('>> Done <<')
 
     @property
@@ -883,3 +889,39 @@ class DataFrame(SemiRing):
         result += f'{last_seq.get_sdql_ir(ConstantExpr(True))}'
 
         return result
+
+    def apply(self, func, axis):
+        """
+
+        :param func:
+        :param axis: 0=columns, 1 = rows
+        :return:
+        """
+        code = str(inspect.getsource(func)).strip()
+        # tree = ast.parse(code)
+        # nodes = ast.walk(tree)
+        # print(ast.dump(tree, indent=4))
+
+        lamb_arg = re.search(r'lambda.*:', code).group()
+        lamb_arg = lamb_arg.replace('lambda', '').replace(':', '').strip()
+
+        lamb_op = re.search(r':.*if', code).group()
+        lamb_op = lamb_op.replace(':', '').replace('if', '').strip()
+
+        lamb_cond = re.search(r'if.*else', code).group()
+        lamb_cond = lamb_cond.replace('if', '').replace('else', '').strip()
+
+        lamb_else = re.search(r'else.*,', code).group()
+        lamb_else = float(lamb_else.replace('else', '').replace(',', '').strip())
+
+        op = eval(lamb_op.replace(f'{lamb_arg}[', 'self['))
+        cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
+
+        if self.is_joint:
+            self.get_partition_side().push(OpExpr(op_obj=cond,
+                                                  op_on=self,
+                                                  op_iter=False))
+
+            return IfExpr(condExpr=NonNullExpr(self.get_partition_side().get_var_part(), ConstantExpr(None)).sdql_ir,
+                          thenBodyExpr=op,
+                          elseBodyExpr=ConstantExpr(lamb_else))

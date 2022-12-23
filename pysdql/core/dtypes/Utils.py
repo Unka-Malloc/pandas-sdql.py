@@ -29,6 +29,7 @@ def is_date(data) -> bool:
 
 
 def input_fmt(data):
+    # print(data, type(data))
     if is_date(data):
         return ConstantExpr(date_fmt(data))
     elif type(data) in (bool, int, float, str):

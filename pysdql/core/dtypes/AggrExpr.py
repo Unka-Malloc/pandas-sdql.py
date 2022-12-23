@@ -1,7 +1,9 @@
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import (
-    AggrType,
+    AggrType, MathSymbol,
 )
 from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.Utils import input_fmt
 
 
 class AggrExpr(SDQLIR):
@@ -25,7 +27,13 @@ class AggrExpr(SDQLIR):
 
     @property
     def sdql_ir(self):
-        return
+        return self.aggr_op
+
+    def __mul__(self, other):
+        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.aggr_on)
+
+    def __truediv__(self, other):
+        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.aggr_on)
 
     def __repr__(self):
         return f'{self.aggr_op}'
