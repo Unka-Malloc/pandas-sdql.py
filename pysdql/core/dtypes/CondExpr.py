@@ -196,7 +196,6 @@ class CondExpr(SDQLIR):
 
     def __and__(self, other):
         if isinstance(other, IgnoreExpr):
-            print(other.ignore)
             return self
         return CondExpr(unit1=self,
                         operator=LogicSymbol.AND,

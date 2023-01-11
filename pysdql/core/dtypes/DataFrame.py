@@ -342,7 +342,7 @@ class DataFrame(SemiRing):
     def val_access(self, field):
         return RecAccessExpr(self.iter_el.value, field)
 
-    def optimize(self):
+    def optimize(self) -> str:
         opt = self.get_opt()
         for op_expr in self.operations:
             opt.input(op_expr)

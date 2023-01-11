@@ -1,6 +1,7 @@
 from pysdql.core.dtypes.DataFrame import DataFrame
 import pysdql as pd
 
+
 def q1():
     li = DataFrame()
     li_filt = li[(li.l_shipdate <= "1998-09-02")]
@@ -18,6 +19,7 @@ def q1():
     # result.show()
 
     return result.optimize()
+
 
 def q3():
     ord = DataFrame()
@@ -43,6 +45,7 @@ def q3():
 
     return result.optimize()
 
+
 def q4():
     ord = DataFrame()
     li = DataFrame()
@@ -58,9 +61,10 @@ def q4():
         .groupby(["o_orderpriority"]) \
         .agg(order_count=("o_orderdate", "count"))
 
-    results.show()
+    # results.show()
 
     return results.optimize()
+
 
 def q6():
     li = DataFrame()
@@ -80,6 +84,7 @@ def q6():
     # result.show()
 
     return result.optimize()
+
 
 def q10():
     ord = DataFrame()
@@ -261,15 +266,3 @@ def q19():
     # result.show()
 
     return result.optimize()
-
-
-
-
-
-
-
-
-
-
-
-
