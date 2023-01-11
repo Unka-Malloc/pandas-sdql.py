@@ -475,8 +475,7 @@ class JointFrame:
                 last_cond = self.probe_frame.get_cond_after_groupby_agg()
 
                 if last_cond:
-                    last_op = IfExpr(last_cond.replace(PairAccessExpr(x_var_part,
-                                                                      1)),
+                    last_op = IfExpr(last_cond.replace(PairAccessExpr(x_var_part, 1)),
                                      last_op,
                                      EmptyDicConsExpr())
 

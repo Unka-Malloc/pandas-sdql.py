@@ -486,11 +486,13 @@ class ColEl(SDQLIR):
 
     def replace(self, rec, on=None):
         if on is None:
+
             return RecAccessExpr(rec, self.field)
-        if on:
+        else:
             if self.relation.is_joint:
                 if self.field in self.relation.partition_side.columns:
                     return RecAccessExpr(rec, self.field)
+
         return self.relation.key_access(self.field)
 
     @property

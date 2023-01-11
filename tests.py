@@ -34,12 +34,14 @@ def test_VarBindSeq():
 if __name__ == '__main__':
     # test_VarBindSeq()
 
-    li = DataFrame()
-    cond = ((li.l_shipdate >= "1994-01-01") &
-            (li.l_shipdate < "1995-01-01") &
-            (li.l_discount >= 0.05) &
-            (li.l_discount <= 0.07) &
-            (li.l_quantity < 24))
+    # li = DataFrame()
+    # cond = ((li.l_shipdate >= "1994-01-01") &
+    #         (li.l_shipdate < "1995-01-01") &
+    #         (li.l_discount >= 0.05) &
+    #         (li.l_discount <= 0.07) &
+    #         (li.l_quantity < 24))
+    #
+    # print(cond.replace(VarExpr('x')))
 
-    print(cond.replace(VarExpr('x')))
+    print(pysdql.q19())
 
