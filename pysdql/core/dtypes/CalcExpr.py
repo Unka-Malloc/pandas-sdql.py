@@ -1,7 +1,7 @@
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.EnumUtil import (
     MathSymbol,
-    OperationReturnType
+    OpRetType
 )
 from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.Utils import input_fmt
@@ -45,7 +45,7 @@ class CalcExpr(SDQLIR):
                          op_on=self.on,
                          op_iter=True,
                          iter_on=self.on,
-                         ret_type=OperationReturnType.FLOAT)
+                         ret_type=OpRetType.FLOAT)
 
         self.on.push(op_expr)
 
@@ -56,7 +56,7 @@ class CalcExpr(SDQLIR):
                          op_on=self.on,
                          op_iter=True,
                          iter_on=self.on,
-                         ret_type=OperationReturnType.FLOAT)
+                         ret_type=OpRetType.FLOAT)
 
         self.on.push(op_expr)
 

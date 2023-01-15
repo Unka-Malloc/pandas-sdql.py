@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
-from pysdql.core.dtypes.EnumUtil import AggrType, OperationReturnType
+from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
@@ -466,7 +466,7 @@ class ColEl(SDQLIR):
                          op_on=self.relation,
                          op_iter=True,
                          iter_on=self.relation,
-                         ret_type=OperationReturnType.FLOAT)
+                         ret_type=OpRetType.FLOAT)
 
         self.relation.push(op_expr)
 
