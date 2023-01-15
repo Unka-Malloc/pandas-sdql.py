@@ -10,7 +10,7 @@ class OpSeq:
         self.stack.pop()
 
     def push(self, val):
-        if type(val) == OpExpr:
+        if isinstance(val, OpExpr):
             self.stack.append(val)
             self.names.append(val.name)
         else:
@@ -40,6 +40,9 @@ class OpSeq:
 
     def __iter__(self):
         return iter(self.stack)
+
+    def __reversed__(self):
+        return reversed(self.stack)
 
 
 

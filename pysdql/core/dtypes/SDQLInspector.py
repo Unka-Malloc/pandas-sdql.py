@@ -376,3 +376,28 @@ class SDQLInspector:
             all_var += SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_var)
 
         return all_var
+
+    @staticmethod
+    def finall_cols(sdql_obj):
+        all_cols = []
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            all_cols.append(sdql_obj.name)
+        else:
+            pass
+
+        return all_cols
+
+    @staticmethod
+    def find_cols(sdql_obj):
+        cols = []
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            cols.append(sdql_obj.name)
+        else:
+            cols += SDQLInspector.gather_all(sdql_obj, SDQLInspector.find_cols())
+
+        return cols
+
+
+

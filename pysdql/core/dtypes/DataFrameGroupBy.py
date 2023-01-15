@@ -41,12 +41,14 @@ class DataFrameGroupBy:
             if agg_flag == 'count':
                 agg_dict[agg_key] = ConstantExpr(1)
             if callable(agg_flag):
+                # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)
 
         groupby_agg = GroupByAgg(groupby_from=self.groupby_from,
                                  groupby_cols=self.groupby_cols,
                                  agg_dict=agg_dict,
-                                 concat=True)
+                                 concat=True,
+                                 origin_dict=agg_tuple_dict)
 
         op_expr = OpExpr(op_obj=groupby_agg,
                          op_on=self.groupby_from,

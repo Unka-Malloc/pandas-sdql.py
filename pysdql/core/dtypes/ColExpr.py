@@ -7,11 +7,6 @@ from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.VarExpr import VarExpr
 
 from pysdql.core.dtypes.sdql_ir import (
-    Expr,
-    CompareSymbol,
-    RecAccessExpr,
-    ConstantExpr,
-
     AddExpr,
     MulExpr,
     SubExpr,
@@ -20,7 +15,6 @@ from pysdql.core.dtypes.sdql_ir import (
 
 from pysdql.core.dtypes.EnumUtil import (
     MathSymbol,
-    AggrType
 )
 
 from pysdql.core.dtypes.Utils import (

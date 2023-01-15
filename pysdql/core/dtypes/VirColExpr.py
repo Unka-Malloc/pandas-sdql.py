@@ -1,4 +1,4 @@
-class VirColEl:
+class VirColExpr:
     def __init__(self, col_var, col_expr):
         self.col_var = col_var
         self.col_expr = col_expr

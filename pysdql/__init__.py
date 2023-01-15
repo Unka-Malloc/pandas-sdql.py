@@ -48,6 +48,10 @@ from pysdql.const import (
 
 from pysdql.core.query import *
 
+from pysdql.query import (
+    tpch
+)
+
 
 def merge(left, right, how='inner', left_on=None, right_on=None):
     return left.merge(right, how=how, left_on=left_on, right_on=right_on)

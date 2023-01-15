@@ -5,11 +5,11 @@ from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.JointFrame import JointFrame
-from pysdql.core.dtypes.JoinPartitionFrame import JoinPartitionFrame
+from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.VirColEl import VirColEl
+from pysdql.core.dtypes.VirColExpr import VirColExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import *
 
@@ -20,6 +20,7 @@ class Optimizer:
     def __init__(self, opt_on, opt_goal=None):
         self.opt_on = opt_on
         self.opt_goal = opt_goal
+        self.retriver = self.opt_on.get_retriever()
 
         self.cond_info = {
             'cond_if': ConstantExpr(True),
@@ -371,7 +372,7 @@ class Optimizer:
                 self.sum_info['sum_op'] = self.cond_stmt
 
             self.last_func = LastIterFunc.Agg
-        if op_expr.op_type == VirColEl:
+        if op_expr.op_type == VirColExpr:
             self.add_col_ins(col_name=op_expr.op.col_var,
                              col_expr=op_expr.op.col_expr)
 
@@ -462,15 +463,15 @@ class Optimizer:
             self.has_isin = True
 
         if op_expr.op_type == CalcExpr:
-            self.last_func = LastIterFunc.Calculation
+            self.last_func = LastIterFunc.Calc
 
         if op_expr.op_type == ExternalExpr:
             self.cond_info['cond_if'] = op_expr.op
 
     @property
     def partition_frame(self):
-        frame = JoinPartitionFrame(iter_on=self.opt_on,
-                                   col_proj=self.col_proj)
+        frame = JoinPartFrame(iter_on=self.opt_on,
+                              col_proj=self.col_proj)
 
         frame.add_key(self.join_partition_info['partition_key'])
         if type(self.cond_info['cond_if']) != ConstantExpr:
@@ -519,6 +520,9 @@ class Optimizer:
             joint_cond = self.joint_info['joint_cond']
         else:
             joint_cond = None
+
+        # print(self.opt_on.name)
+        # print(self.col_proj)
 
         tmp_joint_frame = JointFrame(partition=partition_frame,
                                      probe=probe_frame,
@@ -790,6 +794,8 @@ class Optimizer:
 
     @property
     def output(self) -> LetExpr:
+        # last_op = self.retriver.find_last_op()
+        # print(last_op)
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.opt_on.peak()
             if op_expr.ret_type == OperationReturnType.DICT:
@@ -805,7 +811,7 @@ class Optimizer:
                                LetExpr(VarExpr('out'),
                                        result,
                                        ConstantExpr(True)))
-        if self.last_func == LastIterFunc.GroupbyAgg:
+        elif self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
                 # Q3 -> this way, sir
                 # Q16 -> this way, sir
@@ -818,13 +824,11 @@ class Optimizer:
             else:
                 # Q1 -> this way, sir
                 return self.groupby_aggr_stmt
-        if self.last_func == LastIterFunc.Joint:
+        elif self.last_func == LastIterFunc.Joint:
             return self.joint_frame.sdql_ir
-        if self.last_func == LastIterFunc.Calculation:
+        elif self.last_func == LastIterFunc.Calc:
             return self.joint_frame.sdql_ir
-        # if self.last_func == LastIterFunc.JoinPartition:
-        #     return self.merge_partition_stmt()
-        # if self.last_func == LastIterFunc.JoinProbe:
-        #     return self.merge_probe_stmt()
         else:
-            raise ValueError()
+            last_op = self.retriver.find_last_op()
+            print(last_op)
+            raise NotImplementedError

@@ -34,7 +34,7 @@ class LastIterFunc(Enum):
     JoinPartition = 2
     JoinProbe = 3
     Joint = 4
-    Calculation = 5
+    Calc = 5
 
 
 @unique
