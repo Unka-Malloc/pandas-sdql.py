@@ -44,11 +44,19 @@ class JoinProbeFrame:
                 return True
         return False
 
-    def get_isin(self):
+    def find_isin(self):
         for op_expr in self.probe_on.operations:
             if op_expr.op_type == IsInExpr:
                 return op_expr.op
         return None
+
+    @property
+    def was_isin(self):
+        for op_expr in self.probe_on.operations:
+            if op_expr.op_type == IsInExpr:
+                return True
+        return False
+
 
     def get_probe_col_proj(self):
         return self.__col_proj
@@ -70,12 +78,12 @@ class JoinProbeFrame:
         return self.__iter_on
 
     @property
-    def is_joint(self):
+    def is_joint(self) -> bool:
         return self.probe_on.is_joint
 
     @property
     def was_groupby_agg(self):
-        for op_expr in self.__iter_on.operations:
+        for op_expr in self.probe_on.operations:
             if op_expr.op_type == GroupByAgg:
                 return True
         return False

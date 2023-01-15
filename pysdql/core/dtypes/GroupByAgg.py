@@ -2,10 +2,11 @@ from pysdql.core.dtypes.sdql_ir import RecConsExpr, RecAccessExpr
 
 
 class GroupByAgg:
-    def __init__(self, groupby_from, groupby_cols, agg_dict, concat: bool):
+    def __init__(self, groupby_from, groupby_cols, agg_dict, concat: bool, origin_dict=None):
         self.groupby_from = groupby_from
         self.groupby_cols = groupby_cols
         self.agg_dict = agg_dict
+        self.origin_dict = origin_dict
         self.concat = concat
 
     @property

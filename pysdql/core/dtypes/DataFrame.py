@@ -4,6 +4,7 @@ import inspect
 import re
 import string
 
+import pysdql.const
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
@@ -26,7 +27,7 @@ from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.SumOpt import SumOpt
-from pysdql.core.dtypes.VirColEl import VirColEl
+from pysdql.core.dtypes.VirColExpr import VirColExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
@@ -37,6 +38,7 @@ from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
 
 from pysdql.core.dtypes.sdql_ir import *
+from pysdql.core.enums import History
 
 from pysdql.core.util.type_checker import (
     is_int,
@@ -49,6 +51,8 @@ from pysdql.core.util.data_interpreter import (
     to_scalar
 )
 
+from pysdql.core.util.df_retriever import Retriever
+
 from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
@@ -56,9 +60,25 @@ from pysdql.core.dtypes.EnumUtil import (
     MathSymbol, OptGoal, SumIterType, AggrType, OperationReturnType,
 )
 
+from pysdql.const import (
+    CUSTOMER_COLS,
+    LINEITEM_COLS,
+    ORDERS_COLS,
+    NATION_COLS,
+    REGION_COLS,
+    PART_COLS,
+    SUPPLIER_COLS,
+    PARTSUPP_COLS
+)
 
-class DataFrame(SemiRing):
-    def __init__(self, data=None,
+from pysdql.core.interfaces import (
+    Retrivable
+)
+
+
+class DataFrame(SemiRing, Retrivable):
+    def __init__(self,
+                 data=None,
                  index=None,
                  columns=None,
                  dtype=None,
@@ -68,6 +88,7 @@ class DataFrame(SemiRing):
                  context_variable=None,
                  context_constant=None,
                  context_unopt=None):
+        super().__init__()
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -76,6 +97,7 @@ class DataFrame(SemiRing):
         self.__name = name
         self.__var_name = varname()
         self.__operations = operations if operations else OpSeq()
+        self.__retriever = Retriever(self)
 
         self.__structure = DataFrameStruct('1DT')
 
@@ -135,17 +157,42 @@ class DataFrame(SemiRing):
     def pre_def_var_const(self):
         pass
 
+    @staticmethod
+    def map_name(name):
+        if name in ['cu', 'customer']:
+            return 'customer'
+        if name in ['li', 'lineitem']:
+            return 'lineitem'
+        if name in ['ord', 'orders']:
+            return 'orders'
+        if name in ['pa', 'part']:
+            return 'part'
+        if name in ['su', 'supplier']:
+            return 'supplier'
+        if name in ['ps', 'partsupp']:
+            return 'partsupp'
+        if name in ['na', 'nation']:
+            return 'nation'
+        if name in ['re', 'region']:
+            return 'region'
+
     def init_var_expr(self):
-        if self.name == 'li':
-            return VarExpr("db->li_dataset")
-        if self.name == 'cu':
+        if self.name == 'customer':
             return VarExpr("db->cu_dataset")
-        if self.name == 'ord':
+        if self.name == 'lineitem':
+            return VarExpr("db->li_dataset")
+        if self.name == 'orders':
             return VarExpr("db->ord_dataset")
-        if self.name == 'pa':
+        if self.name == 'nation':
+            return VarExpr('db->na_dataset')
+        if self.name == 'region':
+            return VarExpr('db->re_dataset')
+        if self.name == 'part':
             return VarExpr("db->pa_dataset")
-        if self.name == 'su':
+        if self.name == 'supplier':
             return VarExpr('db->su_dataset')
+        if self.name == 'partsupp':
+            return VarExpr('db->ps_dataset')
 
         return VarExpr(self.name)
 
@@ -176,36 +223,31 @@ class DataFrame(SemiRing):
 
     @property
     def columns(self):
-        if self.name == 'li':
-            return ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice',
-                    'l_discount',
-                    'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate',
-                    'l_shipinstruct',
-                    'l_shipmode', 'l_comment']
-        if self.name == 'na':
-            return ['n_nationkey', 'n_name', 'n_regionkey', 'n_comment']
-        if self.name == 'ord':
-            return ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority',
-                    'o_clerk', 'o_shippriority', 'o_comment']
-        if self.name == 'cu':
-            return ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment',
-                    'c_comment']
-        if self.name == 'pa':
-            return ['p_partkey', 'p_name', 'p_mfgr', 'p_brand', 'p_type', 'p_size', 'p_container', 'p_retailprice',
-                    'p_comment']
-        if self.name == 'su':
-            return ['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']
-        if self.name == 'ps':
-            return ['ps_partkey', 'ps_suppkey', 'ps_availqty', 'ps_supplycost', 'ps_comment']
+        if self.name in ['customer', 'cu']:
+            return CUSTOMER_COLS
+        if self.name in ['lineitem', 'li']:
+            return LINEITEM_COLS
+        if self.name in ['orders', 'ord']:
+            return ORDERS_COLS
+        if self.name in ['nation', 'na']:
+            return NATION_COLS
+        if self.name in ['region', 're']:
+            return REGION_COLS
+        if self.name in ['part', 'pa']:
+            return PART_COLS
+        if self.name in ['supplier', 'su']:
+            return SUPPLIER_COLS
+        if self.name in ['partsupp', 'ps']:
+            return PARTSUPP_COLS
 
         if self.__columns:
-            return DataFrameColumns(self, self.__columns)
+            return self.__columns
         else:
             if self.__data:
                 self.__columns = list(self.__data.keys())
-                return DataFrameColumns(self, self.__columns)
+                self.__columns
             else:
-                return DataFrameColumns(self, [])
+                return []
 
     @property
     def cols_in(self):
@@ -281,7 +323,6 @@ class DataFrame(SemiRing):
         name_list = []
         for i in list(string.ascii_lowercase):
             name_list.append(f'tmp_{i}')
-        print(name_list)
 
     def gen_tmp_name(self, noname=None):
         if noname is None:
@@ -467,12 +508,12 @@ class DataFrame(SemiRing):
         # next_df.push(OpExpr('', var))
 
     def insert_col_expr(self, key, value):
-        self.operations.push(OpExpr(op_obj=VirColEl(col_var=key,
-                                                    col_expr=value),
+        self.operations.push(OpExpr(op_obj=VirColExpr(col_var=key,
+                                                      col_expr=value),
                                     op_on=self,
                                     op_iter=False))
 
-    def groupby(self, cols):
+    def groupby(self, cols, as_index=False):
         self.__columns_used += cols
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
@@ -499,10 +540,13 @@ class DataFrame(SemiRing):
 
         next_context_unopt = self.unopt_list + right.unopt_list
 
+        next_cols = self.cols_out + right.cols_out
+
         tmp_name = f'{self.name}_{right.name}'
 
         tmp_df = DataFrame(name=tmp_name,
                            is_joint=True,
+                           columns=next_cols,
                            context_variable=next_context_var,
                            context_constant=next_context_const,
                            context_unopt=next_context_unopt)
@@ -515,15 +559,15 @@ class DataFrame(SemiRing):
                                joint=tmp_df)
 
         self.push(OpExpr(op_obj=merge_expr,
-                         op_on=self,
+                         op_on=[self, right],
                          op_iter=True))
 
         right.push(OpExpr(op_obj=merge_expr,
-                          op_on=right,
+                          op_on=[self, right],
                           op_iter=True))
 
         tmp_df.push(OpExpr(op_obj=merge_expr,
-                           op_on=self,
+                           op_on=[self, right],
                            op_iter=True))
 
         return tmp_df
@@ -584,6 +628,8 @@ class DataFrame(SemiRing):
             self.partition_side.show_info()
             self.probe_side.show_info()
 
+        print(f'>> {self.name} Columns <<')
+        print(self.columns)
         print(f'>> {self.name} Columns(In) <<')
         print(self.cols_in)
         print(f'>> {self.name} Columns(Out) <<')
@@ -598,6 +644,7 @@ class DataFrame(SemiRing):
             print(self.context_constant)
         print(f'>> {self.name} Operation Sequence <<')
         print(self.operations)
+        print(f'========================================')
 
     def show(self):
         self.show_info()
@@ -696,7 +743,7 @@ class DataFrame(SemiRing):
     def find_col_ins(self):
         tmp_list = []
         for op_expr in self.operations:
-            if op_expr.op_type == VirColEl:
+            if op_expr.op_type == VirColExpr:
                 tmp_list.append(op_expr)
         if tmp_list:
             return tmp_list
@@ -716,11 +763,19 @@ class DataFrame(SemiRing):
             op_expr = self.find_next_merge()
             left = op_expr.op.left
             right = op_expr.op.right
+            left_on = op_expr.op.left_on
+            right_on = op_expr.op.right_on
 
             if self.name == left.name:
-                self.__columns_used.append(op_expr.op.left_on)
+                if isinstance(left_on, str):
+                    self.__columns_used.append(left_on)
+                if isinstance(left_on, list):
+                    self.__columns_used += left_on
             if self.name == right.name:
-                self.__columns_used.append(op_expr.op.right_on)
+                if isinstance(right_on, str):
+                    self.__columns_used.append(right_on)
+                if isinstance(right_on, list):
+                    self.__columns_used += right_on
 
             joint_cols_used = op_expr.op.joint.cols_used
 
@@ -749,7 +804,17 @@ class DataFrame(SemiRing):
         cols_list = []
         for op_expr in self.operations:
             if op_expr.op_type == MergeExpr:
-                cols_list.append((op_expr.op.left_on, op_expr.op.right_on))
+                if isinstance(op_expr.op.left_on, str) and isinstance(op_expr.op.right_on, str):
+                    cols_list.append((op_expr.op.left_on, op_expr.op.right_on))
+                elif isinstance(op_expr.op.left_on, list) and isinstance(op_expr.op.right_on, list):
+                    if len(op_expr.op.left_on) != len(op_expr.op.right_on):
+                        raise ValueError('MergeError: left_on and right_on must be at the same length!')
+                    for i in range(len(op_expr.op.left_on)):
+                        l_on = op_expr.op.left_on[i]
+                        r_on = op_expr.op.right_on[i]
+                        cols_list.append((l_on, r_on))
+                else:
+                    raise NotImplementedError
                 if self.name != op_expr.op.joint.name:
                     cols_list += op_expr.op.joint.find_cols_as_key_tuple()
         return list(set(cols_list))
@@ -792,20 +857,22 @@ class DataFrame(SemiRing):
     def define_variables(self):
         result = ''
         for vname in self.context_variable.keys():
-            if vname == 'li':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'cu':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'ord':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'na':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'pa':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'su':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
-            elif vname == 'ps':
-                result += f"{vname} = VarExpr('db->{vname}_dataset')\n"
+            if vname == 'lineitem':
+                result += f"{vname} = VarExpr('db->li_dataset')\n"
+            elif vname == 'customer':
+                result += f"{vname} = VarExpr('db->cu_dataset')\n"
+            elif vname == 'orders':
+                result += f"{vname} = VarExpr('db->ord_dataset')\n"
+            elif vname == 'nation':
+                result += f"{vname} = VarExpr('db->na_dataset')\n"
+            elif vname == 'region':
+                result += f"{vname} = VarExpr('db->re_dataset')\n"
+            elif vname == 'part':
+                result += f"{vname} = VarExpr('db->pa_dataset')\n"
+            elif vname == 'supplier':
+                result += f"{vname} = VarExpr('db->su_dataset')\n"
+            elif vname == 'partsupp':
+                result += f"{vname} = VarExpr('db->ps_dataset')\n"
             else:
                 result += f"{vname} = VarExpr('{vname}')\n"
         return result
@@ -849,7 +916,7 @@ class DataFrame(SemiRing):
                 self.unopt_list.append(LetExpr(tmp_var,
                                                sum_expr,
                                                ConstantExpr(True)))
-            if op_expr.op_type == VirColEl:
+            if op_expr.op_type == VirColExpr:
                 sum_expr = SumExpr(iter_last_var,
                                    last_var,
                                    DicConsExpr([(ConcatExpr(iter_last_key,
@@ -925,3 +992,16 @@ class DataFrame(SemiRing):
             return IfExpr(condExpr=NonNullExpr(self.get_partition_side().get_var_part(), ConstantExpr(None)).sdql_ir,
                           thenBodyExpr=op,
                           elseBodyExpr=ConstantExpr(lamb_else))
+
+    def optimize_obj(self):
+        opt = self.get_opt()
+        for op_expr in self.operations:
+            opt.input(op_expr)
+
+        return opt.output
+
+    def get_history(self):
+        return self.operations
+
+    def get_retriever(self) -> Retriever:
+        return self.__retriever

@@ -1,14 +1,22 @@
 from pysdql.core.dtypes.CalcExpr import CalcExpr
-from pysdql.core.dtypes.JoinPartitionFrame import JoinPartitionFrame
+from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 
 from pysdql.core.dtypes.sdql_ir import *
+from pysdql.core.util.df_retriever import Retriever
 
 
 class JointFrame:
-    def __init__(self, partition: JoinPartitionFrame, probe: JoinProbeFrame, joint, col_ins=None, col_proj=None,
-                 groupby_cols=None, aggr_dict=None, joint_cond=None):
+    def __init__(self,
+                 partition: JoinPartFrame,
+                 probe: JoinProbeFrame,
+                 joint,
+                 col_ins=None,
+                 col_proj=None,
+                 groupby_cols=None,
+                 aggr_dict=None,
+                 joint_cond=None):
         """
 
         :param partition:
@@ -21,6 +29,7 @@ class JointFrame:
         :param joint_cond: CondExpr
         """
         self.__partition_frame = partition
+        self.__part_frame = partition
         self.__probe_frame = probe
         self.__op = None
         self.__next_op = None
@@ -30,6 +39,10 @@ class JointFrame:
         self.groupby_cols = groupby_cols if groupby_cols else []
         self.aggr_dict = aggr_dict if aggr_dict else {}
         self.joint_cond = joint_cond
+
+    @property
+    def retriever(self) -> Retriever:
+        return self.joint.get_retriever()
 
     @property
     def joint(self):
@@ -47,15 +60,15 @@ class JointFrame:
         self.__col_proj = val
 
     @property
-    def partition_frame(self):
+    def partition_frame(self) -> JoinPartFrame:
         return self.__partition_frame
 
     @property
-    def part_frame(self):
-        return self.__partition_frame
+    def part_frame(self) -> JoinPartFrame:
+        return self.__part_frame
 
     @property
-    def probe_frame(self):
+    def probe_frame(self) -> JoinProbeFrame:
         return self.__probe_frame
 
     def add_op(self, val):
@@ -70,10 +83,7 @@ class JointFrame:
 
     @property
     def var_probe(self):
-        return self.__probe_frame.var_probe
-
-    def add_col_proj(self, val):
-        self.__probe_frame.add_col_proj(val)
+        return self.probe_frame.get_probe_on_var()
 
     def get_probe_expr(self, next_op=None):
         if not next_op:
@@ -83,7 +93,7 @@ class JointFrame:
                 next_op = ConstantExpr('placeholder_probe_next')
 
         # df: partition side
-        part_on = self.part_frame.get_partition_on()
+        part_on = self.part_frame.get_part_on()
         # var:
         part_var = self.part_frame.get_part_var()
         this_part_col_proj = self.part_frame.get_part_col_proj()
@@ -105,6 +115,80 @@ class JointFrame:
         joint_col_proj_ir = RecConsExpr(self.col_proj) if self.col_proj else RecConsExpr([(probe_key,
                                                                                            probe_on.key_access(
                                                                                                probe_key))])
+
+        if self.retriever.is_last_joint():
+            if self.retriever.last_iter_is_groupby_agg:
+                if self.part_frame.retriever.as_bypass_for_next_join:
+                    pass
+            if self.retriever.last_iter_is_merge:
+                if isinstance(self.part_frame.get_part_key(), list) or isinstance(self.probe_frame.get_probe_key(),
+                                                                                  list):
+                    raise NotImplementedError
+                if isinstance(self.part_frame.get_part_key(), str) or isinstance(self.probe_frame.get_probe_key(), str):
+                    # aggr_key_ir
+                    key_rec_list = []
+                    cleaned_col_proj = []
+                    [cleaned_col_proj.append(x) for x in sorted(self.col_proj) if x not in cleaned_col_proj]
+                    for col in cleaned_col_proj:
+                        col_name = col[0]
+                        if col_name in self.part_frame.cols_out:
+                            key_rec_list.append((col_name,
+                                                 RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                     keyExpr=probe_on.key_access(
+                                                                                         probe_key)),
+                                                               fieldName=col_name)))
+                    aggr_key_ir = RecConsExpr(key_rec_list)
+
+                    joint_op = IfExpr(
+                        condExpr=CompareExpr(CompareSymbol.NE,
+                                             DicLookupExpr(dicExpr=part_var,
+                                                           keyExpr=probe_on.key_access(
+                                                               probe_key)),
+                                             ConstantExpr(None)),
+                        thenBodyExpr=DicConsExpr([(aggr_key_ir, ConstantExpr(True))]),
+                        elseBodyExpr=EmptyDicConsExpr()
+                    )
+
+                    if probe_cond:
+                        joint_op = IfExpr(condExpr=probe_cond,
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=EmptyDicConsExpr())
+
+                    sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                       dictExpr=probe_on.var_expr,
+                                       bodyExpr=joint_op,
+                                       isAssignmentSum=False)
+
+                    var_out = VarExpr('out')
+                    self.joint.add_context_variable('out', var_out)
+
+                    out = LetExpr(var_out, sum_expr, ConstantExpr(True))
+
+                    return out
+        else:
+            if self.retriever.as_part_for_next_join:
+                print(self.joint.name)
+                print(self.retriever.findall_cols_used())
+
+                last_merge_expr = self.retriever.find_merge(mode='as_joint')
+                next_merge_expr = self.retriever.find_merge(mode='as_part')
+                print('last', last_merge_expr)
+                print('next', next_merge_expr)
+
+                print('==============================')
+
+                # dict key: single column
+                key_col = next_merge_expr.left_on
+
+                # dict vals: multi(single) column
+                val_cols = [x for x in self.retriever.findall_cols_used()
+                            if x != last_merge_expr.left_on and x != last_merge_expr.right_on and x != key_col]
+
+                print({
+                    'key': key_col,
+                    'vals': val_cols
+                })
+
         # Q3 -> this way, sir
         if self.is_groupby_agg_joint:
             # aggr_key_ir
@@ -416,7 +500,7 @@ class JointFrame:
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=EmptyDicConsExpr())
 
-                isin_expr = self.probe_frame.get_isin()
+                isin_expr = self.probe_frame.find_isin()
                 if isin_expr:
                     vname_having = f'{isin_expr.part_on.name}_having'
                     var_having = isin_expr.part_on.context_variable[vname_having]
@@ -532,7 +616,7 @@ class JointFrame:
                                                                               aggr_val_ir)]),
                                                    elseBodyExpr=EmptyDicConsExpr())
 
-                isin_expr = self.probe_frame.get_isin()
+                isin_expr = self.probe_frame.find_isin()
                 if isin_expr:
                     if isin_expr.isinvert:
                         joint_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.EQ,
@@ -626,9 +710,13 @@ class JointFrame:
                 # print(self.probe_frame.get_probe_cond())
                 # print(self.get_next_calc().sdql_ir)
 
+            # print('nothing')
+
     def get_joint_expr(self, next_op=None):
         if not next_op:
             if self.is_groupby_agg_joint:
+                next_op = self.get_probe_expr()
+            elif self.retriever.is_last_joint():
                 next_op = self.get_probe_expr()
             else:
                 next_op = ConstantExpr('placeholder_probe_next')
@@ -639,26 +727,25 @@ class JointFrame:
         # Q15 -> this way, sir
         # Q16 -> this way, sir
         # Q19 -> this way, sir
-        if not self.partition_frame.is_joint and not self.probe_frame.is_joint:
-            isin_expr = self.probe_frame.get_isin()
-            if isin_expr:
-                return self.probe_frame.probe_on.get_having(
-                    self.partition_frame.get_part_expr(self.get_probe_expr(next_op)))
+        if not self.part_frame.is_joint and not self.probe_frame.is_joint:
+            if self.probe_frame.was_isin:
+                return self.probe_frame.probe_on.get_having(self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
             if self.probe_frame.was_groupby_agg:
                 tmp_let_expr = self.probe_frame.probe_on.get_groupby_agg()
                 tmp_let_expr = LetExpr(self.probe_frame.get_probe_on().get_var_part(),
                                        tmp_let_expr.valExpr,
                                        self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
                 return tmp_let_expr
-
             # print(f'{self.joint.name}: neither joint')
-            return self.partition_frame.get_part_expr(self.get_probe_expr(next_op))
-        if self.partition_frame.is_joint and not self.probe_frame.is_joint:
+            return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
+        if self.part_frame.is_joint and not self.probe_frame.is_joint:
             # print(f'{self.joint.name}: part joint')
-            return self.partition_frame.partition_on.get_joint_frame().get_joint_expr(next_op)
-        if not self.partition_frame.is_joint and self.probe_frame.is_joint:
+            # return self.part_frame.part_on.get_joint_frame().get_joint_expr(next_op)
+
+            return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
+        if not self.part_frame.is_joint and self.probe_frame.is_joint:
             # print(f'{self.joint.name}: probe joint')
-            # return self.get_next_part_frame().get_part_expr(self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op)))
+            # print(next_op)
             return self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op))
         raise NotImplemented
 
@@ -682,7 +769,7 @@ class JointFrame:
 
     @property
     def is_agg_joint(self):
-        if self.aggr_dict:
+        if not self.groupby_cols and self.aggr_dict:
             return True
         else:
             return False
@@ -697,7 +784,7 @@ class JointFrame:
         else:
             raise ValueError()
 
-    def get_next_part_frame(self) -> JoinPartitionFrame:
+    def get_next_part_frame(self) -> JoinPartFrame:
         for op_expr in self.joint.operations:
             if op_expr.op_type == MergeExpr:
                 if self.joint.name == op_expr.op.left.name or self.joint.name == op_expr.op.right.name:

@@ -276,3 +276,57 @@ Probe: update
             'probe_key': None,
 
             'how': None,
+
+# Plan
+2, 5, 7, 8, 9, 11, 12, 13, 17
+
+# Possible Operations as input()
+1. Agg: Aggregation
+2. GroupbyAgg: Group-By Aggregation
+3. JoinPartition: Partition Side (Hash Join)
+4. JoinProbe: Probe Side (Hash Join)
+5. Joint: Joint DataFrame (Hash Join)
+6. Calc: Addition, Multiplication, Subtraction, and Division
+7. ColProj: Column Projection
+
+# Possible Branches
+1. this (joint) is the last joint frame and has last operation: groupby aggregation
+2. this (joint) is the last joint frame and has last operation: aggregation
+3. this (joint) is the last joint frame and has last operation: calculation
+4. this (joint) is the next probe side
+5. this (joint) is the next partition side
+6. probe side has last operation groupby aggregation
+7. probe side has operation isin()
+
+```
+if self.is_last_joint:
+    if self.last_op_is_groupby_agg:
+    
+    if self.last_op_is_agg:
+    
+    if self.last_op_is_calc:
+    
+    if self.last_op_is_merge:
+    
+    if self.probe_side_was_groupby_agg:
+    
+    if self.probe_side_was_isin:
+    
+    if self.part_side_as_bypass_for_next_join:
+    
+else:
+    if self.as_part_for_next_join:
+    
+    if self.as_probe_for_next_join:
+    
+    if self.as_bypass_for_next_join:
+        Q5
+        '''
+        When: 
+            1. This dataframe is merged as the partition side. (left=this)
+            2. The columns of this dataframe is never used in the operations after the merge.
+        Then:
+            1. Extract columns from this merge as partition keys (left_on=[col1, col2, ...])
+            2. Check these columns are not None with probe keys (right_on=[col1, col2, ...])
+        '''
+```

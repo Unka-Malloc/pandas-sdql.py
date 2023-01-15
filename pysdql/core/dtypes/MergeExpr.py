@@ -1,8 +1,3 @@
-from pysdql.core.dtypes.EnumUtil import OptGoal
-from pysdql.core.dtypes.sdql_ir import LetExpr, VarExpr, IfExpr, DicConsExpr, RecConsExpr, ConstantExpr, \
-    EmptyDicConsExpr, DicLookupExpr, PrintAST, GenerateSDQLCode
-
-
 class MergeExpr:
     def __init__(self, left, right, how, left_on, right_on, joint):
         self.left = left

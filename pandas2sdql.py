@@ -27,28 +27,24 @@ def q1(li):
 
 
 def q2(pa, su, ps, na, re):
+    raise NotImplementedError
+
     re_filt = re[re['r_name'] == 'EUROPE']
 
-    na_re_join = re_filt.merge(na, left_on='r_regionkey', right_on='n_regionkey', how='inner')
-    na_re_join = na_re_join[['n_nationkey']]
-    su_na_join = na_re_join.merge(su, left_on='n_nationkey', right_on='s_nationkey', how='inner')
-    su_na_join = su_na_join[['s_suppkey']]
+    re_na_join = pd.merge(left=re_filt, right=na, left_on='r_regionkey', right_on='n_regionkey', how='inner')
+    re_na_join = re_na_join[['n_nationkey']]
 
-    ps_su_join = su_na_join.merge(ps, left_on='s_suppkey', right_on='ps_suppkey', how='inner')
-    ps_su_join = ps_su_join[['ps_suppkey']]
-
-    ps_min = ps_su_join['ps_supplycost'].min()
-
-    ps_filt = ps[ps['ps_supplycost'] == ps_min]
+    na_su_join = pd.merge(left=re_na_join, right=su, left_on='n_nationkey', right_on='s_nationkey', how='inner')
+    na_su_join = na_su_join[['s_suppkey']]
 
     pa_filt = pa[(pa['p_size'] == 14) & (pa['p_type'].str.endswith('BRASS'))]
 
-    ps_pa_join = ps_filt.merge(pa_filt, left_on='ps_partkey', right_on='p_partkey ', how='inner')
-    ps_pa_join = ps_pa_join[['ps_suppkey']]
+    su_ps_join = pd.merge(left=na_su_join, right=ps, left_on='s_suppkey', right_on='ps_suppkey', how='inner')
+    su_ps_join = su_ps_join[['ps_suppkey']]
 
-    su_ps_join = su_na_join.merge(ps_pa_join, left_on='s_suppkey ', right_on='ps_suppkey ', how='inner')
+    ps_pa_join = pd.merge(left=su_ps_join, right=pa_filt, left_on='ps_partkey', right_on='p_partkey', how='inner')
 
-    result = su_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
+    result = ps_pa_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
     result.show()
 
@@ -95,28 +91,30 @@ def q4(li, ord):
 
 def q5(cu, ord, li, su, na, re):
     re_filt = re[re['r_name'] == 'MIDDLE EAST']
+    # re_filt = re_filt[['r_regionkey']]
+
+    re_na_join = pd.merge(left=re_filt, right=na, left_on='r_regionkey', right_on='n_regionkey')
+    # re_na_join = re_na_join[['n_nationkey', 'n_name']]
+
+    na_cu_join = pd.merge(left=re_na_join, right=cu, left_on='n_nationkey', right_on='c_nationkey')
+    # na_cu_join = na_cu_join[['c_nationkey', 'n_name']]
 
     ord_filt = ord[(ord['o_orderdate'] >= '1995-01-01') & (ord['o_orderdate'] < '1996-01-01')]
 
-    re_na_join = re_filt.merge(right=na, left_on='r_regionkey', right_on='n_regionkey')
-    re_na_join = re_na_join[['n_nationkey']]
+    cu_ord_join = pd.merge(left=na_cu_join, right=ord_filt, left_on='c_custkey', right_on='o_custkey')
+    # cu_ord_join = cu_ord_join[['c_nationkey', 'n_name']]
 
-    re_cu_join = re_na_join.merge(right=cu, left_on='n_nationkey', right_on='c_nationkey')
-    re_cu_join = re_cu_join[['c_nationkey', 'n_nationkey']]
+    ord_li_join = pd.merge(left=cu_ord_join, right=li, left_on='o_orderkey', right_on='l_orderkey')
+    ord_li_join = ord_li_join[['c_nationkey', 'l_suppkey', 'n_name']]
 
-    re_ord_join = re_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
-    re_ord_join = re_ord_join[['c_nationkey', 'n_nationkey']]
+    su_ord_li_join = pd.merge(left=su,
+                              right=ord_li_join,
+                              left_on=['s_suppkey', 's_nationkey'],
+                              right_on=['l_suppkey', 'c_nationkey'])
 
-    re_li_join = re_ord_join.merge(right=li, left_on='o_orderkey', right_on='l_orderkey')
-    re_li_join = re_li_join[['c_nationkey', 'n_nationkey', 'l_suppkey']]
+    su_ord_li_join['revenue'] = su_ord_li_join['l_extendedprice'] * (1 - su_ord_li_join['l_discount'])
 
-    re_su_join = re_li_join.merge(right=su,
-                                  left_on=['c_nationkey', 'n_nationkey', 'l_suppkey'],
-                                  right_on=['s_nationkey', 's_nationkey', 's_suppkey'])
-
-    re_su_join['revenue'] = re_su_join['l_extendedprice'] * (1 - re_su_join['l_discount'])
-
-    result = re_su_join.groupby(['n_name'], as_index=False).agg(revenue=('revenue', 'sum'))
+    result = su_ord_li_join.groupby(['n_name'], as_index=False).agg(revenue=('revenue', 'sum'))
 
     result.show()
 
@@ -365,7 +363,8 @@ def q14(li, pa):
     li_filt = li[(li.l_shipdate >= "1995-09-01") & (li.l_shipdate < "1995-10-01")]
     pa_proj = pa[["p_partkey", "p_type"]]
     li_pa_join = pd.merge(pa_proj, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
-    li_pa_join["A"] = li_pa_join.apply(lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
+    li_pa_join["A"] = li_pa_join.apply(
+        lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
     li_pa_join["B"] = li_pa_join.l_extendedprice * (1.0 - li_pa_join.l_discount)
 
     result = li_pa_join.A.sum() / li_pa_join.B.sum() * 100.0
@@ -554,14 +553,16 @@ if __name__ == '__main__':
     pa = DataFrame()
     su = DataFrame()
     ps = DataFrame()
+    re = DataFrame()
 
     # q1(li)
     # q3(cu, ord, li)
     # q4(li, ord)
+    q5(cu, ord, li, su, na, re)
     # q6(li)
     # q10(ord, cu, na, li)
     # q14(li, pa)
     # q15(li, su)
     # q16(ps, pa, su)
     # q18(cu, ord, li)
-    q19(pa, li)
+    # q19(pa, li)
