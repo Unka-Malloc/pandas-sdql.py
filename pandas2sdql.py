@@ -91,21 +91,16 @@ def q4(li, ord):
 
 def q5(cu, ord, li, su, na, re):
     re_filt = re[re['r_name'] == 'MIDDLE EAST']
-    # re_filt = re_filt[['r_regionkey']]
 
     re_na_join = pd.merge(left=re_filt, right=na, left_on='r_regionkey', right_on='n_regionkey')
-    # re_na_join = re_na_join[['n_nationkey', 'n_name']]
 
     na_cu_join = pd.merge(left=re_na_join, right=cu, left_on='n_nationkey', right_on='c_nationkey')
-    # na_cu_join = na_cu_join[['c_nationkey', 'n_name']]
 
     ord_filt = ord[(ord['o_orderdate'] >= '1995-01-01') & (ord['o_orderdate'] < '1996-01-01')]
 
     cu_ord_join = pd.merge(left=na_cu_join, right=ord_filt, left_on='c_custkey', right_on='o_custkey')
-    # cu_ord_join = cu_ord_join[['c_nationkey', 'n_name']]
 
     ord_li_join = pd.merge(left=cu_ord_join, right=li, left_on='o_orderkey', right_on='l_orderkey')
-    ord_li_join = ord_li_join[['c_nationkey', 'l_suppkey', 'n_name']]
 
     su_ord_li_join = pd.merge(left=su,
                               right=ord_li_join,

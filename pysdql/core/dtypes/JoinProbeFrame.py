@@ -61,6 +61,10 @@ class JoinProbeFrame:
     def get_probe_col_proj(self):
         return self.__col_proj
 
+    @property
+    def probe_key(self):
+        return self.__probe_key
+
     def get_probe_key(self):
         return self.__probe_key
 

@@ -39,15 +39,40 @@ class Retriever:
         elif isinstance(expr_obj, ColExpr):
             cols += Retriever.find_cols(expr_obj.unit1)
             cols += Retriever.find_cols(expr_obj.unit2)
+        return cols
+
+    def find_cols_used(self, mode='', only_next=True):
+        cols = []
+
+        if mode == 'merge':
+            if only_next:
+                next_merges = self.findall_merge()
+                for m in next_merges:
+                    if m.joint.name == self.target.name:
+                        continue
+
+                    if isinstance(m.left_on, str) and isinstance(m.right_on, str):
+                        cols.append(m.left_on)
+                        cols.append(m.right_on)
+                    if isinstance(m.left_on, list) and isinstance(m.right_on, list):
+                        cols += m.left_on
+                        cols += m.right_on
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
 
         return cols
 
-    def findall_cols_used(self, nested=False) -> list:
+    def findall_cols_used(self, as_owner=True, only_next=False) -> list:
         """
 
-        :param nested:
-            True -> find all columns from nested (joint) dataframe and include all columns (even not in current dataframe)
-            False -> only find columns that the current dataframe has
+        :param only_next:
+            True -> only find the columns that are used in the other joints rather than as the [left, right] side
+            False -> fina all usages including the joint that construct itself
+        :param as_owner:
+            False -> find all columns from nested (joint) dataframe and include all columns (even not in current dataframe)
+            True -> only find columns that the current dataframe has
         :return:
         """
         cols_used = []
@@ -57,22 +82,25 @@ class Retriever:
 
             # MergeExpr
             if isinstance(op_body, MergeExpr):
-                if isinstance(op_body.left_on, str):
-                    if isinstance(op_body.right_on, str):
-                        cols_used.append(op_body.left_on)
-                        cols_used.append(op_body.right_on)
+                if not only_next:
+                    if isinstance(op_body.left_on, str):
+                        if isinstance(op_body.right_on, str):
+                            cols_used.append(op_body.left_on)
+                            cols_used.append(op_body.right_on)
+                        else:
+                            raise TypeError(
+                                f'Type does not match: left_on {op_body.left_on} right_on {op_body.right_on}')
+                    elif isinstance(op_body.left_on, list):
+                        if isinstance(op_body.right_on, list):
+                            cols_used += op_body.left_on
+                            cols_used += op_body.right_on
+                        else:
+                            raise TypeError(
+                                f'Type does not match: left_on {op_body.left_on} right_on {op_body.right_on}')
                     else:
-                        raise TypeError(f'Type does not match: left_on {op_body.left_on} right_on {op_body.right_on}')
-                elif isinstance(op_body.left_on, list):
-                    if isinstance(op_body.right_on, list):
-                        cols_used += op_body.left_on
-                        cols_used += op_body.right_on
-                    else:
-                        raise TypeError(f'Type does not match: left_on {op_body.left_on} right_on {op_body.right_on}')
-                else:
-                    raise TypeError('MergeExpr only accept list or str as left_on and right_on.')
+                        raise TypeError('MergeExpr only accept list or str as left_on and right_on.')
 
-                if self.target.name == op_body.left.name or self.target.name == op_body.right.name:
+                if self.target.name != op_body.joint.name:
                     cols_used += op_body.joint.get_retriever().findall_cols_used()
 
             # VirColEl
@@ -108,10 +136,10 @@ class Retriever:
         cleaned_cols_used = []
         [cleaned_cols_used.append(x) for x in sorted(cols_used) if x not in cleaned_cols_used]
 
-        if nested:
-            return cleaned_cols_used
-        else:
+        if as_owner:
             return [x for x in cleaned_cols_used if x in self.target.columns]
+        else:
+            return cleaned_cols_used
 
     '''
     Operations
@@ -212,7 +240,14 @@ class Retriever:
                 else:
                     all_merges.append(op_expr)
 
-        return all_merges
+                if self.target.name != op_body.joint.name:
+                    all_merges += op_body.joint.get_retriever().findall_merge()
+
+        # Remove Duplications
+        cleaned_all_merges = []
+        [cleaned_all_merges.append(x) for x in all_merges if x not in cleaned_all_merges]
+
+        return cleaned_all_merges
 
     def find_merge(self, mode: str):
         """
@@ -264,6 +299,15 @@ class Retriever:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if self.target.name == op_expr.op.left.name:
+                    return True
+        return False
+
+    @property
+    def as_probe_for_next_join(self):
+        for op_expr in reversed(self.history):
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if self.target.name == op_expr.op.right.name:
                     return True
         return False
 

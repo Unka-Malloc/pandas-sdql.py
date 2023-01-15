@@ -13,7 +13,7 @@ from pysdql.core.dtypes.VirColExpr import VirColExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import *
 
-from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OperationReturnType
+from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OpRetType
 
 
 class Optimizer:
@@ -361,7 +361,7 @@ class Optimizer:
 
             self.cond_status = True
         if op_expr.op_type == AggrExpr:
-            if op_expr.ret_type == OperationReturnType.DICT:
+            if op_expr.ret_type == OpRetType.DICT:
                 self.agg_dict_info['aggr_dict'] = op_expr.op.aggr_op
                 self.agg_dict_info['cond_if'] = self.cond_info['cond_if']
                 self.agg_dict_info['cond_then'] = op_expr.op.aggr_op
@@ -798,7 +798,7 @@ class Optimizer:
         # print(last_op)
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.opt_on.peak()
-            if op_expr.ret_type == OperationReturnType.DICT:
+            if op_expr.ret_type == OpRetType.DICT:
                 # Q19 -> this way, sir
                 if self.is_joint:
                     return self.joint_frame.sdql_ir

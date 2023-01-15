@@ -62,7 +62,8 @@ class SumIterType(Enum):
 
 
 @unique
-class OperationReturnType(Enum):
+class OpRetType(Enum):
+    UNKNOWN = -1
     BOOL = 0
     INT = 1
     FLOAT = 2

@@ -27,6 +27,7 @@ from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.SumOpt import SumOpt
+from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.VirColExpr import VirColExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
@@ -57,7 +58,7 @@ from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
-    MathSymbol, OptGoal, SumIterType, AggrType, OperationReturnType,
+    MathSymbol, OptGoal, SumIterType, AggrType, OpRetType,
 )
 
 from pysdql.const import (
@@ -87,7 +88,8 @@ class DataFrame(SemiRing, Retrivable):
                  is_joint=False,
                  context_variable=None,
                  context_constant=None,
-                 context_unopt=None):
+                 context_unopt=None,
+                 context_semiopt=None):
         super().__init__()
         self.__default_name = 'R'
         self.__data = data
@@ -132,6 +134,10 @@ class DataFrame(SemiRing, Retrivable):
         self.unopt_vars = {}
         self.unopt_consts = {}
         self.unopt_list = context_unopt if context_unopt else []
+
+        self.transform = TransExpr(self)
+
+        self.context_semiopt = context_semiopt if context_semiopt else []
 
     @property
     def is_joint(self):
@@ -540,6 +546,8 @@ class DataFrame(SemiRing, Retrivable):
 
         next_context_unopt = self.unopt_list + right.unopt_list
 
+        next_context_semiopt = self.context_semiopt + right.context_semiopt
+
         next_cols = self.cols_out + right.cols_out
 
         tmp_name = f'{self.name}_{right.name}'
@@ -549,7 +557,8 @@ class DataFrame(SemiRing, Retrivable):
                            columns=next_cols,
                            context_variable=next_context_var,
                            context_constant=next_context_const,
-                           context_unopt=next_context_unopt)
+                           context_unopt=next_context_unopt,
+                           context_semiopt=next_context_semiopt)
 
         merge_expr = MergeExpr(left=self,
                                right=right,
@@ -614,7 +623,7 @@ class DataFrame(SemiRing, Retrivable):
                          op_on=self,
                          op_iter=True,
                          iter_on=self,
-                         ret_type=OperationReturnType.DICT)
+                         ret_type=OpRetType.DICT)
 
         self.push(op_expr)
 
