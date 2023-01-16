@@ -963,8 +963,8 @@ class JointFrame:
                     self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
             return self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op))
         if self.part_frame.is_joint and self.probe_frame.is_joint:
-            print(self.retriever.find_dup_cols())
-            print(self.retriever.findall_cols_used(as_owner=False))
+            if self.retriever.find_illegal_dup_col():
+                raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')
 
             '''
             For any joint:
@@ -996,6 +996,10 @@ class JointFrame:
                     (any intermediate joint except the one contains the root probe side)
             
             '''
+            
+            print(self.retriever.find_root_probe())
+
+            print(self.retriever.findall_part_for_root_probe('as_expr'))
 
             raise NotImplementedError
 

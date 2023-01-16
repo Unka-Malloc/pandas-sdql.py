@@ -2,14 +2,15 @@ from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.interfaces import Retrivable
 
 from pysdql.core.dtypes import (
-    CondExpr,
-    MergeExpr,
-    GroupByAgg,
-    AggrExpr,
-    NewColOpExpr,
     ColEl,
     ColExpr,
     ColProjExpr,
+    NewColOpExpr,
+    OldColOpExpr,
+    CondExpr,
+    MergeExpr,
+    AggrExpr,
+    GroupByAgg,
 )
 
 from pysdql.core.dtypes.sdql_ir import *
@@ -99,8 +100,23 @@ class Retriever:
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
                 else:
-                    print(f'Unsupport Type: {type(op_body.col_expr)}')
-                    raise NotImplementedError
+                    raise NotImplementedError(f'Unsupport Type: {type(op_body.col_expr)}')
+
+            # OldColOpExpr
+            if isinstance(op_body, OldColOpExpr):
+                if isinstance(op_body.col_var, str):
+                    cols_used.append(op_body.col_var)
+                else:
+                    TypeError('New Column: The names of new columns must be str.')
+
+                if isinstance(op_body.col_expr, str):
+                    cols_used.append(op_body.col_expr)
+                elif isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                    cols_used += self.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, Expr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr)
+                else:
+                    raise NotImplementedError(f'Unsupport Type: {type(op_body.col_expr)}')
 
             # MergeExpr
             if isinstance(op_body, MergeExpr):
@@ -123,7 +139,8 @@ class Retriever:
                         raise TypeError('MergeExpr only accept list or str as left_on and right_on.')
 
                 if self.target.name != op_body.joint.name:
-                    cols_used += op_body.joint.get_retriever().findall_cols_used()
+                    cols_used += op_body.joint.get_retriever().findall_cols_used(as_owner=as_owner,
+                                                                                 only_next=only_next)
 
             # GroupbyAgg
             if isinstance(op_body, GroupByAgg):
@@ -159,6 +176,23 @@ class Retriever:
                 if self.target.name == op_body.joint.name:
                     dup_cols = [x for x in op_body.left.columns
                                 if x in op_body.right.columns]
+
+        # Remove Duplications
+        cleaned_dup_cols = []
+        [cleaned_dup_cols.append(x) for x in sorted(dup_cols) if x not in cleaned_dup_cols]
+
+        return cleaned_dup_cols
+
+    def find_illegal_dup_col(self):
+        dup_cols = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if self.target.name == op_body.joint.name:
+                    dup_cols = [x for x in op_body.left.columns
+                                if x in op_body.right.columns
+                                and x in self.findall_cols_used(as_owner=False)]
 
         # Remove Duplications
         cleaned_dup_cols = []
@@ -366,6 +400,17 @@ class Retriever:
                     return True
         return False
 
+    @property
+    def is_joint(self) -> bool:
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    return True
+        else:
+            return False
+
     def is_last_joint(self) -> bool:
         is_the_joint = False
 
@@ -387,6 +432,40 @@ class Retriever:
                     is_the_joint = True
 
         return is_the_joint
+
+    def find_root_probe(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if op_body.right.get_retriever().is_joint:
+                        return op_body.right.get_retriever().find_root_probe()
+                    else:
+                        return op_body.right
+        else:
+            raise ValueError('Cannot find the root probe side.')
+
+    def findall_part_for_root_probe(self, mode=''):
+        parts = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if mode == 'as_body':
+                        parts.append(op_body.left)
+                    if mode == 'as_frame':
+                        parts.append(op_body.left.get_part_frame())
+                    if mode == 'as_expr':
+                        if op_body.left.get_retriever().is_joint:
+                            parts.append(op_body.left.get_joint_frame().get_joint_expr())
+                        else:
+                            parts.append(op_body.left.get_part_frame().get_part_expr())
+
+                    if op_body.right.get_retriever().is_joint:
+                        parts += op_body.right.get_retriever().findall_part_for_root_probe(mode)
+
+        return parts
 
     '''
     GroupbyAgg

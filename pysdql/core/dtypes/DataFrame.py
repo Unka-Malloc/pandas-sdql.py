@@ -230,35 +230,32 @@ class DataFrame(SemiRing, Retrivable):
 
     @property
     def columns(self):
-        if self.name in ['customer', 'cu']:
-            return CUSTOMER_COLS
-        if self.name in ['lineitem', 'li']:
-            return LINEITEM_COLS
-        if self.name in ['orders', 'ord']:
-            return ORDERS_COLS
-        if self.name in ['nation', 'na']:
-            return NATION_COLS
-        if self.name in ['region', 're']:
-            return REGION_COLS
-        if self.name in ['part', 'pa']:
-            return PART_COLS
-        if self.name in ['supplier', 'su']:
-            return SUPPLIER_COLS
-        if self.name in ['partsupp', 'ps']:
-            return PARTSUPP_COLS
-        if self.name == 'n1':
-            return ['n_nationkey_1', 'n_name_1', 'n_regionkey_1', 'n_comment_1']
-        if self.name == 'n2':
-            return ['n_nationkey_2', 'n_name_2', 'n_regionkey_2', 'n_comment_2']
-
         if self.__columns:
             return self.__columns
         else:
+            if self.name in ['customer', 'cu']:
+                return CUSTOMER_COLS
+            if self.name in ['lineitem', 'li']:
+                return LINEITEM_COLS
+            if self.name in ['orders', 'ord']:
+                return ORDERS_COLS
+            if self.name in ['nation', 'na']:
+                return NATION_COLS
+            if self.name in ['region', 're']:
+                return REGION_COLS
+            if self.name in ['part', 'pa']:
+                return PART_COLS
+            if self.name in ['supplier', 'su']:
+                return SUPPLIER_COLS
+            if self.name in ['partsupp', 'ps']:
+                return PARTSUPP_COLS
+
             if self.__data:
                 self.__columns = list(self.__data.keys())
-                self.__columns
-            else:
-                return []
+                return self.__columns
+
+        return []
+
 
     @property
     def cols_in(self):
@@ -426,7 +423,7 @@ class DataFrame(SemiRing, Retrivable):
         return
 
     def __str__(self):
-        return self.sdql_expr
+        return self.name
 
     @property
     def structure(self) -> str:
@@ -502,6 +499,13 @@ class DataFrame(SemiRing, Retrivable):
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
+            if key in self.columns:
+                for i in range(len(self.__columns)):
+                    if self.__columns[i] == key:
+                        self.__columns[i] = mapper[key]
+            else:
+                raise IndexError(f'Cannot find the column {key} in {self.name}')
+
             self.operations.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
                                                             col_expr=mapper[key]),
                                         op_on=self,
@@ -1026,3 +1030,8 @@ class DataFrame(SemiRing, Retrivable):
 
     def get_retriever(self) -> Retriever:
         return self.__retriever
+
+    @property
+    def retriever(self) -> Retriever:
+        return self.__retriever
+
