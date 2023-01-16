@@ -978,6 +978,10 @@ class JointFrame:
             Need a function to find the root probe side (the one not joint).
                 retriever.find_root_probe_side()
                 
+            Need a function to find all partition side on the path of the root probe side.
+                (If the root probe side occurs as the probe side in a join)
+                retriever.findall_part_for_root()
+                
             As the end of query, we now have following information:
                 1. groupby aggregation occurs
                 2. probe side is joint
