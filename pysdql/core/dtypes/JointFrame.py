@@ -962,7 +962,40 @@ class JointFrame:
                     mode='as_joint').joint.get_joint_frame().get_joint_expr(
                     self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
             return self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op))
-        raise NotImplemented
+        if self.part_frame.is_joint and self.probe_frame.is_joint:
+            print(self.retriever.find_dup_cols())
+            print(self.retriever.findall_cols_used(as_owner=False))
+
+            '''
+            For any joint:
+                If probe side is joint:
+                    Then find the probe side of the joint probe side.
+                    Until the probe side is not joint.
+                If the probe side is not joint:
+                    Then start with this dataframe
+                    Recursively add dictionary lookup conditions
+                    
+            Need a function to find the root probe side (the one not joint).
+                retriever.find_root_probe_side()
+                
+            As the end of query, we now have following information:
+                1. groupby aggregation occurs
+                2. probe side is joint
+                
+            Therefore, we must reconstruct the process based on __this__ (end):
+                Start with: Groupby Aggregation
+                End with: First merge for the root probe side
+                Preserved:
+                    All partitions
+                Skipped:
+                    Formation of joint dataframes 
+                    (any intermediate joint except the one contains the root probe side)
+            
+            '''
+
+            raise NotImplementedError
+
+        raise NotImplementedError
 
     @property
     def is_first_joint(self):
