@@ -97,7 +97,6 @@ def q5(cu, ord, li, su, na, re):
     na_cu_join = pd.merge(left=re_na_join, right=cu, left_on='n_nationkey', right_on='c_nationkey')
 
     ord_filt = ord[(ord['o_orderdate'] >= '1995-01-01') & (ord['o_orderdate'] < '1996-01-01')]
-
     cu_ord_join = pd.merge(left=na_cu_join, right=ord_filt, left_on='c_custkey', right_on='o_custkey')
 
     ord_li_join = pd.merge(left=cu_ord_join, right=li, left_on='o_orderkey', right_on='l_orderkey')
