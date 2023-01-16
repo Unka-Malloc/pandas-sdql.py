@@ -6,7 +6,7 @@ from pysdql.core.dtypes import (
     MergeExpr,
     GroupByAgg,
     AggrExpr,
-    VirColExpr,
+    NewColOpExpr,
     ColEl,
     ColExpr,
     ColProjExpr,
@@ -37,6 +37,9 @@ class Retriever:
         if isinstance(expr_obj, ColEl):
             cols.append(expr_obj.field)
         elif isinstance(expr_obj, ColExpr):
+            cols += Retriever.find_cols(expr_obj.unit1)
+            cols += Retriever.find_cols(expr_obj.unit2)
+        elif isinstance(expr_obj, CondExpr):
             cols += Retriever.find_cols(expr_obj.unit1)
             cols += Retriever.find_cols(expr_obj.unit2)
         return cols
@@ -80,6 +83,25 @@ class Retriever:
         for op_expr in self.history:
             op_body = op_expr.op
 
+            # CondExpr
+            if isinstance(op_body, CondExpr):
+                cols_used += self.find_cols(op_body)
+
+            # NewColOpExpr
+            if isinstance(op_body, NewColOpExpr):
+                if isinstance(op_body.col_var, str):
+                    cols_used.append(op_body.col_var)
+                else:
+                    TypeError('New Column: The names of new columns must be str.')
+
+                if isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                    cols_used += self.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, Expr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr)
+                else:
+                    print(f'Unsupport Type: {type(op_body.col_expr)}')
+                    raise NotImplementedError
+
             # MergeExpr
             if isinstance(op_body, MergeExpr):
                 if not only_next:
@@ -102,19 +124,6 @@ class Retriever:
 
                 if self.target.name != op_body.joint.name:
                     cols_used += op_body.joint.get_retriever().findall_cols_used()
-
-            # VirColEl
-            if isinstance(op_body, VirColExpr):
-                if isinstance(op_body.col_var, str):
-                    cols_used.append(op_body.col_var)
-                else:
-                    TypeError('Virtual Column: The names of virtual columns must be str.')
-                if isinstance(op_body.col_expr, ColExpr):
-                    cols_used += self.find_cols(op_body.col_expr)
-                elif isinstance(op_body.col_expr, Expr):
-                    cols_used += SDQLInspector.find_cols(op_body.col_expr)
-                else:
-                    raise NotImplementedError
 
             # GroupbyAgg
             if isinstance(op_body, GroupByAgg):
@@ -140,6 +149,22 @@ class Retriever:
             return [x for x in cleaned_cols_used if x in self.target.columns]
         else:
             return cleaned_cols_used
+
+    def find_dup_cols(self):
+        dup_cols = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if self.target.name == op_body.joint.name:
+                    dup_cols = [x for x in op_body.left.columns
+                                if x in op_body.right.columns]
+
+        # Remove Duplications
+        cleaned_dup_cols = []
+        [cleaned_dup_cols.append(x) for x in sorted(dup_cols) if x not in cleaned_dup_cols]
+
+        return cleaned_dup_cols
 
     '''
     Operations

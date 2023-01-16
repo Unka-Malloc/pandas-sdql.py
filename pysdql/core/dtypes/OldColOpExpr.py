@@ -1,4 +1,4 @@
-class VirColExpr:
+class OldColOpExpr:
     def __init__(self, col_var, col_expr):
         self.col_var = col_var
         self.col_expr = col_expr
@@ -18,4 +18,4 @@ class VirColExpr:
 
     @property
     def op_name_suffix(self):
-        return f'_insert'
+        return f'_oldcol'

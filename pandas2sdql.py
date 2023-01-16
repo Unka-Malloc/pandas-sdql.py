@@ -134,46 +134,51 @@ def q6(li):
     return result.optimize()
 
 
-def q7(su, li, ord, cu, n1, n2):
-    n1_filt = n1[(n1['n_name_1'] == 'FRANCE') | (n1['n_name_1'] == 'GERMANY')]
+def q7(su, li, ord, cu, na):
+    na_filt = na[(na['n_name'] == 'FRANCE') | (na['n_name'] == 'GERMANY')]
 
-    n2_filt = n2[(n2['n_name_2'] == 'GERMANY') | (n2['n_name_2'] == 'FRANCE')]
+    na_cu_join = pd.merge(left=na_filt, right=cu,
+                          left_on='n_nationkey', right_on='c_nationkey',
+                          how='inner')
 
-    n1_n2_join = n1_filt.merge(n2_filt, how='cross')
-
-    n1_n2_join = n1_n2_join[(n1['n_name_1'] == 'FRANCE') & (n2['n_name_2'] == 'GERMANY')
-                            | ((n1['n_name_1'] == 'GERMANY') & (n2['n_name_2'] == 'FRANCE'))]
-
-    n1_n2_cu_join = n1_n2_join.merge(cu, left_on='n_nationkey_2', right_on='c_nationkey')
-    n1_n2_cu_join = n1_n2_cu_join[['n_name_1', 'n_name_2', 'n_nationkey_1', 'c_custkey']]
-
-    n1_n2_cu_su_join = n1_n2_cu_join.merge(su, left_on='n_nationkey_1', right_on='s_nationkey')
-    n1_n2_cu_su_join = n1_n2_cu_su_join[['n_name_1', 'n_name_2', 'c_custkey', 's_suppkey']]
-
-    n1_n2_cu_su_ord_join = n1_n2_cu_su_join.merge(ord, left_on='c_custkey', right_on='o_custkey')
-    n1_n2_cu_su_ord_join = n1_n2_cu_su_ord_join[['n_name_1', 'n_name_2', 's_suppkey', 'o_orderkey']]
+    cu_ord_join = pd.merge(left=na_cu_join, right=ord,
+                           left_on='c_custkey', right_on='o_custkey',
+                           how='inner')
 
     li_filt = li[(li['l_shipdate'] >= '1995-01-01') & (li['l_shipdate'] <= '1996-12-31')]
-    n1_n2_cu_su_ord_li_join = n1_n2_cu_su_ord_join.merge(li_filt,
-                                                         left_on=['s_suppkey', 'o_orderkey'],
-                                                         right_on=['l_suppkey', 'l_orderkey'])
-    n1_n2_cu_su_ord_li_join = n1_n2_cu_su_ord_li_join[
-        ['n_name_1', 'n_name_2',
-         'l_extendedprice', 'l_discount', 'l_shipdate']
-    ]
 
-    n1_n2_cu_su_ord_li_join['supp_nation'] = n1_n2_cu_su_ord_li_join['n1_name']
-    n1_n2_cu_su_ord_li_join['cust_nation'] = n1_n2_cu_su_ord_li_join['n2_name']
-    n1_n2_cu_su_ord_li_join['l_year'] = pd.DatetimeIndex(n1_n2_cu_su_ord_li_join['l_shipdate']).year
-    n1_n2_cu_su_ord_li_join['volume'] = n1_n2_cu_su_ord_li_join['l_extendedprice'] * (
-            1 - n1_n2_cu_su_ord_li_join['l_discount'])
+    ord_li_join = pd.merge(left=cu_ord_join, right=li_filt,
+                           left_on='o_orderkey', right_on='l_orderkey'
+                           , how='inner')
 
-    shipping = n1_n2_cu_su_ord_li_join[['supp_nation', 'cust_nation', 'l_year', 'volume']]
+    ord_li_join.rename({'n_name': 'n1_name'}, axis=1, inplace=True)
+
+    na_su_join = pd.merge(left=na_filt, right=su,
+                          left_on='n_nationkey', right_on='s_nationkey',
+                          how='inner')
+
+    na_su_join.rename({'n_name': 'n2_name'}, axis=1, inplace=True)
+
+    all_join = pd.merge(left=na_su_join, right=ord_li_join,
+                        left_on='s_suppkey', right_on='l_suppkey'
+                        , how='inner')
+
+    all_join = all_join[((all_join['n1_name'] == 'FRANCE') & (all_join['n2_name'] == 'GERMANY'))
+                            | ((all_join['n1_name'] == 'GERMANY') & (all_join['n2_name'] == 'FRANCE'))]
+
+    all_join['supp_nation'] = all_join['n1_name']
+    all_join['cust_nation'] = all_join['n2_name']
+    # all_join['l_year'] = pd.DatetimeIndex(all_join['l_shipdate']).year
+    all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
+
+    shipping = all_join[['supp_nation', 'cust_nation', 'l_year', 'volume']]
 
     result = shipping.groupby(['supp_nation', 'cust_nation', 'l_year'], as_index=False) \
         .agg(revenue=('volume', 'sum'))
 
-    return result
+    result.show()
+
+    return result.optimize()
 
 
 def q8(pa, su, li, ord, cu, n1, n2, re):
@@ -549,12 +554,15 @@ if __name__ == '__main__':
     su = DataFrame()
     ps = DataFrame()
     re = DataFrame()
+    # n1 = DataFrame()
+    # n2 = DataFrame()
 
     # q1(li)
     # q3(cu, ord, li)
     # q4(li, ord)
-    q5(cu, ord, li, su, na, re)
+    # q5(cu, ord, li, su, na, re)
     # q6(li)
+    q7(su, li, ord, cu, na)
     # q10(ord, cu, na, li)
     # q14(li, pa)
     # q15(li, su)

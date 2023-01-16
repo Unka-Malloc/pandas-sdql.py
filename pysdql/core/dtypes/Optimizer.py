@@ -9,7 +9,7 @@ from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.VirColExpr import VirColExpr
+from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import *
 
@@ -372,7 +372,7 @@ class Optimizer:
                 self.sum_info['sum_op'] = self.cond_stmt
 
             self.last_func = LastIterFunc.Agg
-        if op_expr.op_type == VirColExpr:
+        if op_expr.op_type == NewColOpExpr:
             self.add_col_ins(col_name=op_expr.op.col_var,
                              col_expr=op_expr.op.col_expr)
 

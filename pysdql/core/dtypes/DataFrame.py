@@ -23,12 +23,13 @@ from pysdql.core.dtypes.IterExpr import IterExpr
 from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.NonNullExpr import NonNullExpr
+from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.SumOpt import SumOpt
 from pysdql.core.dtypes.TransExpr import TransExpr
-from pysdql.core.dtypes.VirColExpr import VirColExpr
+from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
@@ -245,6 +246,10 @@ class DataFrame(SemiRing, Retrivable):
             return SUPPLIER_COLS
         if self.name in ['partsupp', 'ps']:
             return PARTSUPP_COLS
+        if self.name == 'n1':
+            return ['n_nationkey_1', 'n_name_1', 'n_regionkey_1', 'n_comment_1']
+        if self.name == 'n2':
+            return ['n_nationkey_2', 'n_name_2', 'n_regionkey_2', 'n_comment_2']
 
         if self.__columns:
             return self.__columns
@@ -495,6 +500,13 @@ class DataFrame(SemiRing, Retrivable):
             if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr, IfExpr):
                 return self.insert_col_expr(key, value)
 
+    def rename(self, mapper: dict, axis=1, inplace=True):
+        for key in mapper.keys():
+            self.operations.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+                                                            col_expr=mapper[key]),
+                                        op_on=self,
+                                        op_iter=False))
+
     def rename_col_scalar(self, key, value):
         pass
 
@@ -514,8 +526,8 @@ class DataFrame(SemiRing, Retrivable):
         # next_df.push(OpExpr('', var))
 
     def insert_col_expr(self, key, value):
-        self.operations.push(OpExpr(op_obj=VirColExpr(col_var=key,
-                                                      col_expr=value),
+        self.operations.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+                                                        col_expr=value),
                                     op_on=self,
                                     op_iter=False))
 
@@ -752,7 +764,7 @@ class DataFrame(SemiRing, Retrivable):
     def find_col_ins(self):
         tmp_list = []
         for op_expr in self.operations:
-            if op_expr.op_type == VirColExpr:
+            if op_expr.op_type == NewColOpExpr:
                 tmp_list.append(op_expr)
         if tmp_list:
             return tmp_list
@@ -925,7 +937,7 @@ class DataFrame(SemiRing, Retrivable):
                 self.unopt_list.append(LetExpr(tmp_var,
                                                sum_expr,
                                                ConstantExpr(True)))
-            if op_expr.op_type == VirColExpr:
+            if op_expr.op_type == NewColOpExpr:
                 sum_expr = SumExpr(iter_last_var,
                                    last_var,
                                    DicConsExpr([(ConcatExpr(iter_last_key,
