@@ -136,6 +136,12 @@ def q6(li):
 def q7(su, li, ord, cu, na):
     na_filt = na[(na['n_name'] == 'FRANCE') | (na['n_name'] == 'GERMANY')]
 
+    na_su_join = pd.merge(left=na_filt, right=su,
+                          left_on='n_nationkey', right_on='s_nationkey',
+                          how='inner')
+
+    na_su_join.rename({'n_name': 'n1_name'}, axis=1, inplace=True)
+
     na_cu_join = pd.merge(left=na_filt, right=cu,
                           left_on='n_nationkey', right_on='c_nationkey',
                           how='inner')
@@ -144,30 +150,24 @@ def q7(su, li, ord, cu, na):
                            left_on='c_custkey', right_on='o_custkey',
                            how='inner')
 
+    cu_ord_join.rename({'n_name': 'n2_name'}, axis=1, inplace=True)
+
     li_filt = li[(li['l_shipdate'] >= '1995-01-01') & (li['l_shipdate'] <= '1996-12-31')]
 
     ord_li_join = pd.merge(left=cu_ord_join, right=li_filt,
                            left_on='o_orderkey', right_on='l_orderkey'
                            , how='inner')
 
-    ord_li_join.rename({'n_name': 'n1_name'}, axis=1, inplace=True)
-
-    na_su_join = pd.merge(left=na_filt, right=su,
-                          left_on='n_nationkey', right_on='s_nationkey',
-                          how='inner')
-
-    na_su_join.rename({'n_name': 'n2_name'}, axis=1, inplace=True)
-
     all_join = pd.merge(left=na_su_join, right=ord_li_join,
                         left_on='s_suppkey', right_on='l_suppkey'
                         , how='inner')
 
     all_join = all_join[((all_join['n1_name'] == 'FRANCE') & (all_join['n2_name'] == 'GERMANY'))
-                            | ((all_join['n1_name'] == 'GERMANY') & (all_join['n2_name'] == 'FRANCE'))]
+                        | ((all_join['n1_name'] == 'GERMANY') & (all_join['n2_name'] == 'FRANCE'))]
 
     all_join['supp_nation'] = all_join['n1_name']
     all_join['cust_nation'] = all_join['n2_name']
-    # all_join['l_year'] = pd.DatetimeIndex(all_join['l_shipdate']).year
+    all_join['l_year'] = pd.DatetimeIndex(all_join['l_shipdate']).year
     all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
 
     shipping = all_join[['supp_nation', 'cust_nation', 'l_year', 'volume']]

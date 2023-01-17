@@ -1,6 +1,7 @@
 from pysdql.core.dtypes.GroupByAgg import GroupByAgg
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
+from pysdql.core.util.df_retriever import Retriever
 
 
 class JoinProbeFrame:
@@ -91,6 +92,10 @@ class JoinProbeFrame:
             if op_expr.op_type == GroupByAgg:
                 return True
         return False
+
+    @property
+    def retriever(self) -> Retriever:
+        return self.probe_on.get_retriever()
 
     def add_key(self, val):
         self.__probe_key = val

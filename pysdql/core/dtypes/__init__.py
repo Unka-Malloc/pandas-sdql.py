@@ -7,3 +7,4 @@ from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr

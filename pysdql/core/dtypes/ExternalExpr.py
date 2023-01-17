@@ -112,8 +112,14 @@ class ExternalExpr(SDQLIR):
 
     @property
     def sdql_ir(self):
+        if not isinstance(self.col, SDQLIR):
+            raise TypeError(f'Illegal Column IR')
+
         if self.func == ExtFuncSymbol.StartsWith:
-            return ExtFuncExpr(self.func, self.col.sdql_ir, self.args, ConstantExpr("Nothing!"))
+            return ExtFuncExpr(self.func,
+                               self.col.sdql_ir,
+                               self.args,
+                               ConstantExpr("Nothing!"))
         if self.func == ExtFuncSymbol.StringContains:
             return CompareExpr(CompareSymbol.NE,
                                ExtFuncExpr(ExtFuncSymbol.FirstIndex,
@@ -126,6 +132,17 @@ class ExternalExpr(SDQLIR):
                                 self.col.sdql_ir,
                                 self.args,
                                 ConstantExpr("Nothing!"))
+
+        if self.func == ExtFuncSymbol.ExtractYear:
+            return ExtFuncExpr(self.func,
+                                self.col.sdql_ir,
+                                ConstantExpr("Nothing!"),
+                                ConstantExpr("Nothing!"))
+
+        raise NotImplementedError(f'''
+        {self.col},
+        {self.func}
+        ''')
 
     def __repr__(self):
         return str(self.sdql_ir)

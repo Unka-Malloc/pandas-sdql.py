@@ -11,6 +11,7 @@ from pysdql.core.dtypes import (
     MergeExpr,
     AggrExpr,
     GroupByAgg,
+    ExternalExpr,
 )
 
 from pysdql.core.dtypes.sdql_ir import *
@@ -43,6 +44,8 @@ class Retriever:
         elif isinstance(expr_obj, CondExpr):
             cols += Retriever.find_cols(expr_obj.unit1)
             cols += Retriever.find_cols(expr_obj.unit2)
+        elif isinstance(expr_obj, ExternalExpr):
+            cols += Retriever.find_cols(expr_obj.col)
         return cols
 
     def find_cols_used(self, mode='', only_next=True):
@@ -68,6 +71,54 @@ class Retriever:
 
         return cols
 
+    def find_col_rename(self, col_name, by='val'):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            # OldColOpExpr
+            if isinstance(op_body, OldColOpExpr):
+                if by == 'key':
+                    if op_body.col_var == col_name:
+                        return op_body.col_expr
+                if by == 'val':
+                    if op_body.col_expr == col_name:
+                        return op_body.col_var
+        else:
+            raise IndexError(f'Not found: {col_name}')
+
+    def find_renamed_cols(self, mode='as_key'):
+        cols_used = []
+        cols_own = []
+
+        cols_own += self.target.columns
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            # OldColOpExpr
+            if isinstance(op_body, OldColOpExpr):
+                if mode == 'as_key':
+                    if isinstance(op_body.col_var, str):
+                        cols_used.append(op_body.col_var)
+                    else:
+                        TypeError('New Column: The names of new columns must be str.')
+
+                if mode == 'as_val':
+                    if isinstance(op_body.col_expr, str):
+                        # If the key and value are both strings
+                        # rename({'col_new', 'col_old'})
+                        # both columns are owned by the joint one.
+                        cols_own.append(op_body.col_var)
+                        cols_used.append(op_body.col_expr)
+                    elif isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                        cols_used += self.find_cols(op_body.col_expr)
+                    elif isinstance(op_body.col_expr, Expr):
+                        cols_used += SDQLInspector.find_cols(op_body.col_expr)
+                    else:
+                        raise NotImplementedError(f'Unsupport Type: {type(op_body.col_expr)}')
+
+        return cols_used
+
     def findall_cols_used(self, as_owner=True, only_next=False) -> list:
         """
 
@@ -80,6 +131,9 @@ class Retriever:
         :return:
         """
         cols_used = []
+        cols_own = []
+
+        cols_own += self.target.columns
 
         for op_expr in self.history:
             op_body = op_expr.op
@@ -95,7 +149,7 @@ class Retriever:
                 else:
                     TypeError('New Column: The names of new columns must be str.')
 
-                if isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                if isinstance(op_body.col_expr, (ColEl, ColExpr, ExternalExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
@@ -107,9 +161,13 @@ class Retriever:
                 if isinstance(op_body.col_var, str):
                     cols_used.append(op_body.col_var)
                 else:
-                    TypeError('New Column: The names of new columns must be str.')
+                    TypeError('Old Column: The names of new columns must be str.')
 
                 if isinstance(op_body.col_expr, str):
+                    # If the key and value are both strings
+                    # rename({'col_new', 'col_old'})
+                    # both columns are owned by the joint one.
+                    cols_own.append(op_body.col_var)
                     cols_used.append(op_body.col_expr)
                 elif isinstance(op_body.col_expr, (ColEl, ColExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
@@ -163,7 +221,7 @@ class Retriever:
         [cleaned_cols_used.append(x) for x in sorted(cols_used) if x not in cleaned_cols_used]
 
         if as_owner:
-            return [x for x in cleaned_cols_used if x in self.target.columns]
+            return [x for x in cleaned_cols_used if x in cols_own]
         else:
             return cleaned_cols_used
 
@@ -260,6 +318,38 @@ class Retriever:
     '''
     CondExpr
     '''
+
+    @staticmethod
+    def split_cond(cond_expr: CondExpr):
+        return cond_expr.unit1, cond_expr.unit2
+
+    @staticmethod
+    def replace_cond(cond: CondExpr, mapper: dict) -> CondExpr:
+        new_unit1 = cond.unit1
+        new_unit2 = cond.unit2
+
+        if isinstance(cond.unit1, CondExpr):
+            new_unit1 = Retriever.replace_cond(cond.unit1, mapper)
+        if isinstance(cond.unit2, CondExpr):
+            new_unit2 = Retriever.replace_cond(cond.unit2, mapper)
+
+        if isinstance(cond.unit1, ColEl):
+            col_name = cond.unit1.field
+
+            if col_name in mapper.keys():
+                new_unit1 = mapper[col_name]
+
+        if isinstance(cond.unit2, ColEl):
+            col_name = cond.unit2.field
+
+            if col_name in mapper.keys():
+                new_unit2 = mapper[col_name]
+
+        result = CondExpr(new_unit1,
+                          cond.op,
+                          new_unit2)
+
+        return result
 
     def findall_cond(self, body_only=True):
         """
@@ -444,6 +534,35 @@ class Retriever:
                         return op_body.right
         else:
             raise ValueError('Cannot find the root probe side.')
+
+    def finall_key_for_root_probe(self):
+        keys = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    keys.append(op_body.right_on)
+
+                    if op_body.right.get_retriever().is_joint:
+                        keys += op_body.right.get_retriever().finall_key_for_root_probe()
+
+        return keys
+
+    def find_probe_key_as_part_side(self):
+        """
+        Find the probe key for the probe side based on the part side.
+        :param part_side:
+        :return:
+        """
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.left.name == self.target.name:
+                    return op_body.right_on
+        else:
+            raise IndexError('Cannot find a merge.')
 
     def findall_part_for_root_probe(self, mode=''):
         parts = []

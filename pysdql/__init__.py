@@ -45,6 +45,9 @@ from pysdql.const import (
     NATION_LOAD,
     REGION_LOAD,
 )
+from pysdql.core.dtypes.ExtDateTime import ExtDatetime
+from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.sdql_ir import ExtFuncExpr, ExtFuncSymbol, RecAccessExpr, PairAccessExpr, ConstantExpr
 
 from pysdql.core.query import *
 
@@ -146,4 +149,4 @@ def set_option(*args):
 
 
 def DatetimeIndex(col):
-    return col
+    return ExtDatetime(col)

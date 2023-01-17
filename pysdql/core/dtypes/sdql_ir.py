@@ -850,7 +850,7 @@ class EmptyDicConsExpr(Expr):
 
 
 class DicLookupExpr(Expr):
-    def __init__(self, dicExpr: Expr, keyExpr: Expr):
+    def __init__(self, dicExpr: Expr, keyExpr: Expr) -> object:
         super().__init__([dicExpr, keyExpr])
         self.dicExpr = dicExpr
         self.keyExpr = keyExpr
