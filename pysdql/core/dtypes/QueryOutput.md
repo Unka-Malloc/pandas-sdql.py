@@ -246,6 +246,107 @@ query = LetExpr(out,
                 ConstantExpr(True))
 ```
 
+# Q7
+```python
+na = VarExpr('na')
+x_na = VarExpr('x_na')
+na_part = VarExpr('na_part')
+france = VarExpr('france')
+germany = VarExpr('germany')
+su = VarExpr('su')
+x_su = VarExpr('x_su')
+su_part = VarExpr('su_part')
+na_su = VarExpr('na_su')
+x_na_su = VarExpr('x_na_su')
+cu = VarExpr('cu')
+x_cu = VarExpr('x_cu')
+cu_part = VarExpr('cu_part')
+na_cu = VarExpr('na_cu')
+x_na_cu = VarExpr('x_na_cu')
+ord = VarExpr('ord')
+x_ord = VarExpr('x_ord')
+ord_part = VarExpr('ord_part')
+na_cu_ord = VarExpr('na_cu_ord')
+x_na_cu_ord = VarExpr('x_na_cu_ord')
+li = VarExpr('li')
+x_li = VarExpr('x_li')
+li_part = VarExpr('li_part')
+na_cu_ord_li = VarExpr('na_cu_ord_li')
+x_na_cu_ord_li = VarExpr('x_na_cu_ord_li')
+na_su_na_cu_ord_li = VarExpr('na_su_na_cu_ord_li')
+x_na_su_na_cu_ord_li = VarExpr('x_na_su_na_cu_ord_li')
+na_su_na_cu_ord_li_having = VarExpr('na_su_na_cu_ord_li_having')
+x_na_su_na_cu_ord_li_groupby_agg = VarExpr('x_na_su_na_cu_ord_li_groupby_agg')
+out = VarExpr('out')
+
+query = LetExpr(france, ConstantExpr("FRANCE"), 
+                LetExpr(germany, ConstantExpr("GERMANY"),
+                        LetExpr(na_part, 
+                                SumExpr(x_na, na, 
+                                        IfExpr(AddExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_na, 0), 'n_name'), france), 
+                                                       CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(x_na, 0), 'n_name'), germany)), 
+                                               DicConsExpr([(RecAccessExpr(PairAccessExpr(x_na, 0), 'n_nationkey'), 
+                                                             RecConsExpr([('n_name', RecAccessExpr(PairAccessExpr(x_na, 0), 'n_name'))]))]), 
+                                               EmptyDicConsExpr()), 
+                                        True), 
+                                LetExpr(na_su, 
+                                        SumExpr(x_su, su,
+                                                IfExpr(ConstantExpr(True), 
+                                                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_part, RecAccessExpr(PairAccessExpr(x_su, 0), 's_nationkey')), ConstantExpr(None)),
+                                                              DicConsExpr([(RecAccessExpr(PairAccessExpr(x_su, 0), 's_suppkey'), 
+                                                                            RecConsExpr([('n1_name', RecAccessExpr(PairAccessExpr(x_su, 0), 'n_name'))]))]), 
+                                                              EmptyDicConsExpr()), 
+                                                       EmptyDicConsExpr()), 
+                                                False), 
+                                        LetExpr(na_cu,
+                                                SumExpr(x_cu, cu,
+                                                        IfExpr(ConstantExpr(True), 
+                                                               IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_part, RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_nationkey')), ConstantExpr(None)), 
+                                                                      DicConsExpr([(RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_custkey'), 
+                                                                                    RecConsExpr([('n_name', RecAccessExpr(DicLookupExpr(na_part, RecAccessExpr(PairAccessExpr(x_cu, 0), 'c_nationkey')), 'n_name'))]))]),
+                                                                      EmptyDicConsExpr()), 
+                                                               EmptyDicConsExpr()), 
+                                                        False),
+                                                LetExpr(na_cu_ord, 
+                                                        SumExpr(x_ord, ord, 
+                                                                IfExpr(ConstantExpr(True), 
+                                                                       IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_cu, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), ConstantExpr(None)), 
+                                                                              DicConsExpr([(RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_orderkey'), 
+                                                                                            RecConsExpr([('n2_name', RecAccessExpr(PairAccessExpr(x_ord, 0), 'n_name'))]))]), 
+                                                                              EmptyDicConsExpr()),
+                                                                       EmptyDicConsExpr()),
+                                                                False),
+                                                        LetExpr(na_su_na_cu_ord_li, 
+                                                                SumExpr(x_li, li, 
+                                                                        IfExpr(MulExpr(CompareExpr(CompareSymbol.GTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr(19950101)),
+                                                                                       CompareExpr(CompareSymbol.LTE, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr(19961231))),
+                                                                               IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), ConstantExpr(None)), 
+                                                                                      IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(na_su, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_suppkey')), ConstantExpr(None)), 
+                                                                                             IfExpr(AddExpr(MulExpr(CompareExpr(CompareSymbol.EQ, DicLookupExpr(na_su, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_suppkey')), france),
+                                                                                                                    CompareExpr(CompareSymbol.EQ, DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), germany)),
+                                                                                                            MulExpr(CompareExpr(CompareSymbol.EQ, DicLookupExpr(na_su, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_suppkey')), germany), 
+                                                                                                                    CompareExpr(CompareSymbol.EQ, DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), france))), 
+                                                                                                    DicConsExpr([(RecConsExpr([('supp_nation', RecAccessExpr(DicLookupExpr(na_su, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_suppkey')), 'n1_name')),
+                                                                                                                               ('cust_nation', RecAccessExpr(DicLookupExpr(na_cu_ord, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_orderkey')), 'n2_name')),
+                                                                                                                               ('l_year', ExtFuncExpr(ExtFuncSymbol.ExtractYear, RecAccessExpr(PairAccessExpr(x_li, 0), 'l_shipdate'), ConstantExpr("Nothing!"), ConstantExpr("Nothing!")))]),
+                                                                                                                  RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(x_li, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1), RecAccessExpr(PairAccessExpr(x_li, 0), 'l_discount'))))]))]), 
+                                                                                                    EmptyDicConsExpr()), 
+                                                                                             EmptyDicConsExpr()), 
+                                                                                      EmptyDicConsExpr()), 
+                                                                               EmptyDicConsExpr()), 
+                                                                        False), 
+                                                                LetExpr(out, 
+                                                                        SumExpr(x_na_su_na_cu_ord_li, 
+                                                                                na_su_na_cu_ord_li, 
+                                                                                DicConsExpr([(RecConsExpr([('supp_nation', RecAccessExpr(PairAccessExpr(x_na_su_na_cu_ord_li, 0), 'supp_nation')), 
+                                                                                                           ('cust_nation', RecAccessExpr(PairAccessExpr(x_na_su_na_cu_ord_li, 0), 'cust_nation')), 
+                                                                                                           ('l_year', RecAccessExpr(PairAccessExpr(x_na_su_na_cu_ord_li, 0), 'l_year')), 
+                                                                                                           ('revenue', RecAccessExpr(PairAccessExpr(x_na_su_na_cu_ord_li, 1), 'revenue'))]), 
+                                                                                              ConstantExpr(True))]), 
+                                                                                True), 
+                                                                        ConstantExpr(None)))))))))
+```
+
 # Q10
 ```python
 na = VarExpr('db->na_dataset')

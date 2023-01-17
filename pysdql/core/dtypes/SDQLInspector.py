@@ -395,9 +395,90 @@ class SDQLInspector:
         if isinstance(sdql_obj, RecAccessExpr):
             cols.append(sdql_obj.name)
         else:
-            cols += SDQLInspector.gather_all(sdql_obj, SDQLInspector.find_cols())
+            cols += SDQLInspector.gather_all(sdql_obj, SDQLInspector.find_cols)
 
         return cols
 
+    @staticmethod
+    def split_conds(sdql_obj):
+        pass
 
+    @staticmethod
+    def add_binding(bind1, bind2) -> LetExpr:
+        result = LetExpr(bind1.varExpr,
+                         bind1.valExpr,
+                         LetExpr(bind2.varExpr,
+                                 bind2.valExpr,
+                                 bind2.bodyExpr))
 
+        return result
+
+    @staticmethod
+    def split_bindings(sdql_obj) -> list:
+        result = []
+        if isinstance(sdql_obj, LetExpr):
+            var_expr = sdql_obj.varExpr
+            val_expr = sdql_obj.valExpr
+            body_expr = sdql_obj.bodyExpr
+
+            result.append(LetExpr(varExpr=var_expr,
+                                  valExpr=val_expr,
+                                  bodyExpr=ConstantExpr(None)))
+
+            if isinstance(body_expr, LetExpr):
+                result += SDQLInspector.split_bindings(body_expr)
+
+        return result
+
+    @staticmethod
+    def replace_binding(old_obj: LetExpr, new_obj: Expr, mode='body'):
+        if mode == 'body':
+            if isinstance(old_obj.bodyExpr, LetExpr):
+                return LetExpr(varExpr=old_obj.varExpr,
+                               valExpr=old_obj.valExpr,
+                               bodyExpr=SDQLInspector.replace_binding(old_obj.bodyExpr, new_obj))
+            else:
+                return LetExpr(varExpr=old_obj.varExpr,
+                               valExpr=old_obj.valExpr,
+                               bodyExpr=new_obj)
+
+    @staticmethod
+    def remove_dup_bindings(bindings: list):
+        result = []
+        for b in bindings:
+            if isinstance(b, LetExpr):
+                if not any([b.varExpr.name == r.varExpr.name for r in result]):
+                    result.append(b)
+                else:
+                    # print(f'Found duplicate {b.varExpr}')
+                    pass
+        return result
+
+    @staticmethod
+    def concat_bindings(bindings: list) -> LetExpr:
+        flatten = []
+        for b in bindings:
+            flatten += SDQLInspector.split_bindings(b)
+
+        flatten = SDQLInspector.remove_dup_bindings(flatten)
+
+        result = None
+
+        if not len(flatten) >= 2:
+            raise ValueError()
+        else:
+            first_let = flatten[0]
+            second_let = flatten[1]
+
+            if isinstance(first_let, LetExpr) and isinstance(second_let, LetExpr):
+                result = LetExpr(first_let.varExpr,
+                                 first_let.valExpr,
+                                 LetExpr(second_let.varExpr,
+                                         second_let.valExpr,
+                                         second_let.bodyExpr))
+
+                if len(bindings) >= 3:
+                    for i in range(2, len(flatten)):
+                        result = SDQLInspector.replace_binding(result, flatten[i])
+
+        return result

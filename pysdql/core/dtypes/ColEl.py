@@ -485,8 +485,9 @@ class ColEl(SDQLIR):
         pass
 
     def replace(self, rec, on=None):
-        if on is None:
+        # print(f'try to replace col {self.sdql_ir} with {rec} as record')
 
+        if on is None:
             return RecAccessExpr(rec, self.field)
         else:
             if self.relation.is_joint:
