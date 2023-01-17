@@ -145,6 +145,30 @@ class JointFrame:
                 if self.probe_frame.retriever.is_joint:
                     # Q5
                     if self.part_frame.retriever.as_bypass_for_next_join:
+                        '''
+                        Hello from Yizhuo,
+                        This comment is in chinese, it tells the assumption for this optimization
+                        本优化预设了
+                        1. 上一个融合的probe side必定是root, 这时我们只需要预设当前的融合不存在, 并且向上一个融合回退一步就行了
+                        2. 当前的融合存在列表作为融合的键, 也就是说, 必须存在 left_on=[] and right_on=[]
+                        3. 当前的bypass part side确实进行了一次遍历, 
+                            而唯一的原因是当前的merge需要这次遍历, 这也就是它叫做bypass的原因
+                        4. 如果上一个融合的probe side依然是joint之后的结果
+                            它也许会从get_joint_expr()开始
+                            走向 part_is_joint and probe_is_joint 这个分支
+                            也有可能走向其它的分支, 这取决于另外一个part side的状态
+                        
+                        不论如何, 它们都要求之前必须存在多个part side.
+                        
+                        如果未来需要将这个branch进行优化
+                        那么:
+                            1. 推导出基于 str 的 merge
+                            2. 将上一级probe side的 merge 更改为 root probe side 的 merge, 
+                                这将会需要检查路径上的所有bypass part side, 并且为其生成相应的expr
+                                并且将当前需要用到的列在所有part side上搜索.
+                        优化后的branch将会更加通用 
+                        '''
+
                         # print(self.part_frame.part_on.name, 'is bypass')
                         if isinstance(self.part_frame.part_key, list) \
                                 and isinstance(self.probe_frame.probe_key, list):
