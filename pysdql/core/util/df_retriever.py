@@ -140,7 +140,8 @@ class Retriever:
 
             # CondExpr
             if isinstance(op_body, CondExpr):
-                cols_used += self.find_cols(op_body)
+                if not only_next:
+                    cols_used += self.find_cols(op_body)
 
             # NewColOpExpr
             if isinstance(op_body, NewColOpExpr):

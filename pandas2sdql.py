@@ -180,51 +180,75 @@ def q7(su, li, ord, cu, na):
     return result.optimize()
 
 
-def q8(pa, su, li, ord, cu, n1, n2, re):
-    re_filt = re[(re['r_name'] == 'MIDDLE EAST')]
+def q8(pa, su, li, ord, cu, na, re):
+    re_filt = re[(re['r_name'] == 'AMERICA')]
 
-    n1_re_join = n1.merge(re_filt, left_on='n_regionkey_1', right_on='r_regionkey')
-    n1_re_join = n1_re_join[['n1_nationkey']]
+    re_na_join = pd.merge(left=re_filt, right=na, left_on='r_regionkey', right_on='n_regionkey')
 
-    pa_li_join = pa.merge(li, left_on='p_partkey', right_on='l_partkey')
-    pa_li_join = pa_li_join[['l_orderkey']]
+    ord_filt = ord[(ord['o_orderdate'] >= '1995-01-01') & (ord['o_orderdate'] <= '1996-12-31')]
 
-    pa_li_ord_join = pa_li_join.merge(ord, left_on='l_orderkey', right_on='o_orderkey')
-    pa_li_ord_join = pa_li_ord_join[['o_custkey']]
+    na_cu_join = pd.merge(left=re_na_join, right=cu, left_on='n_nationkey', right_on='c_nationkey')
 
-    pa_li_ord_cu_join = pa_li_ord_join.merge(cu, left_on='o_custkey', right_on='c_custkey')
-    pa_li_ord_cu_join = pa_li_ord_cu_join[['c_nationkey']]
+    cu_ord_join = pd.merge(left=na_cu_join, right=ord_filt, left_on='c_custkey', right_on='o_custkey')
 
-    n1_re_pa_li_ord_cu_join = n1_re_join.merge(pa_li_ord_cu_join,
-                                               left_on='n1_nationkey', right_on='c_nationkey')
-    n1_re_pa_li_ord_cu_join = n1_re_pa_li_ord_cu_join[['l_suppkey']]
+    ord_li_join = pd.merge(left=cu_ord_join, right=li, left_on='o_orderkey', right_on='l_orderkey')
 
-    n1_re_pa_li_ord_cu_su_join = n1_re_pa_li_ord_cu_join.merge(su, left_on='l_suppkey', right_on='s_suppkey')
-    n1_re_pa_li_ord_cu_su_n2_join = n1_re_pa_li_ord_cu_su_join.merge(
-        n2, left_on='s_nationkey', right_on='n2_nationkey')
+    '''
+    通过 left and right 的直接传递来判断一个probe side 是否 bypass
+    例如 l_orderkey -> o_orderkey -> o_custkey -> c_custkey -> c_nationkey -> n_nationkey
+    region nation 是一个例外
+    因为他们满足: region is not joint and nation is not joint
+    此时, probe 必须发生
+    
+    当这样的传递发生时, 仅可以省略中间的传递
+    在 lineitem -> orders -> customers -> nation -> region
+    的传递中
+    orders 同时包含 
+        1. 必须的 orderdate 作为下文的变量
+        2. o_custkey 作为上文的索引, 在此处, 特指 对 customers 的索引 o_custkey
+        通过 o_custkey, 可以直接取值 o_custkey -> c_custkey
+    customer 作为唯一的 complete bypass dictionary, 也可以称之为 indexing bypass dictionary,
+    它将 c_custkey 索引至 c_nationkey, 也就是说, 它的 key 和 value 必须唯一
+    
+    这也就是 indexing bypass 的 传递作用:
+        通过直接使用 indexing, 我们可以直接判断两端 [orders, nation] 是否符合要求,
+        如果两端符合要求, 则 作为 bypass dictionary 的 customer 必定符合要求
+        这种直接的索引优化了非空判断 (non null assertion optimization)
+    
+    在这个例子中, li 按照顺序检查了 [part, orders, region_n1_joint]
+    这同时意味着, [n2, supplier, customer] 全部都是 bypass partition
+    '''
 
-    n1_re_pa_li_ord_cu_su_n2_join = n1_re_pa_li_ord_cu_su_n2_join[
-        ['o_orderdate', 'l_extendedprice', 'l_discount', 'n_name_2']]
+    pa_filt = pa[pa['p_type'] == 'ECONOMY ANODIZED STEEL']
 
-    n1_re_pa_li_ord_cu_su_n2_join['o_year'] = pd.DatetimeIndex(n1_re_pa_li_ord_cu_su_n2_join['o_orderdate']).year
-    n1_re_pa_li_ord_cu_su_n2_join['volume'] = n1_re_pa_li_ord_cu_su_n2_join['l_extendedprice'] * (
-            1 - n1_re_pa_li_ord_cu_su_n2_join['l_discount']
-    )
-    n1_re_pa_li_ord_cu_su_n2_join['nation'] = n1_re_pa_li_ord_cu_su_n2_join['n2_name']
+    pa_li_join = pd.merge(left=pa_filt, right=ord_li_join, left_on='p_partkey', right_on='l_partkey')
 
-    all_nations = n1_re_pa_li_ord_cu_su_n2_join[['o_year', 'volume', 'nation']]
+    su_li_join = pd.merge(left=su, right=pa_li_join, left_on='s_suppkey', right_on='l_suppkey')
 
-    all_nations['val'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
+    na.rename({'n_name': 'n2_name'}, axis=1, inplace=True)
+
+    all_join = pd.merge(left=na, right=su_li_join, left_on='n_nationkey', right_on='s_nationkey')
+
+    all_join['o_year'] = pd.DatetimeIndex(all_join['o_orderdate']).year
+    all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
+    all_join['nation'] = all_join['n2_name']
+
+    all_nations = all_join[['o_year', 'volume', 'nation']]
+
+    # all_nations['val_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
+    all_nations['val_A'] = all_nations['volume'] * 0.2
 
     all_nations_agg = all_nations.groupby(['o_year'], as_index=False) \
-        .agg(val_sum=('val', 'sum'),
-             vol_sum=('volume', 'sum'))
+        .agg(A=('val_A', 'sum'),
+             B=('volume', 'sum'))
 
-    all_nations_agg['mkt_share'] = all_nations_agg['val_sum'] / all_nations_agg['vol_sum']
+    all_nations_agg['mkt_share'] = all_nations_agg['A'] / all_nations_agg['B']
 
     result = all_nations_agg[['o_year', 'mkt_share']]
 
-    return result
+    result.show()
+
+    return result.optimize()
 
 
 def q9(pa, su, li, ps, ord, na):
@@ -561,7 +585,8 @@ if __name__ == '__main__':
     # q4(li, ord)
     # q5(cu, ord, li, su, na, re)
     # q6(li)
-    q7(su, li, ord, cu, na)
+    # q7(su, li, ord, cu, na)
+    q8(pa, su, li, ord, cu, na, re)
     # q10(ord, cu, na, li)
     # q14(li, pa)
     # q15(li, su)

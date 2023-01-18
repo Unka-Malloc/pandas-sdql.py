@@ -95,7 +95,7 @@ class DataFrame(SemiRing, Retrivable):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
-        self.__columns = columns
+        self.__columns = columns if columns else []
         self.__dtype = dtype
         self.__name = name
         self.__var_name = varname()
@@ -103,6 +103,8 @@ class DataFrame(SemiRing, Retrivable):
         self.__retriever = Retriever(self)
 
         self.__structure = DataFrameStruct('1DT')
+
+        self.init_cols()
 
         self.__columns_in = columns if columns else []
         self.__columns_out = columns if columns else []
@@ -139,6 +141,24 @@ class DataFrame(SemiRing, Retrivable):
         self.transform = TransExpr(self)
 
         self.context_semiopt = context_semiopt if context_semiopt else []
+
+    def init_cols(self):
+        if self.name in ['customer', 'cu']:
+            self.__columns = CUSTOMER_COLS
+        if self.name in ['lineitem', 'li']:
+            self.__columns = LINEITEM_COLS
+        if self.name in ['orders', 'ord']:
+            self.__columns = ORDERS_COLS
+        if self.name in ['nation', 'na']:
+            self.__columns = NATION_COLS
+        if self.name in ['region', 're']:
+            self.__columns = REGION_COLS
+        if self.name in ['part', 'pa']:
+            self.__columns = PART_COLS
+        if self.name in ['supplier', 'su']:
+            self.__columns = SUPPLIER_COLS
+        if self.name in ['partsupp', 'ps']:
+            self.__columns = PARTSUPP_COLS
 
     @property
     def is_joint(self):
@@ -255,7 +275,6 @@ class DataFrame(SemiRing, Retrivable):
                 return self.__columns
 
         return []
-
 
     @property
     def cols_in(self):
@@ -500,8 +519,8 @@ class DataFrame(SemiRing, Retrivable):
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
             if key in self.columns:
-                for i in range(len(self.__columns)):
-                    if self.__columns[i] == key:
+                for i in range(len(self.columns)):
+                    if self.columns[i] == key:
                         self.__columns[i] = mapper[key]
             else:
                 raise IndexError(f'Cannot find the column {key} in {self.name}')
@@ -1014,7 +1033,8 @@ class DataFrame(SemiRing, Retrivable):
                                                   op_on=self,
                                                   op_iter=False))
 
-            return IfExpr(condExpr=NonNullExpr(self.get_partition_side().get_var_part(), ConstantExpr(None)).sdql_ir,
+            return IfExpr(condExpr=NonNullExpr(var_dict=self.get_partition_side().get_var_part(),
+                                               var_key=ConstantExpr(None)).sdql_ir,
                           thenBodyExpr=op,
                           elseBodyExpr=ConstantExpr(lamb_else))
 
@@ -1034,4 +1054,3 @@ class DataFrame(SemiRing, Retrivable):
     @property
     def retriever(self) -> Retriever:
         return self.__retriever
-

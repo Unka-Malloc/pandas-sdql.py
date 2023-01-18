@@ -85,10 +85,13 @@ class JoinPartFrame:
             if not self.retriever.as_bypass_for_next_join:
                 cols = self.retriever.findall_cols_used(only_next=True)
 
-                if len(cols) == 1:
+                if len(cols) == 0:
+                    return RecConsExpr([(self.group_key,
+                                         self.part_on.key_access(self.group_key))])
+                elif len(cols) == 1:
                     return RecConsExpr([(cols[0], self.part_on.key_access(cols[0]))])
                 else:
-                    return RecConsExpr([(i, self.part_on.key_access(cols[i])) for i in cols])
+                    return RecConsExpr([(i, self.part_on.key_access(i)) for i in cols])
 
         return RecConsExpr([(self.group_key, self.part_on.key_access(self.group_key))])
 

@@ -513,7 +513,7 @@ class JointFrame:
                                                   self.retriever.find_col_rename(col_name=i,
                                                                                  by='val'))))
 
-                dict_val_ir = RecConsExpr(dict_val_list)
+                dict_val_ir = RecConsExpr(dict_val_list) if dict_val_list else ConstantExpr(True)
 
                 joint_op = DicConsExpr([(
                     dict_key_ir,
@@ -1128,7 +1128,7 @@ class JointFrame:
             # print(f'{self.joint.name}: neither joint')
             return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
         if self.part_frame.is_joint and not self.probe_frame.is_joint:
-            # print(f'{self.joint.name}: part joint')
+            print(f'{self.joint.name}: part joint')
             # return self.part_frame.part_on.get_joint_frame().get_joint_expr(next_op)
             return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
         if not self.part_frame.is_joint and self.probe_frame.is_joint:
