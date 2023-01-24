@@ -282,7 +282,8 @@ class DataFrame(SemiRing, Retrivable):
             if isinstance(op_body, GroupbyAggrExpr):
                 return op_body.groupby_cols + list(op_body.agg_dict.keys())
             if isinstance(op_body, MergeExpr):
-                return op_body.left.cols_out + op_body.right.cols_out
+                if self.name == op_body.joint.name:
+                    return op_body.left.cols_out + op_body.right.cols_out
             if isinstance(op_body, NewColOpExpr):
                 if not cols:
                     cols += self.cols_in
