@@ -1,3 +1,6 @@
+from pysdql.core.dtypes.CalcExpr import CalcExpr
+from pysdql.core.dtypes.EnumUtil import LastIterFunc
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.interfaces import Retrivable
 
@@ -10,7 +13,7 @@ from pysdql.core.dtypes import (
     CondExpr,
     MergeExpr,
     AggrExpr,
-    GroupByAgg,
+    GroupbyAggrExpr,
     ExternalExpr,
 )
 
@@ -66,6 +69,13 @@ class Retriever:
                         cols += m.right_on
             else:
                 raise NotImplementedError
+        if mode == 'insert':
+            for op_expr in self.history:
+                op_body = op_expr.op
+
+                # NewColOpExpr
+                if isinstance(op_body, NewColOpExpr):
+                    cols.append(op_body.col_var)
         else:
             raise NotImplementedError
 
@@ -202,7 +212,7 @@ class Retriever:
                                                                                  only_next=only_next)
 
             # GroupbyAgg
-            if isinstance(op_body, GroupByAgg):
+            if isinstance(op_body, GroupbyAggrExpr):
                 cols_used += op_body.groupby_cols
 
                 if isinstance(op_body.origin_dict, dict):
@@ -233,8 +243,8 @@ class Retriever:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if self.target.name == op_body.joint.name:
-                    dup_cols = [x for x in op_body.left.columns
-                                if x in op_body.right.columns]
+                    dup_cols = [x for x in op_body.left.__columns
+                                if x in op_body.right.__columns]
 
         # Remove Duplications
         cleaned_dup_cols = []
@@ -249,8 +259,8 @@ class Retriever:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if self.target.name == op_body.joint.name:
-                    dup_cols = [x for x in op_body.left.columns
-                                if x in op_body.right.columns
+                    dup_cols = [x for x in op_body.left.__columns
+                                if x in op_body.right.__columns
                                 and x in self.findall_cols_used(as_owner=False)]
 
         # Remove Duplications
@@ -258,6 +268,20 @@ class Retriever:
         [cleaned_dup_cols.append(x) for x in sorted(dup_cols) if x not in cleaned_dup_cols]
 
         return cleaned_dup_cols
+
+    def find_col_ins_before(self, op_type) -> dict:
+        col_ins = {}
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, NewColOpExpr):
+                col_ins[op_body.col_var] = op_body.col_expr
+
+            if isinstance(op_body, op_type):
+                break
+
+        return col_ins
 
     '''
     Operations
@@ -269,29 +293,43 @@ class Retriever:
 
     @property
     def last_iter_is_groupby_agg(self):
-        return isinstance(self.find_last_iter(), GroupByAgg)
+        return isinstance(self.find_last_iter(), GroupbyAggrExpr)
 
     @property
     def last_iter_is_agg(self):
         return isinstance(self.find_last_iter(), AggrExpr)
 
-    def find_last_iter(self, body_only=True):
+    def find_last_iter(self, body_only=True, as_enum=False):
         for op_expr in reversed(self.history):
             op_body = op_expr.op
 
             if isinstance(op_body, MergeExpr):
+                if as_enum:
+                    return LastIterFunc.Joint
                 if body_only:
                     return op_body
                 else:
                     return op_expr
 
             if isinstance(op_body, AggrExpr):
+                if as_enum:
+                    return LastIterFunc.Agg
                 if body_only:
                     return op_body
                 else:
                     return op_expr
 
-            if isinstance(op_body, GroupByAgg):
+            if isinstance(op_body, GroupbyAggrExpr):
+                if as_enum:
+                    return LastIterFunc.GroupbyAgg
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+
+            if isinstance(op_body, CalcExpr):
+                if as_enum:
+                    return LastIterFunc.Calc
                 if body_only:
                     return op_body
                 else:
@@ -369,6 +407,21 @@ class Retriever:
                     all_conds.append(op_expr)
 
         return all_conds
+
+    def find_cond_before(self, op_type, body_only=True):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CondExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+
+            if isinstance(op_body, op_type):
+                return None
+        else:
+            return None
 
     '''
     MergeExpr
@@ -591,20 +644,79 @@ class Retriever:
     GroupbyAgg
     '''
 
-    def findall_groupby_agg(self, body_only=True):
+    def find_groupby_agg(self, body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
         :return:
         """
-        all_groupby_agg = []
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+        else:
+            return None
+
+    '''
+    Aggregation
+    '''
+
+    def find_agg(self, body_only=True):
+        """
+        It returns a list that contains all groupby aggregation operations.
+        :return:
+        """
 
         for op_expr in self.history:
             op_body = op_expr.op
 
-            if isinstance(op_body, GroupByAgg):
+            if isinstance(op_body, AggrExpr):
                 if body_only:
-                    all_groupby_agg.append(op_body)
+                    return op_body
                 else:
-                    all_groupby_agg.append(op_expr)
+                    return op_expr
+        else:
+            return None
 
-        return all_groupby_agg
+    '''
+    isin()
+    '''
+    def find_isin(self, body_only=True):
+        """
+        It returns a list that contains all groupby aggregation operations.
+        :return:
+        """
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, IsInExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+        else:
+            return None
+
+    def find_isin_before(self, op_type, body_only=True):
+        """
+        It returns a list that contains all groupby aggregation operations.
+        :return:
+        """
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, IsInExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+
+            if isinstance(op_body, op_type):
+                return None
+        else:
+            return None

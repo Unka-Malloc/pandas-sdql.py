@@ -423,7 +423,7 @@ class SDQLInspector:
 
             result.append(LetExpr(varExpr=var_expr,
                                   valExpr=val_expr,
-                                  bodyExpr=ConstantExpr(None)))
+                                  bodyExpr=ConstantExpr(True)))
 
             if isinstance(body_expr, LetExpr):
                 result += SDQLInspector.split_bindings(body_expr)

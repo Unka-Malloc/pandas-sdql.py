@@ -767,25 +767,22 @@ class VarExpr(Expr):
         return " | " + "name: " + str(self.name)
 
     def __repr__(self) -> str:
-        # if self.isFirstCall:
-        #     self.isFirstCall = False
-        #     return f"VarExpr('{self.name}')"
         if self.name == 'db->li_dataset':
-            return 'li'
+            return 'lineitem'
         if self.name == 'db->ord_dataset':
-            return 'ord'
+            return 'orders'
         if self.name == 'db->cu_dataset':
-            return 'cu'
+            return 'customer'
         if self.name == 'db->na_dataset':
-            return 'na'
+            return 'nation'
         if self.name == 'db->re_dataset':
-            return 're'
+            return 'region'
         if self.name == 'db->su_dataset':
-            return 'su'
+            return 'supplier'
         if self.name == 'db->pa_dataset':
-            return 'pa'
+            return 'part'
         if self.name == 'db->ps_dataset':
-            return 'ps'
+            return 'partsupp'
         return f'{self.name}'
 
 

@@ -184,7 +184,7 @@ class JointFrame:
                             dict_key_list = []
 
                             for k in self.groupby_cols:
-                                if k in prev_part_side.columns:
+                                if k in prev_part_side.__columns:
                                     dict_key_list.append((k, prev_joint_frame.part_lookup(k)))
 
                             dict_key_ir = dict_key_list[0][1] if len(dict_key_list) == 1 else RecConsExpr(dict_key_list)
@@ -200,7 +200,7 @@ class JointFrame:
                                 else:
                                     raise NotImplementedError
 
-                                if col_name not in prev_probe_side.columns:
+                                if col_name not in prev_probe_side.__columns:
                                     if col_name in self.col_ins.keys():
                                         col_op = self.col_ins[col_name].replace(rec=prev_probe_side.iter_el.key)
                                         dict_val_list.append((k, col_op))
@@ -212,9 +212,9 @@ class JointFrame:
                             lookup_keys = []
 
                             for i in self.probe_frame.probe_key:
-                                if i in prev_probe_side.columns:
+                                if i in prev_probe_side.__columns:
                                     lookup_keys.append((i, prev_probe_side.key_access(i)))
-                                if i in prev_part_side.columns:
+                                if i in prev_part_side.__columns:
                                     lookup_keys.append((i, RecAccessExpr(DicLookupExpr(dicExpr=prev_part_frame.part_var,
                                                                                        keyExpr=prev_probe_side.key_access(
                                                                                            i)),
@@ -296,7 +296,7 @@ class JointFrame:
 
                         for k in self.groupby_cols:
                             this_part_side = all_part_sides[0]
-                            if k in this_part_side.columns:
+                            if k in this_part_side.__columns:
                                 joint_frame = this_part_side.get_retriever().find_merge(
                                     mode='as_part').joint.get_joint_frame()
                                 dict_key_list.append((k, joint_frame.part_lookup(k)))
@@ -307,14 +307,14 @@ class JointFrame:
                                 if isinstance(v, (ColEl, ColExpr)):
                                     col_name = v.field
                                     for this_part_side in all_part_sides:
-                                        if col_name in this_part_side.columns:
+                                        if col_name in this_part_side.__columns:
                                             joint_frame = this_part_side.get_retriever().find_merge(
                                                 mode='as_part').joint.get_joint_frame()
                                             dict_key_list.append((k, joint_frame.part_lookup(col_name)))
 
                                 if isinstance(v, ExternalExpr):
                                     col_name = v.col.field
-                                    if col_name in root_probe_side.columns:
+                                    if col_name in root_probe_side.__columns:
                                         dict_key_list.append((k, v.sdql_ir))
 
                         dict_key_ir = dict_key_list[0][1] if len(dict_key_list) == 1 else RecConsExpr(dict_key_list)
@@ -330,7 +330,7 @@ class JointFrame:
                             else:
                                 raise NotImplementedError
 
-                            if col_name not in root_probe_side.columns:
+                            if col_name not in root_probe_side.__columns:
                                 if col_name in self.col_ins.keys():
                                     col_op = self.col_ins[col_name].replace(rec=root_probe_side.iter_el.key)
                                     dict_val_list.append((k, col_op))
@@ -346,13 +346,13 @@ class JointFrame:
 
                         if self.joint_cond:
                             cols_not_found = [x for x in self.retriever.find_cols(joint_cond)
-                                              if x not in root_probe_side.columns]
+                                              if x not in root_probe_side.__columns]
                             if cols_not_found:
                                 cond_replace_mapper = {}
                                 # If found some columns are not in the root probe side
                                 for c in cols_not_found:
                                     for this_part_side in all_part_sides:
-                                        if c in this_part_side.columns:
+                                        if c in this_part_side.__columns:
                                             this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
                                             cond_replace_mapper[c] = DicLookupExpr(
                                                 dicExpr=this_part_side.get_var_part(),
@@ -497,13 +497,13 @@ class JointFrame:
                 dict_val_list = []
 
                 for i in val_cols:
-                    if i in self.part_frame.part_on.columns:
+                    if i in self.part_frame.part_on.__columns:
                         dict_val_list.append((i,
                                               RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
                                                                                   keyExpr=probe_on.key_access(
                                                                                       probe_key)),
                                                             fieldName=i)))
-                    if i in self.probe_frame.probe_on.columns:
+                    if i in self.probe_frame.probe_on.__columns:
                         dict_val_list.append((i,
                                               probe_on.key_access(i)))
 
@@ -726,11 +726,11 @@ class JointFrame:
             return out
         else:
             if self.is_next_probe:
-                probe_cols = probe_on.columns
+                probe_cols = probe_on.__columns
                 # this partition
                 this_part_var = self.part_frame.get_part_var()
                 this_part_key = self.part_frame.get_part_key()
-                this_part_cols = self.part_frame.get_partition_on().columns
+                this_part_cols = self.part_frame.get_partition_on().__columns
 
                 # this probe
                 this_probe_key = probe_key
@@ -744,7 +744,7 @@ class JointFrame:
                 next_part_col_proj = next_part_frame.get_part_col_proj()
                 next_part_var = next_part_frame.get_part_var()
                 next_part_key = next_merge.left_on
-                next_part_cols = next_part_frame.get_partition_on().columns
+                next_part_cols = next_part_frame.get_partition_on().__columns
 
                 # next probe
 
@@ -921,7 +921,7 @@ class JointFrame:
                 iter_key_list = []
                 for col in self.col_proj:
                     cname = col[0]
-                    if cname in self.part_frame.partition_on.columns:
+                    if cname in self.part_frame.partition_on.__columns:
                         if cname == self.part_frame.get_part_key():
                             iter_key_list.append(
                                 (cname, RecAccessExpr(PairAccessExpr(x_var_part, 0),
@@ -1128,7 +1128,7 @@ class JointFrame:
             # print(f'{self.joint.name}: neither joint')
             return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
         if self.part_frame.is_joint and not self.probe_frame.is_joint:
-            print(f'{self.joint.name}: part joint')
+            # print(f'{self.joint.name}: part joint')
             # return self.part_frame.part_on.get_joint_frame().get_joint_expr(next_op)
             return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
         if not self.part_frame.is_joint and self.probe_frame.is_joint:

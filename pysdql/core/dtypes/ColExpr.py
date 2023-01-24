@@ -3,7 +3,6 @@ from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
-from pysdql.core.dtypes.SumStmt import SumStmt
 from pysdql.core.dtypes.VarExpr import VarExpr
 
 from pysdql.core.dtypes.sdql_ir import (

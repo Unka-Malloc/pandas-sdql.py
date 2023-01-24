@@ -1,5 +1,5 @@
 class NewColOpExpr:
-    def __init__(self, col_var, col_expr):
+    def __init__(self, col_var: str, col_expr):
         self.col_var = col_var
         self.col_expr = col_expr
 

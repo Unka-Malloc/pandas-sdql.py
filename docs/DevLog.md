@@ -37,3 +37,18 @@ Reconstruct from dict:
 ('n_nationkey', 
     RecAccessExpr(DicLookupExpr(re_na_cu, RecAccessExpr(PairAccessExpr(x_ord, 0), 'o_custkey')), 'n_nationkey'))
 ```
+
+# Q1
+GroupbyAggrFrame
+
+# Q6
+AggrFrame
+
+# Q4
+IsInExpr
+GroupbyAggrFrame
+
+Error: 
+    1. Variable Not Defined (lineitem_part). 
+        This could be fixed in GroupbyAggrFrame, by adding context_variables from isin_part to isin_probe
+

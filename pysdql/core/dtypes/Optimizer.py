@@ -1,9 +1,11 @@
 from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
-from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
@@ -14,13 +16,13 @@ from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import *
 
 from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OpRetType
+from pysdql.core.util.df_retriever import Retriever
 
 
 class Optimizer:
     def __init__(self, opt_on, opt_goal=None):
         self.opt_on = opt_on
         self.opt_goal = opt_goal
-        self.retriver = self.opt_on.get_retriever()
 
         self.cond_info = {
             'cond_if': ConstantExpr(True),
@@ -78,8 +80,6 @@ class Optimizer:
             'let_next': ConstantExpr(None),
         }
 
-        self.last_func = None
-
         self.last_merge_info = {
             'merge_left': None,
             'merge_right': None,
@@ -95,7 +95,7 @@ class Optimizer:
             'merge_left_sum_on': opt_on.var_expr,
             'merge_left_sum_op': ConstantExpr(None),
 
-            'merge_left_let_var': self.opt_on.part_var,
+            'merge_left_let_var': self.opt_on.var_part,
             'merge_left_let_val': ConstantExpr(None),
             'merge_left_let_next': ConstantExpr(None)
         }
@@ -107,7 +107,6 @@ class Optimizer:
             'merge_right_sum_on': opt_on.var_expr,
             'merge_right_sum_op': ConstantExpr(None),
 
-            'merge_right_let_var': self.opt_on.var_probe,
             'merge_right_let_val': ConstantExpr(None),
             'merge_right_let_next': ConstantExpr(None)
         }
@@ -163,7 +162,7 @@ class Optimizer:
     def get_cond_after_groupby_agg(self):
         groupby_agg_located = False
         for op_expr in self.opt_on.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 groupby_agg_located = True
             if op_expr.op_type == CondExpr:
                 if groupby_agg_located:
@@ -370,14 +369,12 @@ class Optimizer:
                 self.cond_info['cond_then'] = op_expr.op.aggr_op
                 self.cond_info['cond_else'] = op_expr.op.aggr_else
                 self.sum_info['sum_op'] = self.cond_stmt
-
-            self.last_func = LastIterFunc.Agg
         if op_expr.op_type == NewColOpExpr:
             self.add_col_ins(col_name=op_expr.op.col_var,
                              col_expr=op_expr.op.col_expr)
 
             self.col_ins[op_expr.op.col_var] = op_expr.op.col_expr
-        if op_expr.op_type == GroupByAgg:
+        if op_expr.op_type == GroupbyAggrExpr:
             groupby_from = op_expr.op.groupby_from
             groupby_cols = op_expr.op.groupby_cols
             aggr_dict = op_expr.op.agg_dict
@@ -423,8 +420,6 @@ class Optimizer:
                                                          valExpr=sum_concat,
                                                          bodyExpr=ConstantExpr(True))
 
-            self.last_func = LastIterFunc.GroupbyAgg
-
         if op_expr.op_type == ColProjExpr:
             for col in op_expr.op.proj_cols:
                 self.add_col_proj((col,
@@ -436,15 +431,11 @@ class Optimizer:
                 self.is_join_partition_side = True
 
                 self.join_partition_info['partition_key'] = op_expr.op.left_on
-
-                self.last_func = LastIterFunc.JoinPartition
             # detect(self) -> probe side
             elif op_expr.op.right.name == self.opt_on.name:
                 self.is_join_probe_side = True
 
                 self.join_probe_info['probe_key'] = op_expr.op.right_on
-
-                self.last_func = LastIterFunc.JoinProbe
             else:
                 if self.is_joint:
                     self.joint_info['partition_side'] = op_expr.op.left
@@ -452,8 +443,6 @@ class Optimizer:
                     self.joint_info['probe_side'] = op_expr.op.right
                     self.joint_info['probe_key'] = op_expr.op.right_on
                     self.joint_info['how'] = op_expr.op.how
-
-                    self.last_func = LastIterFunc.Joint
                 else:
                     raise ValueError(str(op_expr))
 
@@ -461,9 +450,6 @@ class Optimizer:
             self.isin_op = op_expr.op
 
             self.has_isin = True
-
-        if op_expr.op_type == CalcExpr:
-            self.last_func = LastIterFunc.Calc
 
         if op_expr.op_type == ExternalExpr:
             self.cond_info['cond_if'] = op_expr.op
@@ -743,7 +729,11 @@ class Optimizer:
         return self.last_merge_info['left'].merge_probe_stmt(let_next=next_let)
 
     @property
-    def agg_dict_stmt(self):
+    def aggr_frame(self):
+        return AggrFrame(self.opt_on)
+
+    @property
+    def aggr_stmt(self):
         if len(self.agg_dict_info['cond_then'].keys()) == 1:
             agg_list = []
             for agg_key in self.agg_dict_info['cond_then'].keys():
@@ -779,6 +769,14 @@ class Optimizer:
             raise NotImplementedError
 
     @property
+    def retriever(self) -> Retriever:
+        return self.opt_on.get_retriever()
+
+    @property
+    def last_func(self):
+        return self.retriever.find_last_iter(as_enum=True)
+
+    @property
     def info(self):
         if self.opt_goal == OptGoal.JoinPartition:
             col_proj_ir = self.get_col_proj_ir(MergeType.PARTITION)
@@ -794,41 +792,36 @@ class Optimizer:
 
     @property
     def output(self) -> LetExpr:
-        # last_op = self.retriver.find_last_op()
-        # print(last_op)
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.opt_on.peak()
             if op_expr.ret_type == OpRetType.DICT:
-                # Q19 -> this way, sir
+                # Q19
                 if self.is_joint:
                     return self.joint_frame.sdql_ir
-                # Q6 -> this way, sir
-                return self.agg_dict_stmt
+                # Q6
+                # Q6_1
+                return AggrFrame(self.opt_on).sdql_ir
+            if op_expr.ret_type == OpRetType.FLOAT:
+                # Q6_2
+                return AggrFrame(self.opt_on).sdql_ir
             else:
-                result = VarExpr('result')
-                return LetExpr(result,
-                               self.sum_stmt,
-                               LetExpr(VarExpr('out'),
-                                       result,
-                                       ConstantExpr(True)))
+                raise NotImplementedError
         elif self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
-                # Q3 -> this way, sir
-                # Q16 -> this way, sir
+                # Q3
+                # Q16
                 return self.joint_frame.sdql_ir
-            if self.has_isin:
-                # Q4 -> this way, sir
-                return self.isin_op.get_ref_ir(self.groupby_aggr_stmt)
-            if self.get_cond_after_groupby_agg():
-                return self.get_groupby_agg_having_stmt()
-            else:
-                # Q1 -> this way, sir
-                return self.groupby_aggr_stmt
+            # if self.get_cond_after_groupby_agg():
+            #     return self.get_groupby_agg_having_stmt()
+
+            # Q1
+            # Q4
+            return GroupbyAggrFrame(self.opt_on).sdql_ir
         elif self.last_func == LastIterFunc.Joint:
             return self.joint_frame.sdql_ir
         elif self.last_func == LastIterFunc.Calc:
             return self.joint_frame.sdql_ir
         else:
-            last_op = self.retriver.find_last_op()
+            last_op = self.retriever.find_last_op()
             print(last_op)
             raise NotImplementedError

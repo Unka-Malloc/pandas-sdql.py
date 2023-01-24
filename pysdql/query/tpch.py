@@ -6,9 +6,10 @@ class tpch:
     @staticmethod
     def q1() -> pysdqlDataFrame:
         lineitem = pysdqlDataFrame()
-        li_filt = lineitem[(lineitem.l_shipdate <= "1998-09-02")]
-        li_filt["disc_price"] = li_filt.l_extendedprice * (1 - li_filt.l_discount)
-        li_filt["charge"] = li_filt.l_extendedprice * (1 - li_filt.l_discount) * (1 + li_filt.l_tax)
+
+        li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
+        li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
+        li_filt["charge"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount']) * (1.0 + li_filt['l_tax'])
 
         result = li_filt \
             .groupby(["l_returnflag", "l_linestatus"]) \
@@ -59,12 +60,14 @@ class tpch:
             .groupby(["o_orderpriority"]) \
             .agg(order_count=("o_orderdate", "count"))
 
-        # results.show()
-
-        return results.optimize()
+        return results
 
     @staticmethod
     def q6() -> pysdqlDataFrame:
+        """
+
+        :return: a singleton dictionary {record -> true}
+        """
         lineitem = pysdqlDataFrame()
 
         li_filt = lineitem[
@@ -78,6 +81,57 @@ class tpch:
         li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
 
         result = li_filt.agg({'revenue': 'sum'})
+
+        return result
+
+    @staticmethod
+    def q6_1() -> pysdqlDataFrame:
+        """
+        agg(revenue=('revenue', 'sum'))
+        should be the same as
+        agg({'revenue': 'sum'})
+        :return: a singleton dictionary {record -> true}
+        """
+        lineitem = pysdqlDataFrame()
+
+        li_filt = lineitem[
+            (lineitem.l_shipdate >= "1994-01-01") &
+            (lineitem.l_shipdate < "1995-01-01") &
+            (lineitem.l_discount >= 0.05) &
+            (lineitem.l_discount <= 0.07) &
+            (lineitem.l_quantity < 24)
+            ]
+
+        li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
+
+        result = li_filt.agg(total_revenue=('revenue', 'sum'))
+
+        # result = li_filt.agg(order_count=('l_orderkey', 'count'))
+
+        # result = li_filt.agg(total_revenue=('revenue', 'sum'),
+        #                      order_count=('l_orderkey', 'count'))
+
+        return result
+
+    @staticmethod
+    def q6_2() -> pysdqlDataFrame:
+        """
+        should return a single scalar
+        :return:
+        """
+        lineitem = pysdqlDataFrame()
+
+        li_filt = lineitem[
+            (lineitem.l_shipdate >= "1994-01-01") &
+            (lineitem.l_shipdate < "1995-01-01") &
+            (lineitem.l_discount >= 0.05) &
+            (lineitem.l_discount <= 0.07) &
+            (lineitem.l_quantity < 24)
+            ]
+
+        li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
+
+        result = li_filt['revenue'].sum()
 
         return result
 
@@ -116,13 +170,14 @@ class tpch:
         part = pysdqlDataFrame()
 
         li_filt = lineitem[(lineitem.l_shipdate >= "1995-09-01") & (lineitem.l_shipdate < "1995-10-01")]
-        pa_proj = part[["p_partkey", "p_type"]]
-        li_pa_join = pd.merge(pa_proj, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
+
+        li_pa_join = pd.merge(part, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
         li_pa_join["A"] = li_pa_join.apply(
-            lambda x: x["l_extendedprice"] * (1 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0, axis=1)
+            lambda x: x["l_extendedprice"] * (1.0 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0.0,
+            axis=1)
         li_pa_join["B"] = li_pa_join.l_extendedprice * (1.0 - li_pa_join.l_discount)
 
-        result = li_pa_join.A.sum() / li_pa_join.B.sum() * 100.0
+        result = li_pa_join['A'].sum() / li_pa_join['B'].sum() * 100.0
 
         return result
 

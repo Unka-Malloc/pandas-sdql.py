@@ -38,10 +38,10 @@ if __name__ == '__main__':
     part_agg['agg_partkey'] = part_agg['l_partkey']
 
     part_agg = part_agg[['avg_quantity', 'agg_partkey']]
-    part_agg.columns.field = 'part_agg'
+    part_agg.__columns.field = 'part_agg'
 
     sub_p = part[(part['p_brand'] == var1) & (part['p_container'] == var2)]
-    sub_p.columns.field = 'sub_p'
+    sub_p.__columns.field = 'sub_p'
 
     r = sub_p.merge(lineitem, left_on='p_partkey', right_on='l_partkey')
 
