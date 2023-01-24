@@ -17,6 +17,46 @@ class IsInExpr(IgnoreExpr):
     def get_probe_field(self):
         return self.col_probe.field
 
+    def get_non_null(self, replace=None):
+        if replace:
+            body = replace
+        else:
+            body = DicLookupExpr(self.part_on.get_var_part(),
+                                 self.col_probe.sdql_ir)
+
+        if self.isinvert:
+            return CompareExpr(CompareSymbol.EQ,
+                               body,
+                               ConstantExpr(None))
+        else:
+            return CompareExpr(CompareSymbol.NE,
+                               body,
+                               ConstantExpr(None))
+
+    def get_isin_part(self):
+        part_var = self.part_on.get_var_part()
+        part_key = self.part_on.iter_el.key
+        part_retriever = self.part_on.get_retriever()
+
+        sum_op = DicConsExpr([(self.col_part, ConstantExpr(True))])
+
+        cond = part_retriever.find_cond_before(IsInExpr)
+        if cond:
+            sum_op = IfExpr(condExpr=cond,
+                            thenBodyExpr=sum_op,
+                            elseBodyExpr=ConstantExpr(None))
+
+        sum_expr = SumExpr(varExpr=part_key,
+                           dictExpr=part_var,
+                           bodyExpr=sum_op,
+                           isAssignmentSum=True)
+
+        let_expr = LetExpr(varExpr=part_var,
+                           valExpr=sum_expr,
+                           bodyExpr=ConstantExpr(True))
+
+        return let_expr
+
     def get_ref_var(self):
         return self.part_on.get_var_part()
 
@@ -34,11 +74,6 @@ class IsInExpr(IgnoreExpr):
         if opt.has_cond:
             cond_after_groupby_agg = opt.get_cond_after_groupby_agg()
             if cond_after_groupby_agg:
-                # vname_having = f'{self.part_on.name}_having'
-                # var_having = self.part_on.context_variable[vname_having]
-                # vname_having_el = f'x_{vname_having}'
-                # var_having_el = VarExpr(vname_having_el)
-                # self.probe_on.add_context_variable(vname_having_el, var_having_el)
                 return opt.get_groupby_agg_having_stmt(next_op)
             else:
                 cond = opt.get_cond_ir()
@@ -75,41 +110,3 @@ class IsInExpr(IgnoreExpr):
     @property
     def op_name_suffix(self):
         return ''
-
-    # @property
-    # def expr(self):
-    #     return f'{self.col_probe} == {self.col_part}'
-    #
-    # def __repr__(self):
-    #     return str(self.cond)
-    #
-    # @property
-    # def cond(self):
-    #     if self.isinvert:
-    #         return ~CondExpr(self.col_probe, '==', self.col_part, inherit_from=self.col_part.relation, isin=True)
-    #     else:
-    #         return CondExpr(self.col_probe, '==', self.col_part, inherit_from=self.col_part.relation, isin=True)
-    #
-    # def __and__(self, other):
-    #     return CondExpr(unit1=self.cond,
-    #                     operator='&&',
-    #                     unit2=other).inherit(self.cond).inherit(other)
-    #
-    # def __rand__(self, other):
-    #     return CondExpr(unit1=other,
-    #                     operator='&&',
-    #                     unit2=self.cond).inherit(self.cond).inherit(other)
-    #
-    # def __or__(self, other):
-    #     return CondExpr(unit1=self.cond,
-    #                     operator='||',
-    #                     unit2=other).inherit(self.cond).inherit(other)
-    #
-    # def __ror__(self, other):
-    #     return CondExpr(unit1=other,
-    #                     operator='||',
-    #                     unit2=self.cond).inherit(self.cond).inherit(other)
-    #
-    # def __invert__(self):
-    #     self.isinvert = True
-    #     return self

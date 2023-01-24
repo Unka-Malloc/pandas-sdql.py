@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.sdql_ir import ConstantExpr
 
@@ -8,12 +8,12 @@ class DataFrameGroupBy:
         self.groupby_from = groupby_from
         self.groupby_cols = groupby_cols
 
-    def agg(self, agg_func=None, *agg_args, **agg_kwargs):
-        if agg_func:
-            if type(agg_func) == str:
-                return self.agg_str_parse(agg_func)
-            if type(agg_func) == dict:
-                return self.agg_dict_parse(agg_func)
+    def agg(self, func=None, *agg_args, **agg_kwargs):
+        if func:
+            if type(func) == str:
+                return self.agg_str_parse(func)
+            if type(func) == dict:
+                return self.agg_dict_parse(func)
         if agg_args:
             pass
         if agg_kwargs:
@@ -44,11 +44,11 @@ class DataFrameGroupBy:
                 # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)
 
-        groupby_agg = GroupByAgg(groupby_from=self.groupby_from,
-                                 groupby_cols=self.groupby_cols,
-                                 agg_dict=agg_dict,
-                                 concat=True,
-                                 origin_dict=agg_tuple_dict)
+        groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
+                                      groupby_cols=self.groupby_cols,
+                                      agg_dict=agg_dict,
+                                      concat=True,
+                                      origin_dict=agg_tuple_dict)
 
         op_expr = OpExpr(op_obj=groupby_agg,
                          op_on=self.groupby_from,

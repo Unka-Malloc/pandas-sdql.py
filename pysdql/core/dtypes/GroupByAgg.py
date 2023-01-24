@@ -1,8 +1,10 @@
+from typing import List
+
 from pysdql.core.dtypes.sdql_ir import RecConsExpr, RecAccessExpr
 
 
-class GroupByAgg:
-    def __init__(self, groupby_from, groupby_cols, agg_dict, concat: bool, origin_dict=None):
+class GroupbyAggrExpr:
+    def __init__(self, groupby_from, groupby_cols: List[str], agg_dict: dict, concat: bool, origin_dict=None):
         self.groupby_from = groupby_from
         self.groupby_cols = groupby_cols
         self.agg_dict = agg_dict

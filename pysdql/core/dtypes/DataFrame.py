@@ -9,7 +9,7 @@ from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
-from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.IterStmt import IterStmt
 # from pysdql.core.dtypes.ConcatExpr import ConcatExpr
@@ -26,8 +26,6 @@ from pysdql.core.dtypes.NonNullExpr import NonNullExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
-from pysdql.core.dtypes.SumStmt import SumStmt
-from pysdql.core.dtypes.SumOpt import SumOpt
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -95,27 +93,21 @@ class DataFrame(SemiRing, Retrivable):
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
-        self.__columns = columns if columns else []
         self.__dtype = dtype
-        self.__name = name
-        self.__var_name = varname()
+        self.__name = name if name else varname()
+        self.__columns = columns if columns else self.preset_cols()
+        self.__columns_in = columns if columns else self.preset_cols()
         self.__operations = operations if operations else OpSeq()
         self.__retriever = Retriever(self)
 
         self.__structure = DataFrameStruct('1DT')
 
-        self.init_cols()
-
-        self.__columns_in = columns if columns else []
-        self.__columns_out = columns if columns else []
-        self.__columns_used = []
-
         self.__iter_el = IterEl(f'x_{self.get_name()}')
         self.__var_expr = self.init_var_expr()
 
-        self.context_constant = {}
-
         self.__is_merged = is_joint
+
+        self.context_constant = {}
 
         self.context_variable = context_variable if context_variable else {}
         self.context_constant = context_constant if context_constant else {}
@@ -141,24 +133,6 @@ class DataFrame(SemiRing, Retrivable):
         self.transform = TransExpr(self)
 
         self.context_semiopt = context_semiopt if context_semiopt else []
-
-    def init_cols(self):
-        if self.name in ['customer', 'cu']:
-            self.__columns = CUSTOMER_COLS
-        if self.name in ['lineitem', 'li']:
-            self.__columns = LINEITEM_COLS
-        if self.name in ['orders', 'ord']:
-            self.__columns = ORDERS_COLS
-        if self.name in ['nation', 'na']:
-            self.__columns = NATION_COLS
-        if self.name in ['region', 're']:
-            self.__columns = REGION_COLS
-        if self.name in ['part', 'pa']:
-            self.__columns = PART_COLS
-        if self.name in ['supplier', 'su']:
-            self.__columns = SUPPLIER_COLS
-        if self.name in ['partsupp', 'ps']:
-            self.__columns = PARTSUPP_COLS
 
     @property
     def is_joint(self):
@@ -229,8 +203,8 @@ class DataFrame(SemiRing, Retrivable):
 
     @property
     def data(self):
-        if self.__columns:
-            columns_names = self.__columns
+        if self.columns:
+            columns_names = self.columns
         else:
             columns_names = list(self.__data.keys())
 
@@ -248,52 +222,80 @@ class DataFrame(SemiRing, Retrivable):
     def index(self):
         return self.__index
 
-    @property
-    def columns(self):
-        if self.__columns:
-            return self.__columns
-        else:
-            if self.name in ['customer', 'cu']:
-                return CUSTOMER_COLS
-            if self.name in ['lineitem', 'li']:
-                return LINEITEM_COLS
-            if self.name in ['orders', 'ord']:
-                return ORDERS_COLS
-            if self.name in ['nation', 'na']:
-                return NATION_COLS
-            if self.name in ['region', 're']:
-                return REGION_COLS
-            if self.name in ['part', 'pa']:
-                return PART_COLS
-            if self.name in ['supplier', 'su']:
-                return SUPPLIER_COLS
-            if self.name in ['partsupp', 'ps']:
-                return PARTSUPP_COLS
+    '''
+    Columns
+    Columns In
+    Columns Out
+    Columns Used
+    '''
 
-            if self.__data:
-                self.__columns = list(self.__data.keys())
-                return self.__columns
-
+    def preset_cols(self) -> list:
+        if self.__name in ['customer', 'cu']:
+            return CUSTOMER_COLS
+        if self.__name in ['lineitem', 'li']:
+            return LINEITEM_COLS
+        if self.__name in ['orders', 'ord']:
+            return ORDERS_COLS
+        if self.__name in ['nation', 'na']:
+            return NATION_COLS
+        if self.__name in ['region', 're']:
+            return REGION_COLS
+        if self.__name in ['part', 'pa']:
+            return PART_COLS
+        if self.__name in ['supplier', 'su']:
+            return SUPPLIER_COLS
+        if self.__name in ['partsupp', 'ps']:
+            return PARTSUPP_COLS
         return []
 
     @property
-    def cols_in(self):
-        if self.__columns_in:
-            return self.__columns_in
-        return self.columns
+    def columns(self) -> list:
+        return self.__columns
 
     @property
-    def cols_out(self):
-        if self.__columns_out:
-            return self.__columns_out
-        if self.cols_in:
-            return self.cols_in
-        return self.columns
+    def cols_in(self) -> list:
+        return self.__columns_in
+
+    @property
+    def cols_out(self) -> list:
+        return self.infer_cols_out()
+
+    def infer_cols_out(self) -> list:
+        """
+        What could change columns?
+        The last operation:
+            1. col proj
+            2. groupby agg
+            3. agg
+            4. merge
+        :return:
+        """
+        cols = []
+
+        for op_expr in reversed(self.operations):
+            op_body = op_expr.op
+
+            if isinstance(op_body, ColProjExpr):
+                return op_body.proj_cols
+            if isinstance(op_body, AggrExpr):
+                return list(op_body.aggr_op.keys())
+            if isinstance(op_body, GroupbyAggrExpr):
+                return op_body.groupby_cols + list(op_body.agg_dict.keys())
+            if isinstance(op_body, MergeExpr):
+                return op_body.left.cols_out + op_body.right.cols_out
+            if isinstance(op_body, NewColOpExpr):
+                if not cols:
+                    cols += self.cols_in
+                cols.append(op_body.col_var)
+        else:
+            if cols:
+                return cols
+            else:
+                return self.cols_in
 
     @property
     def cols_used(self):
-        self.infer_col_used()
-        return [i for i in list(set(self.__columns_used)) if i in self.cols_in]
+        return self.retriever.findall_cols_used(as_owner=True)
 
     @property
     def dtype(self):
@@ -320,15 +322,11 @@ class DataFrame(SemiRing, Retrivable):
     def name(self):
         if self.__name:
             return self.__name
-        if self.__var_name:
-            return self.__var_name
         return self.__default_name
 
     def get_name(self):
         if self.__name:
             return self.__name
-        if self.__var_name:
-            return self.__var_name
         return self.__default_name
 
     def get_var_part(self):
@@ -399,11 +397,10 @@ class DataFrame(SemiRing, Retrivable):
         return self.iter_el
 
     def key_access(self, field):
-        self.__columns_used.append(field)
         if self.is_joint:
-            if field in self.partition_side.columns:
+            if field in self.partition_side.__columns:
                 return self.partition_side.key_access(field)
-            elif field in self.probe_side.columns:
+            elif field in self.probe_side.__columns:
                 return self.probe_side.key_access(field)
         return RecAccessExpr(self.iter_el.key, field)
 
@@ -476,9 +473,6 @@ class DataFrame(SemiRing, Retrivable):
             return self
 
         if type(item) == list:
-            self.__columns_out = item
-            self.__columns_used += item
-
             self.operations.push(OpExpr(op_obj=ColProjExpr(self, item),
                                         op_on=self,
                                         op_iter=False))
@@ -497,12 +491,17 @@ class DataFrame(SemiRing, Retrivable):
             return self.get_col(col_name=item)
 
     def get_col(self, col_name):
+        """
+        df['col_name'] = ?
+        :param col_name:
+        :return:
+        """
         if col_name in self.columns:
-            self.__columns_used.append(col_name)
             return ColEl(self, col_name)
-
-        # unsafe
-        return ColEl(self, col_name)
+        if col_name in self.retriever.find_cols_used(mode='insert'):
+            return ColEl(self, col_name)
+        else:
+            raise IndexError(f'Cannot find column "{col_name}" in {self.columns}')
 
     def __setitem__(self, key, value):
         if key in self.columns:
@@ -521,7 +520,7 @@ class DataFrame(SemiRing, Retrivable):
             if key in self.columns:
                 for i in range(len(self.columns)):
                     if self.columns[i] == key:
-                        self.__columns[i] = mapper[key]
+                        self.columns[i] = mapper[key]
             else:
                 raise IndexError(f'Cannot find the column {key} in {self.name}')
 
@@ -555,7 +554,6 @@ class DataFrame(SemiRing, Retrivable):
                                     op_iter=False))
 
     def groupby(self, cols, as_index=False):
-        self.__columns_used += cols
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
 
@@ -634,24 +632,64 @@ class DataFrame(SemiRing, Retrivable):
             opt.input(op_expr)
         return opt
 
-    def agg(self, func):
-        if type(func) == dict:
-            return self.agg_by_dict(func)
+    def agg(self, func=None, *agg_args, **agg_kwargs):
+        if func:
+            if type(func) == str:
+                return self.agg_str_parse(func)
+            if type(func) == dict:
+                return self.agg_dict_parse(func)
+        if agg_args:
+            pass
+        if agg_kwargs:
+            return self.agg_kwargs_parse(agg_kwargs)
 
-    def agg_by_dict(self, input_aggr_dict):
+    def agg_dict_parse(self, input_aggr_dict):
         output_aggr_dict = {}
 
         for aggr_key in input_aggr_dict.keys():
             aggr_func = input_aggr_dict[aggr_key]
 
             if aggr_func == 'sum':
-                output_aggr_dict[aggr_key] = aggr_key
+                output_aggr_dict[aggr_key] = self.key_access(aggr_key)
             if aggr_func == 'count':
-                output_aggr_dict[aggr_key] = 1
+                output_aggr_dict[aggr_key] = ConstantExpr(1)
 
         aggr_expr = AggrExpr(aggr_type=AggrType.DICT,
                              aggr_on=self,
                              aggr_op=output_aggr_dict,
+                             aggr_else=EmptyDicConsExpr())
+
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self,
+                         op_iter=True,
+                         iter_on=self,
+                         ret_type=OpRetType.DICT)
+
+        self.push(op_expr)
+
+        return self
+
+    def agg_kwargs_parse(self, agg_tuple_dict):
+        agg_dict = {}
+
+        for agg_key in agg_tuple_dict.keys():
+            agg_val = agg_tuple_dict[agg_key]
+            if not isinstance(agg_val, tuple):
+                raise ValueError()
+
+            agg_flag = agg_tuple_dict[agg_key][1]
+
+            if agg_flag == 'sum':
+                agg_dict[agg_key] = self.key_access(agg_val[0])
+            if agg_flag == 'count':
+                agg_dict[agg_key] = ConstantExpr(1)
+            if callable(agg_flag):
+                # received lambda function
+                agg_dict[agg_key] = ConstantExpr(1)
+
+        aggr_expr = AggrExpr(aggr_type=AggrType.DICT,
+                             aggr_on=self,
+                             aggr_op=agg_dict,
                              aggr_else=EmptyDicConsExpr())
 
         op_expr = OpExpr(op_obj=aggr_expr,
@@ -756,7 +794,7 @@ class DataFrame(SemiRing, Retrivable):
 
     def find_groupby_agg(self):
         for op_expr in self.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 return op_expr
         return None
 
@@ -802,30 +840,6 @@ class DataFrame(SemiRing, Retrivable):
             return tmp_list
         return None
 
-    def infer_col_used(self):
-        if self.find_next_merge():
-            op_expr = self.find_next_merge()
-            left = op_expr.op.left
-            right = op_expr.op.right
-            left_on = op_expr.op.left_on
-            right_on = op_expr.op.right_on
-
-            if self.name == left.name:
-                if isinstance(left_on, str):
-                    self.__columns_used.append(left_on)
-                if isinstance(left_on, list):
-                    self.__columns_used += left_on
-            if self.name == right.name:
-                if isinstance(right_on, str):
-                    self.__columns_used.append(right_on)
-                if isinstance(right_on, list):
-                    self.__columns_used += right_on
-
-            joint_cols_used = op_expr.op.joint.cols_used
-
-            if joint_cols_used:
-                self.__columns_used += joint_cols_used
-
     def find_cols_as_probe_key(self):
         cols_list = []
         for op_expr in self.operations:
@@ -868,25 +882,6 @@ class DataFrame(SemiRing, Retrivable):
         for op_expr in self.operations:
             output += op_expr.get_op_name_suffix()
         return output
-
-    # def find_cols_used(self):
-    #     cols_list = []
-    #     if self.find_next_merge():
-    #         op_expr = self.find_next_merge()
-    #         left = op_expr.op.left
-    #         right = op_expr.op.right
-    #
-    #         if self.name == left.name:
-    #             cols_list.append(op_expr.op.left_on)
-    #         if self.name == right.name:
-    #             cols_list.append(op_expr.op.right_on)
-    #
-    #         joint_cols_used = op_expr.op.joint.find_cols_used()
-    #
-    #         if joint_cols_used:
-    #             cols_list += joint_cols_used
-    #
-    #     return cols_list
 
     def init_context_variable(self):
         self.context_variable[self.name] = self.var_expr
@@ -982,7 +977,7 @@ class DataFrame(SemiRing, Retrivable):
                 self.unopt_list.append(LetExpr(tmp_var,
                                                sum_expr,
                                                ConstantExpr(True)))
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 pass
 
             self.unopt_count += 1

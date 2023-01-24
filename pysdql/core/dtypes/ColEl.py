@@ -459,7 +459,7 @@ class ColEl(SDQLIR):
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
                              aggr_on=self.relation,
-                             aggr_op=self.col,
+                             aggr_op={self.field: self.col},
                              aggr_else=ConstantExpr(0.0))
 
         op_expr = OpExpr(op_obj=aggr_expr,
@@ -486,15 +486,9 @@ class ColEl(SDQLIR):
 
     def replace(self, rec, on=None):
         # print(f'try to replace col {self.sdql_ir} with {rec} as record')
+        # print(f'get {RecAccessExpr(rec, self.field)}')
 
-        if on is None:
-            return RecAccessExpr(rec, self.field)
-        else:
-            if self.relation.is_joint:
-                if self.field in self.relation.partition_side.columns:
-                    return RecAccessExpr(rec, self.field)
-
-        return self.relation.key_access(self.field)
+        return RecAccessExpr(rec, self.field)
 
     @property
     def sdql_ir(self):

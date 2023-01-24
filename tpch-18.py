@@ -50,7 +50,7 @@ if __name__ == '__main__':
     lineitem = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=pysdql.LINEITEM_COLS)
 
     agg_l = lineitem.groupby(['l_orderkey'], as_index=False).filter(lambda x: x['l_quantity'].sum() > var1)
-    agg_l.columns.field = 'agg_l'
+    agg_l.__columns.field = 'agg_l'
 
     r = customer.merge(orders, left_on='c_custkey', right_on='o_custkey')
     r = r.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')

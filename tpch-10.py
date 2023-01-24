@@ -54,13 +54,13 @@ if __name__ == '__main__':
     nation = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=pysdql.NATION_COLS)
 
     sub_o = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)]
-    sub_o.columns.field = 'sub_o'
+    sub_o.__columns.field = 'sub_o'
 
     r = customer.merge(sub_o, left_on='c_custkey', right_on='o_custkey')
     r = r.merge(nation, left_on='c_nationkey', right_on='n_nationkey')
 
     sub_l = lineitem[lineitem['l_returnflag'] == 'R']
-    sub_l.columns.field = 'sub_l'
+    sub_l.__columns.field = 'sub_l'
     r = r.merge(sub_l, left_on='o_custkey', right_on='l_orderkey')
 
     r['value'] = r['l_extendedprice'] * (1 - r['l_discount'])

@@ -7,7 +7,7 @@ from pysdql.core.dtypes.Utils import input_fmt
 
 
 class AggrExpr(SDQLIR):
-    def __init__(self, aggr_type, aggr_on, aggr_op, aggr_if=None, aggr_else=None, update_sum=False):
+    def __init__(self, aggr_type, aggr_on, aggr_op: dict, aggr_if=None, aggr_else=None, update_sum=False):
         self.aggr_type = aggr_type
         self.aggr_on = aggr_on
         self.aggr_op = aggr_op
@@ -40,4 +40,7 @@ class AggrExpr(SDQLIR):
 
     def optimize(self):
         return self.aggr_on.optimize()
+
+    def show(self):
+        self.aggr_on.show()
 

@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.GroupByAgg import GroupByAgg
+from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.util.df_retriever import Retriever
@@ -17,14 +17,14 @@ class JoinProbeFrame:
 
     def get_groupby_cols(self):
         for op_expr in self.probe_on.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 return op_expr.op.groupby_cols
         else:
             raise ValueError()
 
     def get_aggr_dict(self):
         for op_expr in self.probe_on.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 return op_expr.op.agg_dict
         else:
             raise ValueError()
@@ -32,7 +32,7 @@ class JoinProbeFrame:
     def get_cond_after_groupby_agg(self):
         groupby_agg_located = False
         for op_expr in self.probe_on.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 groupby_agg_located = True
             if op_expr.op_type == CondExpr:
                 if groupby_agg_located:
@@ -89,7 +89,7 @@ class JoinProbeFrame:
     @property
     def was_groupby_agg(self):
         for op_expr in self.probe_on.operations:
-            if op_expr.op_type == GroupByAgg:
+            if op_expr.op_type == GroupbyAggrExpr:
                 return True
         return False
 

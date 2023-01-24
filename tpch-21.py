@@ -61,28 +61,28 @@ if __name__ == '__main__':
                'l1_discount', 'l1_tax', 'l1_returnflag', 'l1_linestatus', 'l1_shipdate', 'l1_commitdate',
                'l1_receiptdate', 'l1_shipinstruct', 'l1_shipmode', 'l1_comment']
     l1 = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=l1_cols)
-    l1.columns.field = 'l1'
+    l1.__columns.field = 'l1'
     l2_cols = ['l2_orderkey', 'l2_partkey', 'l2_suppkey', 'l2_linenumber', 'l2_quantity', 'l2_extendedprice',
                'l2_discount', 'l2_tax', 'l2_returnflag', 'l2_linestatus', 'l2_shipdate', 'l2_commitdate',
                'l2_receiptdate', 'l2_shipinstruct', 'l2_shipmode', 'l2_comment']
     l2 = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=l2_cols)
-    l2.columns.field = 'l2'
+    l2.__columns.field = 'l2'
     l3_cols = ['l3_orderkey', 'l3_partkey', 'l3_suppkey', 'l3_linenumber', 'l3_quantity', 'l3_extendedprice',
                'l3_discount', 'l3_tax', 'l3_returnflag', 'l3_linestatus', 'l3_shipdate', 'l3_commitdate',
                'l3_receiptdate', 'l3_shipinstruct', 'l3_shipmode', 'l3_comment']
     l3 = pd.read_table(rf'{data_path}/lineitem.tbl', sep='|', index_col=False, header=None, names=l3_cols)
-    l3.columns.field = 'l3'
+    l3.__columns.field = 'l3'
 
     sub_n = nation[(nation['n_name'] == var1)]
-    sub_n.columns.field = 'sub_n'
+    sub_n.__columns.field = 'sub_n'
     join_ns = supplier.merge(sub_n, left_on='s_nationkey', right_on='n_nationkey')
-    join_ns.columns.field = 'join_ns'
+    join_ns.__columns.field = 'join_ns'
     sub_l1 = l1[(l1['l1_receiptdate'] > l1['l1_commitdate'])]
-    sub_l1.columns.field = 'sub_l1'
+    sub_l1.__columns.field = 'sub_l1'
     r = join_ns.merge(sub_l1, left_on='s_suppkey', right_on='l1_suppkey')
 
     sub_o = orders[(orders['o_orderstatus'] == 'F')]
-    sub_o.columns.field = 'sub_o'
+    sub_o.__columns.field = 'sub_o'
     r = r.merge(sub_o, left_on='l1_orderkey', right_on='o_orderkey')
 
     main_cols = pysdql.SUPPLIER_COLS + pysdql.ORDERS_COLS + pysdql.NATION_COLS + l1_cols

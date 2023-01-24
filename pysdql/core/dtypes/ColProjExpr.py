@@ -1,8 +1,14 @@
+from typing import List
+
 from pysdql.core.dtypes.sdql_ir import RecConsExpr
 
 
 class ColProjExpr:
-    def __init__(self, proj_on, proj_cols):
+    def __init__(self, proj_on, proj_cols: List[str]):
+        """
+        :param proj_on:
+        :param List[str] proj_cols: list of columns to be projected
+        """
         self.proj_on = proj_on
         self.proj_cols = proj_cols
 
