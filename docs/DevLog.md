@@ -52,3 +52,4 @@ Error:
     1. Variable Not Defined (lineitem_part). 
         This could be fixed in GroupbyAggrFrame, by adding context_variables from isin_part to isin_probe
 
+# Q14
