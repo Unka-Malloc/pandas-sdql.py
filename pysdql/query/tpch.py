@@ -27,16 +27,16 @@ class tpch:
         customer = pysdqlDataFrame()
         lineitem = pysdqlDataFrame()
 
-        cu_filt = customer[customer.c_mktsegment == "BUILDING"]
+        cu_filt = customer[customer['c_mktsegment'] == "BUILDING"]
 
-        ord_filt = orders[orders.o_orderdate < "1995-03-15"]
-        ord_cu_join = pd.merge(cu_filt, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+        ord_filt = orders[orders['o_orderdate'] < "1995-03-15"]
+        cu_ord_join = pd.merge(cu_filt, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
 
-        li_filt = lineitem[lineitem.l_shipdate > "1995-03-15"]
-        li_order_join = pd.merge(ord_cu_join, li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
-        li_order_join["revenue"] = li_order_join.l_extendedprice * (1.0 - li_order_join.l_discount)
+        li_filt = lineitem[lineitem['l_shipdate'] > "1995-03-15"]
+        li_ord_join = pd.merge(cu_ord_join, li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+        li_ord_join["revenue"] = li_ord_join['l_extendedprice'] * (1.0 - li_ord_join['l_discount'])
 
-        result = li_order_join \
+        result = li_ord_join \
             .groupby(["l_orderkey", "o_orderdate", "o_shippriority"]) \
             .agg({'revenue': 'sum'})
 
@@ -244,16 +244,16 @@ class tpch:
             .groupby(["l_orderkey"]) \
             .agg(sum_quantity=("l_quantity", "sum"))
 
-        li_filt = li_aggr[li_aggr.sum_quantity > 300].reset_index()
+        li_filt = li_aggr[li_aggr['sum_quantity'] > 300].reset_index()
         li_proj = li_filt[["l_orderkey"]]
 
-        ord_filt = orders[orders.o_orderkey.isin(li_proj["l_orderkey"])]
+        ord_filt = orders[orders['o_orderkey'].isin(li_proj["l_orderkey"])]
 
         cu_proj = customer[["c_custkey", "c_name"]]
-        ord_cu_join = pd.merge(cu_proj, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
-        ord_cu_join = ord_cu_join[["o_orderkey", "c_name", "c_custkey", "o_orderdate", "o_totalprice"]]
+        cu_ord_join = pd.merge(cu_proj, ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+        cu_ord_join = cu_ord_join[["c_name", "c_custkey", "o_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]]
 
-        li_ord_join = pd.merge(ord_cu_join, lineitem, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+        li_ord_join = pd.merge(cu_ord_join, lineitem, left_on="o_orderkey", right_on="l_orderkey", how="inner")
 
         result = li_ord_join \
             .groupby(["c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]) \
@@ -287,7 +287,7 @@ class tpch:
         li_pa_join_filt = li_pa_join[
             (
                     ((li_pa_join.p_brand == "Brand#12")
-                       & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11)))
+                     & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11)))
                     | ((li_pa_join.p_brand == "Brand#23")
                        & ((li_pa_join.l_quantity >= 10) & (li_pa_join.l_quantity <= 20)))
                     | ((li_pa_join.p_brand == "Brand#34")

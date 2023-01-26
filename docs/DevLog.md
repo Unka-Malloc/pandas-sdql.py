@@ -76,4 +76,13 @@ Done
 
 Done
 
-# Q10 and Q18
+# Q10
+
+Done
+
+# Q18
+
+as_part_for_next_join -> probe side is not joint 
+
+working for isin()
+

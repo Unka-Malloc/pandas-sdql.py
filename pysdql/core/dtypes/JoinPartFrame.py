@@ -71,28 +71,42 @@ class JoinPartFrame:
     def get_partition_on(self):
         return self.__iter_on
 
+    def get_part_dict_key(self) -> list:
+        if isinstance(self.part_key, str):
+            return [self.part_key]
+        elif isinstance(self.part_key, list):
+            return self.part_key
+
+    def get_part_dict_val(self) -> list:
+        col_proj = self.retriever.find_col_proj().proj_cols
+        col_proj = [col for col in col_proj if self.group_key != col]
+        cols_used = self.retriever.findall_cols_used(only_next=True)
+
+        if col_proj:
+            return col_proj
+        else:
+            return cols_used
+
     @property
     def col_proj_ir(self):
-        col_proj = self.get_part_col_proj()
-        if col_proj:
-            tmp_col_proj = [col for col in col_proj if self.group_key != col[0]]
-            if tmp_col_proj:
-                return RecConsExpr(tmp_col_proj)
-            else:
-                return RecConsExpr(col_proj)
-        else:
-            if not self.retriever.as_bypass_for_next_join:
-                cols_used = self.retriever.findall_cols_used(only_next=True)
+        col_proj = self.retriever.find_col_proj()
 
+        if col_proj:
+            col_proj = [col for col in col_proj.proj_cols if self.group_key != col]
+
+            if len(col_proj) == 0:
+                return ConstantExpr(True)
+            else:
+                return RecConsExpr([(i, self.part_on.key_access(i)) for i in col_proj])
+        else:
+            if self.retriever.as_bypass_for_next_join:
+                return ConstantExpr(True)
+            else:
+                cols_used = self.retriever.findall_cols_used(only_next=True)
                 if len(cols_used) == 0:
-                    return RecConsExpr([(self.group_key,
-                                         self.part_on.key_access(self.group_key))])
-                elif len(cols_used) == 1:
-                    return RecConsExpr([(cols_used[0], self.part_on.key_access(cols_used[0]))])
+                    return ConstantExpr(True)
                 else:
                     return RecConsExpr([(i, self.part_on.key_access(i)) for i in cols_used])
-
-        return RecConsExpr([(self.group_key, self.part_on.key_access(self.group_key))])
 
     def add_key(self, val):
         self.__group_key = val
@@ -118,7 +132,7 @@ class JoinPartFrame:
             if self.next_probe:
                 next_probe_op = self.next_probe
             else:
-                next_probe_op = ConstantExpr('placeholder_partition_next')
+                next_probe_op = ConstantExpr(True)
 
         if isinstance(self.part_key, str):
             part_left_op = DicConsExpr([(

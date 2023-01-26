@@ -157,6 +157,46 @@ class Retriever:
 
         return cols_used
 
+    def findall_cols_for_groupby_aggr(self, as_owner=True, only_next=False) -> list:
+        cols_used = []
+        cols_own = []
+
+        cols_own += self.target.columns
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            # MergeExpr
+            if isinstance(op_body, MergeExpr):
+                if self.target.name != op_body.joint.name:
+                    cols_used += op_body.joint.get_retriever().findall_cols_used(as_owner=as_owner,
+                                                                                 only_next=only_next)
+
+            # GroupbyAgg
+            if isinstance(op_body, GroupbyAggrExpr):
+                cols_used += op_body.groupby_cols
+
+                if isinstance(op_body.origin_dict, dict):
+                    for k in op_body.origin_dict.keys():
+                        v = op_body.origin_dict[k]
+                        if isinstance(k, str):
+                            cols_used.append(k)
+                        if isinstance(v, tuple):
+                            cols_used.append(v[0])
+                        else:
+                            raise NotImplementedError
+                else:
+                    raise TypeError('Groupby aggregation dictionary must be dict.')
+
+        # Remove Duplications
+        cleaned_cols_used = []
+        [cleaned_cols_used.append(x) for x in sorted(cols_used) if x not in cleaned_cols_used]
+
+        if as_owner:
+            return [x for x in cleaned_cols_used if x in cols_own]
+        else:
+            return cleaned_cols_used
+
     def findall_cols_used(self, as_owner=True, only_next=False) -> list:
         """
 
@@ -534,7 +574,7 @@ class Retriever:
     MergeExpr
     '''
 
-    def findall_merge(self, body_only=True, only_next=True, ) -> list:
+    def findall_merge(self, body_only=True, only_next=True) -> list:
         """
         It returns a list that contains all MergeExpr objects in the history operations.
         :return:
@@ -549,18 +589,10 @@ class Retriever:
                     all_merges.append(op_body)
                 else:
                     all_merges.append(op_expr)
-                    
+
                 if only_next:
                     if self.target.name != op_body.joint.name:
                         all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
-                else:
-                    if self.target.name == op_body.left.name:
-                        all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
-                    if self.target.name == op_body.right.name:
-                        all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
-                    if self.target.name == op_body.joint.name:
-                        all_merges += op_body.left.get_retriever().findall_merge(body_only, only_next)
-                        all_merges += op_body.right.get_retriever().findall_merge(body_only, only_next)
 
         # Remove Duplications
         cleaned_all_merges = []
@@ -693,6 +725,18 @@ class Retriever:
 
         return is_the_joint
 
+    def find_root_merge(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if op_body.right.get_retriever().is_joint:
+                        return op_body.right.get_retriever().find_root_merge()
+                    else:
+                        return op_body
+        else:
+            raise ValueError('Cannot find the root probe side.')
+
     def find_root_probe(self):
         for op_expr in self.history:
             op_body = op_expr.op
@@ -705,19 +749,44 @@ class Retriever:
         else:
             raise ValueError('Cannot find the root probe side.')
 
-    def finall_key_for_root_probe(self):
-        keys = []
+    def find_root_probe_key(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if op_body.right.retriever.is_joint:
+                        return op_body.right.retriever.find_root_probe_key()
+                    else:
+                        return op_body.right_on
+        else:
+            raise ValueError('Cannot find the root probe side.')
+
+    def findall_key_for_root_probe(self, as_tuple=False, ret_type=list):
+        keys_list = []
+        keys_dict = {}
 
         for op_expr in self.history:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if op_body.joint.name == self.target.name:
-                    keys.append(op_body.right_on)
+                    if as_tuple:
+                        keys_dict[(op_body.left_on, op_body.right_on)] = op_body
+                        keys_list.append((op_body.left_on, op_body.right_on))
+                    else:
+                        keys_dict[op_body.right_on] = op_body
+                        keys_list.append(op_body.right_on)
 
-                    if op_body.right.get_retriever().is_joint:
-                        keys += op_body.right.get_retriever().finall_key_for_root_probe()
+                    if op_body.right.retriever.is_joint:
+                        next_dict = op_body.right.retriever.findall_key_for_root_probe(as_tuple, ret_type=dict)
+                        for k in next_dict.keys():
+                            keys_dict[k] = next_dict[k]
 
-        return keys
+                        keys_list += op_body.right.get_retriever().findall_key_for_root_probe(as_tuple, ret_type)
+
+        if ret_type == list:
+            return keys_list
+        if ret_type == dict:
+            return keys_dict
 
     def find_probe_key_as_part_side(self):
         """
@@ -757,20 +826,73 @@ class Retriever:
         return parts
 
     @staticmethod
-    def find_lookup_path(the_from, key_from: str, key_to: str):
+    def find_lookup_path(start_from, key_from: str, key_to: str):
         """
         nation left -> right customer_orders_join -> customer left -> right orders
-        :param the_from:
+        :param start_from:
         :param key_from:
         :param key_to:
         :return:
         """
         path = []
 
+        root_merge = start_from.retriever.find_root_merge()
+        root_part = root_merge.left
+        root_probe = root_merge.right
+        root_part_key = root_merge.left_on
+        root_probe_key = root_merge.right_on
 
+        all_parts = start_from.retriever.findall_part_for_root_probe('as_body')
 
+        all_merges = start_from.retriever.findall_key_for_root_probe(as_tuple=True, ret_type=dict)
 
+        if key_to == root_part_key:
+            lookup_expr = root_probe.key_access(root_probe_key)
 
+            print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+        elif key_to in root_part.columns:
+            lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
+                                                              keyExpr=root_probe.key_access(root_probe_key)),
+                                        fieldName=key_to)
+
+            print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+        else:
+            for part in all_parts:
+                if key_to in part.columns:
+                    lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+
+                    print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+    @staticmethod
+    def find_bypass_lookup(all_parts, target, root_merge):
+        root_part = root_merge.left
+        root_probe = root_merge.right
+        root_probe_key = root_merge.right_on
+
+        for this_part in all_parts:
+            if target in this_part.columns:
+                this_merge = this_part.retriever.find_merge('as_part')
+                this_probe_key = this_merge.right_on
+
+                if this_probe_key == root_probe_key:
+                    lookup_expr = RecAccessExpr(
+                        recExpr=DicLookupExpr(
+                            dicExpr=root_part.var_part,
+                            keyExpr=root_probe.key_access(root_probe_key)),
+                        fieldName=target)
+                    return lookup_expr
+
+                else:
+                    lookup_expr = RecAccessExpr(
+                        recExpr=DicLookupExpr(
+                            dicExpr=this_part.var_part,
+                            keyExpr=Retriever.find_bypass_lookup(all_parts,
+                                                                 this_probe_key,
+                                                                 root_merge)),
+                        fieldName=target)
+                    return lookup_expr
+        else:
+            raise IndexError(f'Failed to find column {target} in {all_parts}')
 
     '''
     GroupbyAgg
@@ -890,7 +1012,7 @@ class Retriever:
         return False
 
     @property
-    def was_aggregation(self):
+    def was_aggregated(self):
         for op_expr in self.history:
             op_body = op_expr.op
 
