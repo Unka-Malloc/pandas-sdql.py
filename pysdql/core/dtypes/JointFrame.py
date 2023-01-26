@@ -119,12 +119,12 @@ class JointFrame:
             if self.__next_op:
                 next_op = self.__next_op
             else:
-                next_op = ConstantExpr('placeholder_probe_next')
+                next_op = ConstantExpr(True)
 
         # df: partition side
-        part_on = self.part_frame.get_part_on()
+        part_on = self.part_frame.part_on
         # var:
-        part_var = self.part_frame.get_part_var()
+        part_var = self.part_frame.part_var
         this_part_col_proj = self.part_frame.get_part_col_proj()
 
         # str: left_on
@@ -553,9 +553,8 @@ class JointFrame:
                         return joint_let
                 else:
                     # Q3
+                    # Q18
                     if self.part_frame.retriever.was_probed:
-                        all_part_sides = []
-
                         groupby_aggr_info = self.retriever.find_groupby_agg()
 
                         aggr_dict = groupby_aggr_info.aggr_dict
@@ -573,7 +572,11 @@ class JointFrame:
                             key_tuples = []
 
                             for c in groupby_cols:
-                                if c in probe_on.columns:
+                                if c == probe_key:
+                                    key_tuples.append((c, probe_key_ir))
+                                elif c == part_key:
+                                    key_tuples.append((c, probe_key_ir))
+                                elif c in probe_on.columns:
                                     key_tuples.append((c, self.probe_access(c)))
                                 elif c in part_on.columns:
                                     key_tuples.append((c, self.part_lookup(c)))
@@ -932,7 +935,7 @@ class JointFrame:
                             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
             # Q15
             if self.retriever.last_iter_is_merge:
-                if self.probe_frame.retriever.was_aggregation:
+                if self.probe_frame.retriever.was_aggregated:
                     key_rec_list = []
 
                     if self.probe_frame.retriever.was_aggr:
@@ -1132,6 +1135,7 @@ class JointFrame:
             # Q5
             # Q7
             # Q10
+            # Q18
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
@@ -1139,7 +1143,11 @@ class JointFrame:
 
                     all_part_sides = self.retriever.findall_part_for_root_probe('as_body')
 
-                    root_probe_side = self.retriever.find_root_probe()
+                    root_merge = self.retriever.find_root_merge()
+                    root_part_side = root_merge.left
+                    root_probe_side = root_merge.right
+                    root_part_key = root_merge.left_on
+                    root_probe_key = root_merge.right_on
 
                     # dict key (single)
 
@@ -1157,36 +1165,48 @@ class JointFrame:
                                     and x != key_col
                                     and x not in self.retriever.find_renamed_cols())]
 
-                    print(val_cols)
-
                     dict_val_list = []
 
                     for col in val_cols:
-                        for this_part_side in all_part_sides:
-                            if col in this_part_side.columns:
-                                this_part_col_used = this_part_side.get_retriever().findall_cols_used(only_next=True)
-                                if len(this_part_col_used) == 1:
-                                    print(this_part_side.name, 'has only one column', this_part_col_used[0])
-                                this_merge_expr = this_part_side.get_retriever().find_merge('as_part')
-                                this_part_key = this_merge_expr.left_on
-                                this_probe_key = this_merge_expr.right_on
-                                print(col, 'in', this_part_side.name)
-                                if col == this_part_key:
-                                    print('found', col, 'as part key')
-                                    print('probe key for this', this_probe_key)
-                                if this_probe_key not in root_probe_side.columns:
-                                    print(this_probe_key, 'not in probe columns')
-
-                    print(self.retriever.findall_merge(only_next=False))
+                        if col == root_part_key:
+                            dict_val_list.append((
+                                col,
+                                root_probe_side.key_access(root_probe_key)
+                            ))
+                        elif col == root_probe_key:
+                            dict_val_list.append((
+                                col,
+                                root_probe_side.key_access(root_probe_key)
+                            ))
+                        elif col in root_part_side.columns:
+                            dict_val_list.append((
+                                col,
+                                RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part_side.var_part,
+                                                                    keyExpr=root_probe_side.key_access(
+                                                                        root_probe_key)),
+                                              fieldName=col)
+                            ))
+                        elif col in root_probe_side.columns:
+                            dict_val_list.append((
+                                col,
+                                root_probe_side.key_access(col)
+                            ))
+                        else:
+                            for part in all_part_sides:
+                                if col in part.columns:
+                                    dict_val_list.append((
+                                        col,
+                                        self.retriever.find_bypass_lookup(all_part_sides, col, root_merge)
+                                    ))
 
                     dict_val_ir = RecConsExpr(dict_val_list)
 
-                    print({
-                        'part': [i.name for i in all_part_sides],
-                        'probe': root_probe_side.name,
-                        'key': dict_key_ir,
-                        'val': dict_val_ir
-                    })
+                    # print({
+                    #     'part': [i.name for i in all_part_sides],
+                    #     'probe': root_probe_side.name,
+                    #     'key': dict_key_ir,
+                    #     'val': dict_val_ir
+                    # })
 
                     joint_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
 
@@ -1225,7 +1245,7 @@ class JointFrame:
                             elseBodyExpr=ConstantExpr(None)
                         )
 
-                    probe_side_conds = root_probe_side.get_retriever().findall_cond()
+                    probe_side_conds = root_probe_side.retriever.findall_cond()
                     if probe_side_conds:
                         for probe_cond in probe_side_conds:
                             joint_op = IfExpr(condExpr=probe_cond,
@@ -1241,12 +1261,11 @@ class JointFrame:
                                         valExpr=joint_sum,
                                         bodyExpr=next_op)
 
-                    raise NotImplementedError
-
                     return joint_let
 
                 # probe side is not joint
                 else:
+                    # Q18
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
 
@@ -1267,7 +1286,8 @@ class JointFrame:
                                     and x not in self.retriever.find_renamed_cols())
                                 or (x in self.retriever.find_cols_used('merge')
                                     and x != key_col
-                                    and x not in self.retriever.find_renamed_cols())]
+                                    and x not in self.retriever.find_renamed_cols())
+                                or (x in self.retriever.findall_cols_for_groupby_aggr())]
 
                     dict_val_list = []
 
@@ -1305,18 +1325,18 @@ class JointFrame:
 
                     self.probe_frame.probe_on.transform.migrate(transform)
 
-                    # print(self.joint.name)
-                    # print('all', self.joint.columns)
-                    # print('used', self.retriever.findall_cols_used())
-                    # print('last', last_merge_expr)
-                    # print('next', next_merge_expr)
-                    # print({
-                    #     'key': key_col,
-                    #     'vals': val_cols
-                    # })
-                    # print(transform)
-                    # print(joint_op)
-                    # print('==============================')
+                    print(self.joint.name)
+                    print('all', self.joint.columns)
+                    print('used', self.retriever.findall_cols_used())
+                    print('last', last_merge_expr)
+                    print('next', next_merge_expr)
+                    print({
+                        'key': key_col,
+                        'vals': val_cols
+                    })
+                    print(transform)
+                    print(joint_op)
+                    print('==============================')
 
                     if joint_cond:
                         joint_op = IfExpr(condExpr=joint_cond,
@@ -1350,6 +1370,8 @@ class JointFrame:
             # Q10
             if self.retriever.as_probe_for_next_join:
                 return next_op
+
+        # OLD (Deprecated) below
 
         if self.is_groupby_agg_joint:
             # aggr_key_ir
@@ -1621,8 +1643,6 @@ class JointFrame:
 
                 return out
 
-            # Q3 -> this way, sir
-            # Q18 -> this way, sir
             if self.is_next_part:
                 iter_key = self.get_next_part_key()
                 next_part_key_ir = probe_on.key_access(iter_key)
@@ -1885,30 +1905,47 @@ class JointFrame:
         # Q14
         # Q15
         # Q16
+        # Q18
         # Q19
         if not self.part_frame.is_joint and not self.probe_frame.is_joint:
+            # print(f'{self.joint.name}: neither joint')
+
             if self.probe_frame.retriever.was_groupby_aggr:
                 result = SDQLInspector.concat_bindings([self.probe_frame.probe_on.get_groupby_agg(),
                                                         self.part_frame.get_part_expr(),
                                                         self.get_probe_expr(next_op)])
                 return result
-            # print(f'{self.joint.name}: neither joint')
+
             return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
+        # Q10
+        # Q18
         if self.part_frame.is_joint and not self.probe_frame.is_joint:
             # print(f'{self.joint.name}: part joint')
-            # return self.part_frame.part_on.get_joint_frame().get_joint_expr(next_op)
+
             return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
+        # Q10
         if not self.part_frame.is_joint and self.probe_frame.is_joint:
             # print(f'{self.joint.name}: probe joint')
-            if self.part_frame.retriever.as_part_for_next_join:
+            if self.part_frame.retriever.as_bypass_for_next_join:
                 # print(f'completely bypass\n'
                 #       f'joint: {self.joint.name}\n'
                 #       f'part: {self.part_frame.part_on.name}\n'
                 #       f'probe: {self.probe_frame.probe_on.name}')
-                return self.probe_frame.probe_on.get_retriever().find_merge(
+                return self.probe_frame.probe_on.retriever.find_merge(
                     mode='as_joint').joint.get_joint_frame().get_joint_expr(
                     self.part_frame.get_part_expr(self.get_probe_expr(next_op)))
-            return self.part_frame.get_part_expr(self.probe_frame.probe_on.get_joint_frame().get_joint_expr(next_op))
+
+            # Q10
+
+            all_bindings = []
+
+            all_part_expr = self.retriever.findall_part_for_root_probe('as_expr')
+
+            all_bindings += all_part_expr
+
+            all_bindings.append(self.get_probe_expr(next_op))
+
+            return SDQLInspector.concat_bindings(all_bindings)
         if self.part_frame.is_joint and self.probe_frame.is_joint:
             if self.retriever.find_illegal_dup_col():
                 raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')

@@ -502,7 +502,7 @@ class DataFrame(SemiRing, Retrivable):
             return ColEl(self, col_name)
         if col_name in self.retriever.find_cols_used(mode='insert'):
             return ColEl(self, col_name)
-        if self.retriever.was_aggregation:
+        if self.retriever.was_aggregated:
             if col_name in self.retriever.find_cols_used(mode='aggregation'):
                 return ColEl(self, col_name)
         else:
@@ -761,6 +761,10 @@ class DataFrame(SemiRing, Retrivable):
 
     def get_probe_frame(self):
         return self.get_opt(OptGoal.JoinProbe).probe_frame
+
+    @property
+    def joint_frame(self):
+        return self.get_opt(OptGoal.Joint).joint_frame
 
     def get_joint_frame(self):
         return self.get_opt(OptGoal.Joint).joint_frame
