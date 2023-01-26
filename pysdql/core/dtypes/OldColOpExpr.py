@@ -3,8 +3,8 @@ class OldColOpExpr:
         self.col_var = col_var
         self.col_expr = col_expr
 
-    def replace(self, rec, on=None):
-        return self.col_expr.replace(rec, on)
+    def replace(self, rec, inplace=False, mapper=None):
+        return self.col_expr.replace(rec, inplace, mapper)
 
     @property
     def expr(self):

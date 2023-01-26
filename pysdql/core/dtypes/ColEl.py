@@ -484,9 +484,20 @@ class ColEl(SDQLIR):
     def max(self):
         pass
 
-    def replace(self, rec, inplace=False):
+    def replace(self, rec, inplace=False, mapper=None):
         # print(f'try to replace col {self.sdql_ir} with {rec} as record')
         # print(f'get {RecAccessExpr(rec, self.field)}')
+
+        if mapper:
+            if isinstance(mapper, dict):
+                for k in mapper.keys():
+                    if self.field in k:
+                        if inplace:
+                            return mapper[k]
+                        else:
+                            return RecAccessExpr(mapper[k], self.field)
+            else:
+                raise TypeError(f'mapper must be a dict')
 
         if inplace:
             return rec

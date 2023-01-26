@@ -227,14 +227,14 @@ class ColExpr(SDQLIR):
         #
         # return aggr_expr
 
-    def replace(self, rec, on=None):
+    def replace(self, rec, inplace=False, mapper=None):
         new_unit1 = self.unit1
         new_unit2 = self.unit2
 
         if isinstance(self.unit1, SDQLIR):
-            new_unit1 = self.unit1.replace(rec, on)
+            new_unit1 = self.unit1.replace(rec, inplace, mapper)
         if isinstance(self.unit2, SDQLIR):
-            new_unit2 = self.unit2.replace(rec, on)
+            new_unit2 = self.unit2.replace(rec, inplace, mapper)
 
         if self.operator == MathSymbol.ADD:
             return AddExpr(op1Expr=input_fmt(new_unit1),
