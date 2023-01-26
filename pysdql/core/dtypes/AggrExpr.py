@@ -27,7 +27,12 @@ class AggrExpr(SDQLIR):
 
     @property
     def sdql_ir(self):
-        return self.aggr_op
+        if self.aggr_type == AggrType.VAL:
+            col_expr = list(self.aggr_op.values())[0]
+            # print(type(col_expr), col_expr)
+            return col_expr
+        else:
+            raise ValueError()
 
     def __mul__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.aggr_on)

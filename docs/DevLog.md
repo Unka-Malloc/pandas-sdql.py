@@ -53,3 +53,37 @@ Error:
         This could be fixed in GroupbyAggrFrame, by adding context_variables from isin_part to isin_probe
 
 # Q14
+
+Done
+
+# Q16
+
+Done
+
+Error: 
+    1. Variable Not Defined (Customer, Complaints). 
+        This could be fixed in JointFrame, by adding context_variables from isin_part to isin_probe
+
+# Q15
+
+```python
+groupby_cols = []
+aggr_dict = {}
+
+# aggr = {? : scalar}
+if len(aggr_dict.keys()) == 1:
+    # aggr = {scalar : scalar}
+    if len(groupby_cols) == 1:
+        pass
+    # aggr = {record : scalar}
+    else:
+        pass
+# aggr = {? : record}
+else:
+    # aggr = {scalar: record}
+    if len(groupby_cols) == 1:
+        pass
+    # aggr = {record : record}
+    else:
+        pass
+```

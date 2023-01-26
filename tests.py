@@ -43,7 +43,7 @@ if __name__ == '__main__':
     #
     # print(cond.replace(VarExpr('x')))
 
-    query_obj = pysdql.tpch.q16()
+    query_obj = pysdql.tpch.q15()
 
     # print(query_obj.get_retriever().findall_groupby_agg())
 

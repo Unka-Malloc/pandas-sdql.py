@@ -377,7 +377,7 @@ class Optimizer:
         if op_expr.op_type == GroupbyAggrExpr:
             groupby_from = op_expr.op.groupby_from
             groupby_cols = op_expr.op.groupby_cols
-            aggr_dict = op_expr.op.agg_dict
+            aggr_dict = op_expr.op.aggr_dict
 
             self.groupby_aggr_info['groupby_cols'] = groupby_cols
             self.groupby_aggr_info['aggr_dict'] = aggr_dict
@@ -818,9 +818,12 @@ class Optimizer:
             # Q4
             return GroupbyAggrFrame(self.opt_on).sdql_ir
         elif self.last_func == LastIterFunc.Joint:
+            # Q15
             return self.joint_frame.sdql_ir
         elif self.last_func == LastIterFunc.Calc:
-            return self.joint_frame.sdql_ir
+            # Q14
+            if self.is_joint:
+                return self.joint_frame.sdql_ir
         else:
             last_op = self.retriever.find_last_op()
             print(last_op)

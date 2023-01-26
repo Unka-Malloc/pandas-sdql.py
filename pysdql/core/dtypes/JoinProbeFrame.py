@@ -25,7 +25,7 @@ class JoinProbeFrame:
     def get_aggr_dict(self):
         for op_expr in self.probe_on.operations:
             if op_expr.op_type == GroupbyAggrExpr:
-                return op_expr.op.agg_dict
+                return op_expr.op.aggr_dict
         else:
             raise ValueError()
 
@@ -85,13 +85,6 @@ class JoinProbeFrame:
     @property
     def is_joint(self) -> bool:
         return self.probe_on.is_joint
-
-    @property
-    def was_groupby_agg(self):
-        for op_expr in self.probe_on.operations:
-            if op_expr.op_type == GroupbyAggrExpr:
-                return True
-        return False
 
     @property
     def retriever(self) -> Retriever:

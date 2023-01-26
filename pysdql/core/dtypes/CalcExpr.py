@@ -27,7 +27,6 @@ class CalcExpr(SDQLIR):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.on)
 
     def __truediv__(self, other):
-
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
 
     @property

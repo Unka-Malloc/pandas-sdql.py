@@ -459,7 +459,7 @@ class ColEl(SDQLIR):
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
                              aggr_on=self.relation,
-                             aggr_op={self.field: self.col},
+                             aggr_op={self.field: self.sdql_ir},
                              aggr_else=ConstantExpr(0.0))
 
         op_expr = OpExpr(op_obj=aggr_expr,
@@ -484,9 +484,12 @@ class ColEl(SDQLIR):
     def max(self):
         pass
 
-    def replace(self, rec, on=None):
+    def replace(self, rec, inplace=False):
         # print(f'try to replace col {self.sdql_ir} with {rec} as record')
         # print(f'get {RecAccessExpr(rec, self.field)}')
+
+        if inplace:
+            return rec
 
         return RecAccessExpr(rec, self.field)
 

@@ -2,7 +2,6 @@ from pysdql.core.dtypes.sdql_ir import (
     IfExpr,
     DicConsExpr,
     RecConsExpr,
-    EmptyDicConsExpr,
     SumExpr,
     LetExpr,
     ConstantExpr
@@ -83,15 +82,15 @@ class JoinPartFrame:
                 return RecConsExpr(col_proj)
         else:
             if not self.retriever.as_bypass_for_next_join:
-                cols = self.retriever.findall_cols_used(only_next=True)
+                cols_used = self.retriever.findall_cols_used(only_next=True)
 
-                if len(cols) == 0:
+                if len(cols_used) == 0:
                     return RecConsExpr([(self.group_key,
                                          self.part_on.key_access(self.group_key))])
-                elif len(cols) == 1:
-                    return RecConsExpr([(cols[0], self.part_on.key_access(cols[0]))])
+                elif len(cols_used) == 1:
+                    return RecConsExpr([(cols_used[0], self.part_on.key_access(cols_used[0]))])
                 else:
-                    return RecConsExpr([(i, self.part_on.key_access(i)) for i in cols])
+                    return RecConsExpr([(i, self.part_on.key_access(i)) for i in cols_used])
 
         return RecConsExpr([(self.group_key, self.part_on.key_access(self.group_key))])
 
@@ -130,7 +129,7 @@ class JoinPartFrame:
             if self.has_cond:
                 part_left_op = IfExpr(condExpr=self.__iter_cond,
                                       thenBodyExpr=part_left_op,
-                                      elseBodyExpr=EmptyDicConsExpr())
+                                      elseBodyExpr=ConstantExpr(None))
 
             part_left_sum = SumExpr(varExpr=self.part_on_iter_el,
                                     dictExpr=self.part_on.var_expr,
@@ -150,7 +149,7 @@ class JoinPartFrame:
                 if self.has_cond:
                     part_left_op = IfExpr(condExpr=self.part_cond,
                                           thenBodyExpr=part_left_op,
-                                          elseBodyExpr=EmptyDicConsExpr())
+                                          elseBodyExpr=ConstantExpr(None))
 
                 part_left_sum = SumExpr(varExpr=self.part_on_iter_el,
                                         dictExpr=self.__iter_on.var_expr,

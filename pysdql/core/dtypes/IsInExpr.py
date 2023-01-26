@@ -17,7 +17,7 @@ class IsInExpr(IgnoreExpr):
     def get_probe_field(self):
         return self.col_probe.field
 
-    def get_non_null(self, replace=None):
+    def get_as_cond(self, replace=None):
         if replace:
             body = replace
         else:
@@ -33,12 +33,13 @@ class IsInExpr(IgnoreExpr):
                                body,
                                ConstantExpr(None))
 
-    def get_isin_part(self):
+    def get_as_part(self):
         part_var = self.part_on.get_var_part()
         part_key = self.part_on.iter_el.key
         part_retriever = self.part_on.get_retriever()
 
-        sum_op = DicConsExpr([(self.col_part, ConstantExpr(True))])
+        sum_op = DicConsExpr([(self.col_part.replace(part_key),
+                               ConstantExpr(True))])
 
         cond = part_retriever.find_cond_before(IsInExpr)
         if cond:
