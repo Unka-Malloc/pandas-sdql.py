@@ -9,6 +9,11 @@ class GroupbyAggrFrame:
     def __init__(self, aggr_on):
         self.aggr_on = aggr_on
 
+        self.vname_aggr = f'{aggr_on.name}_aggr'
+        self.var_aggr = VarExpr(self.vname_aggr)
+        self.vname_x_aggr = f'x_{self.vname_aggr}'
+        self.var_x_aggr = VarExpr(self.vname_x_aggr)
+
     @property
     def retriever(self) -> Retriever:
         return self.aggr_on.get_retriever()
@@ -111,19 +116,15 @@ class GroupbyAggrFrame:
                                 bodyExpr=aggr_body,
                                 isAssignmentSum=False)
 
-        vname_aggr = f'{self.aggr_on.name}_aggr'
-        var_aggr = VarExpr(vname_aggr)
-        self.aggr_on.add_context_variable(vname_aggr,
-                                          var_aggr)
+        self.aggr_on.add_context_variable(self.vname_aggr,
+                                          self.var_aggr)
 
-        aggr_let_expr = LetExpr(varExpr=var_aggr,
+        aggr_let_expr = LetExpr(varExpr=self.var_aggr,
                                 valExpr=aggr_sum_expr,
                                 bodyExpr=ConstantExpr(True))
 
-        vname_x_aggr = f'x_{vname_aggr}'
-        var_x_aggr = VarExpr(vname_x_aggr)
-        self.aggr_on.add_context_variable(vname_x_aggr,
-                                          var_x_aggr)
+        self.aggr_on.add_context_variable(self.vname_x_aggr,
+                                          self.var_x_aggr)
 
         # aggr = {? : scalar}
         if len(aggr_dict.keys()) == 1:
@@ -134,13 +135,13 @@ class GroupbyAggrFrame:
             # aggr = {scalar : scalar}
             if len(groupby_cols) == 1:
                 format_key_tuples.append((groupby_cols[0],
-                                          PairAccessExpr(var_x_aggr, 0)))
+                                          PairAccessExpr(self.var_x_aggr, 0)))
             # aggr = {record : scalar}
             else:
                 for c in groupby_cols:
-                    format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)))
+                    format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(self.var_x_aggr, 0), c)))
 
-            format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
+            format_key_tuples.append((dict_key, PairAccessExpr(self.var_x_aggr, 1)))
 
             format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
                                       ConstantExpr(True))])
@@ -149,11 +150,11 @@ class GroupbyAggrFrame:
             # aggr = {scalar: record}
             if len(groupby_cols) == 1:
                 format_key_tuples = [(groupby_cols[0],
-                                      PairAccessExpr(var_x_aggr, 0))]
+                                      PairAccessExpr(self.var_x_aggr, 0))]
 
                 for k in aggr_dict.keys():
                     format_key_tuples.append((k,
-                                              RecAccessExpr(PairAccessExpr(var_x_aggr,
+                                              RecAccessExpr(PairAccessExpr(self.var_x_aggr,
                                                                            1),
                                                             k)))
 
@@ -161,12 +162,12 @@ class GroupbyAggrFrame:
                                           ConstantExpr(True))])
             else:
                 # aggr = {record : record}
-                format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(var_x_aggr, 0),
-                                                     PairAccessExpr(var_x_aggr, 1)),
+                format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(self.var_x_aggr, 0),
+                                                     PairAccessExpr(self.var_x_aggr, 1)),
                                           ConstantExpr(True))])
 
-        format_sum = SumExpr(varExpr=var_x_aggr,
-                             dictExpr=var_aggr,
+        format_sum = SumExpr(varExpr=self.var_x_aggr,
+                             dictExpr=self.var_aggr,
                              bodyExpr=format_op,
                              isAssignmentSum=True)
 

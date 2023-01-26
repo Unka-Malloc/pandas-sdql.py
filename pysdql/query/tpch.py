@@ -282,23 +282,24 @@ class tpch:
              & (part.p_size >= 1) & (part.p_size <= 15))
             ]
 
-        pa_proj = pa_filt[["p_partkey", "p_brand", "p_size", "p_container"]]
+        pa_proj = pa_filt[["p_partkey", "p_brand"]]
 
         li_filt = lineitem[(((lineitem.l_shipmode == "AIR") | (lineitem.l_shipmode == "AIR REG"))
                             & (lineitem.l_shipinstruct == "DELIVER IN PERSON"))]
+
         li_pa_join = pd.merge(pa_proj, li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
         li_pa_join_filt = li_pa_join[
             (
                     ((li_pa_join.p_brand == "Brand#12")
-                     & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11))) |
-                    ((li_pa_join.p_brand == "Brand#23")
-                     & ((li_pa_join.l_quantity >= 10) & (li_pa_join.l_quantity <= 20))) |
-                    ((li_pa_join.p_brand == "Brand#34")
-                     & ((li_pa_join.l_quantity >= 20) & (li_pa_join.l_quantity <= 30)))
+                       & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11)))
+                    | ((li_pa_join.p_brand == "Brand#23")
+                       & ((li_pa_join.l_quantity >= 10) & (li_pa_join.l_quantity <= 20)))
+                    | ((li_pa_join.p_brand == "Brand#34")
+                       & ((li_pa_join.l_quantity >= 20) & (li_pa_join.l_quantity <= 30)))
             )
         ]
 
-        li_pa_join_filt["revenue"] = li_pa_join_filt.l_extendedprice * (1 - li_pa_join_filt.l_discount)
+        li_pa_join_filt["revenue"] = li_pa_join_filt['l_extendedprice'] * (1.0 - li_pa_join_filt['l_discount'])
 
         result = li_pa_join_filt.agg({'revenue': 'sum'})
 

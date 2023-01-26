@@ -391,8 +391,54 @@ class Retriever:
     '''
 
     @staticmethod
-    def split_cond(cond_expr: CondExpr):
-        return cond_expr.unit1, cond_expr.unit2
+    def split_cond(cond: CondExpr, mapper: dict) -> dict:
+        on = {}
+
+        return on
+
+    @staticmethod
+    def find_cond_on(cond: CondExpr, mapper: dict) -> list:
+        on = []
+
+        if isinstance(cond.unit1, ColEl):
+            col_name = cond.unit1.field
+            for n in mapper.keys():
+                if col_name in mapper[n]:
+                    on.append(n)
+
+        elif isinstance(cond.unit1, CondExpr):
+            on += Retriever.find_cond_on(cond.unit1, mapper)
+        elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
+            pass
+        elif isinstance(cond.unit1, (bool, int, float, str)):
+            pass
+        else:
+            raise ValueError(f'Unexpected unit1 type {type(cond.unit1)}')
+
+        if isinstance(cond.unit2, ColEl):
+            col_name = cond.unit2.field
+            for n in mapper.keys():
+                if col_name in mapper[n]:
+                    on.append(n)
+        elif isinstance(cond.unit2, CondExpr):
+            on += Retriever.find_cond_on(cond.unit2, mapper)
+        elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):
+            pass
+        elif isinstance(cond.unit2, (bool, int, float, str)):
+            pass
+        else:
+            raise ValueError(f'Unexpected unit2 type {type(cond.unit2)}')
+
+        cleaned_on = []
+        [cleaned_on.append(x) for x in on if x not in cleaned_on]
+
+        return cleaned_on
+
+    @staticmethod
+    def purify_cond(cond: CondExpr) -> dict:
+        cond_mapper = {}
+
+        return cond_mapper
 
     @staticmethod
     def replace_cond(cond: CondExpr, mapper: dict) -> CondExpr:
@@ -440,6 +486,18 @@ class Retriever:
 
         return all_conds
 
+    def find_cond(self, body_only=True):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CondExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+        else:
+            return None
+
     def find_cond_before(self, op_type, body_only=True):
         for op_expr in self.history:
             op_body = op_expr.op
@@ -452,6 +510,23 @@ class Retriever:
 
             if isinstance(op_body, op_type):
                 return None
+        else:
+            return None
+
+    def find_cond_after(self, op_type, body_only=True):
+        target_located = False
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, op_type):
+                target_located = True
+
+            if isinstance(op_body, CondExpr):
+                if target_located:
+                    if body_only:
+                        return op_body
+                    else:
+                        return op_expr
         else:
             return None
 
@@ -821,3 +896,14 @@ class Retriever:
                 return True
 
         return False
+
+    def find_col_proj(self, body_only=True):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, ColProjExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+        return None

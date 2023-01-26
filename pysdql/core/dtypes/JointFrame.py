@@ -1,6 +1,6 @@
-from pysdql.core.dtypes import ColExpr, ColEl, ExternalExpr, GroupbyAggrExpr
+from pysdql.core.dtypes import ColExpr, ColEl, ExternalExpr, GroupbyAggrExpr, AggrExpr
 from pysdql.core.dtypes.CalcExpr import CalcExpr
-from pysdql.core.dtypes.EnumUtil import OpRetType
+from pysdql.core.dtypes.EnumUtil import OpRetType, AggrType
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
@@ -127,6 +127,9 @@ class JointFrame:
         part_var = self.part_frame.get_part_var()
         this_part_col_proj = self.part_frame.get_part_col_proj()
 
+        # str: left_on
+        part_key = self.part_frame.part_key
+
         # df: probe side
         probe_on = self.probe_frame.get_probe_on()
         # var: joint dict
@@ -140,12 +143,135 @@ class JointFrame:
         this_probe_col_proj = self.probe_frame.get_probe_col_proj()
 
         joint_cond = self.joint_cond
-        joint_col_proj = self.col_proj
-        joint_col_proj_ir = RecConsExpr(self.col_proj) if self.col_proj else RecConsExpr([(probe_key,
-                                                                                           probe_on.key_access(
-                                                                                               probe_key))])
+        joint_col_proj = self.retriever.find_col_proj()
 
         if self.retriever.is_last_joint():
+            if self.retriever.last_iter_is_aggr:
+                # Q19
+
+                aggr_info = self.retriever.find_agg()
+
+                aggr_dict = aggr_info.aggr_op
+
+                cond_mapper = {tuple(part_on.columns): DicLookupExpr(part_var, probe_key_ir),
+                               tuple(probe_on.columns): probe_on.iter_el.key}
+
+                joint_cond = joint_cond.replace(rec=None,
+                                                inplace=False,
+                                                mapper=cond_mapper)
+                col_ins = self.retriever.find_col_ins_before(AggrExpr)
+
+                if len(aggr_dict.keys()) == 1:
+                    '''
+                    Aggregation as a single value
+                    Then format to a singleton dictionary
+                    '''
+                    dict_val = list(aggr_dict.items())[0][1]
+
+                    if isinstance(dict_val, RecAccessExpr):
+                        # (, 'sum')
+                        dict_val_name = dict_val.name
+
+                        if dict_val_name in probe_on.columns:
+                            aggr_body = probe_on.key_access(dict_val_name)
+                        else:
+                            if dict_val_name in col_ins.keys():
+                                aggr_body = col_ins[dict_val_name].replace(probe_on.iter_el.key)
+                            else:
+                                raise IndexError(f'Cannot find column {dict_val_name} in {probe_on.columns}')
+
+                        if joint_cond:
+                            aggr_body = IfExpr(condExpr=joint_cond,
+                                               thenBodyExpr=aggr_body,
+                                               elseBodyExpr=ConstantExpr(0.0))
+                    elif isinstance(dict_val, ConstantExpr):
+                        # (, 'count')
+                        aggr_body = dict_val
+
+                        if joint_cond:
+                            aggr_body = IfExpr(condExpr=joint_cond,
+                                               thenBodyExpr=aggr_body,
+                                               elseBodyExpr=ConstantExpr(0))
+                    else:
+                        raise NotImplementedError
+                else:
+                    '''
+                    Aggregation as a single record
+                    Then format to a singleton dictionary
+                    '''
+                    aggr_tuples = []
+                    for k in aggr_dict.keys():
+                        v = aggr_dict[k]
+                        if isinstance(v, RecAccessExpr):
+                            # (, 'sum')
+                            v_name = v.name
+                            if v_name in probe_on.columns:
+                                aggr_tuples.append((k, probe_on.key_access(v_name)))
+                            else:
+                                if v_name in col_ins.keys():
+                                    aggr_tuples.append((k,
+                                                        col_ins[v_name].replace(probe_on.iter_el.key)))
+                                else:
+                                    raise IndexError(f'Cannot find column {k} in {probe_on.columns}')
+                        elif isinstance(v, ConstantExpr):
+                            # (, 'count')
+                            aggr_tuples.append((k, v))
+                        else:
+                            raise NotImplementedError
+
+                    aggr_body = RecConsExpr(aggr_tuples)
+
+                    if joint_cond:
+                        aggr_body = IfExpr(condExpr=joint_cond,
+                                           thenBodyExpr=aggr_body,
+                                           elseBodyExpr=ConstantExpr(None))
+
+                aggr_body = SDQLInspector.add_cond(sdql_obj=aggr_body,
+                                                   cond=self.part_nonull(),
+                                                   layer='outer')
+
+                if probe_cond:
+                    aggr_body = SDQLInspector.add_cond(sdql_obj=aggr_body,
+                                                       cond=probe_cond,
+                                                       layer='outer')
+
+                aggr_sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                        dictExpr=probe_on.var_expr,
+                                        bodyExpr=aggr_body,
+                                        isAssignmentSum=False)
+
+                vname_aggr = f'{probe_on.name}_aggr'
+                var_aggr = VarExpr(vname_aggr)
+                probe_on.add_context_variable(vname_aggr,
+                                              var_aggr)
+
+                aggr_let_expr = LetExpr(varExpr=var_aggr,
+                                        valExpr=aggr_sum_expr,
+                                        bodyExpr=ConstantExpr(True))
+
+                if len(aggr_dict.keys()) == 1:
+                    dict_key = list(aggr_dict.items())[0][0]
+
+                    if aggr_info.aggr_type == AggrType.DICT:
+                        format_op = DicConsExpr([(RecConsExpr([(dict_key, var_aggr)]), ConstantExpr(True))])
+                    elif aggr_info.aggr_type == AggrType.VAL:
+                        format_op = var_aggr
+                    else:
+                        raise NotImplementedError
+                else:
+                    format_op = DicConsExpr([(var_aggr, ConstantExpr(True))])
+
+                vname_res = f'results'
+                var_res = VarExpr(vname_res)
+                probe_on.add_context_variable(vname_res,
+                                              var_res)
+
+                form_let_expr = LetExpr(varExpr=var_res,
+                                        valExpr=format_op,
+                                        bodyExpr=ConstantExpr(True))
+
+                return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
+
             if self.retriever.last_iter_is_groupby_aggr:
                 if self.probe_frame.retriever.is_joint:
                     # Q5
@@ -189,7 +315,7 @@ class JointFrame:
                             dict_key_list = []
 
                             for k in self.groupby_cols:
-                                if k in prev_part_side.__columns:
+                                if k in prev_part_side.columns:
                                     dict_key_list.append((k, prev_joint_frame.part_lookup(k)))
 
                             dict_key_ir = dict_key_list[0][1] if len(dict_key_list) == 1 else RecConsExpr(dict_key_list)
@@ -205,7 +331,7 @@ class JointFrame:
                                 else:
                                     raise NotImplementedError
 
-                                if col_name not in prev_probe_side.__columns:
+                                if col_name not in prev_probe_side.columns:
                                     if col_name in self.col_ins.keys():
                                         col_op = self.col_ins[col_name].replace(rec=prev_probe_side.iter_el.key)
                                         dict_val_list.append((k, col_op))
@@ -217,9 +343,9 @@ class JointFrame:
                             lookup_keys = []
 
                             for i in self.probe_frame.probe_key:
-                                if i in prev_probe_side.__columns:
+                                if i in prev_probe_side.columns:
                                     lookup_keys.append((i, prev_probe_side.key_access(i)))
-                                if i in prev_part_side.__columns:
+                                if i in prev_part_side.columns:
                                     lookup_keys.append((i, RecAccessExpr(DicLookupExpr(dicExpr=prev_part_frame.part_var,
                                                                                        keyExpr=prev_probe_side.key_access(
                                                                                            i)),
@@ -301,7 +427,7 @@ class JointFrame:
 
                         for k in self.groupby_cols:
                             this_part_side = all_part_sides[0]
-                            if k in this_part_side.__columns:
+                            if k in this_part_side.columns:
                                 joint_frame = this_part_side.get_retriever().find_merge(
                                     mode='as_part').joint.get_joint_frame()
                                 dict_key_list.append((k, joint_frame.part_lookup(k)))
@@ -312,14 +438,14 @@ class JointFrame:
                                 if isinstance(v, (ColEl, ColExpr)):
                                     col_name = v.field
                                     for this_part_side in all_part_sides:
-                                        if col_name in this_part_side.__columns:
+                                        if col_name in this_part_side.columns:
                                             joint_frame = this_part_side.get_retriever().find_merge(
                                                 mode='as_part').joint.get_joint_frame()
                                             dict_key_list.append((k, joint_frame.part_lookup(col_name)))
 
                                 if isinstance(v, ExternalExpr):
                                     col_name = v.col.field
-                                    if col_name in root_probe_side.__columns:
+                                    if col_name in root_probe_side.columns:
                                         dict_key_list.append((k, v.sdql_ir))
 
                         dict_key_ir = dict_key_list[0][1] if len(dict_key_list) == 1 else RecConsExpr(dict_key_list)
@@ -335,7 +461,7 @@ class JointFrame:
                             else:
                                 raise NotImplementedError
 
-                            if col_name not in root_probe_side.__columns:
+                            if col_name not in root_probe_side.columns:
                                 if col_name in self.col_ins.keys():
                                     col_op = self.col_ins[col_name].replace(rec=root_probe_side.iter_el.key)
                                     dict_val_list.append((k, col_op))
@@ -349,26 +475,26 @@ class JointFrame:
 
                         joint_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
 
-                        if self.joint_cond:
+                        if joint_cond:
                             cols_not_found = [x for x in self.retriever.find_cols(joint_cond)
-                                              if x not in root_probe_side.__columns]
+                                              if x not in root_probe_side.columns]
                             if cols_not_found:
                                 cond_replace_mapper = {}
                                 # If found some columns are not in the root probe side
                                 for c in cols_not_found:
                                     for this_part_side in all_part_sides:
-                                        if c in this_part_side.__columns:
+                                        if c in this_part_side.columns:
                                             this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
                                             cond_replace_mapper[c] = DicLookupExpr(
                                                 dicExpr=this_part_side.get_var_part(),
                                                 keyExpr=root_probe_side.key_access(this_probe_key))
 
-                                joint_op = IfExpr(condExpr=self.retriever.replace_cond(cond=self.joint_cond,
+                                joint_op = IfExpr(condExpr=self.retriever.replace_cond(cond=joint_cond,
                                                                                        mapper=cond_replace_mapper).sdql_ir,
                                                   thenBodyExpr=joint_op,
                                                   elseBodyExpr=EmptyDicConsExpr())
                             else:
-                                joint_op = IfExpr(condExpr=self.joint_cond,
+                                joint_op = IfExpr(condExpr=joint_cond,
                                                   thenBodyExpr=joint_op,
                                                   elseBodyExpr=EmptyDicConsExpr())
 
@@ -628,85 +754,160 @@ class JointFrame:
                             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
             # Q15
             if self.retriever.last_iter_is_merge:
-                if isinstance(self.part_frame.get_part_key(), list) and \
-                        isinstance(self.probe_frame.get_probe_key(), list):
-                    raise NotImplementedError
-                if isinstance(self.part_frame.get_part_key(), str) \
-                        and isinstance(self.probe_frame.get_probe_key(), str):
-
-                    # aggr_key_ir
+                if self.probe_frame.retriever.was_aggregation:
                     key_rec_list = []
 
-                    cleaned_col_proj = []
+                    if self.probe_frame.retriever.was_aggr:
+                        pass
+                    elif self.probe_frame.retriever.was_groupby_aggr:
+                        groupby_aggr_info = self.probe_frame.retriever.find_groupby_agg()
 
-                    [cleaned_col_proj.append(x)
-                     for x in sorted(self.col_proj)
-                     if x not in cleaned_col_proj]
+                        groupby_cols = groupby_aggr_info.groupby_cols
+                        aggr_dict = groupby_aggr_info.aggr_dict
 
-                    for col in cleaned_col_proj:
-                        col_name = col[0]
-                        if col_name in self.part_frame.cols_out:
-                            if self.probe_frame.retriever.was_aggregation:
-                                if self.probe_frame.retriever.was_groupby_aggr:
-                                    groupby_aggr_info = self.probe_frame.retriever.find_groupby_agg()
+                        vname_aggr = f'{self.probe_frame.probe_on.name}_aggr'
+                        var_aggr = VarExpr(vname_aggr)
+                        vname_x_aggr = f'x_{vname_aggr}'
+                        var_x_aggr = VarExpr(vname_x_aggr)
 
-                                    groupby_cols = groupby_aggr_info.groupby_cols
-                                    aggr_dict = groupby_aggr_info.aggr_dict
+                        if joint_col_proj:
+                            cleaned_col_proj = []
 
-                                    # aggr = {? : scalar}
-                                    if len(aggr_dict.keys()) == 1:
-                                        # aggr = {scalar : scalar}
-                                        if len(groupby_cols) == 1:
-                                            pass
-                                        # aggr = {record : scalar}
-                                        else:
-                                            pass
-                                    # aggr = {? : record}
+                            [cleaned_col_proj.append(x)
+                             for x in joint_col_proj.proj_cols
+                             if x not in cleaned_col_proj]
+
+                            # aggr = {? : scalar}
+                            if len(aggr_dict.keys()) == 1:
+                                # aggr = {scalar : scalar}
+                                if len(groupby_cols) == 1:
+                                    if groupby_cols[0] != probe_key:
+                                        raise IndexError(f'Cannot find column {probe_key} '
+                                                         f'in groupby columns {groupby_cols}')
                                     else:
-                                        # aggr = {scalar: record}
-                                        if len(groupby_cols) == 1:
-                                            pass
-                                        # aggr = {record : record}
-                                        else:
-                                            pass
+                                        for col in cleaned_col_proj:
+                                            # as left_on
+                                            if col == part_key:
+                                                key_rec_list.append((col,
+                                                                     PairAccessExpr(var_x_aggr, 0)))
+                                            # as right_on
+                                            elif col == probe_key:
+                                                key_rec_list.append((col,
+                                                                     PairAccessExpr(var_x_aggr, 0)))
+                                            # as val of dict (groupby aggr dict)
+                                            elif col == list(aggr_dict.keys())[0]:
+                                                key_rec_list.append((col,
+                                                                     PairAccessExpr(var_x_aggr, 1)))
+                                            # from part side
+                                            elif col in self.part_frame.cols_out:
+                                                key_rec_list.append((col,
+                                                                     RecAccessExpr(
+                                                                         DicLookupExpr(part_var,
+                                                                                       PairAccessExpr(
+                                                                                           var_x_aggr,
+                                                                                           0)
+                                                                                       ),
+                                                                         col)
+                                                                     ))
+                                            else:
+                                                raise IndexError(f'Column {col} not found')
 
-                                    key_rec_list.append((col_name,
-                                                         self.part_lookup(col_name)))
+                                        aggr_key_ir = RecConsExpr(key_rec_list)
+
+                                        aggr_body = DicConsExpr([(aggr_key_ir, ConstantExpr(True))])
+
+                                        cond_after_aggr = self.probe_frame.retriever.find_cond_after(GroupbyAggrExpr)
+
+                                        if cond_after_aggr:
+                                            cond_after_aggr = cond_after_aggr.replace(
+                                                rec=PairAccessExpr(var_x_aggr, 0),
+                                                inplace=True)
+
+                                            aggr_body = IfExpr(condExpr=cond_after_aggr,
+                                                               thenBodyExpr=aggr_body,
+                                                               elseBodyExpr=ConstantExpr(None))
+
+                                        aggr_body = IfExpr(condExpr=self.part_nonull(),
+                                                           thenBodyExpr=aggr_body,
+                                                           elseBodyExpr=ConstantExpr(None))
+
+                                        sum_expr = SumExpr(varExpr=var_x_aggr,
+                                                           dictExpr=var_aggr,
+                                                           bodyExpr=aggr_body,
+                                                           isAssignmentSum=True)
+
+                                        var_res = VarExpr('results')
+                                        self.joint.add_context_variable('results', var_res)
+
+                                        out = LetExpr(var_res, sum_expr, ConstantExpr(True))
+
+                                        return out
+
+                                # aggr = {record : scalar}
+                                else:
+                                    raise NotImplementedError
+                            # aggr = {? : record}
                             else:
+                                # aggr = {scalar: record}
+                                if len(groupby_cols) == 1:
+                                    raise NotImplementedError
+                                # aggr = {record : record}
+                                else:
+                                    raise NotImplementedError
+                        else:
+                            raise NotImplementedError
+                    else:
+                        raise NotImplementedError
+                else:
+                    if isinstance(self.part_frame.get_part_key(), list) and \
+                            isinstance(self.probe_frame.get_probe_key(), list):
+                        raise NotImplementedError
+                    if isinstance(self.part_frame.get_part_key(), str) \
+                            and isinstance(self.probe_frame.get_probe_key(), str):
+
+                        # aggr_key_ir
+                        key_rec_list = []
+
+                        cleaned_col_proj = []
+
+                        [cleaned_col_proj.append(x)
+                         for x in sorted(self.col_proj)
+                         if x not in cleaned_col_proj]
+
+                        for col in cleaned_col_proj:
+                            col_name = col[0]
+                            if col_name in self.part_frame.cols_out:
                                 key_rec_list.append((col_name,
-                                                 self.part_lookup(col_name)))
-                    aggr_key_ir = RecConsExpr(key_rec_list)
+                                                     self.part_lookup(col_name)))
 
-                    joint_op = IfExpr(
-                        condExpr=CompareExpr(CompareSymbol.NE,
-                                             DicLookupExpr(dicExpr=part_var,
-                                                           keyExpr=probe_on.key_access(
-                                                               probe_key)),
-                                             ConstantExpr(None)),
-                        thenBodyExpr=DicConsExpr([(aggr_key_ir, ConstantExpr(True))]),
-                        elseBodyExpr=EmptyDicConsExpr()
-                    )
+                        aggr_key_ir = RecConsExpr(key_rec_list)
 
-                    if probe_cond:
-                        joint_op = IfExpr(condExpr=probe_cond,
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=EmptyDicConsExpr())
+                        joint_op = IfExpr(
+                            condExpr=CompareExpr(CompareSymbol.NE,
+                                                 DicLookupExpr(dicExpr=part_var,
+                                                               keyExpr=probe_on.key_access(
+                                                                   probe_key)),
+                                                 ConstantExpr(None)),
+                            thenBodyExpr=DicConsExpr([(aggr_key_ir, ConstantExpr(True))]),
+                            elseBodyExpr=EmptyDicConsExpr()
+                        )
 
-                    joint_sum = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
-                                        dictExpr=probe_on.var_expr,
-                                        bodyExpr=joint_op,
-                                        isAssignmentSum=False)
+                        if probe_cond:
+                            joint_op = IfExpr(condExpr=probe_cond,
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=EmptyDicConsExpr())
 
-                    var_res = VarExpr('results')
-                    self.joint.add_context_variable('results', var_res)
+                        joint_sum = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                            dictExpr=probe_on.var_expr,
+                                            bodyExpr=joint_op,
+                                            isAssignmentSum=False)
 
-                    out = LetExpr(var_res, joint_sum, ConstantExpr(True))
+                        var_res = VarExpr('results')
+                        self.joint.add_context_variable('results', var_res)
 
-                    print(out)
+                        out = LetExpr(var_res, joint_sum, ConstantExpr(True))
 
-                    raise NotImplementedError
-
-                    return out
+                        return out
 
             if self.retriever.last_iter_is_calc:
                 # Q14
@@ -778,13 +979,13 @@ class JointFrame:
                 dict_val_list = []
 
                 for i in val_cols:
-                    if i in self.part_frame.part_on.__columns:
+                    if i in self.part_frame.part_on.columns:
                         dict_val_list.append((i,
                                               RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
                                                                                   keyExpr=probe_on.key_access(
                                                                                       probe_key)),
                                                             fieldName=i)))
-                    if i in self.probe_frame.probe_on.__columns:
+                    if i in self.probe_frame.probe_on.columns:
                         dict_val_list.append((i,
                                               probe_on.key_access(i)))
 
@@ -958,8 +1159,7 @@ class JointFrame:
 
             if joint_cond:
                 this_part_side = self.partition_frame.partition_on
-                next_joint_cond = joint_cond.replace(rec=DicLookupExpr(part_var, probe_key_ir),
-                                                     on=this_part_side)
+                next_joint_cond = joint_cond.replace(rec=DicLookupExpr(part_var, probe_key_ir))
 
                 joint_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                             leftExpr=DicLookupExpr(dicExpr=part_var,
@@ -1007,11 +1207,11 @@ class JointFrame:
             return out
         else:
             if self.is_next_probe:
-                probe_cols = probe_on.__columns
+                probe_cols = probe_on.columns
                 # this partition
                 this_part_var = self.part_frame.get_part_var()
                 this_part_key = self.part_frame.get_part_key()
-                this_part_cols = self.part_frame.get_partition_on().__columns
+                this_part_cols = self.part_frame.get_partition_on().columns
 
                 # this probe
                 this_probe_key = probe_key
@@ -1025,7 +1225,7 @@ class JointFrame:
                 next_part_col_proj = next_part_frame.get_part_col_proj()
                 next_part_var = next_part_frame.get_part_var()
                 next_part_key = next_merge.left_on
-                next_part_cols = next_part_frame.get_partition_on().__columns
+                next_part_cols = next_part_frame.get_partition_on().columns
 
                 # next probe
 
@@ -1192,7 +1392,7 @@ class JointFrame:
 
                 return out
 
-            if self.probe_frame.was_groupby_agg:
+            if self.probe_frame.retriever.was_groupby_aggr:
                 var_part = self.probe_frame.probe_on.get_var_part()
 
                 x_vname_part = f'x_{var_part.name}'
@@ -1202,7 +1402,7 @@ class JointFrame:
                 iter_key_list = []
                 for col in self.col_proj:
                     cname = col[0]
-                    if cname in self.part_frame.partition_on.__columns:
+                    if cname in self.part_frame.partition_on.columns:
                         if cname == self.part_frame.get_part_key():
                             iter_key_list.append(
                                 (cname, RecAccessExpr(PairAccessExpr(x_var_part, 0),

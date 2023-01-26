@@ -16,8 +16,8 @@ class ExternalExpr(SDQLIR):
 
         self.isinvert = isinvert
 
-    def replace(self, rec, on=None):
-        return ExternalExpr(self.col.replace(rec, on), self.func, self.args, self.isinvert)
+    def replace(self, rec, inplace=False, mapper=None):
+        return ExternalExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
 
     def gen_cond_expr(self, operator, unit2):
         """
