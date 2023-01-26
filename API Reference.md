@@ -300,25 +300,24 @@ Probe: update
 
 ```
 if self.is_last_joint:
-    if self.is_last_joint:
-        if self.last_iter_is_groupby_aggr:
-            if probe.is_joint:
-                if part.as_bypass_for_next_join:
-                    # partition side is completely bypassed
-                    Q5
-                else:
-                    # partition side contains some columns that are used in the future
-                    # probe on each partition side
-                    Q7
+    if self.last_iter_is_groupby_aggr:
+        if probe.is_joint:
+            if part.as_bypass_for_next_join:
+                # partition side is completely bypassed
+                Q5
             else:
-                # probe_side is not joint
-                # what about part side?
-                # 1. part side was probed -> possible multiple partitions
-                #   - part side is joint -> part side + 1
-                #   - part side has isin -> part side + 1
-                # 2. part side was not probed -> at most 2 partitions
-                #   - 1st part (neccessary): from merge
-                #   - 2nd part (possible): from isin 
+                # partition side contains some columns that are used in the future
+                # probe on each partition side
+                Q7
+        else:
+            # probe_side is not joint
+            # what about part side?
+            # 1. part side was probed -> possible multiple partitions
+            #   - part side is joint -> part side + 1
+            #   - part side has isin -> part side + 1
+            # 2. part side was not probed -> at most 2 partitions
+            #   - 1st part (neccessary): from merge
+            #   - 2nd part (possible): from isin 
     
     if self.last_iter_is_calc:
         Q14

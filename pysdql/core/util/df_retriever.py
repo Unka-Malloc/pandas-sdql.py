@@ -271,8 +271,8 @@ class Retriever:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if self.target.name == op_body.joint.name:
-                    dup_cols = [x for x in op_body.left.__columns
-                                if x in op_body.right.__columns]
+                    dup_cols = [x for x in op_body.left.columns
+                                if x in op_body.right.columns]
 
         # Remove Duplications
         cleaned_dup_cols = []
@@ -287,8 +287,8 @@ class Retriever:
             op_body = op_expr.op
             if isinstance(op_body, MergeExpr):
                 if self.target.name == op_body.joint.name:
-                    dup_cols = [x for x in op_body.left.__columns
-                                if x in op_body.right.__columns
+                    dup_cols = [x for x in op_body.left.columns
+                                if x in op_body.right.columns
                                 and x in self.findall_cols_used(as_owner=False)]
 
         # Remove Duplications
@@ -534,7 +534,7 @@ class Retriever:
     MergeExpr
     '''
 
-    def findall_merge(self, body_only=True) -> list:
+    def findall_merge(self, body_only=True, only_next=True, ) -> list:
         """
         It returns a list that contains all MergeExpr objects in the history operations.
         :return:
@@ -549,9 +549,18 @@ class Retriever:
                     all_merges.append(op_body)
                 else:
                     all_merges.append(op_expr)
-
-                if self.target.name != op_body.joint.name:
-                    all_merges += op_body.joint.get_retriever().findall_merge()
+                    
+                if only_next:
+                    if self.target.name != op_body.joint.name:
+                        all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
+                else:
+                    if self.target.name == op_body.left.name:
+                        all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
+                    if self.target.name == op_body.right.name:
+                        all_merges += op_body.joint.get_retriever().findall_merge(body_only, only_next)
+                    if self.target.name == op_body.joint.name:
+                        all_merges += op_body.left.get_retriever().findall_merge(body_only, only_next)
+                        all_merges += op_body.right.get_retriever().findall_merge(body_only, only_next)
 
         # Remove Duplications
         cleaned_all_merges = []
@@ -746,6 +755,22 @@ class Retriever:
                         parts += op_body.right.get_retriever().findall_part_for_root_probe(mode)
 
         return parts
+
+    @staticmethod
+    def find_lookup_path(the_from, key_from: str, key_to: str):
+        """
+        nation left -> right customer_orders_join -> customer left -> right orders
+        :param the_from:
+        :param key_from:
+        :param key_to:
+        :return:
+        """
+        path = []
+
+
+
+
+
 
     '''
     GroupbyAgg
