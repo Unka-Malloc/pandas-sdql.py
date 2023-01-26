@@ -69,13 +69,41 @@ class Retriever:
                         cols += m.right_on
             else:
                 raise NotImplementedError
-        if mode == 'insert':
+        elif mode == 'insert':
             for op_expr in self.history:
                 op_body = op_expr.op
 
                 # NewColOpExpr
                 if isinstance(op_body, NewColOpExpr):
                     cols.append(op_body.col_var)
+        elif mode == 'groupby_aggr':
+            for op_expr in self.history:
+                op_body = op_expr.op
+
+                # GroupbyAggrExpr
+                if isinstance(op_body, GroupbyAggrExpr):
+                    cols += op_body.groupby_cols
+                    cols += list(op_body.origin_dict.keys())
+
+        elif mode == 'aggr':
+            for op_expr in self.history:
+                op_body = op_expr.op
+
+                # AggrExpr
+                if isinstance(op_body, AggrExpr):
+                    cols += list(op_body.aggr_op.keys())
+        elif mode == 'aggregation':
+            for op_expr in self.history:
+                op_body = op_expr.op
+
+                # GroupbyAggrExpr
+                if isinstance(op_body, GroupbyAggrExpr):
+                    cols += op_body.groupby_cols
+                    cols += list(op_body.origin_dict.keys())
+
+                # AggrExpr
+                if isinstance(op_body, AggrExpr):
+                    cols += list(op_body.aggr_op.keys())
         else:
             raise NotImplementedError
 
@@ -292,12 +320,16 @@ class Retriever:
         return isinstance(self.find_last_iter(), MergeExpr)
 
     @property
-    def last_iter_is_groupby_agg(self):
+    def last_iter_is_groupby_aggr(self):
         return isinstance(self.find_last_iter(), GroupbyAggrExpr)
 
     @property
-    def last_iter_is_agg(self):
+    def last_iter_is_aggr(self):
         return isinstance(self.find_last_iter(), AggrExpr)
+
+    @property
+    def last_iter_is_calc(self):
+        return isinstance(self.find_last_iter(), CalcExpr)
 
     def find_last_iter(self, body_only=True, as_enum=False):
         for op_expr in reversed(self.history):
@@ -684,6 +716,7 @@ class Retriever:
     '''
     isin()
     '''
+
     def find_isin(self, body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
@@ -720,3 +753,71 @@ class Retriever:
                 return None
         else:
             return None
+
+    '''
+    CalcExpr
+    '''
+
+    def find_calc(self, body_only=True):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CalcExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+        else:
+            return None
+
+    '''
+    
+    '''
+
+    @property
+    def was_probed(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    return True
+
+            if isinstance(op_body, IsInExpr):
+                if op_body.probe_on.name == self.target.name:
+                    return True
+
+        return False
+
+    @property
+    def was_aggregation(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrExpr):
+                return True
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                return True
+
+        return False
+
+    @property
+    def was_aggr(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrExpr):
+                return True
+
+        return False
+
+    @property
+    def was_groupby_aggr(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                return True
+
+        return False

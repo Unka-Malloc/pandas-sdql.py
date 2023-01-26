@@ -187,13 +187,13 @@ class tpch:
         lineitem = pysdqlDataFrame()
         supplier = pysdqlDataFrame()
 
-        li_filt = lineitem[(lineitem.l_shipdate >= "1996-01-01") & (lineitem.l_shipdate < "1996-04-01")]
-        li_filt["revenue"] = li_filt.l_extendedprice * (1 - li_filt.l_discount)
+        li_filt = lineitem[(lineitem['l_shipdate'] >= "1996-01-01") & (lineitem['l_shipdate'] < "1996-04-01")]
+        li_filt["revenue"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
 
         li_aggr = li_filt \
             .groupby(["l_suppkey"]) \
             .agg(total_revenue=("revenue", "sum"))
-        li_aggr = li_aggr[li_aggr.total_revenue == 1772627.2087]
+        li_aggr = li_aggr[li_aggr['total_revenue'] == 1772627.2087]
 
         su_proj = supplier[["s_suppkey", "s_name", "s_address", "s_phone"]]
         li_su_join = pd.merge(su_proj, li_aggr, left_on="s_suppkey", right_on="l_suppkey", how="inner")
@@ -220,8 +220,7 @@ class tpch:
                     (part.p_size == 3) |
                     (part.p_size == 36) |
                     (part.p_size == 9)
-            )
-            ]
+            )]
         pa_proj = pa_filt[["p_partkey", "p_brand", "p_type", "p_size"]]
 
         su_filt = supplier[

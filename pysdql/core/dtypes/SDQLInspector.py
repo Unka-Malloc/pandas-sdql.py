@@ -177,7 +177,7 @@ class SDQLInspector:
 
     @staticmethod
     def add_cond(sdql_obj, cond, layer='outer'):
-        if type(sdql_obj) == IfExpr:
+        if isinstance(sdql_obj, IfExpr):
             if layer == 'outer':
                 return IfExpr(condExpr=cond,
                               thenBodyExpr=sdql_obj,
@@ -189,6 +189,22 @@ class SDQLInspector:
                                                   thenBodyExpr=sdql_obj.thenBodyExpr,
                                                   elseBodyExpr=sdql_obj.elseBodyExpr),
                               elseBodyExpr=sdql_obj.elseBodyExpr)
+        if isinstance(sdql_obj, (DicConsExpr,
+                                 RecConsExpr)):
+            return IfExpr(condExpr=cond,
+                          thenBodyExpr=sdql_obj,
+                          elseBodyExpr=ConstantExpr(None))
+        if isinstance(sdql_obj, (RecAccessExpr,
+                                 MulExpr,
+                                 AddExpr,
+                                 DivExpr,
+                                 SubExpr)):
+            return IfExpr(condExpr=cond,
+                          thenBodyExpr=sdql_obj,
+                          elseBodyExpr=ConstantExpr(0.0))
+
+        raise TypeError(f'Unsupported Type: {type(sdql_obj)}. '
+                        f'Must annotate the default value if condition is false.')
 
     @staticmethod
     def replace_var(sdql_obj, old_var, new_var):
@@ -351,7 +367,8 @@ class SDQLInspector:
             all_list += func(arg3, *args)
 
         else:
-            raise NotImplementedError
+            print(sdql_obj)
+            raise NotImplementedError(f'Unsupport type {type(sdql_obj)}')
 
         return all_list
 

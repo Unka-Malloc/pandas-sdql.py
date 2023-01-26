@@ -10,6 +10,7 @@ from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.IterStmt import IterStmt
 # from pysdql.core.dtypes.ConcatExpr import ConcatExpr
@@ -280,7 +281,7 @@ class DataFrame(SemiRing, Retrivable):
             if isinstance(op_body, AggrExpr):
                 return list(op_body.aggr_op.keys())
             if isinstance(op_body, GroupbyAggrExpr):
-                return op_body.groupby_cols + list(op_body.agg_dict.keys())
+                return op_body.groupby_cols + list(op_body.aggr_dict.keys())
             if isinstance(op_body, MergeExpr):
                 if self.name == op_body.joint.name:
                     return op_body.left.cols_out + op_body.right.cols_out
@@ -501,6 +502,9 @@ class DataFrame(SemiRing, Retrivable):
             return ColEl(self, col_name)
         if col_name in self.retriever.find_cols_used(mode='insert'):
             return ColEl(self, col_name)
+        if self.retriever.was_aggregation:
+            if col_name in self.retriever.find_cols_used(mode='aggregation'):
+                return ColEl(self, col_name)
         else:
             raise IndexError(f'Cannot find column "{col_name}" in {self.columns}')
 
@@ -924,11 +928,8 @@ class DataFrame(SemiRing, Retrivable):
                                         var_value=ConstantExpr(const)))
         return result_seq
 
-    def get_groupby_agg(self, next_op=None):
-        return self.get_opt(OptGoal.GroupByAggregation).get_groupby_aggr_stmt(next_op)
-
-    def get_having(self, next_op=None):
-        return self.get_opt(OptGoal.GroupByAggregation).isin_op.get_ref_ir(next_op)
+    def get_groupby_agg(self, next_op=None) -> LetExpr:
+        return GroupbyAggrFrame(self).get_groupby_aggr_expr()
 
     def reset_index(self):
         return self
@@ -1031,7 +1032,7 @@ class DataFrame(SemiRing, Retrivable):
 
             return IfExpr(condExpr=NonNullExpr(var_dict=self.get_partition_side().get_var_part(),
                                                var_key=ConstantExpr(None)).sdql_ir,
-                          thenBodyExpr=op,
+                          thenBodyExpr=op.sdql_ir,
                           elseBodyExpr=ConstantExpr(lamb_else))
 
     def optimize_obj(self):

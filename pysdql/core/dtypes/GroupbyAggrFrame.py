@@ -14,12 +14,12 @@ class GroupbyAggrFrame:
         return self.aggr_on.get_retriever()
 
     @property
-    def sdql_ir(self):
+    def sdql_ir(self) -> LetExpr:
         # Q1
         # Q4
         groupby_aggr_info = self.retriever.find_groupby_agg()
 
-        aggr_dict = groupby_aggr_info.agg_dict
+        aggr_dict = groupby_aggr_info.aggr_dict
         groupby_cols = groupby_aggr_info.groupby_cols
 
         cond = self.retriever.find_cond_before(GroupbyAggrExpr)
@@ -103,7 +103,7 @@ class GroupbyAggrFrame:
 
         if isin_expr:
             aggr_body = SDQLInspector.add_cond(aggr_body,
-                                               isin_expr.get_non_null(),
+                                               isin_expr.get_as_cond(),
                                                'inner')
 
         aggr_sum_expr = SumExpr(varExpr=self.aggr_on.iter_el.sdql_ir,
@@ -179,9 +179,14 @@ class GroupbyAggrFrame:
                                 valExpr=format_sum,
                                 bodyExpr=ConstantExpr(True))
 
-        isin_let_expr = isin_expr.get_isin_part()
-
         if isin_expr:
+            isin_let_expr = isin_expr.get_as_part()
             return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
         else:
             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
+
+    def get_groupby_aggr_expr(self) -> LetExpr:
+        let_expr = self.sdql_ir
+        return LetExpr(varExpr=let_expr.varExpr,
+                       valExpr=let_expr.valExpr,
+                       bodyExpr=ConstantExpr(True))
