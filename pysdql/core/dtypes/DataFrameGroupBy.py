@@ -1,3 +1,5 @@
+from pysdql.core.dtypes import AggrExpr
+from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.sdql_ir import ConstantExpr
@@ -22,8 +24,34 @@ class DataFrameGroupBy:
     def agg_str_parse(self, agg_str):
         pass
 
-    def agg_dict_parse(self, agg_dict):
-        pass
+    def agg_dict_parse(self, input_aggr_dict):
+        output_aggr_dict = {}
+        tuple_aggr_dict = {}
+
+        for k in input_aggr_dict.keys():
+            tuple_aggr_dict[k] = (k, input_aggr_dict[k])
+
+        for aggr_key in input_aggr_dict.keys():
+            aggr_func = input_aggr_dict[aggr_key]
+
+            if aggr_func == 'sum':
+                output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
+            if aggr_func == 'count':
+                output_aggr_dict[aggr_key] = ConstantExpr(1)
+
+        groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
+                                      groupby_cols=self.groupby_cols,
+                                      agg_dict=output_aggr_dict,
+                                      concat=True,
+                                      origin_dict=tuple_aggr_dict)
+
+        op_expr = OpExpr(op_obj=groupby_agg,
+                         op_on=self.groupby_from,
+                         op_iter=True,
+                         iter_on=self.groupby_from)
+
+        self.groupby_from.push(op_expr)
+        return self.groupby_from
 
     def agg_kwargs_parse(self, agg_tuple_dict):
         agg_dict = {}

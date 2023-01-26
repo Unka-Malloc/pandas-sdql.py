@@ -70,8 +70,10 @@ Done
 
 # Q19
 
-Working
+Done
 
 # Q3
+
+Done
 
 # Q10 and Q18
