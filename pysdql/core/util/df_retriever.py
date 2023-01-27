@@ -179,9 +179,11 @@ class Retriever:
                 if isinstance(op_body.origin_dict, dict):
                     for k in op_body.origin_dict.keys():
                         v = op_body.origin_dict[k]
-                        if isinstance(k, str):
+                        # {k : v}
+                        if isinstance(v, str):
                             cols_used.append(k)
-                        if isinstance(v, tuple):
+                        # {k : (v0, v1)}
+                        elif isinstance(v, tuple):
                             cols_used.append(v[0])
                         else:
                             raise NotImplementedError
@@ -898,7 +900,7 @@ class Retriever:
     GroupbyAgg
     '''
 
-    def find_groupby_agg(self, body_only=True):
+    def find_groupby_aggr(self, body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
         :return:
@@ -911,6 +913,25 @@ class Retriever:
                     return op_body
                 else:
                     return op_expr
+        else:
+            return None
+
+    def find_groupby_aggr_before(self, op_type, body_only=True):
+        """
+        It returns a list that contains all groupby aggregation operations.
+        :return:
+        """
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                if body_only:
+                    return op_body
+                else:
+                    return op_expr
+
+            if isinstance(op_body, op_type):
+                return None
         else:
             return None
 

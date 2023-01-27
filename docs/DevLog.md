@@ -82,7 +82,6 @@ Done
 
 # Q18
 
-as_part_for_next_join -> probe side is not joint 
+as_part_for_next_join -> probe side is not joint
 
-working for isin()
-
+Done

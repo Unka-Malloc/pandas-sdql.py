@@ -1,4 +1,6 @@
+from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.sdql_ir import *
 
 
@@ -33,73 +35,103 @@ class IsInExpr(IgnoreExpr):
                                body,
                                ConstantExpr(None))
 
-    def get_as_part(self):
+    def get_as_part(self, next_op=None):
         part_var = self.part_on.get_var_part()
-        part_key = self.part_on.iter_el.key
         part_retriever = self.part_on.get_retriever()
 
-        sum_op = DicConsExpr([(self.col_part.replace(part_key),
-                               ConstantExpr(True))])
+        groupby_aggr_info = part_retriever.find_groupby_aggr_before(IsInExpr)
 
-        cond = part_retriever.find_cond_before(IsInExpr)
-        if cond:
-            sum_op = IfExpr(condExpr=cond,
-                            thenBodyExpr=sum_op,
-                            elseBodyExpr=ConstantExpr(None))
+        groupby_cols = groupby_aggr_info.groupby_cols
+        aggr_dict = groupby_aggr_info.aggr_dict
 
-        sum_expr = SumExpr(varExpr=part_key,
-                           dictExpr=part_var,
-                           bodyExpr=sum_op,
-                           isAssignmentSum=True)
+        vname_aggr = f'{self.part_on.name}_aggr'
+        var_aggr = VarExpr(vname_aggr)
+        vname_x_aggr = f'x_{vname_aggr}'
+        var_x_aggr = VarExpr(vname_x_aggr)
 
-        let_expr = LetExpr(varExpr=part_var,
-                           valExpr=sum_expr,
-                           bodyExpr=ConstantExpr(True))
+        if groupby_aggr_info:
+            cond_after_aggr = part_retriever.find_cond_after(GroupbyAggrExpr)
+
+            if self.col_part.field not in groupby_cols:
+                raise IndexError(f'Cannot find column {self.col_part.field}!')
+
+            cond_mapper = {}
+
+            # aggr = {? : scalar}
+            if len(aggr_dict.keys()) == 1:
+                cond_mapper[tuple(list(aggr_dict.keys()))] = PairAccessExpr(var_x_aggr, 1)
+
+            # aggr = {? : record}
+            else:
+                for k in aggr_dict.keys():
+                    cond_mapper[tuple([k])] = RecAccessExpr(PairAccessExpr(var_x_aggr, 1), k)
+
+            # aggr = {scalar: record}
+            if len(groupby_cols) == 1:
+                cond_mapper[tuple(groupby_cols)] = PairAccessExpr(var_x_aggr, 0)
+
+                sum_op_isin = DicConsExpr([(PairAccessExpr(var_x_aggr, 0), ConstantExpr(True))])
+            else:
+                # aggr = {record : record}
+                for c in groupby_cols:
+                    cond_mapper[tuple([c])] = RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)
+
+                sum_op_isin = DicConsExpr([(RecAccessExpr(PairAccessExpr(var_x_aggr, 0), self.col_part.field),
+                                            ConstantExpr(True))])
+
+            cond_after_aggr = cond_after_aggr.replace(rec=None,
+                                                      inplace=True,
+                                                      mapper=cond_mapper)
+
+            if cond_after_aggr:
+                sum_op_isin = IfExpr(condExpr=cond_after_aggr,
+                                     thenBodyExpr=sum_op_isin,
+                                     elseBodyExpr=ConstantExpr(None))
+
+            sum_expr_isin = SumExpr(varExpr=var_x_aggr,
+                                    dictExpr=var_aggr,
+                                    bodyExpr=sum_op_isin,
+                                    isAssignmentSum=True)
+
+            if next_op:
+                let_expr_isin = LetExpr(varExpr=part_var,
+                                        valExpr=sum_expr_isin,
+                                        bodyExpr=next_op)
+            else:
+                let_expr_isin = LetExpr(varExpr=part_var,
+                                        valExpr=sum_expr_isin,
+                                        bodyExpr=ConstantExpr(True))
+
+            return self.part_on.get_groupby_aggr(let_expr_isin)
+        else:
+            cond = part_retriever.find_cond_before(IsInExpr)
+
+            sum_op = DicConsExpr([(self.col_part.replace(self.part_on.iter_el.key),
+                                   ConstantExpr(True))])
+
+            if cond:
+                sum_op = IfExpr(condExpr=cond,
+                                thenBodyExpr=sum_op,
+                                elseBodyExpr=ConstantExpr(None))
+
+            sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
+                               dictExpr=part_var,
+                               bodyExpr=sum_op,
+                               isAssignmentSum=True)
+
+            if next_op:
+                let_expr = LetExpr(varExpr=part_var,
+                                   valExpr=sum_expr,
+                                   bodyExpr=next_op)
+            else:
+                let_expr = LetExpr(varExpr=part_var,
+                                   valExpr=sum_expr,
+                                   bodyExpr=ConstantExpr(True))
 
         return let_expr
 
     def get_ref_var(self):
         return self.part_on.get_var_part()
-
-    def get_ref_ir(self, next_op=None):
-        if not next_op:
-            next_op = ConstantExpr('placeholder_isin_ref')
-
-        opt = self.part_on.get_opt()
-        part_var = self.get_ref_var()
-        col_proj = opt.col_proj
-
-        sum_op = DicConsExpr([(self.part_on.key_access(self.col_part.field),
-                               ConstantExpr(True))])
-
-        if opt.has_cond:
-            cond_after_groupby_agg = opt.get_cond_after_groupby_agg()
-            if cond_after_groupby_agg:
-                return opt.get_groupby_agg_having_stmt(next_op)
-            else:
-                cond = opt.get_cond_ir()
-                sum_op = IfExpr(condExpr=cond,
-                                thenBodyExpr=sum_op,
-                                elseBodyExpr=EmptyDicConsExpr())
-                sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
-                                   dictExpr=self.part_on.var_expr,
-                                   bodyExpr=sum_op,
-                                   isAssignmentSum=True)
-        else:
-            cond = opt.get_cond_ir()
-            sum_op = IfExpr(condExpr=cond,
-                            thenBodyExpr=sum_op,
-                            elseBodyExpr=EmptyDicConsExpr())
-
-            sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
-                               dictExpr=self.part_on.var_expr,
-                               bodyExpr=sum_op,
-                               isAssignmentSum=True)
-
-        let_expr = LetExpr(varExpr=part_var,
-                           valExpr=sum_expr,
-                           bodyExpr=next_op)
-        return let_expr
 
     def __invert__(self):
         self.isinvert = True
