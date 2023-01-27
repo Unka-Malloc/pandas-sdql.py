@@ -1,7 +1,5 @@
 from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
-from pysdql.core.dtypes.EnumUtil import AggrType
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
-from pysdql.core.util.df_retriever import Retriever
 from pysdql.core.dtypes.sdql_ir import *
 
 
@@ -15,14 +13,14 @@ class GroupbyAggrFrame:
         self.var_x_aggr = VarExpr(self.vname_x_aggr)
 
     @property
-    def retriever(self) -> Retriever:
-        return self.aggr_on.get_retriever()
+    def retriever(self):
+        return self.aggr_on.retriever
 
     @property
     def sdql_ir(self) -> LetExpr:
         # Q1
         # Q4
-        groupby_aggr_info = self.retriever.find_groupby_agg()
+        groupby_aggr_info = self.retriever.find_groupby_aggr()
 
         aggr_dict = groupby_aggr_info.aggr_dict
         groupby_cols = groupby_aggr_info.groupby_cols
@@ -186,8 +184,13 @@ class GroupbyAggrFrame:
         else:
             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
 
-    def get_groupby_aggr_expr(self) -> LetExpr:
+    def get_groupby_aggr_expr(self, next_op) -> LetExpr:
         let_expr = self.sdql_ir
-        return LetExpr(varExpr=let_expr.varExpr,
-                       valExpr=let_expr.valExpr,
-                       bodyExpr=ConstantExpr(True))
+        if next_op:
+            return LetExpr(varExpr=let_expr.varExpr,
+                           valExpr=let_expr.valExpr,
+                           bodyExpr=next_op)
+        else:
+            return LetExpr(varExpr=let_expr.varExpr,
+                           valExpr=let_expr.valExpr,
+                           bodyExpr=ConstantExpr(True))

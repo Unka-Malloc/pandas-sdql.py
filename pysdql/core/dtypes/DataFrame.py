@@ -932,8 +932,8 @@ class DataFrame(SemiRing, Retrivable):
                                         var_value=ConstantExpr(const)))
         return result_seq
 
-    def get_groupby_agg(self, next_op=None) -> LetExpr:
-        return GroupbyAggrFrame(self).get_groupby_aggr_expr()
+    def get_groupby_aggr(self, next_op=None) -> LetExpr:
+        return GroupbyAggrFrame(self).get_groupby_aggr_expr(next_op)
 
     def reset_index(self):
         return self

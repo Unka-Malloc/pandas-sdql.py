@@ -159,6 +159,7 @@ class JointFrame:
                 joint_cond = joint_cond.replace(rec=None,
                                                 inplace=False,
                                                 mapper=cond_mapper)
+
                 col_ins = self.retriever.find_col_ins_before(AggrExpr)
 
                 if len(aggr_dict.keys()) == 1:
@@ -555,7 +556,7 @@ class JointFrame:
                     # Q3
                     # Q18
                     if self.part_frame.retriever.was_probed:
-                        groupby_aggr_info = self.retriever.find_groupby_agg()
+                        groupby_aggr_info = self.retriever.find_groupby_aggr()
 
                         aggr_dict = groupby_aggr_info.aggr_dict
                         groupby_cols = groupby_aggr_info.groupby_cols
@@ -750,7 +751,7 @@ class JointFrame:
 
                         # Q16
 
-                        groupby_aggr_info = self.retriever.find_groupby_agg()
+                        groupby_aggr_info = self.retriever.find_groupby_aggr()
 
                         aggr_dict = groupby_aggr_info.aggr_dict
                         groupby_cols = groupby_aggr_info.groupby_cols
@@ -941,7 +942,7 @@ class JointFrame:
                     if self.probe_frame.retriever.was_aggr:
                         pass
                     elif self.probe_frame.retriever.was_groupby_aggr:
-                        groupby_aggr_info = self.probe_frame.retriever.find_groupby_agg()
+                        groupby_aggr_info = self.probe_frame.retriever.find_groupby_aggr()
 
                         groupby_cols = groupby_aggr_info.groupby_cols
                         aggr_dict = groupby_aggr_info.aggr_dict
@@ -1135,7 +1136,6 @@ class JointFrame:
             # Q5
             # Q7
             # Q10
-            # Q18
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
@@ -1269,6 +1269,8 @@ class JointFrame:
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
 
+                    probe_isin = self.probe_frame.retriever.find_isin()
+
                     # dict key: single column
                     if isinstance(next_merge_expr.left_on, list):
                         raise NotImplementedError
@@ -1292,17 +1294,23 @@ class JointFrame:
                     dict_val_list = []
 
                     for i in val_cols:
-                        if i in self.part_frame.part_on.columns:
+                        if i == part_key:
+                            dict_val_list.append((i,
+                                                  probe_key_ir))
+                        elif i == probe_key:
+                            dict_val_list.append((i,
+                                                  probe_key_ir))
+                        elif i in self.part_frame.part_on.columns:
                             dict_val_list.append((i,
                                                   RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
                                                                                       keyExpr=probe_on.key_access(
                                                                                           probe_key)),
                                                                 fieldName=i)))
-                        if i in self.probe_frame.probe_on.columns:
+                        elif i in self.probe_frame.probe_on.columns:
                             dict_val_list.append((i,
                                                   probe_on.key_access(i)))
 
-                        if i in self.retriever.find_renamed_cols(mode='as_val'):
+                        elif i in self.retriever.find_renamed_cols(mode='as_val'):
                             dict_val_list.append((i,
                                                   probe_on.key_access(
                                                       self.retriever.find_col_rename(col_name=i,
@@ -1325,21 +1333,26 @@ class JointFrame:
 
                     self.probe_frame.probe_on.transform.migrate(transform)
 
-                    print(self.joint.name)
-                    print('all', self.joint.columns)
-                    print('used', self.retriever.findall_cols_used())
-                    print('last', last_merge_expr)
-                    print('next', next_merge_expr)
-                    print({
-                        'key': key_col,
-                        'vals': val_cols
-                    })
-                    print(transform)
-                    print(joint_op)
-                    print('==============================')
+                    # print(self.joint.name)
+                    # print('all', self.joint.columns)
+                    # print('used', self.retriever.findall_cols_used())
+                    # print('last', last_merge_expr)
+                    # print('next', next_merge_expr)
+                    # print({
+                    #     'key': key_col,
+                    #     'vals': val_cols
+                    # })
+                    # print(transform)
+                    # print(joint_op)
+                    # print('==============================')
 
                     if joint_cond:
                         joint_op = IfExpr(condExpr=joint_cond,
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
+
+                    if probe_isin:
+                        joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
                                           thenBodyExpr=joint_op,
                                           elseBodyExpr=ConstantExpr(None))
 
@@ -1364,7 +1377,10 @@ class JointFrame:
                                                   isAssignmentSum=False),
                                   bodyExpr=next_op)
 
-                    return out
+                    if probe_isin:
+                        return probe_isin.get_as_part(out)
+                    else:
+                        return out
 
             # Q5
             # Q10
@@ -1911,7 +1927,7 @@ class JointFrame:
             # print(f'{self.joint.name}: neither joint')
 
             if self.probe_frame.retriever.was_groupby_aggr:
-                result = SDQLInspector.concat_bindings([self.probe_frame.probe_on.get_groupby_agg(),
+                result = SDQLInspector.concat_bindings([self.probe_frame.probe_on.get_groupby_aggr(),
                                                         self.part_frame.get_part_expr(),
                                                         self.get_probe_expr(next_op)])
                 return result
