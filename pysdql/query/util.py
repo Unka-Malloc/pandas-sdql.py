@@ -5,6 +5,8 @@ import pandas
 
 from pysdql.extlib.sdqlpy.sdql_lib import (sr_dict, record)
 
+from pysdql.core.util.type_checker import is_date
+
 
 def pandas_to_df(result):
     if isinstance(result, pandas.DataFrame):
@@ -91,6 +93,11 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
             sdql_df[c] = sdql_df[c].round(2)
             pandas_df[c] = pandas_df[c].round(2)
 
+    for c in pandas_df.columns:
+        if pandas_df[c].dtype == object:
+            if pandas_df[c].apply(lambda x: is_date(x)).all():
+                pandas_df[c] = pandas_df[c].apply(lambda x: np.float64(x.replace('-', '')))
+
     for xi, xrow in sdql_df.iterrows():
         found_row = False
         for yi, yrow in pandas_df.iterrows():
@@ -100,7 +107,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
         else:
             if not found_row:
                 print('Not Found')
-                print(xrow)
+                print(xrow.to_dict())
+                print(pandas_df)
                 return False
     else:
         return True

@@ -100,7 +100,7 @@ class GroupbyAggrFrame:
             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
         if cond:
-            aggr_body = IfExpr(condExpr=cond,
+            aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                thenBodyExpr=aggr_body,
                                elseBodyExpr=ConstantExpr(None))
 
