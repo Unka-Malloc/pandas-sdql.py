@@ -76,6 +76,21 @@ def q3(execution_mode=0, threads_count=1):
 
     return Q.query(lineitem_data, customer_data, orders_data)
 
+def q4(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    lineitem = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+
+    write_query(3, tpch_q4(orders, lineitem).opt_to_sdqlir())
+
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
+
+    import pysdql.query.tpch.Qsdql.Q4 as Q
+
+    return Q.query(orders_data, lineitem_data)
+
 def q6(execution_mode=0, threads_count=1):
     sdqlpy_init(execution_mode, threads_count)
 

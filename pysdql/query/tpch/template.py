@@ -34,6 +34,20 @@ def tpch_q3(lineitem, customer, orders):
 
     return result
 
+def tpch_q4(orders, lineitem):
+    li_filt = lineitem[lineitem.l_commitdate < lineitem.l_receiptdate]
+    li_proj = li_filt[["l_orderkey"]]
+
+    ord_filt = orders[(orders.o_orderdate >= "1993-07-01")
+                      & (orders.o_orderdate < "1993-10-01")
+                      & orders.o_orderkey.isin(li_proj["l_orderkey"])]
+
+    results = ord_filt \
+        .groupby(["o_orderpriority"], as_index=False) \
+        .agg(order_count=("o_orderdate", "count"))
+
+    return results
+
 
 def tpch_q6(lineitem):
     var1 = 4
