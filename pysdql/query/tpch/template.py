@@ -34,12 +34,16 @@ def tpch_q3(lineitem, customer, orders):
 
     return result
 
+
 def tpch_q4(orders, lineitem):
+    var1 = "1993-07-01"
+    var2 = "1993-10-01"  # var1 + interval '3' month
+
     li_filt = lineitem[lineitem.l_commitdate < lineitem.l_receiptdate]
     li_proj = li_filt[["l_orderkey"]]
 
-    ord_filt = orders[(orders.o_orderdate >= "1993-07-01")
-                      & (orders.o_orderdate < "1993-10-01")
+    ord_filt = orders[(orders.o_orderdate >= var1)
+                      & (orders.o_orderdate < var2)
                       & orders.o_orderkey.isin(li_proj["l_orderkey"])]
 
     results = ord_filt \
@@ -65,5 +69,23 @@ def tpch_q6(lineitem):
     li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
 
     result = li_filt.agg({'revenue': 'sum'})
+
+    return result
+
+
+def tpch_q14(lineitem, part):
+    var1 = "1995-09-01"
+    var2 = "1995-10-01"  # var1 + interval '1' month
+
+    li_filt = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)]
+
+    li_pa_join = part.merge(li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
+
+    li_pa_join["A"] = li_pa_join.apply(
+        lambda x: x["l_extendedprice"] * (1.0 - x["l_discount"]) if x["p_type"].startswith("PROMO") else 0.0,
+        axis=1)
+    li_pa_join["B"] = li_pa_join['l_extendedprice'] * (1.0 - li_pa_join['l_discount'])
+
+    result = li_pa_join['A'].sum() / li_pa_join['B'].sum() * 100.0
 
     return result

@@ -94,12 +94,27 @@ def q4(execution_mode=0, threads_count=1):
 def q6(execution_mode=0, threads_count=1):
     sdqlpy_init(execution_mode, threads_count)
 
-    li = pysdql.DataFrame()
+    lineitem = pysdql.DataFrame()
 
-    write_query(6, tpch_q6(li).opt_to_sdqlir())
+    write_query(6, tpch_q6(lineitem).opt_to_sdqlir())
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
     import pysdql.query.tpch.Qsdql.Q6 as Q
 
     return Q.query(lineitem_data)
+
+def q14(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    lineitem = pysdql.DataFrame()
+    part = pysdql.DataFrame()
+
+    write_query(6, tpch_q14(lineitem, part).opt_to_sdqlir())
+
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
+
+    import pysdql.query.tpch.Qsdql.Q14 as Q
+
+    return Q.query(lineitem_data, part_data)

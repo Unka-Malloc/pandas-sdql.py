@@ -61,6 +61,17 @@ class CalcExpr(SDQLIR):
 
         return self.on.optimize()
 
+    def opt_to_sdqlir(self):
+        op_expr = OpExpr(op_obj=self,
+                         op_on=self.on,
+                         op_iter=True,
+                         iter_on=self.on,
+                         ret_type=OpRetType.FLOAT)
+
+        self.on.push(op_expr)
+
+        return self.on.opt_to_sdqlir()
+
     @property
     def op_name_suffix(self):
         return '_calc'
