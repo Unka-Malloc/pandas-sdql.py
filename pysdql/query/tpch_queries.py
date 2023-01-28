@@ -63,7 +63,6 @@ class tpch:
     @staticmethod
     def q6() -> pysdqlDataFrame:
         """
-
         :return: a singleton dictionary {record -> true}
         """
         lineitem = pysdqlDataFrame()

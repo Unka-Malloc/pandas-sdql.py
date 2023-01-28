@@ -1,1 +1,1 @@
-from pysdql.query.tpch import tpch
+import pysdql.query.tpch
