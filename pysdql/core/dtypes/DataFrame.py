@@ -37,6 +37,7 @@ from pysdql.core.dtypes.SemiRing import SemiRing
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
+from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
 
 from pysdql.core.dtypes.sdql_ir import *
 from pysdql.core.enums import History
@@ -419,6 +420,24 @@ class DataFrame(SemiRing, Retrivable):
                      f'query = {self.define_constants().get_sdql_ir(query)}']
 
         return '\n'.join(last_list)
+
+    def opt_to_sdqlir(self, indent='    ') -> str:
+        opt = self.get_opt()
+        for op_expr in self.operations:
+            opt.input(op_expr)
+        query_obj = opt.output
+
+        query_str = GenerateSDQLPYCode(self.define_constants().get_sdql_ir(query_obj), {})
+
+        query_list = query_str.split('\n')
+
+        query_list = query_list[:query_list.index('True')]
+
+        print('\n'.join(query_list))
+
+        query_list = [f'{indent}{i}' for i in query_list]
+
+        return '\n'.join(query_list)
 
     @property
     def sdql_ir(self):

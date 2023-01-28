@@ -1,3 +1,7 @@
+import os
+
+import pysdql
+
 from pysdql.query.tpch.const import (
     DATAPATH,
     LINEITEM_TYPE,
@@ -15,25 +19,72 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
     sdqlpy_init
 )
 
-from pysdql.query.tpch.Qsdql import (
-    Q1,
-    Q6
-)
+from pysdql.query.tpch.template import *
+
+Qfile_path = os.path.realpath(os.path.dirname(__file__))
+
+
+def write_query(q: int, content: str):
+    query_path = os.path.join(Qfile_path, f'Q{q}.py')
+
+    old_lines = []
+
+    with open(query_path, 'r') as f:
+        for line in f:
+            old_lines.append(line)
+
+    first_index = old_lines.index('    # Insert\n')
+    second_index = old_lines.index('    # Complete\n')
+
+    first_lines = old_lines[:first_index + 1]
+    second_lines = old_lines[second_index:]
+
+    new_lines = first_lines + [f'{i}\n' for i in content.split('\n')] + second_lines
+
+    with open(query_path, 'w') as f:
+        for line in new_lines:
+            f.write(line)
+
 
 def q1(execution_mode=0, threads_count=1):
     sdqlpy_init(execution_mode, threads_count)
 
-    lineitem = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    lineitem = pysdql.DataFrame()
 
-    return Q1.query(lineitem)
+    write_query(1, tpch_q1(lineitem).opt_to_sdqlir())
+
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+
+    import pysdql.query.tpch.Qsdql.Q1 as Q
+
+    return Q.query(lineitem_data)
+
+def q3(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    lineitem = pysdql.DataFrame()
+    customer = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+
+    write_query(3, tpch_q3(lineitem, customer, orders).opt_to_sdqlir())
+
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
+    orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
+
+    import pysdql.query.tpch.Qsdql.Q3 as Q
+
+    return Q.query(lineitem_data, customer_data, orders_data)
 
 def q6(execution_mode=0, threads_count=1):
     sdqlpy_init(execution_mode, threads_count)
 
-    lineitem = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    li = pysdql.DataFrame()
 
-    return Q6.query(lineitem)
+    write_query(6, tpch_q6(li).opt_to_sdqlir())
 
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
+    import pysdql.query.tpch.Qsdql.Q6 as Q
 
-
+    return Q.query(lineitem_data)

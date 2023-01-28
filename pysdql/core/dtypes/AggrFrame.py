@@ -44,7 +44,7 @@ class AggrFrame:
                         raise IndexError(f'Cannot find column {dict_val_name} in {self.aggr_on.columns}')
 
                 if cond:
-                    aggr_body = IfExpr(condExpr=cond,
+                    aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                        thenBodyExpr=aggr_body,
                                        elseBodyExpr=ConstantExpr(0.0))
             elif isinstance(dict_val, ConstantExpr):
@@ -52,7 +52,7 @@ class AggrFrame:
                 aggr_body = dict_val
 
                 if cond:
-                    aggr_body = IfExpr(condExpr=cond,
+                    aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                        thenBodyExpr=aggr_body,
                                        elseBodyExpr=ConstantExpr(0))
             else:
@@ -85,7 +85,7 @@ class AggrFrame:
             aggr_body = RecConsExpr(aggr_tuples)
 
             if cond:
-                aggr_body = IfExpr(condExpr=cond,
+                aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                    thenBodyExpr=aggr_body,
                                    elseBodyExpr=ConstantExpr(None))
 

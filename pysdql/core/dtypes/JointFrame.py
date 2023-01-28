@@ -98,8 +98,14 @@ class JointFrame:
                              fieldName=col_name)
 
     def part_nonull(self):
+        # print(self.part_frame.get_part_dict_key())
+        #
+        # print(self.part_frame.get_part_dict_val())
+
         return CompareExpr(CompareSymbol.NE,
-                           self.part_lookup(self.probe_frame.probe_key),
+                           DicLookupExpr(dicExpr=self.part_frame.part_var,
+                                         keyExpr=self.probe_frame.probe_on.key_access(
+                                             self.probe_frame.probe_key)),
                            ConstantExpr(None))
 
     def get_probe_expr(self, next_op=None):
@@ -648,7 +654,13 @@ class JointFrame:
 
                             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
-                        # joint condition: outermost layer
+                        # probe condition: first outermost layer
+                        if probe_cond:
+                            aggr_body = IfExpr(condExpr=probe_cond,
+                                               thenBodyExpr=aggr_body,
+                                               elseBodyExpr=ConstantExpr(None))
+
+                        # joint condition: second outermost layer
                         if joint_cond:
                             aggr_body = IfExpr(condExpr=joint_cond,
                                                thenBodyExpr=aggr_body,

@@ -1,4 +1,4 @@
-from pysdql.extlib.sdqlpy.lib.sdql_ir import *
+from pysdql.core.dtypes.sdql_ir import *
 
 names = {
     "db->li_dataset": "li",
