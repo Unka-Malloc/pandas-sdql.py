@@ -41,15 +41,15 @@ class IsInExpr(IgnoreExpr):
 
         groupby_aggr_info = part_retriever.find_groupby_aggr_before(IsInExpr)
 
-        groupby_cols = groupby_aggr_info.groupby_cols
-        aggr_dict = groupby_aggr_info.aggr_dict
-
-        vname_aggr = f'{self.part_on.name}_aggr'
-        var_aggr = VarExpr(vname_aggr)
-        vname_x_aggr = f'x_{vname_aggr}'
-        var_x_aggr = VarExpr(vname_x_aggr)
-
         if groupby_aggr_info:
+            groupby_cols = groupby_aggr_info.groupby_cols
+            aggr_dict = groupby_aggr_info.aggr_dict
+
+            vname_aggr = f'{self.part_on.name}_aggr'
+            var_aggr = VarExpr(vname_aggr)
+            vname_x_aggr = f'x_{vname_aggr}'
+            var_x_aggr = VarExpr(vname_x_aggr)
+
             cond_after_aggr = part_retriever.find_cond_after(GroupbyAggrExpr)
 
             if self.col_part.field not in groupby_cols:
@@ -110,7 +110,7 @@ class IsInExpr(IgnoreExpr):
                                    ConstantExpr(True))])
 
             if cond:
-                sum_op = IfExpr(condExpr=cond,
+                sum_op = IfExpr(condExpr=cond.sdql_ir,
                                 thenBodyExpr=sum_op,
                                 elseBodyExpr=ConstantExpr(None))
 

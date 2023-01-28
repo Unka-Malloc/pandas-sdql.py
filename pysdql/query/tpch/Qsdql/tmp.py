@@ -4,6 +4,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 
 @sdql_compile({"li": LINEITEM_TYPE})
 def query(li):
+
     # Insert
 
     lineitem_aggr = li.sum(lambda x_lineitem:

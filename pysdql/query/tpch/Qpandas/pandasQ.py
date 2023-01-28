@@ -35,6 +35,14 @@ def q3():
 
     return result
 
+def q4():
+    lineitem = pd.read_table(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
+    orders = pd.read_table(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
+
+    result = tpch_q4(orders, lineitem)
+
+    return result
+
 def q6():
     lineitem = pd.read_table(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
 

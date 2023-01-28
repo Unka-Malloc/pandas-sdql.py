@@ -8,7 +8,7 @@ from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
 
 def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
-    done = [1, 3, 6]
+    done = [1, 3, 4, 6]
 
     if isinstance(qindex, int):
         if qindex not in done:

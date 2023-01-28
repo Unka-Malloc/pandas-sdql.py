@@ -2,7 +2,7 @@ import pysdql
 
 
 if __name__ == '__main__':
-    test_all = pysdql.tpch_query([1, 3, 6], 0, 1)
+    test_all = pysdql.tpch_query([1, 3, 4, 6], 0, 1)
     #
     # print(test_all)
 
