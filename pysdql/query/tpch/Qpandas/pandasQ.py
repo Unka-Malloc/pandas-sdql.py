@@ -50,5 +50,13 @@ def q6():
 
     return result
 
+def q14():
+    lineitem = pd.read_table(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
+    part = pd.read_table(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
+
+    result = tpch_q14(lineitem, part)
+
+    return result
+
 
 

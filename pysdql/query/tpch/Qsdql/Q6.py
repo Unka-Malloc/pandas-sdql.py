@@ -6,9 +6,12 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li):
 
     # Insert
-    li_aggr = li.sum(lambda x_li: (((x_li[0].l_extendedprice) * (x_li[0].l_discount))) if (((((((((x_li[0].l_shipdate >= 19940101) * (x_li[0].l_shipdate < 19950101))) * (x_li[0].l_discount >= 0.049999999999999996))) * (x_li[0].l_discount <= 0.06999999999999999))) * (x_li[0].l_quantity < 24))) else (0.0))
+    promo = "PROMO"
+    part_part = pa.sum(lambda x_part: {x_part[0].p_partkey: True})
     
-    results = {record({"revenue": li_aggr}): True}
+    part_lineitem = li.sum(lambda x_lineitem: (record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})) if (((x_lineitem[0].l_shipdate >= 19950901) * (x_lineitem[0].l_shipdate < 19951001))) else (None))
+    
+    results = ((((part_lineitem.A) / (part_lineitem.B))) * (100.0))
     # Complete
 
     return results

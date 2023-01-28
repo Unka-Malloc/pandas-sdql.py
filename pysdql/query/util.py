@@ -25,6 +25,8 @@ def pandas_to_df(result):
             i_count += 1
 
         return pandas.DataFrame(tmp_dict, index=res_index)
+    elif isinstance(result, float):
+        return pandas.DataFrame({'result': [result]})
     else:
         raise NotImplementedError
 
@@ -56,6 +58,8 @@ def sdql_to_df(sdql_obj):
                     res_list.append(sdql_record_to_pydict(k))
             else:
                 return pandas.DataFrame(concat_pydict(res_list))
+    elif isinstance(sdql_obj, float):
+        return pandas.DataFrame({'result': [sdql_obj]})
     else:
         raise NotImplementedError
 

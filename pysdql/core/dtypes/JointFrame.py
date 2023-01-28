@@ -1108,6 +1108,7 @@ class JointFrame:
                 rec_list = []
 
                 for i in self.col_ins:
+                    col_ir = self.col_ins[i].sdql_ir
                     if isinstance(self.col_ins[i], IfExpr):
                         prev_if = self.col_ins[i]
                         next_if = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
@@ -1118,7 +1119,7 @@ class JointFrame:
                                          elseBodyExpr=prev_if.elseBodyExpr)
                         rec_list.append((i, next_if))
                     else:
-                        rec_list.append((i, self.col_ins[i]))
+                        rec_list.append((i, col_ir))
 
                 rec = RecConsExpr(rec_list)
 
@@ -1134,7 +1135,7 @@ class JointFrame:
                                    bodyExpr=rec,
                                    isAssignmentSum=False)
 
-                calc_expr = self.retriever.find_calc()
+                calc_expr = self.retriever.find_calc().sdql_ir
 
                 var_res = VarExpr('results')
                 self.joint.add_context_variable('results', var_res)
