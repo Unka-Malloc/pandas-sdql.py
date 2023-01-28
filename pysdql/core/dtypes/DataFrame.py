@@ -433,6 +433,8 @@ class DataFrame(SemiRing, Retrivable):
 
         query_list = query_list[:query_list.index('True')]
 
+        print('>> Optimized Query <<')
+
         print('\n'.join(query_list))
 
         query_list = [f'{indent}{i}' for i in query_list]
