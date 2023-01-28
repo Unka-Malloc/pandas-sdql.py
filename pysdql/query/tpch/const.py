@@ -4,6 +4,10 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
     date
 )
 
+# There should not be a '/' at the end.
+# Path/should/be/like/this
+# Not/like/this/
+
 DATAPATH = r'T:/tpch_dataset/1M'
 
 LINEITEM_COLS = ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
