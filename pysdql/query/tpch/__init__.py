@@ -6,9 +6,11 @@ import pysdql.query.tpch.Qpandas
 
 from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
+sep_line = '#' * 75
+
 
 def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
-    done = [1, 3, 4, 6, 14]
+    done = [1, 3, 4, 6, 14, 15, 16]
 
     if isinstance(qindex, int):
         if qindex not in done:
@@ -24,59 +26,70 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
                 print(f'Query {q} has not been verified.')
                 return False
 
-            sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
-
-            pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
-
-            sdql_df = sdql_to_df(sdql_result)
-
-            pandas_df = pandas_to_df(pandas_result)
-
             print(f'>> Query {q} <<')
 
-            print(f'>> SDQL <<')
+            sdql_df = None
+            pandas_df = None
 
-            print(sdql_result)
+            try:
+                print(f'>> SDQL <<')
 
-            print(f'>> Pandas <<')
+                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
 
-            print(pandas_result)
+                sdql_df = sdql_to_df(sdql_result)
 
-            sep_line = '#' * 75
+                print(sdql_result)
+
+                pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
+
+                pandas_df = pandas_to_df(pandas_result)
+
+                print(f'>> Pandas <<')
+
+                print(pandas_result)
+            except:
+                pass
 
             if compare_dataframe(sdql_df, pandas_df):
                 check_list.append(True)
-                print(sep_line)
-                print(f'''
-                {art_map[q]}
-                ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
-                ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
-                ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
-                ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
-                ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
-                ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝                                             
-                ''')
-                print(sep_line)
+                print_succ_text(q)
             else:
                 check_list.append(False)
-                print(sep_line)
-                print(f'''
-                {art_map[q]}
-                   █████ ▄▄▄       ██▓  ██▓    █    ██  ██▀███   ▓█████
-                 ▓██    ▒████▄   ▒▓██▒ ▓██▒    ██  ▓██▒▓██ ▒ ██▒ ▓█   ▀
-                 ▒████  ▒██  ▀█▄ ▒▒██▒ ▒██░   ▓██  ▒██░▓██ ░▄█ ▒ ▒███  
-                 ░▓█▒   ░██▄▄▄▄██░░██░ ▒██░   ▓▓█  ░██░▒██▀▀█▄   ▒▓█  ▄
-                ▒░▒█░   ▒▓█   ▓██░░██░▒░██████▒▒█████▓ ░██▓ ▒██▒▒░▒████
-                ░ ▒ ░   ░▒▒   ▓▒█ ░▓  ░░ ▒░▓  ░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░░░░ ▒░ 
-                ░ ░     ░ ░   ▒▒ ░ ▒ ░░░ ░ ▒  ░░▒░ ░ ░   ░▒ ░ ▒ ░ ░ ░  
-                  ░ ░     ░   ▒  ░ ▒ ░   ░ ░   ░░░ ░ ░   ░░   ░     ░  
-                ░             ░    ░  ░    ░     ░        ░     ░   ░  
-                ''')
-                print(sep_line)
+                print_fail_text(q)
         else:
             return all(check_list)
     else:
         raise NotImplementedError
+
+def print_succ_text(q):
+    print(sep_line)
+    print(f'''
+    {art_map[q]}
+    ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
+    ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
+    ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
+    ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
+    ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
+    ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝                                             
+    ''')
+    print(sep_line)
+
+
+def print_fail_text(q):
+    print(sep_line)
+    print(f'''
+    {art_map[q]}
+       █████ ▄▄▄       ██▓  ██▓    █    ██  ██▀███   ▓█████
+     ▓██    ▒████▄   ▒▓██▒ ▓██▒    ██  ▓██▒▓██ ▒ ██▒ ▓█   ▀
+     ▒████  ▒██  ▀█▄ ▒▒██▒ ▒██░   ▓██  ▒██░▓██ ░▄█ ▒ ▒███  
+     ░▓█▒   ░██▄▄▄▄██░░██░ ▒██░   ▓▓█  ░██░▒██▀▀█▄   ▒▓█  ▄
+    ▒░▒█░   ▒▓█   ▓██░░██░▒░██████▒▒█████▓ ░██▓ ▒██▒▒░▒████
+    ░ ▒ ░   ░▒▒   ▓▒█ ░▓  ░░ ▒░▓  ░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░░░░ ▒░ 
+    ░ ░     ░ ░   ▒▒ ░ ▒ ░░░ ░ ▒  ░░▒░ ░ ░   ░▒ ░ ▒ ░ ░ ░  
+      ░ ░     ░   ▒  ░ ▒ ░   ░ ░   ░░░ ░ ░   ░░   ░     ░  
+    ░             ░    ░  ░    ░     ░        ░     ░   ░  
+    ''')
+    print(sep_line)
 
 
 art_map = {

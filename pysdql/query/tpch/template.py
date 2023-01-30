@@ -89,3 +89,78 @@ def tpch_q14(lineitem, part):
     result = li_pa_join['A'].sum() / li_pa_join['B'].sum() * 100.0
 
     return result
+
+
+def tpch_q15(lineitem, supplier):
+    li_filt = lineitem[(lineitem['l_shipdate'] >= "1996-01-01") & (lineitem['l_shipdate'] < "1996-04-01")]
+    li_filt["revenue"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
+
+    li_aggr = li_filt \
+        .groupby(["l_suppkey"]) \
+        .agg(total_revenue=("revenue", "sum"))
+
+    # maximum:
+    # 1G -> 1772627.2087
+    # 100M -> 1614410.2928
+    # 10M -> 1161099.4636
+    # 1M -> 797313.3838
+
+    li_aggr = li_aggr[li_aggr['total_revenue'] == 797313.3838]
+
+    su_proj = supplier[["s_suppkey", "s_name", "s_address", "s_phone"]]
+    li_su_join = su_proj.merge(li_aggr, left_on="s_suppkey", right_on="l_suppkey", how="inner")
+
+    result = li_su_join[["s_suppkey", "s_name", "s_address", "s_phone", "total_revenue"]]
+
+    return result
+
+
+def tpch_q16(partsupp, part, supplier):
+    # 1G
+    var1 = "Brand#45"
+    var2 = "MEDIUM POLISHED"
+    var3 = (49, 14, 23, 45, 19, 3, 36, 9)
+
+    pa_filt = part[
+        (part.p_brand != var1) &
+        (part.p_type.str.startswith(var2) == False) &
+        (part.p_size.isin(var3))]
+    pa_proj = pa_filt[["p_partkey", "p_brand", "p_type", "p_size"]]
+
+    su_filt = supplier[
+        supplier.s_comment.str.contains("Customer")
+        & ((supplier.s_comment.str.find("Customer") + 7) < supplier.s_comment.str.find("Complaints"))]
+    su_proj = su_filt[["s_suppkey"]]
+
+    ps_filt = partsupp[~partsupp.ps_suppkey.isin(su_proj["s_suppkey"])]
+
+    ps_pa_join = pa_proj.merge(ps_filt, left_on="p_partkey", right_on="ps_partkey", how="inner")
+
+    result = ps_pa_join \
+        .groupby(["p_brand", "p_type", "p_size"], as_index=False) \
+        .agg(supplier_cnt=("ps_suppkey", lambda x: x.nunique()))
+
+    return result
+
+
+def tpch_q18(lineitem, customer, orders):
+    li_aggr = lineitem \
+        .groupby(["l_orderkey"]) \
+        .agg(sum_quantity=("l_quantity", "sum"))
+
+    li_filt = li_aggr[li_aggr['sum_quantity'] > 300].reset_index()
+    li_proj = li_filt[["l_orderkey"]]
+
+    ord_filt = orders[orders['o_orderkey'].isin(li_proj["l_orderkey"])]
+
+    cu_proj = customer[["c_custkey", "c_name"]]
+    cu_ord_join = cu_proj.merge(ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+    cu_ord_join = cu_ord_join[["c_name", "c_custkey", "o_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]]
+
+    li_ord_join = cu_ord_join.merge(lineitem, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+
+    result = li_ord_join \
+        .groupby(["c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]) \
+        .agg(sum_quantity=("l_quantity", "sum"))
+
+    return result

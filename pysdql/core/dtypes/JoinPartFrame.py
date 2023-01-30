@@ -1,4 +1,6 @@
+from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.sdql_ir import (
+    Expr,
     IfExpr,
     DicConsExpr,
     RecConsExpr,
@@ -37,10 +39,6 @@ class JoinPartFrame:
     @property
     def group_key(self):
         return self.__group_key
-
-    @property
-    def part_cond(self):
-        return self.__iter_cond
 
     @property
     def part_key(self):
@@ -140,8 +138,8 @@ class JoinPartFrame:
                 self.col_proj_ir
             )])
 
-            if self.has_cond:
-                part_left_op = IfExpr(condExpr=self.__iter_cond,
+            if self.part_cond:
+                part_left_op = IfExpr(condExpr=self.part_cond,
                                       thenBodyExpr=part_left_op,
                                       elseBodyExpr=ConstantExpr(None))
 
@@ -160,7 +158,7 @@ class JoinPartFrame:
                 part_left_op = DicConsExpr([(RecConsExpr([(k, self.part_on.key_access(k)) for k in self.group_key]),
                                              ConstantExpr(True))])
 
-                if self.has_cond:
+                if self.part_cond:
                     part_left_op = IfExpr(condExpr=self.part_cond,
                                           thenBodyExpr=part_left_op,
                                           elseBodyExpr=ConstantExpr(None))
@@ -181,11 +179,16 @@ class JoinPartFrame:
             raise NotImplementedError
 
     @property
-    def has_cond(self):
-        if self.__iter_cond:
-            return True
+    def part_cond(self):
+        cond = self.retriever.find_cond()
+
+        if isinstance(cond, Expr):
+            return cond
+        if isinstance(cond, SDQLIR):
+            return cond.sdql_ir
         else:
-            return False
+            Warning(f'NOT safe condition {type(cond)} : {cond} at partition side')
+            return cond
 
     @property
     def filled(self):

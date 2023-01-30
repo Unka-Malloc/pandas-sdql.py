@@ -1051,7 +1051,7 @@ class DataFrame(SemiRing, Retrivable):
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
         if self.is_joint:
-            self.get_partition_side().push(OpExpr(op_obj=cond.sdql_ir,
+            self.get_partition_side().push(OpExpr(op_obj=cond,
                                                   op_on=self,
                                                   op_iter=False))
 

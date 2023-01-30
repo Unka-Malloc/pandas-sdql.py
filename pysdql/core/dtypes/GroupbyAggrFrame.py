@@ -180,6 +180,7 @@ class GroupbyAggrFrame:
 
         if isin_expr:
             isin_let_expr = isin_expr.get_as_part()
+
             return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
         else:
             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])

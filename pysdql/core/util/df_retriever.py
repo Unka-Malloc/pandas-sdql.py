@@ -537,6 +537,15 @@ class Retriever:
                     return op_body
                 else:
                     return op_expr
+
+            if isinstance(op_body, ExternalExpr):
+                if op_body.func in [ExtFuncSymbol.StartsWith,
+                                    ExtFuncSymbol.EndsWith,
+                                    ExtFuncSymbol.StringContains]:
+                    if body_only:
+                        return op_body
+                    else:
+                        return op_expr
         else:
             return None
 
