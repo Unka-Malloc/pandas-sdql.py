@@ -67,23 +67,23 @@ if __name__ == '__main__':
     n1 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n1_cols)
     n2 = pd.read_table(rf'{data_path}/nation.tbl', sep='|', index_col=False, header=None, names=n2_cols)
 
-    n1.columns.field = 'n1'
-    n2.columns.field = 'n2'
+    n1.__columns.field = 'n1'
+    n2.__columns.field = 'n2'
 
     sub_r = region[(region['r_name'] == var2)]
-    sub_r.columns.field = 'sub_r'
+    sub_r.__columns.field = 'sub_r'
 
     sub_o = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] <= '1996-12-31')]
-    sub_o.columns.field = 'sub_o'
+    sub_o.__columns.field = 'sub_o'
 
     r1 = n1.merge(sub_r, left_on='n1_regionkey', right_on='r_regionkey')
-    r1.columns.field = 'r1'
+    r1.__columns.field = 'r1'
 
     r2 = part.merge(lineitem, left_on='p_partkey', right_on='l_partkey')
     r2 = r2.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
     r2 = r2.merge(customer, left_on='o_custkey', right_on='c_custkey')
 
-    r2.columns.field = 'r2'
+    r2.__columns.field = 'r2'
 
     r = r1.merge(r2, left_on='n1_nationkey', right_on='c_nationkey')
     r = r.merge(supplier, left_on='l_suppkey', right_on='s_suppkey')
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     all_nations = r[['o_year', 'volume', 'nation']]
 
-    all_nations.columns.field = 'all_nations'
+    all_nations.__columns.field = 'all_nations'
 
     all_nations['value1'] = np.select(
         [

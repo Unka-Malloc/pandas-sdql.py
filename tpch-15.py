@@ -50,14 +50,14 @@ if __name__ == '__main__':
     supplier = pd.read_table(rf'{data_path}/supplier.tbl', sep='|', index_col=False, header=None, names=pysdql.SUPPLIER_COLS)
 
     sub_l = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)]
-    sub_l.columns.field = 'sub_l'
+    sub_l.__columns.field = 'sub_l'
 
     sub_l['tmp_val'] = sub_l['l_extendedprice'] * (1 - sub_l['l_discount'])
 
     revenue0 = sub_l.groupby(['l_suppkey'], as_index=False).agg(total_revenue=('tmp_val', 'sum'))
     revenue0['supplier_no'] = revenue0['l_suppkey']
     revenue0 = revenue0[['supplier_no', 'total_revenue']]
-    revenue0.columns.field = 'revenue0'
+    revenue0.__columns.field = 'revenue0'
 
     max_revenue = revenue0['total_revenue'].max()
 
