@@ -103,9 +103,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
             return False
 
     if sdql_df.shape[0] == pandas_df.shape[0]:
-        print(f'Size Check Passed: {sdql_df.shape[0]} rows in total.')
+        print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
     else:
-        print('Mismatch Size')
+        print('Mismatch Shape!')
         return False
 
     for c in sdql_df.columns:

@@ -1,3 +1,4 @@
+import pprint
 import time
 
 import pysdql.query.tpch.Qsdql
@@ -10,7 +11,7 @@ sep_line = '#' * 75
 
 
 def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
-    done = [1, 3, 4, 6, 14, 15, 16]
+    done = [1, 3, 4, 6, 10, 14, 15, 16, 18, 19]
 
     if isinstance(qindex, int):
         if qindex not in done:
@@ -20,7 +21,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
         qindex = [qindex]
 
     if isinstance(qindex, list):
-        check_list = []
+        check_dict = {}
         for q in qindex:
             if q not in done:
                 print(f'Query {q} has not been verified.')
@@ -31,46 +32,68 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
             sdql_df = None
             pandas_df = None
 
+            print(f'>> SDQL <<')
+
             try:
-                print(f'>> SDQL <<')
-
                 sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
+            except Exception as msg:
+                check_dict[q] = 'Error'
 
-                sdql_df = sdql_to_df(sdql_result)
+                print_error_text(q)
 
-                print(sdql_result)
+                print(msg)
 
+                continue
+
+            sdql_df = sdql_to_df(sdql_result)
+
+            print(sdql_result)
+
+            print(f'>> Pandas <<')
+
+            try:
                 pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
+            except Exception as msg:
+                check_dict[q] = 'Error'
 
-                pandas_df = pandas_to_df(pandas_result)
+                print_error_text(q)
 
-                print(f'>> Pandas <<')
+                print(msg)
 
-                print(pandas_result)
-            except:
-                pass
+                continue
+
+            pandas_df = pandas_to_df(pandas_result)
+
+            print(pandas_result)
 
             if compare_dataframe(sdql_df, pandas_df):
-                check_list.append(True)
-                print_succ_text(q)
+                check_dict[q] = 'Pass'
+                print_pass_text(q)
             else:
-                check_list.append(False)
+                check_dict[q] = 'Fail'
                 print_fail_text(q)
         else:
-            return all(check_list)
+            pprint.pprint(check_dict)
+            print(sep_line)
+
+            for k in check_dict.keys():
+                if check_dict[k] != 'Pass':
+                    return False
+            else:
+                return True
     else:
         raise NotImplementedError
 
-def print_succ_text(q):
+def print_pass_text(q):
     print(sep_line)
     print(f'''
     {art_map[q]}
-    ███████╗██╗   ██╗ ██████╗ ██████╗███████╗███████╗███████╗
-    ██╔════╝██║   ██║██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝
-    ███████╗██║   ██║██║     ██║     █████╗  ███████╗███████╗
-    ╚════██║██║   ██║██║     ██║     ██╔══╝  ╚════██║╚════██║
-    ███████║╚██████╔╝╚██████╗╚██████╗███████╗███████║███████║
-    ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝                                             
+           ██████╗  █████╗ ███████╗███████╗
+           ██╔══██╗██╔══██╗██╔════╝██╔════╝
+           ██████╔╝███████║███████╗███████╗
+           ██╔═══╝ ██╔══██║╚════██║╚════██║
+           ██║     ██║  ██║███████║███████║
+           ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝                                                                  
     ''')
     print(sep_line)
 
@@ -79,15 +102,31 @@ def print_fail_text(q):
     print(sep_line)
     print(f'''
     {art_map[q]}
-       █████ ▄▄▄       ██▓  ██▓    █    ██  ██▀███   ▓█████
-     ▓██    ▒████▄   ▒▓██▒ ▓██▒    ██  ▓██▒▓██ ▒ ██▒ ▓█   ▀
-     ▒████  ▒██  ▀█▄ ▒▒██▒ ▒██░   ▓██  ▒██░▓██ ░▄█ ▒ ▒███  
-     ░▓█▒   ░██▄▄▄▄██░░██░ ▒██░   ▓▓█  ░██░▒██▀▀█▄   ▒▓█  ▄
-    ▒░▒█░   ▒▓█   ▓██░░██░▒░██████▒▒█████▓ ░██▓ ▒██▒▒░▒████
-    ░ ▒ ░   ░▒▒   ▓▒█ ░▓  ░░ ▒░▓  ░▒▓▒ ▒ ▒ ░ ▒▓ ░▒▓░░░░ ▒░ 
-    ░ ░     ░ ░   ▒▒ ░ ▒ ░░░ ░ ▒  ░░▒░ ░ ░   ░▒ ░ ▒ ░ ░ ░  
-      ░ ░     ░   ▒  ░ ▒ ░   ░ ░   ░░░ ░ ░   ░░   ░     ░  
-    ░             ░    ░  ░    ░     ░        ░     ░   ░  
+             █████▒ ▄▄▄       ██▓ ██▓    
+           ▓██   ▒ ▒████▄    ▓██▒▓██▒    
+           ▒████ ░ ▒██  ▀█▄  ▒██▒▒██░    
+           ░▓█▒  ░ ░██▄▄▄▄██ ░██░▒██░    
+           ░▒█░     ▓█   ▓██▒░██░░██████▒
+            ▒ ░     ▒▒   ▓▒█░░▓  ░ ▒░▓  ░
+            ░        ▒   ▒▒ ░ ▒ ░░ ░ ▒  ░
+            ░ ░      ░   ▒    ▒ ░  ░ ░   
+                         ░  ░ ░      ░  ░
+    ''')
+    print(sep_line)
+
+def print_error_text(q):
+    print(sep_line)
+    print(f'''
+    {art_map[q]}
+         ▓█████  ██▀███   ██▀███   ▒█████   ██▀███  
+         ▓█   ▀ ▓██ ▒ ██▒▓██ ▒ ██▒▒██▒  ██▒▓██ ▒ ██▒
+         ▒███   ▓██ ░▄█ ▒▓██ ░▄█ ▒▒██░  ██▒▓██ ░▄█ ▒
+         ▒▓█  ▄ ▒██▀▀█▄  ▒██▀▀█▄  ▒██   ██░▒██▀▀█▄  
+         ░▒████▒░██▓ ▒██▒░██▓ ▒██▒░ ████▓▒░░██▓ ▒██▒
+         ░░ ▒░ ░░ ▒▓ ░▒▓░░ ▒▓ ░▒▓░░ ▒░▒░▒░ ░ ▒▓ ░▒▓░
+          ░ ░  ░  ░▒ ░ ▒░  ░▒ ░ ▒░  ░ ▒ ▒░   ░▒ ░ ▒░
+            ░     ░░   ░   ░░   ░ ░ ░ ░ ▒    ░░   ░ 
+            ░  ░   ░        ░         ░ ░     ░                 
     ''')
     print(sep_line)
 

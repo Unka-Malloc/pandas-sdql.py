@@ -145,7 +145,7 @@ class JointFrame:
         probe_key = self.probe_frame.get_probe_key()
         probe_key_ir = probe_on.key_access(probe_key)
 
-        probe_cond = self.probe_frame.get_probe_cond()
+        probe_cond = self.probe_frame.retriever.find_cond()
         this_probe_col_proj = self.probe_frame.get_probe_col_proj()
 
         joint_cond = self.joint_cond
@@ -239,7 +239,7 @@ class JointFrame:
 
                 if probe_cond:
                     aggr_body = SDQLInspector.add_cond(sdql_obj=aggr_body,
-                                                       cond=probe_cond,
+                                                       cond=probe_cond.sdql_ir,
                                                        layer='outer')
 
                 aggr_sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
@@ -378,7 +378,7 @@ class JointFrame:
                             )
 
                             if probe_cond:
-                                joint_op = IfExpr(condExpr=probe_cond,
+                                joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                                   thenBodyExpr=joint_op,
                                                   elseBodyExpr=ConstantExpr(None))
 
@@ -520,7 +520,7 @@ class JointFrame:
                         probe_side_conds = root_probe_side.get_retriever().findall_cond()
                         if probe_side_conds:
                             for probe_cond in probe_side_conds:
-                                joint_op = IfExpr(condExpr=probe_cond,
+                                joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                                   thenBodyExpr=joint_op,
                                                   elseBodyExpr=ConstantExpr(None))
 
@@ -560,6 +560,7 @@ class JointFrame:
                         return joint_let
                 else:
                     # Q3
+                    # Q16
                     # Q18
                     if self.part_frame.retriever.was_probed:
                         groupby_aggr_info = self.retriever.find_groupby_aggr()
@@ -656,9 +657,15 @@ class JointFrame:
 
                         # probe condition: first outermost layer
                         if probe_cond:
-                            aggr_body = IfExpr(condExpr=probe_cond,
-                                               thenBodyExpr=aggr_body,
-                                               elseBodyExpr=ConstantExpr(None))
+                            cond_cols = self.retriever.find_cond_on(probe_cond, {True: tuple(aggr_dict.keys())})
+                            if cond_cols:
+                                if all(cond_cols):
+                                    # This is to drop the condition that is ONLY for the previous aggregation
+                                    pass
+                            else:
+                                aggr_body = IfExpr(condExpr=probe_cond.sdql_ir,
+                                                   thenBodyExpr=aggr_body,
+                                                   elseBodyExpr=ConstantExpr(None))
 
                         # joint condition: second outermost layer
                         if joint_cond:
@@ -1093,7 +1100,7 @@ class JointFrame:
                         )
 
                         if probe_cond:
-                            joint_op = IfExpr(condExpr=probe_cond,
+                            joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                               thenBodyExpr=joint_op,
                                               elseBodyExpr=ConstantExpr(None))
 
@@ -1129,10 +1136,8 @@ class JointFrame:
 
                 rec = RecConsExpr(rec_list)
 
-                probe_cond = self.probe_frame.get_probe_cond()
-
                 if probe_cond:
-                    rec = IfExpr(condExpr=probe_cond,
+                    rec = IfExpr(condExpr=probe_cond.sdql_ir,
                                  thenBodyExpr=rec,
                                  elseBodyExpr=ConstantExpr(None))
 
@@ -1252,22 +1257,19 @@ class JointFrame:
                                               thenBodyExpr=joint_op,
                                               elseBodyExpr=ConstantExpr(None))
 
-                    for this_part_side in all_part_sides:
-                        this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
-                        joint_op = IfExpr(
-                            condExpr=CompareExpr(CompareSymbol.NE,
-                                                 DicLookupExpr(dicExpr=this_part_side.get_var_part(),
-                                                               keyExpr=root_probe_side.key_access(
-                                                                   this_probe_key)),
-                                                 ConstantExpr(None)),
-                            thenBodyExpr=joint_op,
-                            elseBodyExpr=ConstantExpr(None)
-                        )
+                    joint_op = IfExpr(
+                        condExpr=CompareExpr(CompareSymbol.NE,
+                                             DicLookupExpr(dicExpr=root_part_side.get_var_part(),
+                                                           keyExpr=root_probe_side.key_access(
+                                                               root_probe_key)),
+                                             ConstantExpr(None)),
+                        thenBodyExpr=joint_op,
+                        elseBodyExpr=ConstantExpr(None))
 
                     probe_side_conds = root_probe_side.retriever.findall_cond()
                     if probe_side_conds:
                         for probe_cond in probe_side_conds:
-                            joint_op = IfExpr(condExpr=probe_cond,
+                            joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                               thenBodyExpr=joint_op,
                                               elseBodyExpr=ConstantExpr(None))
 
@@ -1385,7 +1387,7 @@ class JointFrame:
                                       elseBodyExpr=ConstantExpr(None))
 
                     if probe_cond:
-                        joint_op = IfExpr(condExpr=probe_cond,
+                        joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                           thenBodyExpr=joint_op,
                                           elseBodyExpr=ConstantExpr(None))
 
@@ -1459,7 +1461,7 @@ class JointFrame:
             if probe_cond:
                 last_cond = self.probe_frame.get_cond_after_groupby_agg()
                 if not last_cond:
-                    joint_groupby_aggr_op = IfExpr(condExpr=probe_cond,
+                    joint_groupby_aggr_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                                    thenBodyExpr=joint_groupby_aggr_op,
                                                    elseBodyExpr=ConstantExpr(None))
 
@@ -1525,7 +1527,7 @@ class JointFrame:
                                        elseBodyExpr=ConstantExpr(None))
 
             if probe_cond:
-                joint_aggr_op = IfExpr(condExpr=probe_cond,
+                joint_aggr_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                        thenBodyExpr=joint_aggr_op,
                                        elseBodyExpr=ConstantExpr(None))
 
@@ -1665,7 +1667,7 @@ class JointFrame:
                                       )]),
                                       elseBodyExpr=ConstantExpr(None))
                 if probe_cond:
-                    joint_op = IfExpr(condExpr=probe_cond,
+                    joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=ConstantExpr(None))
 
@@ -1712,7 +1714,7 @@ class JointFrame:
                                       )]),
                                       elseBodyExpr=ConstantExpr(None))
                 if probe_cond:
-                    joint_op = IfExpr(condExpr=probe_cond,
+                    joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=ConstantExpr(None))
 
@@ -1902,9 +1904,8 @@ class JointFrame:
                         rec_list.append((i, self.col_ins[i]))
                 rec = RecConsExpr(rec_list)
 
-                joint_cond = self.probe_frame.get_probe_cond()
-                if joint_cond:
-                    rec = IfExpr(condExpr=joint_cond,
+                if probe_cond:
+                    rec = IfExpr(condExpr=probe_cond.sdql_ir,
                                  thenBodyExpr=rec,
                                  elseBodyExpr=ConstantExpr(None))
 

@@ -3,7 +3,11 @@ import pandas as pd
 from pysdql.query.tpch.const import DATAPATH, LINEITEM_COLS
 
 if __name__ == '__main__':
-    test_all = pysdql.tpch_query([1, 3, 4, 6, 14, 15, 16, 18], 0, 1)
+    test_all = pysdql.tpch_query([1, 3, 4, 6, 10, 14, 15, 16, 18, 19], 0, 1)
+
+    # test_some = pysdql.tpch_query([3, 18])
+
+    # test_one = pysdql.tpch_query(10)
 
     # old_lines = []
     #

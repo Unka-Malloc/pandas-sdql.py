@@ -7,28 +7,18 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, cu, ord):
 
     # Insert
-
-    li_groupby_agg = li.sum(lambda x_li: ({x_li[0].l_orderkey: x_li[0].l_quantity}) if (True) else (None))
-
-    li_having = li_groupby_agg.sum(
-        lambda x_li_groupby_agg: ({x_li_groupby_agg[0]: True}) if (x_li_groupby_agg[1] > 300) else (None))
-
-    cu_part = cu.sum(lambda x_cu: {x_cu[0].c_custkey: record({"c_name": x_cu[0].c_name})})
-
-    cu_ord = ord.sum(lambda x_ord: ((({x_ord[0].o_orderkey: record(
-        {"c_name": cu_part[x_ord[0].o_custkey].c_name, "o_custkey": x_ord[0].o_custkey,
-         "o_orderdate": x_ord[0].o_orderdate, "o_totalprice": x_ord[0].o_totalprice})}) if (
-            cu_part[x_ord[0].o_custkey] != None) else (None)) if (True) else (None)) if (
-            li_having[x_ord[0].o_orderkey] != None) else (None))
-
-    cu_ord_li = li.sum(lambda x_li: ({record(
-        {"c_name": cu_ord[x_li[0].l_orderkey].c_name, "o_custkey": cu_ord[x_li[0].l_orderkey].o_custkey,
-         "o_orderkey": x_li[0].l_orderkey, "o_orderdate": cu_ord[x_li[0].l_orderkey].o_orderdate,
-         "o_totalprice": cu_ord[x_li[0].l_orderkey].o_totalprice}): record({"sum_quantity": x_li[0].l_quantity})}) if (
-            cu_ord[x_li[0].l_orderkey] != None) else (None))
-
-    results = cu_ord_li.sum(lambda x_cu_ord_li: {x_cu_ord_li[0].concat(x_cu_ord_li[1]): True})
-
-    # Insert
+    customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
+    
+    lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+    
+    lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 200) else (None))
+    
+    customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None)) if (customer_part[x_orders[0].o_custkey] != None) else (None))
+    
+    lineitem_aggr = li.sum(lambda x_lineitem: ({record({"c_name": customer_orders[x_lineitem[0].l_orderkey].c_name, "c_custkey": customer_orders[x_lineitem[0].l_orderkey].c_custkey, "o_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": customer_orders[x_lineitem[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_lineitem[0].l_orderkey].o_totalprice}): x_lineitem[0].l_quantity}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+    
+    results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey, "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
+    
+    # Complete
 
     return results
