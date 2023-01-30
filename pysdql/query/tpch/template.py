@@ -53,6 +53,32 @@ def tpch_q4(orders, lineitem):
     return results
 
 
+def tpch_q5(lineitem, customer, orders, region, nation, supplier):
+    # var1 = "ASIA"
+    var1 = "MIDDLE EAST"
+
+    re_filt = region[region['r_name'] == var1]
+
+    re_na_join = re_filt.merge(right=nation, left_on='r_regionkey', right_on='n_regionkey')
+
+    na_cu_join = re_na_join.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
+
+    ord_filt = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] < '1996-01-01')]
+    cu_ord_join = na_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
+
+    ord_li_join = cu_ord_join.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
+
+    su_ord_li_join = supplier.merge(right=ord_li_join,
+                                    left_on=['s_suppkey', 's_nationkey'],
+                                    right_on=['l_suppkey', 'c_nationkey'])
+
+    su_ord_li_join['revenue'] = su_ord_li_join['l_extendedprice'] * (1 - su_ord_li_join['l_discount'])
+
+    result = su_ord_li_join.groupby(['n_name'], as_index=False).agg(revenue=('revenue', 'sum'))
+
+    return result
+
+
 def tpch_q6(lineitem):
     var1 = 4
     var2 = 0.06
@@ -71,6 +97,7 @@ def tpch_q6(lineitem):
     result = li_filt.agg({'revenue': 'sum'})
 
     return result
+
 
 def tpch_q10(customer, orders, lineitem, nation):
     ord_filt = orders[(orders['o_orderdate'] >= "1993-10-01") & (orders['o_orderdate'] < "1994-01-01")]
@@ -194,6 +221,7 @@ def tpch_q18(lineitem, customer, orders):
         .agg(sum_quantity=("l_quantity", "sum"))
 
     return result
+
 
 def tpch_q19(lineitem, part):
     pa_filt = part[

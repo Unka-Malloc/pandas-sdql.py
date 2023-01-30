@@ -350,13 +350,14 @@ class JointFrame:
                             lookup_keys = []
 
                             for i in self.probe_frame.probe_key:
-                                if i in prev_probe_side.columns:
-                                    lookup_keys.append((i, prev_probe_side.key_access(i)))
                                 if i in prev_part_side.columns:
                                     lookup_keys.append((i, RecAccessExpr(DicLookupExpr(dicExpr=prev_part_frame.part_var,
                                                                                        keyExpr=prev_probe_side.key_access(
-                                                                                           i)),
+                                                                                           prev_probe_frame.probe_key)),
                                                                          i)))
+                                elif i in prev_probe_side.columns:
+                                    lookup_keys.append((i, prev_probe_side.key_access(i)))
+
 
                             joint_op = IfExpr(
                                 condExpr=CompareExpr(CompareSymbol.NE,
@@ -406,8 +407,8 @@ class JointFrame:
                                                                         ConstantExpr(True))]),
                                                  isAssignmentSum=True)
 
-                            var_res = VarExpr('out')
-                            self.joint.add_context_variable('out', var_res)
+                            var_res = VarExpr('results')
+                            self.joint.add_context_variable('results', var_res)
 
                             out = LetExpr(var_res, sum_concat, ConstantExpr(True))
 
