@@ -347,6 +347,10 @@ class ColEl(SDQLIR):
 
         if type(vals) == ColEl:
             isin_expr = IsInExpr(col_probe=self, col_part=vals)
+
+            for k in vals.relation.context_constant:
+                self.add_const(k)
+
             self.relation.push(OpExpr(op_obj=isin_expr,
                                       op_on=self.R,
                                       op_iter=True,

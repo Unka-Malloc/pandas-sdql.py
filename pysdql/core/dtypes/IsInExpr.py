@@ -115,7 +115,7 @@ class IsInExpr(IgnoreExpr):
                                 elseBodyExpr=ConstantExpr(None))
 
             sum_expr = SumExpr(varExpr=self.part_on.iter_el.el,
-                               dictExpr=part_var,
+                               dictExpr=self.part_on.var_expr,
                                bodyExpr=sum_op,
                                isAssignmentSum=True)
 

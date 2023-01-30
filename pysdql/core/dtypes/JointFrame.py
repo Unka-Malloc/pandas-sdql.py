@@ -1014,14 +1014,20 @@ class JointFrame:
 
                                         if cond_after_aggr:
                                             cond_after_aggr = cond_after_aggr.replace(
-                                                rec=PairAccessExpr(var_x_aggr, 0),
-                                                inplace=True)
+                                                rec=None,
+                                                inplace=True,
+                                                mapper={list(aggr_dict.keys())[0]: PairAccessExpr(var_x_aggr, 1)})
 
                                             aggr_body = IfExpr(condExpr=cond_after_aggr,
                                                                thenBodyExpr=aggr_body,
                                                                elseBodyExpr=ConstantExpr(None))
 
-                                        aggr_body = IfExpr(condExpr=self.part_nonull(),
+                                        aggr_body = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                                                DicLookupExpr(
+                                                                                    dicExpr=self.part_frame.part_var,
+                                                                                    keyExpr=PairAccessExpr(var_x_aggr,
+                                                                                                           0)),
+                                                                                ConstantExpr(None)),
                                                            thenBodyExpr=aggr_body,
                                                            elseBodyExpr=ConstantExpr(None))
 

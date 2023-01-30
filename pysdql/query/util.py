@@ -49,8 +49,6 @@ def sdql_to_df(sdql_obj):
 
         if len(container.keys()) == 0:
             raise NotImplementedError
-        elif len(container.keys()) == 1:
-            raise NotImplementedError
         else:
             res_list = []
             for k in container.keys():
@@ -60,7 +58,10 @@ def sdql_to_df(sdql_obj):
                 return pandas.DataFrame(concat_pydict(res_list))
     elif isinstance(sdql_obj, float):
         return pandas.DataFrame({'result': [sdql_obj]})
+    elif sdql_obj is None:
+        return pandas.DataFrame({'result': [sdql_obj]})
     else:
+        print(type(sdql_obj))
         raise NotImplementedError
 
 
@@ -89,13 +90,28 @@ def concat_pydict(res_list: List[dict]):
 
 
 def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
-    if sdql_df.shape[0] != pandas_df.shape[0]:
+    if sdql_df is None:
+        if pandas_df is None:
+            print('SDQL and Pandas results are both None!')
+            return True
+        else:
+            print('Pandas result exists but SDQL result is None')
+            return False
+    else:
+        if pandas_df is None:
+            print('SDQL result exists but Pandas result is None')
+            return False
+
+    if sdql_df.shape[0] == pandas_df.shape[0]:
+        print(f'Size Check Passed: {sdql_df.shape[0]} rows in total.')
+    else:
+        print('Mismatch Size')
         return False
 
     for c in sdql_df.columns:
         if sdql_df[c].dtype == np.float64:
-            sdql_df[c] = sdql_df[c].round(2)
-            pandas_df[c] = pandas_df[c].round(2)
+            sdql_df[c] = sdql_df[c].astype(int)
+            pandas_df[c] = pandas_df[c].astype(int)
 
     for c in pandas_df.columns:
         if pandas_df[c].dtype == object:
@@ -103,16 +119,20 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
                 pandas_df[c] = pandas_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for xi, xrow in sdql_df.iterrows():
-        found_row = False
-        for yi, yrow in pandas_df.iterrows():
-            if xrow.isin(yrow).all():
-                found_row = True
-                continue
-        else:
-            if not found_row:
-                print('Not Found')
-                print(xrow.to_dict())
-                print(pandas_df)
+
+        answer_df = pandas_df
+
+        for k in xrow.keys():
+            subset_df = answer_df[answer_df[k] == xrow[k]]
+            if subset_df.empty:
+                print(f'Not found {xrow.to_dict()}')
+                print(f'While looking for {k} == {xrow[k]}')
+                print(f'The answer is as following:')
+                print(answer_df)
                 return False
+            else:
+                answer_df = subset_df
+        else:
+            return True
     else:
         return True
