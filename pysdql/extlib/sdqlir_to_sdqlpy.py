@@ -163,6 +163,10 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += ", "
             code += GenerateSDQLPYCode(AST.inp2, cache)
             code += ")"
+        elif AST.symbol == ExtFuncSymbol.ExtractYear:
+            code += "extractYear("
+            code += GenerateSDQLPYCode(AST.inp1, cache)
+            code += ")"
         else:
             print("Error: ExtFunc not defined!")
         return code

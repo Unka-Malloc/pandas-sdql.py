@@ -358,7 +358,6 @@ class JointFrame:
                                 elif i in prev_probe_side.columns:
                                     lookup_keys.append((i, prev_probe_side.key_access(i)))
 
-
                             joint_op = IfExpr(
                                 condExpr=CompareExpr(CompareSymbol.NE,
                                                      DicLookupExpr(dicExpr=self.part_frame.part_var,
@@ -493,9 +492,12 @@ class JointFrame:
                                     for this_part_side in all_part_sides:
                                         if c in this_part_side.columns:
                                             this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
-                                            cond_replace_mapper[c] = DicLookupExpr(
-                                                dicExpr=this_part_side.get_var_part(),
-                                                keyExpr=root_probe_side.key_access(this_probe_key))
+                                            cond_replace_mapper[c] = RecAccessExpr(
+                                                recExpr=DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                      keyExpr=root_probe_side.key_access(
+                                                                          this_probe_key)),
+                                                fieldName=c
+                                            )
 
                                 joint_op = IfExpr(condExpr=self.retriever.replace_cond(cond=joint_cond,
                                                                                        mapper=cond_replace_mapper).sdql_ir,
@@ -549,8 +551,8 @@ class JointFrame:
                                                                     ConstantExpr(True))]),
                                              isAssignmentSum=True)
 
-                        var_res = VarExpr('out')
-                        self.joint.add_context_variable('out', var_res)
+                        var_res = VarExpr('results')
+                        self.joint.add_context_variable('results', var_res)
 
                         out = LetExpr(var_res, sum_concat, ConstantExpr(True))
 
@@ -1287,7 +1289,9 @@ class JointFrame:
 
                 # probe side is not joint
                 else:
+                    # Q7
                     # Q18
+
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
 
@@ -1334,7 +1338,7 @@ class JointFrame:
 
                         elif i in self.retriever.find_renamed_cols(mode='as_val'):
                             dict_val_list.append((i,
-                                                  probe_on.key_access(
+                                                  self.part_lookup(
                                                       self.retriever.find_col_rename(col_name=i,
                                                                                      by='val'))))
 

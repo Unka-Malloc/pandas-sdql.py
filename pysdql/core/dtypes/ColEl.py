@@ -1,19 +1,13 @@
-import re
-from datetime import datetime
-
+from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.SDQLIR import SDQLIR
-from pysdql.core.dtypes.IterStmt import IterStmt
-from pysdql.core.dtypes.RecEl import RecEl
-from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
-from pysdql.core.dtypes.CondStmt import CondStmt
 
 from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol,
@@ -77,18 +71,15 @@ class ColEl(SDQLIR):
 
     @property
     def year(self):
-        return ExternalExpr(col=self,
-                            ext_func='Year')
+        return ExternalExpr(col=self, ext_func=ExtFuncSymbol.ExtractYear)
 
     @property
     def month(self):
-        return ExternalExpr(col=self,
-                            ext_func='Month')
+        raise NotImplementedError
 
     @property
     def day(self):
-        return ExternalExpr(col=self,
-                            ext_func='Day')
+        raise NotImplementedError
 
     def new_expr(self, new_str) -> str:
         if self.isvar:
