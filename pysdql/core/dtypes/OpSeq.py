@@ -10,7 +10,7 @@ class OpSeq:
         self.stack.pop()
 
     def push(self, val):
-        if type(val) == OpExpr:
+        if isinstance(val, OpExpr):
             self.stack.append(val)
             self.names.append(val.name)
         else:
@@ -30,7 +30,6 @@ class OpSeq:
         expr_str = ''
         if len(self.stack) >= 1:
             expr_str = f'\n'.join([f'{i}' for i in self.stack])
-            expr_str += f'\n{self.peak().name}'
         return expr_str
 
     def __str__(self):
@@ -41,6 +40,9 @@ class OpSeq:
 
     def __iter__(self):
         return iter(self.stack)
+
+    def __reversed__(self):
+        return reversed(self.stack)
 
 
 

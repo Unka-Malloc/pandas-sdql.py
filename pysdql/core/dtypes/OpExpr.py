@@ -1,23 +1,26 @@
 class OpExpr:
     def __init__(self, op_obj, op_on, op_iter: bool, iter_on=None, ret_type=None):
-        # self.op_info = op_info
-        # self.op_obj = op_obj
-
-        # self.data = (self.op_info, self.op_obj)
-
+        self.__info_op = op_obj
+        self.__info_on = op_on
         self.__info_iter = op_iter
         self.__info_iter_on = iter_on
-        self.__info_op = op_obj
-        self.__info_op_type = type(op_obj)
-        self.__info_on = op_on
-        self.__info_ret_type = None
+        self.__info_ret_type = ret_type
+
+    def get_op_info(self):
+        return self.info
 
     def get_op_name_suffix(self):
         return self.op.op_name_suffix
 
     def get_op_name(self) -> str:
-        op_name = f'{self.op_on.name}'
-        op_name += self.op.op_name_suffix
+        if isinstance(self.op_on, list):
+            op_name = ''
+            for df in self.op_on:
+                op_name += f'{df.name}'
+                op_name += self.op.op_name_suffix
+        else:
+            op_name = f'{self.op_on.name}'
+            op_name += self.op.op_name_suffix
 
         return op_name
 
@@ -33,12 +36,6 @@ class OpExpr:
         # enum([None, 'scalar', 'dict', 'record', 'groupby_dict'])
         return self.__info_iter
 
-    @iter.setter
-    def iter(self, val):
-        if val not in (True, False):
-            raise ValueError()
-        self.__info_iter = val
-
     @property
     def iter_on(self):
         return self.__info_iter_on
@@ -47,44 +44,28 @@ class OpExpr:
     def op(self):
         return self.__info_op
 
-    @op.setter
-    def op(self, val):
-        self.__info_op = val
-
     @property
     def op_type(self):
         # enum([CondExpr, ])
-        return self.__info_op_type
-
-    @op_type.setter
-    def op_type(self, val):
-        self.__info_op_type = val
+        return type(self.op)
 
     @property
     def op_on(self):
         # enum([None, DataFrame(), ColEl(), ColExpr()])
         return self.__info_on
 
-    @op_on.setter
-    def op_on(self, val):
-        self.__info_on = val
-
     @property
     def ret_type(self):
         return self.__info_ret_type
-
-    @ret_type.setter
-    def ret_type(self, val):
-        self.__info_ret_type = val
 
     @property
     def info(self):
         return {
             'iter': self.iter,
-            'op': self.op,
             'op_type': self.op_type,
-            'on': self.op_on,
+            'op_on': self.op_on,
             'ret_type': self.ret_type,
+            'op': self.op
         }
 
     # @property
@@ -149,7 +130,7 @@ class OpExpr:
     #     return f'{self.op_obj}'
 
     def __repr__(self):
-        return str(self.info)
+        return repr(self.info)
     #
     # def __hash__(self):
     #     return hash((self.op_info, self.op_obj))

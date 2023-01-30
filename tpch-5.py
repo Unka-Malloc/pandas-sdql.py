@@ -50,10 +50,10 @@ if __name__ == '__main__':
     region = pd.read_table(rf'{data_path}/region.tbl', sep='|', index_col=False, header=None, names=pysdql.REGION_COLS)
 
     sub_r = region[region['r_name'] == var1]
-    sub_r.columns.field = 'sub_r'
+    sub_r.__columns.field = 'sub_r'
 
     sub_o = orders[(orders['o_orderdate'] >= var2) & (orders['o_orderdate'] < var3)]
-    sub_o.columns.field = 'sub_o'
+    sub_o.__columns.field = 'sub_o'
 
     r = sub_r.merge(right=nation, left_on='r_regionkey', right_on='n_regionkey')
     r = r.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
