@@ -8,6 +8,8 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
 # Path/should/be/like/this
 # Not/like/this/
 
+# DATAPATH should contain all 8 tbl files
+
 DATAPATH = r'T:/tpch_dataset/1M'
 
 LINEITEM_COLS = ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
