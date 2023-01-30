@@ -6,11 +6,11 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 @sdql_compile({"ps": PARTSUPP_TYPE, "pa": PART_TYPE, "su": SUPPLIER_TYPE})
 def query(ps, pa, su):
     # Insert
-    brand45 = "Brand#45"
-    mediumpolished = "MEDIUM POLISHED"
+    brand13 = "Brand#13"
+    smallbrushed = "SMALL BRUSHED"
     customer = "Customer"
     complaints = "Complaints"
-    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand, "p_type": x_part[0].p_type, "p_size": x_part[0].p_size})}) if (((((x_part[0].p_brand != brand45) * (startsWith(x_part[0].p_type, mediumpolished) == False))) * (((((((((((((((x_part[0].p_size == 9) + (x_part[0].p_size == 36))) + (x_part[0].p_size == 49))) + (x_part[0].p_size == 14))) + (x_part[0].p_size == 23))) + (x_part[0].p_size == 45))) + (x_part[0].p_size == 19))) + (x_part[0].p_size == 3))))) else (None))
+    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand, "p_type": x_part[0].p_type, "p_size": x_part[0].p_size})}) if (((((x_part[0].p_brand != brand13) * (startsWith(x_part[0].p_type, smallbrushed) == False))) * (((((((((((((((x_part[0].p_size == 13) + (x_part[0].p_size == 17))) + (x_part[0].p_size == 30))) + (x_part[0].p_size == 2))) + (x_part[0].p_size == 18))) + (x_part[0].p_size == 20))) + (x_part[0].p_size == 31))) + (x_part[0].p_size == 8))))) else (None))
     
     supplier_part = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: True}) if (((firstIndex(x_supplier[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x_supplier[0].s_comment, complaints) > ((firstIndex(x_supplier[0].s_comment, customer)) + (7))))) else (None))
     

@@ -168,9 +168,14 @@ def tpch_q15(lineitem, supplier):
 
 def tpch_q16(partsupp, part, supplier):
     # 1G
-    var1 = "Brand#45"
-    var2 = "MEDIUM POLISHED"
-    var3 = (49, 14, 23, 45, 19, 3, 36, 9)
+    # var1 = "Brand#45"
+    # var2 = "MEDIUM POLISHED"
+    # var3 = (49, 14, 23, 45, 19, 3, 36, 9)
+
+    # 1M
+    var1 = "Brand#13"
+    var2 = "SMALL BRUSHED"
+    var3 = (30, 2, 18, 20, 31, 8, 17, 13)
 
     pa_filt = part[
         (part.p_brand != var1) &
