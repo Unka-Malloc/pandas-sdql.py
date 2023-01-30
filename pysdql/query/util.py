@@ -89,7 +89,7 @@ def concat_pydict(res_list: List[dict]):
     return res_dict
 
 
-def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
+def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, verbose=False):
     if sdql_df is None:
         if pandas_df is None:
             print('SDQL and Pandas results are both None!')
@@ -103,7 +103,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame):
             return False
 
     if sdql_df.shape[0] == pandas_df.shape[0]:
-        print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
+        if verbose:
+            print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
+
     else:
         print('Mismatch Shape!')
         return False

@@ -7,10 +7,10 @@ import pysdql.query.tpch.Qpandas
 
 from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
-sep_line = '#' * 75
+sep_line = '#' * 60
 
 
-def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
+def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> bool:
     done = [1, 3, 4, 6, 10, 14, 15, 16, 18, 19]
 
     if isinstance(qindex, int):
@@ -32,14 +32,20 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
             sdql_df = None
             pandas_df = None
 
-            print(f'>> SDQL <<')
+            if verbose:
+                print(f'>> SDQL <<')
 
             try:
+                print('SDQL Running...')
+
                 sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
             except Exception as msg:
                 check_dict[q] = 'Error'
 
-                print_error_text(q)
+                if verbose:
+                    print_error_text(q)
+                else:
+                    print(f'Query {q}: Error')
 
                 print(msg)
 
@@ -47,16 +53,22 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
 
             sdql_df = sdql_to_df(sdql_result)
 
-            print(sdql_result)
+            if verbose:
+                print(sdql_result)
 
-            print(f'>> Pandas <<')
+                print(f'>> Pandas <<')
 
             try:
+                print('Pandas Running...')
+
                 pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
             except Exception as msg:
                 check_dict[q] = 'Error'
 
-                print_error_text(q)
+                if verbose:
+                    print_error_text(q)
+                else:
+                    print(f'Query {q}: Error')
 
                 print(msg)
 
@@ -64,14 +76,21 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1) -> bool:
 
             pandas_df = pandas_to_df(pandas_result)
 
-            print(pandas_result)
+            if verbose:
+                print(pandas_result)
 
-            if compare_dataframe(sdql_df, pandas_df):
+            if compare_dataframe(sdql_df, pandas_df, verbose):
                 check_dict[q] = 'Pass'
-                print_pass_text(q)
+                if verbose:
+                    print_pass_text(q)
+                else:
+                    print(f'Query {q}: Pass')
             else:
                 check_dict[q] = 'Fail'
-                print_fail_text(q)
+                if verbose:
+                    print_fail_text(q)
+                else:
+                    print(f'Query {q}: Fail')
         else:
             pprint.pprint(check_dict)
             print(sep_line)
