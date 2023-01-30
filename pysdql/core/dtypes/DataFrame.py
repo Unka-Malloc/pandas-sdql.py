@@ -1,10 +1,7 @@
-import ast
-import base64
 import inspect
 import re
 import string
 
-import pysdql.const
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
@@ -12,20 +9,14 @@ from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.IterEl import IterEl
-from pysdql.core.dtypes.IterStmt import IterStmt
-# from pysdql.core.dtypes.ConcatExpr import ConcatExpr
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColEl import ColEl
 from pysdql.core.dtypes.ColExpr import ColExpr
-from pysdql.core.dtypes.DataFrameColumns import DataFrameColumns
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
-from pysdql.core.dtypes.IterExpr import IterExpr
-from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.NonNullExpr import NonNullExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
-from pysdql.core.dtypes.OptStmt import OptStmt
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
@@ -33,7 +24,6 @@ from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.OpSeq import OpSeq
 from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
-from pysdql.core.dtypes.SemiRing import SemiRing
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
@@ -272,27 +262,34 @@ class DataFrame(SemiRing, Retrivable):
             4. merge
         :return:
         """
-        cols = []
+        tmp_cols = []
 
-        for op_expr in reversed(self.operations):
+        rename_cols = {}
+
+        for op_expr in self.operations:
             op_body = op_expr.op
 
-            if isinstance(op_body, ColProjExpr):
-                return op_body.proj_cols
-            if isinstance(op_body, AggrExpr):
-                return list(op_body.aggr_op.keys())
-            if isinstance(op_body, GroupbyAggrExpr):
-                return op_body.groupby_cols + list(op_body.aggr_dict.keys())
-            if isinstance(op_body, MergeExpr):
-                if self.name == op_body.joint.name:
-                    return op_body.left.cols_out + op_body.right.cols_out
             if isinstance(op_body, NewColOpExpr):
-                if not cols:
-                    cols += self.cols_in
-                cols.append(op_body.col_var)
+                tmp_cols.append(op_body.col_var)
+            elif isinstance(op_body, OldColOpExpr):
+                if isinstance(op_body.col_expr, str):
+                    rename_cols[op_body.col_var] = op_body.col_expr
+                else:
+                    raise NotImplementedError
+            elif isinstance(op_body, ColProjExpr):
+                tmp_cols = op_body.proj_cols
+            elif isinstance(op_body, AggrExpr):
+                tmp_cols = list(op_body.aggr_op.keys())
+            elif isinstance(op_body, GroupbyAggrExpr):
+                tmp_cols = op_body.groupby_cols + list(op_body.aggr_dict.keys())
+            elif isinstance(op_body, MergeExpr):
+                if self.name == op_body.joint.name:
+                    tmp_cols = op_body.left.cols_out + op_body.right.cols_out
         else:
-            if cols:
-                return cols
+            if tmp_cols:
+                for k in rename_cols.keys():
+                    tmp_cols[tmp_cols.index(k)] = rename_cols[k]
+                return tmp_cols
             else:
                 return self.cols_in
 
@@ -521,13 +518,13 @@ class DataFrame(SemiRing, Retrivable):
         """
         if col_name in self.columns:
             return ColEl(self, col_name)
-        if col_name in self.retriever.find_cols_used(mode='insert'):
+        elif col_name in self.retriever.find_cols_used(mode='insert'):
             return ColEl(self, col_name)
-        if self.retriever.was_aggregated:
+        elif self.retriever.was_aggregated:
             if col_name in self.retriever.find_cols_used(mode='aggregation'):
                 return ColEl(self, col_name)
         else:
-            raise IndexError(f'Cannot find column "{col_name}" in {self.columns}')
+            raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
 
     def __setitem__(self, key, value):
         if key in self.columns:

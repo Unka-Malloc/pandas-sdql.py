@@ -8,6 +8,8 @@ Easy query, hard inference.
 # Q7
 Columns renaming and multi hash join.
 
+ExtFunc not defined.
+
 # Q8
 Not allowed: Use ConstantExpr(True) as value if empty.
 ```
@@ -85,3 +87,7 @@ Done
 as_part_for_next_join -> probe side is not joint
 
 Done
+
+# Q7
+
+Error: ExtFunc not defined for ExtractYear

@@ -8,4 +8,6 @@ class ExtDatetime:
 
     @property
     def year(self):
-        return ExternalExpr(col=self.col, ext_func=ExtFuncSymbol.ExtractYear, )
+        return ExternalExpr(col=self.col, ext_func=ExtFuncSymbol.ExtractYear)
+
+
