@@ -185,13 +185,89 @@ class GroupbyAggrFrame:
         else:
             return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
 
-    def get_groupby_aggr_expr(self, next_op) -> LetExpr:
-        let_expr = self.sdql_ir
+    def get_groupby_aggr_expr(self, next_op, as_part=False) -> LetExpr:
+        if as_part:
+            groupby_aggr_info = self.retriever.find_groupby_aggr()
+
+            aggr_dict = groupby_aggr_info.aggr_dict
+            groupby_cols = groupby_aggr_info.groupby_cols
+
+            cond = self.retriever.find_cond_before(GroupbyAggrExpr)
+            col_ins = self.retriever.find_col_ins_before(GroupbyAggrExpr)
+            isin_expr = self.retriever.find_isin_before(GroupbyAggrExpr)
+
+            if len(groupby_cols) == 0:
+                raise ValueError()
+            elif len(groupby_cols) == 1:
+                dict_key_ir = self.aggr_on.key_access(groupby_cols[0])
+            else:
+                key_tuples = []
+
+                for c in groupby_cols:
+                    key_tuples.append((c, self.aggr_on.key_access(c)))
+
+                dict_key_ir = RecConsExpr(key_tuples)
+
+            if len(aggr_dict.keys()) == 0:
+                raise ValueError()
+            else:
+                '''
+                Aggregation as a single record
+                Then format to a singleton dictionary
+                '''
+                val_tuples = []
+                for k in aggr_dict.keys():
+                    v = aggr_dict[k]
+
+                    if isinstance(v, RecAccessExpr):
+                        # (, 'sum')
+                        v_name = v.name
+
+                        if v_name in self.aggr_on.columns:
+                            val_tuples.append((k, self.aggr_on.key_access(v_name)))
+                        else:
+                            if v_name in col_ins.keys():
+                                val_tuples.append((k,
+                                                   col_ins[v_name].replace(self.aggr_on.iter_el.key)))
+                            else:
+                                raise IndexError(f'Cannot find column {v_name} in {self.aggr_on.columns}')
+                    elif isinstance(v, ConstantExpr):
+                        # (, 'count')
+                        val_tuples.append((k, v))
+                    else:
+                        raise NotImplementedError
+
+                aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
+
+            if cond:
+                aggr_body = IfExpr(condExpr=cond.sdql_ir,
+                                   thenBodyExpr=aggr_body,
+                                   elseBodyExpr=ConstantExpr(None))
+
+            if isin_expr:
+                aggr_body = SDQLInspector.add_cond(aggr_body,
+                                                   isin_expr.get_as_cond(),
+                                                   'inner')
+
+            aggr_sum_expr = SumExpr(varExpr=self.aggr_on.iter_el.sdql_ir,
+                                    dictExpr=self.aggr_on.var_expr,
+                                    bodyExpr=aggr_body,
+                                    isAssignmentSum=False)
+
+            self.aggr_on.add_context_variable(self.vname_aggr,
+                                              self.var_aggr)
+
+            aggr_let_expr = LetExpr(varExpr=self.var_aggr,
+                                    valExpr=aggr_sum_expr,
+                                    bodyExpr=ConstantExpr(True))
+        else:
+            aggr_let_expr = self.sdql_ir
+
         if next_op:
-            return LetExpr(varExpr=let_expr.varExpr,
-                           valExpr=let_expr.valExpr,
+            return LetExpr(varExpr=aggr_let_expr.varExpr,
+                           valExpr=aggr_let_expr.valExpr,
                            bodyExpr=next_op)
         else:
-            return LetExpr(varExpr=let_expr.varExpr,
-                           valExpr=let_expr.valExpr,
+            return LetExpr(varExpr=aggr_let_expr.varExpr,
+                           valExpr=aggr_let_expr.valExpr,
                            bodyExpr=ConstantExpr(True))

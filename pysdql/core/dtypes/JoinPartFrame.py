@@ -90,7 +90,7 @@ class JoinPartFrame:
         col_proj = self.retriever.find_col_proj()
 
         if col_proj:
-            col_proj = [col for col in col_proj.proj_cols if self.group_key != col]
+            col_proj = col_proj.proj_cols
 
             if len(col_proj) == 0:
                 return ConstantExpr(True)
