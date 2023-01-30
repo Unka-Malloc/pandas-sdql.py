@@ -14,17 +14,6 @@ from pysdql.core.util.data_str import (
 
 from pysdql.core.util.type_checker import is_header
 
-from pysdql.const import (
-    CUSTOMER_COLS,
-    LINEITEM_COLS,
-    ORDERS_COLS,
-    NATION_COLS,
-    REGION_COLS,
-    PART_COLS,
-    SUPPLIER_COLS,
-    PARTSUPP_COLS
-)
-
 def read_table(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, load=True):
     return read_csv(filepath_or_buffer=filepath_or_buffer,
                     sep=sep,

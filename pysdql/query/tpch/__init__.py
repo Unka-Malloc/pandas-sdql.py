@@ -1,5 +1,6 @@
 import pprint
 import time
+import traceback
 
 import pysdql.query.tpch.Qsdql
 
@@ -11,7 +12,7 @@ sep_line = '#' * 60
 
 
 def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> bool:
-    done = [1, 3, 4, 6, 10, 14, 15, 16, 18, 19]
+    done = [1, 3, 4, 5, 6, 10, 14, 15, 16, 18, 19]
 
     if isinstance(qindex, int):
         if qindex not in done:
@@ -39,7 +40,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print('SDQL Running...')
 
                 sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
-            except Exception as msg:
+            except:
                 check_dict[q] = 'Error'
 
                 if verbose:
@@ -47,7 +48,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 else:
                     print(f'Query {q}: Error')
 
-                print(msg)
+                print(traceback.print_exc())
 
                 continue
 
@@ -62,7 +63,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print('Pandas Running...')
 
                 pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
-            except Exception as msg:
+            except:
                 check_dict[q] = 'Error'
 
                 if verbose:
@@ -70,7 +71,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 else:
                     print(f'Query {q}: Error')
 
-                print(msg)
+                print(traceback.print_exc())
 
                 continue
 
