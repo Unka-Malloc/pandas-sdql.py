@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def tpch_q1(lineitem):
     li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
     li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
@@ -237,6 +238,7 @@ def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
 
     return result
 
+
 def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
     na_su_join = nation.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
 
@@ -252,7 +254,8 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
 
     all_join['nation'] = all_join['n_name']
     all_join['o_year'] = all_join['o_orderdate'].dt.year
-    all_join['amount'] = (all_join['l_extendedprice'] * (1.0 - all_join['l_discount'])) - (all_join['ps_supplycost'] * all_join['l_quantity'])
+    all_join['amount'] = (all_join['l_extendedprice'] * (1.0 - all_join['l_discount'])) - (
+            all_join['ps_supplycost'] * all_join['l_quantity'])
 
     profit = all_join[['nation', 'o_year', 'amount']]
 
@@ -285,6 +288,7 @@ def tpch_q10(customer, orders, lineitem, nation):
         .agg({"revenue": 'sum'})
 
     return result
+
 
 def tpch_q11(partsupp, supplier, nation):
     # 1G
@@ -426,6 +430,7 @@ def tpch_q16(partsupp, part, supplier):
 
     return result
 
+
 def tpch_q17(lineitem, part):
     # 1G
     # var1 = 'Brand#23'
@@ -446,8 +451,9 @@ def tpch_q17(lineitem, part):
     pa_li_join = pa_filt.merge(part_agg, left_on='p_partkey', right_on='l_partkey')
 
     pa_li_join = pa_li_join.merge(lineitem, left_on='l_partkey', right_on='l_partkey')
-    pa_li_join['l_extendedprice'] = pa_li_join.apply(lambda x: x['l_extendedprice'] if (x['l_quantity'] < (0.2 * (x['sum_quant'] / x['count_quant']))) else 0.0,
-                                                     axis=1)
+    pa_li_join['l_extendedprice'] = pa_li_join.apply(
+        lambda x: x['l_extendedprice'] if (x['l_quantity'] < (0.2 * (x['sum_quant'] / x['count_quant']))) else 0.0,
+        axis=1)
 
     result = pa_li_join['l_extendedprice'].sum() / 7.0
 
@@ -516,5 +522,36 @@ def tpch_q19(lineitem, part):
     li_pa_join_filt["revenue"] = li_pa_join_filt['l_extendedprice'] * (1.0 - li_pa_join_filt['l_discount'])
 
     result = li_pa_join_filt.agg({'revenue': 'sum'})
+
+    return result
+
+
+def tpch_q20(supplier, nation, partsupp, part, lineitem):
+    li_filt = lineitem[(lineitem['l_shipdate'] >= '1994-01-01') & (lineitem['l_shipdate'] < '1995-01-01')]
+
+    agg_lineitem = li_filt.groupby(['l_partkey', 'l_suppkey'], as_index=False) \
+        .agg(sum_quantity=('l_quantity', 'sum'))
+
+    agg_lineitem['agg_partkey'] = agg_lineitem['l_partkey']
+    agg_lineitem['agg_suppkey'] = agg_lineitem['l_suppkey']
+    agg_lineitem['agg_quantity'] = agg_lineitem['sum_quantity'] * 0.5
+
+    li_ps_join = agg_lineitem.merge(partsupp,
+                                    left_on=['agg_partkey', 'agg_suppkey'],
+                                    right_on=['ps_partkey', 'ps_suppkey'])
+
+    pa_filt = part[part['p_name'].str.startswith('forest')]
+
+    li_ps_filt = li_ps_join[(li_ps_join['ps_partkey'].isin(pa_filt['p_partkey']))]
+
+    ps_li_filt = li_ps_filt[li_ps_filt['ps_availqty'] > li_ps_filt['agg_quantity']]
+
+    na_filt = nation[(nation['n_name'] == 'CANADA')]
+
+    na_su_join = na_filt.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+
+    na_su_filt = na_su_join[(na_su_join['s_suppkey'].isin(ps_li_filt['ps_suppkey']))]
+
+    result = na_su_filt[['s_name', 's_address']]
 
     return result
