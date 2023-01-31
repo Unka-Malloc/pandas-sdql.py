@@ -89,47 +89,47 @@ def concat_pydict(res_list: List[dict]):
     return res_dict
 
 
-def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, verbose=False):
+def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False):
     if sdql_df is None:
-        if pandas_df is None:
+        if pd_df is None:
             print('SDQL and Pandas results are both None!')
             return True
         else:
             print('Pandas result exists but SDQL result is None')
             return False
     else:
-        if pandas_df is None:
+        if pd_df is None:
             print('SDQL result exists but Pandas result is None')
             return False
 
-    if sdql_df.shape[0] == pandas_df.shape[0]:
+    if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
 
     else:
-        print('Mismatch Shape!')
+        print(f'Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
         return False
 
     for c in sdql_df.columns:
-        if c not in pandas_df.columns:
+        if c not in pd_df.columns:
             print('Mismatch Column!')
             return False
         if sdql_df[c].dtype == np.float64:
-            if pandas_df[c].apply(lambda x: x < np.float64(1.0)).all():
-                sdql_df[c] = pandas_df[c].apply(lambda x: x * 1000).astype(int)
-                pandas_df[c] = pandas_df[c].apply(lambda x: x * 1000).astype(int)
+            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
+                sdql_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
-                pandas_df[c] = pandas_df[c].astype(int)
+                pd_df[c] = pd_df[c].astype(int)
 
-    for c in pandas_df.columns:
-        if pandas_df[c].dtype == object:
-            if pandas_df[c].apply(lambda x: is_date(x)).all():
-                pandas_df[c] = pandas_df[c].apply(lambda x: np.float64(x.replace('-', '')))
+    for c in pd_df.columns:
+        if pd_df[c].dtype == object:
+            if pd_df[c].apply(lambda x: is_date(x)).all():
+                pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for xi, xrow in sdql_df.iterrows():
 
-        answer_df = pandas_df
+        answer_df = pd_df
 
         for k in xrow.keys():
             subset_df = answer_df[answer_df[k] == xrow[k]]

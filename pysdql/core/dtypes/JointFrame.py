@@ -92,11 +92,16 @@ class JointFrame:
     def probe_access(self, col_name):
         return self.probe_frame.probe_on.key_access(col_name)
 
-    def part_lookup(self, col_name):
-        return RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.part_frame.part_var,
-                                                   keyExpr=self.probe_frame.probe_on.key_access(
-                                                       self.probe_frame.probe_key)),
-                             fieldName=col_name)
+    def part_lookup(self, col_name=''):
+        if col_name:
+            return RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.part_frame.part_var,
+                                                       keyExpr=self.probe_frame.probe_on.key_access(
+                                                           self.probe_frame.probe_key)),
+                                 fieldName=col_name)
+        else:
+            return DicLookupExpr(dicExpr=self.part_frame.part_var,
+                                                       keyExpr=self.probe_frame.probe_on.key_access(
+                                                           self.probe_frame.probe_key))
 
     def part_nonull(self):
         # print(self.part_frame.get_part_dict_key())
@@ -817,6 +822,7 @@ class JointFrame:
                         # probe side could have isin()
 
                         # Q12
+                        # Q13
                         # Q16
 
                         groupby_aggr_info = self.retriever.find_groupby_aggr()
@@ -831,10 +837,38 @@ class JointFrame:
                         if len(groupby_cols) == 0:
                             raise ValueError()
                         elif len(groupby_cols) == 1:
-                            if groupby_cols[0] in probe_on.columns:
-                                dict_key_ir = probe_on.key_access(groupby_cols[0])
-                            elif groupby_cols[0] in part_on.columns:
-                                dict_key_ir = self.part_lookup(groupby_cols[0])
+                            only_key_col = groupby_cols[0]
+                            if only_key_col in probe_on.columns:
+                                dict_key_ir = probe_on.key_access(only_key_col)
+                            elif only_key_col in part_on.columns:
+                                dict_key_ir = self.part_lookup(only_key_col)
+                            elif self.retriever.has_multi_gourpby_aggr:
+                                part_groupby_aggr_expr = self.retriever.find_groupby_aggr_after(MergeExpr)
+
+                                if self.retriever.find_merge('as_joint').how == 'right':
+                                    aggr_val_expr = part_groupby_aggr_expr.origin_dict[only_key_col]
+                                    if isinstance(aggr_val_expr, str):
+                                        if aggr_val_expr == 'sum':
+                                            else_value = ConstantExpr(0.0)
+                                        elif aggr_val_expr == 'count':
+                                            else_value = ConstantExpr(0)
+                                        else:
+                                            raise ValueError(f'Aggregation function {aggr_val_expr} is not supported.')
+                                    else:
+                                        if aggr_val_expr[1] == 'sum':
+                                            else_value = ConstantExpr(0.0)
+                                        elif aggr_val_expr[1] == 'count':
+                                            else_value = ConstantExpr(0)
+                                        else:
+                                            raise ValueError(f'Aggregation function {aggr_val_expr[1]} is not supported.')
+
+                                    dict_key_ir = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                                              self.part_lookup(),
+                                                                              ConstantExpr(None)),
+                                                         thenBodyExpr=self.part_lookup(only_key_col),
+                                                         elseBodyExpr=else_value)
+                                else:
+                                    raise NotImplementedError
                             else:
                                 raise IndexError(f'Column {groupby_cols[0]} not found!')
                         else:
@@ -920,15 +954,17 @@ class JointFrame:
                             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
                         # joint condition: outermost layer
+                        join_how = self.retriever.find_merge('as_joint').how
                         if joint_cond:
                             aggr_body = IfExpr(condExpr=joint_cond,
                                                thenBodyExpr=aggr_body,
                                                elseBodyExpr=ConstantExpr(None))
 
-                        # part non null condition: add to the inner layer
-                        aggr_body = SDQLInspector.add_cond(aggr_body,
-                                                           self.part_nonull(),
-                                                           'inner')
+                        if join_how == 'inner':
+                            # part non null condition: add to the inner layer
+                            aggr_body = SDQLInspector.add_cond(aggr_body,
+                                                               self.part_nonull(),
+                                                               'inner')
 
                         # isin non null condition: add to the inner layer
                         if probe_isin_expr:

@@ -2,6 +2,11 @@
 1. Q14
 2. Q8
 
+# Seems like not implemented
+1. min in Q2
+2. max in Q15
+3. left outer join in Q13
+
 # Q5
 Exceptionally difficult implementation.  
 Easy query, hard inference.
