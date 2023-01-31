@@ -111,9 +111,16 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, ve
         return False
 
     for c in sdql_df.columns:
+        if c not in pandas_df.columns:
+            print('Mismatch Column!')
+            return False
         if sdql_df[c].dtype == np.float64:
-            sdql_df[c] = sdql_df[c].astype(int)
-            pandas_df[c] = pandas_df[c].astype(int)
+            if pandas_df[c].apply(lambda x: x < np.float64(1.0)).all():
+                sdql_df[c] = pandas_df[c].apply(lambda x: x * 1000).astype(int)
+                pandas_df[c] = pandas_df[c].apply(lambda x: x * 1000).astype(int)
+            else:
+                sdql_df[c] = sdql_df[c].astype(int)
+                pandas_df[c] = pandas_df[c].astype(int)
 
     for c in pandas_df.columns:
         if pandas_df[c].dtype == object:

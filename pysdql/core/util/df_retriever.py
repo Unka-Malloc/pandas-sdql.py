@@ -69,6 +69,32 @@ class Retriever:
                         cols += m.right_on
             else:
                 raise NotImplementedError
+        elif mode == 'probe':
+            if only_next:
+                next_merges = self.findall_merge()
+                for m in next_merges:
+                    if m.joint.name == self.target.name:
+                        continue
+
+                    if isinstance(m.left_on, str) and isinstance(m.right_on, str):
+                        cols.append(m.right_on)
+                    if isinstance(m.left_on, list) and isinstance(m.right_on, list):
+                        cols += m.right_on
+            else:
+                raise NotImplementedError
+        elif mode == 'part':
+            if only_next:
+                next_merges = self.findall_merge()
+                for m in next_merges:
+                    if m.joint.name == self.target.name:
+                        continue
+
+                    if isinstance(m.left_on, str) and isinstance(m.right_on, str):
+                        cols.append(m.left_on)
+                    if isinstance(m.left_on, list) and isinstance(m.right_on, list):
+                        cols += m.left_on
+            else:
+                raise NotImplementedError
         elif mode == 'insert':
             for op_expr in self.history:
                 op_body = op_expr.op
@@ -109,12 +135,27 @@ class Retriever:
 
         return cols
 
+    def findall_col_rename(self, reverse=False):
+        result = {}
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            # OldColOpExpr
+            if isinstance(op_body, OldColOpExpr):
+                if reverse:
+                    result[op_body.col_expr] = op_body.col_var
+                else:
+                    result[op_body.col_var] = op_body.col_expr
+        else:
+            return result
+
     def find_col_rename(self, col_name, by='val'):
         for op_expr in self.history:
             op_body = op_expr.op
 
             # OldColOpExpr
             if isinstance(op_body, OldColOpExpr):
+                print(op_body)
                 if by == 'key':
                     if op_body.col_var == col_name:
                         return op_body.col_expr
@@ -169,8 +210,8 @@ class Retriever:
             # MergeExpr
             if isinstance(op_body, MergeExpr):
                 if self.target.name != op_body.joint.name:
-                    cols_used += op_body.joint.get_retriever().findall_cols_used(as_owner=as_owner,
-                                                                                 only_next=only_next)
+                    cols_used += op_body.joint.get_retriever().findall_cols_for_groupby_aggr(as_owner=as_owner,
+                                                                                             only_next=only_next)
 
             # GroupbyAgg
             if isinstance(op_body, GroupbyAggrExpr):
@@ -306,6 +347,16 @@ class Retriever:
         else:
             return cleaned_cols_used
 
+    def find_cols_probed(self, as_owner=True, only_next=True):
+        # Remove Duplications
+        cleaned_cols_used = []
+        [cleaned_cols_used.append(x) for x in self.find_cols_used(mode='probe') if x not in cleaned_cols_used]
+
+        if as_owner:
+            return [x for x in cleaned_cols_used if x in self.target.columns]
+        else:
+            return cleaned_cols_used
+
     def find_dup_cols(self):
         dup_cols = []
 
@@ -350,6 +401,33 @@ class Retriever:
 
             if isinstance(op_body, op_type):
                 break
+
+        return col_ins
+
+    def find_col_ins_after(self, op_type) -> dict:
+        col_ins = {}
+
+        target_located = False
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, op_type):
+                target_located = True
+
+            if target_located:
+                if isinstance(op_body, NewColOpExpr):
+                    col_ins[op_body.col_var] = op_body.col_expr
+        else:
+            return col_ins
+
+    def findall_col_insert(self) -> dict:
+        col_ins = {}
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, NewColOpExpr):
+                col_ins[op_body.col_var] = op_body.col_expr
 
         return col_ins
 
@@ -475,6 +553,37 @@ class Retriever:
         [cleaned_on.append(x) for x in on if x not in cleaned_on]
 
         return cleaned_on
+
+    @staticmethod
+    def findall_cols_in_cond(cond):
+        cols = []
+
+        if isinstance(cond.unit1, ColEl):
+            cols.append(cond.unit1.field)
+        elif isinstance(cond.unit1, CondExpr):
+            cols += Retriever.findall_cols_in_cond(cond.unit1)
+        elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
+            pass
+        elif isinstance(cond.unit1, (bool, int, float, str)):
+            pass
+        else:
+            raise ValueError(f'Unexpected unit1 type {type(cond.unit1)}')
+
+        if isinstance(cond.unit2, ColEl):
+            cols.append(cond.unit2.field)
+        elif isinstance(cond.unit2, CondExpr):
+            cols += Retriever.findall_cols_in_cond(cond.unit2)
+        elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):
+            pass
+        elif isinstance(cond.unit2, (bool, int, float, str)):
+            pass
+        else:
+            raise ValueError(f'Unexpected unit2 type {type(cond.unit2)}')
+
+        cleaned_cols = []
+        [cleaned_cols.append(x) for x in cols if x not in cleaned_cols]
+
+        return cleaned_cols
 
     @staticmethod
     def purify_cond(cond: CondExpr) -> dict:
@@ -837,15 +946,13 @@ class Retriever:
         return parts
 
     @staticmethod
-    def find_lookup_path(start_from, key_from: str, key_to: str):
+    def find_lookup_path(start_from, key_to: str):
         """
         nation left -> right customer_orders_join -> customer left -> right orders
-        :param start_from:
-        :param key_from:
+        :param start_from: 
         :param key_to:
         :return:
         """
-        path = []
 
         root_merge = start_from.retriever.find_root_merge()
         root_part = root_merge.left
@@ -855,27 +962,33 @@ class Retriever:
 
         all_parts = start_from.retriever.findall_part_for_root_probe('as_body')
 
-        all_merges = start_from.retriever.findall_key_for_root_probe(as_tuple=True, ret_type=dict)
-
         if key_to == root_part_key:
             lookup_expr = root_probe.key_access(root_probe_key)
 
-            print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+        if key_to == root_probe_key:
+            lookup_expr = root_probe.key_access(root_probe_key)
+
+            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
         elif key_to in root_part.columns:
             lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
                                                               keyExpr=root_probe.key_access(root_probe_key)),
                                         fieldName=key_to)
 
-            print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
         else:
             for part in all_parts:
                 if key_to in part.columns:
                     lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
 
-                    print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                    # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                    return lookup_expr
 
     @staticmethod
     def find_bypass_lookup(all_parts, target, root_merge):
+        # print(f'looking for {target} in {all_parts}')
+
         root_part = root_merge.left
         root_probe = root_merge.right
         root_probe_key = root_merge.right_on
@@ -892,7 +1005,13 @@ class Retriever:
                             keyExpr=root_probe.key_access(root_probe_key)),
                         fieldName=target)
                     return lookup_expr
-
+                elif this_probe_key in root_probe.columns:
+                    lookup_expr = RecAccessExpr(
+                        recExpr=DicLookupExpr(
+                            dicExpr=this_part.var_part,
+                            keyExpr=root_probe.key_access(this_probe_key)),
+                        fieldName=target)
+                    return lookup_expr
                 else:
                     lookup_expr = RecAccessExpr(
                         recExpr=DicLookupExpr(
@@ -1084,3 +1203,20 @@ class Retriever:
                 else:
                     return op_expr
         return None
+
+    def find_col_proj_after(self, op_type, body_only=True):
+        target_located = False
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, op_type):
+                target_located = True
+
+            if isinstance(op_body, ColProjExpr):
+                if target_located:
+                    if body_only:
+                        return op_body
+                    else:
+                        return op_expr
+        else:
+            return None

@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 def tpch_q1(lineitem):
     li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
     li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
@@ -150,6 +147,90 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
 
     result = shipping.groupby(['supp_nation', 'cust_nation', 'l_year'], as_index=False) \
         .agg(revenue=('volume', 'sum'))
+
+    return result
+
+def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
+    # 1G
+    # var1 = 'BRAZIL'
+    var2 = 'AMERICA'
+    var3 = 'ECONOMY ANODIZED STEEL'
+
+    n1 = nation.copy()
+
+    n1.rename({'n_nationkey': 'n1_nationkey',
+               'n_name': 'n1_name',
+               'n_regionkey': 'n1_regionkey',
+               'n_comment': 'n1_comment'}, axis=1, inplace=True)
+
+    n2 = nation.copy()
+
+    n2.rename({'n_nationkey': 'n2_nationkey',
+               'n_name': 'n2_name',
+               'n_regionkey': 'n2_regionkey',
+               'n_comment': 'n2_comment'}, axis=1, inplace=True)
+
+    re_filt = region[(region['r_name'] == var2)]
+
+    re_na_join = re_filt.merge(right=n1, left_on='r_regionkey', right_on='n1_regionkey')
+
+    ord_filt = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] <= '1996-12-31')]
+
+    na_cu_join = re_na_join.merge(right=customer, left_on='n1_nationkey', right_on='c_nationkey')
+
+    cu_ord_join = na_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
+
+    ord_li_join = cu_ord_join.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
+
+    '''
+    通过 left and right 的直接传递来判断一个probe side 是否 bypass
+    例如 l_orderkey -> o_orderkey -> o_custkey -> c_custkey -> c_nationkey -> n_nationkey
+    region nation 是一个例外
+    因为他们满足: region is not joint and nation is not joint
+    此时, probe 必须发生
+
+    当这样的传递发生时, 仅可以省略中间的传递
+    在 lineitem -> orders -> customers -> nation -> region
+    的传递中
+    orders 同时包含 
+        1. 必须的 orderdate 作为下文的变量
+        2. o_custkey 作为上文的索引, 在此处, 特指 对 customers 的索引 o_custkey
+        通过 o_custkey, 可以直接取值 o_custkey -> c_custkey
+    customer 作为唯一的 complete bypass dictionary, 也可以称之为 indexing bypass dictionary,
+    它将 c_custkey 索引至 c_nationkey, 也就是说, 它的 key 和 value 必须唯一
+
+    这也就是 indexing bypass 的 传递作用:
+        通过直接使用 indexing, 我们可以直接判断两端 [orders, nation] 是否符合要求,
+        如果两端符合要求, 则 作为 bypass dictionary 的 customer 必定符合要求
+        这种直接的索引优化了非空判断 (non null assertion optimization)
+
+    在这个例子中, li 按照顺序检查了 [part, orders, region_n1_joint]
+    这同时意味着, [n2, supplier, customer] 全部都是 bypass partition
+    '''
+
+    pa_filt = part[part['p_type'] == var3]
+
+    pa_li_join = pa_filt.merge(right=ord_li_join, left_on='p_partkey', right_on='l_partkey')
+
+    su_li_join = supplier.merge(right=pa_li_join, left_on='s_suppkey', right_on='l_suppkey')
+
+    all_join = n2.merge(right=su_li_join, left_on='n2_nationkey', right_on='s_nationkey')
+
+    all_join['o_year'] = all_join['o_orderdate'].dt.year
+    all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
+    all_join['nation'] = all_join['n2_name']
+
+    all_nations = all_join[['o_year', 'volume', 'nation']]
+
+    all_nations['volume_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0.0, axis=1)
+
+    all_nations_agg = all_nations.groupby(['o_year'], as_index=False) \
+        .agg(A=('volume_A', 'sum'),
+             B=('volume', 'sum'))
+
+    all_nations_agg['mkt_share'] = all_nations_agg['A'] / all_nations_agg['B']
+
+    result = all_nations_agg[['o_year', 'mkt_share']]
 
     return result
 
