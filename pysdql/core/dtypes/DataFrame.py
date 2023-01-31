@@ -15,9 +15,9 @@ from pysdql.core.dtypes.ColExpr import ColExpr
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ExternalExpr import ExternalExpr
 from pysdql.core.dtypes.MergeExpr import MergeExpr
-from pysdql.core.dtypes.NonNullExpr import NonNullExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
+from pysdql.core.dtypes.SDQLIR import SDQLIR
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -27,10 +27,10 @@ from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
+from pysdql.core.util.data_matcher import match_int, match_float
 from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
 
 from pysdql.core.dtypes.sdql_ir import *
-from pysdql.core.enums import History
 
 from pysdql.core.util.type_checker import (
     is_int,
@@ -39,17 +39,12 @@ from pysdql.core.util.type_checker import (
     is_str
 )
 
-from pysdql.core.util.data_interpreter import (
-    to_scalar
-)
-
 from pysdql.core.util.df_retriever import Retriever
 
 from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
-    LogicSymbol,
-    MathSymbol, OptGoal, SumIterType, AggrType, OpRetType,
+    LogicSymbol, OptGoal, SumIterType, AggrType, OpRetType,
 )
 
 from pysdql.const import (
@@ -77,6 +72,7 @@ class DataFrame(SemiRing, Retrivable):
                  name=None,
                  operations=None,
                  is_joint=False,
+                 is_original=True,
                  context_variable=None,
                  context_constant=None,
                  context_unopt=None,
@@ -120,11 +116,25 @@ class DataFrame(SemiRing, Retrivable):
         self.unopt_count = 0
         self.unopt_vars = {}
         self.unopt_consts = {}
-        self.unopt_list = context_unopt if context_unopt else []
+        self.context_unopt = context_unopt if context_unopt else []
 
         self.transform = TransExpr(self)
 
         self.context_semiopt = context_semiopt if context_semiopt else []
+
+        self.original = is_original
+
+    def copy(self):
+        new_name = varname()
+
+        return DataFrame(name=new_name,
+                         is_joint=self.is_joint,
+                         is_original=False,
+                         columns=self.columns.copy(),
+                         context_variable=self.context_variable,
+                         context_constant=self.context_constant,
+                         context_unopt=self.context_unopt,
+                         context_semiopt=self.context_semiopt)
 
     @property
     def is_joint(self):
@@ -398,9 +408,9 @@ class DataFrame(SemiRing, Retrivable):
 
     def key_access(self, field):
         if self.is_joint:
-            if field in self.partition_side.__columns:
+            if field in self.partition_side.columns:
                 return self.partition_side.key_access(field)
-            elif field in self.probe_side.__columns:
+            elif field in self.probe_side.columns:
                 return self.probe_side.key_access(field)
         return RecAccessExpr(self.iter_el.key, field)
 
@@ -535,15 +545,15 @@ class DataFrame(SemiRing, Retrivable):
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
-            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr, IfExpr):
+            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+                return self.insert_col_expr(key, value)
+            if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
             if key in self.columns:
-                for i in range(len(self.columns)):
-                    if self.columns[i] == key:
-                        self.columns[i] = mapper[key]
+                self.__columns[self.__columns.index(key)] = mapper[key]
             else:
                 raise IndexError(f'Cannot find the column {key} in {self.name}')
 
@@ -600,7 +610,7 @@ class DataFrame(SemiRing, Retrivable):
         for k in right.context_constant.keys():
             next_context_const[k] = right.context_constant[k]
 
-        next_context_unopt = self.unopt_list + right.unopt_list
+        next_context_unopt = self.context_unopt + right.context_unopt
 
         next_context_semiopt = self.context_semiopt + right.context_semiopt
 
@@ -976,9 +986,9 @@ class DataFrame(SemiRing, Retrivable):
                                    IfExpr(op_expr.op,
                                           DicConsExpr([(iter_last_key, iter_last_val)]),
                                           EmptyDicConsExpr()))
-                self.unopt_list.append(LetExpr(tmp_var,
-                                               sum_expr,
-                                               ConstantExpr(True)))
+                self.context_unopt.append(LetExpr(tmp_var,
+                                                  sum_expr,
+                                                  ConstantExpr(True)))
             if op_expr.op_type == NewColOpExpr:
                 sum_expr = SumExpr(iter_last_var,
                                    last_var,
@@ -987,9 +997,9 @@ class DataFrame(SemiRing, Retrivable):
                                                                           op_expr.op.replace(iter_last_key))])
                                                             ),
                                                  ConstantExpr(True))]))
-                self.unopt_list.append(LetExpr(tmp_var,
-                                               sum_expr,
-                                               ConstantExpr(True)))
+                self.context_unopt.append(LetExpr(tmp_var,
+                                                  sum_expr,
+                                                  ConstantExpr(True)))
             if op_expr.op_type == AggrExpr:
                 dic_cons_list = []
                 for k in op_expr.op.aggr_op.keys():
@@ -998,9 +1008,9 @@ class DataFrame(SemiRing, Retrivable):
                 sum_expr = SumExpr(iter_last_var,
                                    last_var,
                                    DicConsExpr(dic_cons_list))
-                self.unopt_list.append(LetExpr(tmp_var,
-                                               sum_expr,
-                                               ConstantExpr(True)))
+                self.context_unopt.append(LetExpr(tmp_var,
+                                                  sum_expr,
+                                                  ConstantExpr(True)))
             if op_expr.op_type == GroupbyAggrExpr:
                 pass
 
@@ -1013,7 +1023,7 @@ class DataFrame(SemiRing, Retrivable):
         result += f"out = VarExpr('out')\n"
 
         last_seq = VarBindSeq()
-        for i in self.unopt_list:
+        for i in self.context_unopt:
             last_seq.push(VarBindExpr(i.varExpr, i.valExpr))
 
         result += f'{last_seq.get_sdql_ir(ConstantExpr(True))}'
@@ -1042,20 +1052,112 @@ class DataFrame(SemiRing, Retrivable):
         lamb_cond = lamb_cond.replace('if', '').replace('else', '').strip()
 
         lamb_else = re.search(r'else.*,', code).group()
-        lamb_else = float(lamb_else.replace('else', '').replace(',', '').strip())
+        lamb_else = lamb_else.replace('else', '').replace(',', '').strip()
+
+        if lamb_else == 'None':
+            lamb_else = None
+        elif lamb_else == '0':
+            lamb_else = 0
+        elif lamb_else == '0.0':
+            lamb_else = 0.0
+        else:
+            if lamb_else.isdigit():
+                lamb_else = int(lamb_else)
+            if lamb_else.isdecimal():
+                lamb_else = float(lamb_else)
+            else:
+                raise NotImplementedError(f'Unsupported Type {lamb_else}.')
 
         op = eval(lamb_op.replace(f'{lamb_arg}[', 'self['))
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
         if self.is_joint:
-            self.get_partition_side().push(OpExpr(op_obj=cond,
-                                                  op_on=self,
-                                                  op_iter=False))
+            if isinstance(cond, ExternalExpr):
+                col_name = cond.col.field
+                if col_name in self.partition_side.columns:
+                    self.partition_side.push(OpExpr(op_obj=cond,
+                                                    op_on=self,
+                                                    op_iter=False))
 
-            return IfExpr(condExpr=NonNullExpr(var_dict=self.get_partition_side().get_var_part(),
-                                               var_key=ConstantExpr(None)).sdql_ir,
-                          thenBodyExpr=op.sdql_ir,
-                          elseBodyExpr=ConstantExpr(lamb_else))
+                    return IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                       DicLookupExpr(self.joint_frame.part_frame.part_on_var,
+                                                                     self.joint_frame.probe_frame.probe_key_sdql_ir),
+                                                       ConstantExpr(None)),
+                                  thenBodyExpr=op.sdql_ir,
+                                  elseBodyExpr=ConstantExpr(lamb_else))
+                elif col_name in self.probe_side.columns:
+
+                    raise NotImplementedError
+                elif col_name in self.columns:
+
+                    raise NotImplementedError
+                else:
+                    raise IndexError(f'Cannot find column {col_name}')
+            elif isinstance(cond, CondExpr):
+                cond_on = self.retriever.find_cond_on(cond,
+                                                      {self.partition_side.name: self.partition_side.cols_out,
+                                                       self.probe_side.name: self.probe_side.columns,
+                                                       self.name: self.cols_out})
+
+                if len(cond_on) == 1:
+                    only_for = cond_on[0]
+
+                    if only_for == self.partition_side.name:
+
+                        raise NotImplementedError
+                    elif only_for == self.probe_side.name:
+
+                        raise NotImplementedError
+                    elif only_for == self.name:
+                        cols_in_cond = self.retriever.findall_cols_in_cond(cond)
+                        if len(cols_in_cond) == 0:
+                            raise NotImplementedError
+                        elif len(cols_in_cond) == 1:
+                            cols_inserted = self.retriever.findall_col_insert()
+                            if cols_inserted:
+                                new_col_name = cols_inserted[cols_in_cond[0]]
+
+                                if isinstance(new_col_name, ColEl):
+                                    old_col_name = cols_inserted[cols_in_cond[0]].field
+
+                                    if old_col_name in self.partition_side.columns:
+                                        apply_cond = cond.replace(
+                                            rec=self.retriever.find_lookup_path(self, old_col_name),
+                                            inplace=True)
+                                    else:
+                                        raise NotImplementedError
+                                else:
+                                    raise NotImplementedError
+                            else:
+                                raise NotImplementedError
+
+                            if isinstance(op, ColEl):
+                                cols_inserted = self.retriever.findall_col_insert()
+                                if cols_inserted:
+                                    new_col_op = cols_inserted[op.field]
+
+                                    if isinstance(new_col_op, SDQLIR):
+                                        apply_op = op.replace(
+                                            rec=new_col_op.sdql_ir,
+                                            inplace=True)
+                                    else:
+                                        raise NotImplementedError
+                                else:
+                                    raise NotImplementedError
+                            else:
+                                raise NotImplementedError
+
+                            return IfExpr(condExpr=apply_cond,
+                                          thenBodyExpr=apply_op,
+                                          elseBodyExpr=ConstantExpr(lamb_else))
+                    else:
+                        raise NotImplementedError
+                else:
+                    raise NotImplementedError
+            else:
+                raise NotImplementedError
+        else:
+            raise NotImplementedError
 
     def optimize_obj(self):
         opt = self.get_opt()

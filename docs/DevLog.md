@@ -1,5 +1,6 @@
-Important changes in pysdql With-Inspector branch
-1. Table name from 're' to 'region' to avoid name duplication (re is regex package in python)
+# Apply
+1. Q14
+2. Q8
 
 # Q5
 Exceptionally difficult implementation.  

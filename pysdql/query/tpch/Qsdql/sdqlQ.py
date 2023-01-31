@@ -153,6 +153,31 @@ def q7(execution_mode=0, threads_count=1):
 
     return Q.query(supplier_data, lineitem_data, orders_data, customer_data, nation_data)
 
+def q8(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    part = pysdql.DataFrame()
+    supplier = pysdql.DataFrame()
+    lineitem = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+    customer = pysdql.DataFrame()
+    nation = pysdql.DataFrame()
+    region = pysdql.DataFrame()
+
+    write_query(8, tpch_q8(part, supplier, lineitem, orders, customer, nation, region).opt_to_sdqlir())
+
+    part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
+    supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
+    customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
+    nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
+    region_data = read_csv(rf'{DATAPATH}/region.tbl', REGION_TYPE, "re")
+
+    import pysdql.query.tpch.Qsdql.Q8 as Q
+
+    return Q.query(part_data, supplier_data, lineitem_data, orders_data, customer_data, nation_data, nation_data, region_data)
+
 
 def q10(execution_mode=0, threads_count=1):
     sdqlpy_init(execution_mode, threads_count)

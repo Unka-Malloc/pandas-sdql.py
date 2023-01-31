@@ -18,8 +18,6 @@ from pysdql.query.tpch.template import *
 pd.set_option('display.max_columns', None)
 # suppress SettingWithCopyWarning
 pd.set_option('mode.chained_assignment', None)
-# 2 decimal places, thousand sep -> like 1,000.00 for 1000
-pd.set_option("display.float_format", "{:.2f}".format)
 
 
 def q1():
@@ -75,6 +73,19 @@ def q7():
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
 
     result = tpch_q7(supplier, lineitem, orders, customer, nation)
+
+    return result
+
+def q8():
+    part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
+    supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
+    lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
+    orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS, parse_dates=['o_orderdate'])
+    customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
+    nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
+    region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
+
+    result = tpch_q8(part, supplier, lineitem, orders, customer, nation, region)
 
     return result
 

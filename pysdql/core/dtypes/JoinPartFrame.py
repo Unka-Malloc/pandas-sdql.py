@@ -38,10 +38,18 @@ class JoinPartFrame:
 
     @property
     def group_key(self):
+        renamed_cols = self.retriever.findall_col_rename(reverse=True)
+        if self.__group_key in renamed_cols.keys():
+            return renamed_cols[self.__group_key]
+
         return self.__group_key
 
     @property
     def part_key(self):
+        renamed_cols = self.retriever.findall_col_rename(reverse=True)
+        if self.__group_key in renamed_cols.keys():
+            return renamed_cols[self.__group_key]
+
         return self.__group_key
 
     @property
@@ -58,6 +66,10 @@ class JoinPartFrame:
     @property
     def part_var(self):
         return self.__var_partition
+
+    @property
+    def part_on_var(self):
+        return self.__iter_on.var_part
 
     @property
     def cols_out(self):
@@ -100,11 +112,25 @@ class JoinPartFrame:
             if self.retriever.as_bypass_for_next_join:
                 return ConstantExpr(True)
             else:
-                cols_used = self.retriever.findall_cols_used(only_next=True)
-                if len(cols_used) == 0:
+                cols_out = self.retriever.findall_cols_used(only_next=True)
+
+                cols_out += self.retriever.find_cols_probed()
+
+                if len(cols_out) == 0:
                     return ConstantExpr(True)
                 else:
-                    return RecConsExpr([(i, self.part_on.key_access(i)) for i in cols_used])
+                    out_list = []
+
+                    cols_renamed = self.retriever.findall_col_rename()
+                    for i in cols_out:
+                        if i in cols_renamed.keys():
+                            out_list.append((cols_renamed[i], self.part_on.key_access(i)))
+                        elif i in cols_renamed.values():
+                            continue
+                        else:
+                            out_list.append((i, self.part_on.key_access(i)))
+
+                    return RecConsExpr(out_list)
 
     def add_key(self, val):
         self.__group_key = val

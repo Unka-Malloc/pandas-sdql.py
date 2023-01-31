@@ -235,11 +235,10 @@ def q8(pa, su, li, ord, cu, na, re):
 
     all_nations = all_join[['o_year', 'volume', 'nation']]
 
-    # all_nations['val_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
-    all_nations['val_A'] = all_nations['volume'] * 0.2
+    all_nations['volume_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
 
     all_nations_agg = all_nations.groupby(['o_year'], as_index=False) \
-        .agg(A=('val_A', 'sum'),
+        .agg(A=('volume_A', 'sum'),
              B=('volume', 'sum'))
 
     all_nations_agg['mkt_share'] = all_nations_agg['A'] / all_nations_agg['B']
