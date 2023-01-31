@@ -150,6 +150,7 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
 
     return result
 
+
 def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
     # 1G
     # var1 = 'BRAZIL'
@@ -256,6 +257,31 @@ def tpch_q10(customer, orders, lineitem, nation):
         .groupby(["c_custkey", "c_name", "c_acctbal", "c_phone", "n_name", "c_address", "c_comment"],
                  as_index=False) \
         .agg({"revenue": 'sum'})
+
+    return result
+
+
+def tpch_q12(orders, lineitem):
+    var1 = ('MAIL', 'SHIP')
+
+    li_filt = lineitem[(lineitem['l_shipmode'].isin(var1))
+                       & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
+                       & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
+                       & (lineitem['l_receiptdate'] >= '1995-01-01') & (lineitem['l_receiptdate'] < '1996-01-01')]
+
+    li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+
+    li_ord_join['high_line_priority'] = li_ord_join.apply(
+        lambda x: 1 if ((x['o_orderpriority'] == '1-URGENT') | (x['o_orderpriority'] == '2-HIGH')) else 0,
+        axis=1)
+
+    li_ord_join['low_line_priority'] = li_ord_join.apply(
+        lambda x: 1 if ((x['o_orderpriority'] != '1-URGENT') | (x['o_orderpriority'] != '2-HIGH')) else 0,
+        axis=1)
+
+    result = li_ord_join.groupby(['l_shipmode'], as_index=False) \
+        .agg(high_line_count=('high_line_priority', 'sum'),
+             low_line_count=('low_line_priority', 'sum'))
 
     return result
 

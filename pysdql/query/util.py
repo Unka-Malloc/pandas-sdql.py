@@ -135,7 +135,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, ve
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
                 print(f'Not found {xrow.to_dict()}')
-                print(f'While looking for {k} == {xrow[k]}')
+                print(f'Failed while looking for {k} == {xrow[k]}')
                 print(f'The answer is as following:')
                 print(answer_df)
                 return False
