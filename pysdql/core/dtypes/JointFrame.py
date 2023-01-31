@@ -1,4 +1,4 @@
-from pysdql.core.dtypes import ColExpr, ColEl, ExternalExpr, GroupbyAggrExpr, AggrExpr
+from pysdql.core.dtypes import ColExpr, ColEl, ExternalExpr, GroupbyAggrExpr, AggrExpr, NewColOpExpr, OldColOpExpr
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import OpRetType, AggrType
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
@@ -816,6 +816,7 @@ class JointFrame:
                         # part side could NOT have isin()
                         # probe side could have isin()
 
+                        # Q12
                         # Q16
 
                         groupby_aggr_info = self.retriever.find_groupby_aggr()
@@ -830,7 +831,12 @@ class JointFrame:
                         if len(groupby_cols) == 0:
                             raise ValueError()
                         elif len(groupby_cols) == 1:
-                            dict_key_ir = probe_on.key_access(groupby_cols[0])
+                            if groupby_cols[0] in probe_on.columns:
+                                dict_key_ir = probe_on.key_access(groupby_cols[0])
+                            elif groupby_cols[0] in part_on.columns:
+                                dict_key_ir = self.part_lookup(groupby_cols[0])
+                            else:
+                                raise IndexError(f'Column {groupby_cols[0]} not found!')
                         else:
                             key_tuples = []
 
@@ -894,8 +900,15 @@ class JointFrame:
                                         val_tuples.append((k, probe_on.key_access(v_name)))
                                     else:
                                         if v_name in joint_col_ins.keys():
-                                            val_tuples.append((k,
-                                                               joint_col_ins[v_name].replace(probe_on.iter_el.key)))
+                                            col_op = joint_col_ins[v_name]
+                                            if isinstance(col_op, (ColEl, ColExpr, ExternalExpr, NewColOpExpr, OldColOpExpr)):
+                                                val_tuples.append((k,
+                                                                   col_op.replace(probe_on.iter_el.key)))
+                                            elif isinstance(col_op, IfExpr):
+                                                val_tuples.append((k,
+                                                                   col_op))
+                                            else:
+                                                raise NotImplementedError
                                         else:
                                             raise IndexError(f'Cannot find column {v_name} in {probe_on.columns}')
                                 elif isinstance(v, ConstantExpr):

@@ -147,7 +147,7 @@ class DataFrame(SemiRing, Retrivable):
     def add_const(self, const):
         if type(const) == str:
             if const not in self.context_constant.keys():
-                tmp_vname = (''.join(re.split(r'[^A-Za-z0-9]', const))).lower()
+                tmp_vname = (''.join(re.split(r'[^A-Za-z]', const))).lower() + ''.join([i for i in const if i.isdigit()])
                 tmp_var = VarExpr(tmp_vname)
                 self.context_constant[const] = tmp_var
                 self.context_variable[tmp_vname] = tmp_var
@@ -1069,6 +1069,9 @@ class DataFrame(SemiRing, Retrivable):
                 raise NotImplementedError(f'Unsupported Type {lamb_else}.')
 
         op = eval(lamb_op.replace(f'{lamb_arg}[', 'self['))
+        if isinstance(op, (bool, int, float, str)):
+            op = ConstantExpr(op)
+
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
         if self.is_joint:
@@ -1099,15 +1102,37 @@ class DataFrame(SemiRing, Retrivable):
                                                        self.probe_side.name: self.probe_side.columns,
                                                        self.name: self.cols_out})
 
+                if len(cond_on) > 1 and self.name in cond_on:
+                    cond_on.remove(self.name)
+
                 if len(cond_on) == 1:
                     only_for = cond_on[0]
 
                     if only_for == self.partition_side.name:
+                        apply_cond = cond.replace(rec=DicLookupExpr(self.joint_frame.part_frame.part_on_var,
+                                                                     self.joint_frame.probe_frame.probe_key_sdql_ir),
+                                                  inplace=False)
 
-                        raise NotImplementedError
+                        if isinstance(op, SDQLIR):
+                            apply_op = op.sdql_ir
+                        else:
+                            apply_op = op
+
+                        return IfExpr(condExpr=apply_cond,
+                                      thenBodyExpr=apply_op,
+                                      elseBodyExpr=ConstantExpr(lamb_else))
                     elif only_for == self.probe_side.name:
+                        apply_cond = cond.replace(rec=self.probe_side.iter_el.key,
+                                                  inplace=False)
 
-                        raise NotImplementedError
+                        if isinstance(op, SDQLIR):
+                            apply_op = op.sdql_ir
+                        else:
+                            apply_op = op
+
+                        return IfExpr(condExpr=apply_cond,
+                                      thenBodyExpr=apply_op,
+                                      elseBodyExpr=ConstantExpr(lamb_else))
                     elif only_for == self.name:
                         cols_in_cond = self.retriever.findall_cols_in_cond(cond)
                         if len(cols_in_cond) == 0:
@@ -1153,7 +1178,8 @@ class DataFrame(SemiRing, Retrivable):
                     else:
                         raise NotImplementedError
                 else:
-                    raise NotImplementedError
+                    print(cond_on)
+                    print(cond)
             else:
                 raise NotImplementedError
         else:
