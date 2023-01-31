@@ -41,4 +41,4 @@ def input_fmt(data):
     elif isinstance(data, IgnoreExpr):
         return ConstantExpr(True)
     else:
-        raise ValueError()
+        raise TypeError(f'Unsupport type {type(data)}')

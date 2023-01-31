@@ -517,6 +517,15 @@ class DataFrame(SemiRing, Retrivable):
 
             return self
 
+        if isinstance(item, ExternalExpr):
+            if item.func == ExtFuncSymbol.StringContains:
+                self.operations.push(OpExpr(op_obj=item,
+                                            op_on=self,
+                                            op_iter=False))
+                return self
+            else:
+                raise NotImplementedError
+
     def __getattr__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)

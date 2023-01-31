@@ -121,6 +121,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
                 pd_df[c] = pd_df[c].astype(int)
+        if sdql_df[c].dtype == object:
+            if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
+                sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
 
     for c in pd_df.columns:
         if pd_df[c].dtype == object:
@@ -145,3 +148,25 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             return True
     else:
         return True
+
+def exists_duplicates(test_str: str):
+    i = 0
+
+    for j in range(len(test_str)):
+        if test_str[i:j] == test_str[j:j + j - i]:
+            singleton = test_str[i:j]
+            if len(singleton.strip()) > 0:
+                return True
+    else:
+        return False
+
+def remove_duplicates(dup_str: str):
+    i = 0
+
+    for j in range(len(dup_str)):
+        if dup_str[i:j] == dup_str[j:j+j-i]:
+            singleton = dup_str[i:j]
+            if len(singleton.strip()) > 0:
+                return singleton
+    else:
+        return dup_str

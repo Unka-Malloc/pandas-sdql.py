@@ -413,7 +413,7 @@ class ColEl(SDQLIR):
 
     def endswith(self, pattern: str):
         # %B
-        return ExternalExpr(self, 'StrEndsWith', pattern)
+        raise NotImplementedError
 
     def contains(self, pattern):
         # %A%
@@ -423,18 +423,18 @@ class ColEl(SDQLIR):
 
     def contains_in_order(self, *args):
         # %A%B%
-        return ExternalExpr(self, 'StrContains_in_order', args)
+        raise NotImplementedError
 
     def not_contains(self, *args):
-        return ExternalExpr(self, 'not_StrContains', args)
+        raise NotImplementedError
 
     def substring(self, start, end):
         # substring
-        return ExternalExpr(self, 'SubString', (start, end))
+        raise NotImplementedError
 
     def slice(self, start, end):
         # substring
-        return ExternalExpr(self, 'SubString', (start, end))
+        raise NotImplementedError
 
     def find(self, pattern):
         self.add_const(pattern)
@@ -480,9 +480,6 @@ class ColEl(SDQLIR):
         pass
 
     def replace(self, rec, inplace=False, mapper=None):
-        # print(f'try to replace col {self.sdql_ir} with {rec} as record')
-        # print(f'get {RecAccessExpr(rec, self.field)}')
-
         if mapper:
             if isinstance(mapper, dict):
                 for k in mapper.keys():

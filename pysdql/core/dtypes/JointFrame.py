@@ -100,8 +100,8 @@ class JointFrame:
                                  fieldName=col_name)
         else:
             return DicLookupExpr(dicExpr=self.part_frame.part_var,
-                                                       keyExpr=self.probe_frame.probe_on.key_access(
-                                                           self.probe_frame.probe_key))
+                                 keyExpr=self.probe_frame.probe_on.key_access(
+                                     self.probe_frame.probe_key))
 
     def part_nonull(self):
         # print(self.part_frame.get_part_dict_key())
@@ -427,6 +427,7 @@ class JointFrame:
                     else:
                         # Q7
                         # Q8
+                        # Q9
 
                         # If the probe side is joint, then there must be multiple partitions
                         # Therefore, we need to probe on every partition
@@ -492,8 +493,19 @@ class JointFrame:
                                     if isinstance(col_op, IfExpr):
                                         dict_val_list.append((k, col_op))
                                     else:
-                                        col_op = col_op.replace(rec=root_probe_side.iter_el.key)
-                                        dict_val_list.append((k, col_op))
+                                        col_mapper = {}
+
+                                        col_mapper[tuple(root_probe_side.columns)] = root_probe_side.iter_el.key
+
+                                        for this_part_side in all_part_sides:
+                                            this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
+                                            col_mapper[tuple(this_part_side.cols_out)] = DicLookupExpr(
+                                                dicExpr=this_part_side.get_var_part(),
+                                                keyExpr=root_probe_side.key_access(
+                                                    this_probe_key))
+
+                                        dict_val_list.append(
+                                            (k, col_op.replace(rec=None, inplace=False, mapper=col_mapper)))
 
                         dict_val_ir = RecConsExpr(dict_val_list)
 
@@ -860,7 +872,8 @@ class JointFrame:
                                         elif aggr_val_expr[1] == 'count':
                                             else_value = ConstantExpr(0)
                                         else:
-                                            raise ValueError(f'Aggregation function {aggr_val_expr[1]} is not supported.')
+                                            raise ValueError(
+                                                f'Aggregation function {aggr_val_expr[1]} is not supported.')
 
                                     dict_key_ir = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                                               self.part_lookup(),
@@ -935,7 +948,8 @@ class JointFrame:
                                     else:
                                         if v_name in joint_col_ins.keys():
                                             col_op = joint_col_ins[v_name]
-                                            if isinstance(col_op, (ColEl, ColExpr, ExternalExpr, NewColOpExpr, OldColOpExpr)):
+                                            if isinstance(col_op,
+                                                          (ColEl, ColExpr, ExternalExpr, NewColOpExpr, OldColOpExpr)):
                                                 val_tuples.append((k,
                                                                    col_op.replace(probe_on.iter_el.key)))
                                             elif isinstance(col_op, IfExpr):
