@@ -532,7 +532,11 @@ class Retriever:
             for n in mapper.keys():
                 if col_name in mapper[n]:
                     on.append(n)
-
+        elif isinstance(cond.unit1, ColExpr):
+            for col_name in Retriever.find_cols(cond.unit1):
+                for n in mapper.keys():
+                    if col_name in mapper[n]:
+                        on.append(n)
         elif isinstance(cond.unit1, CondExpr):
             on += Retriever.find_cond_on(cond.unit1, mapper)
         elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
@@ -547,6 +551,11 @@ class Retriever:
             for n in mapper.keys():
                 if col_name in mapper[n]:
                     on.append(n)
+        elif isinstance(cond.unit2, ColExpr):
+            for col_name in Retriever.find_cols(cond.unit2):
+                for n in mapper.keys():
+                    if col_name in mapper[n]:
+                        on.append(n)
         elif isinstance(cond.unit2, CondExpr):
             on += Retriever.find_cond_on(cond.unit2, mapper)
         elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):
@@ -1122,7 +1131,7 @@ class Retriever:
     Aggregation
     '''
 
-    def find_agg(self, body_only=True):
+    def find_aggr(self, body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
         :return:

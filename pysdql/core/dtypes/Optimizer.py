@@ -793,7 +793,7 @@ class Optimizer:
     @property
     def output(self) -> LetExpr:
         if self.last_func == LastIterFunc.Agg:
-            op_expr = self.opt_on.peak()
+            op_expr = self.retriever.find_aggr(body_only=False)
             if op_expr.ret_type == OpRetType.DICT:
                 # Q19
                 if self.is_joint:
@@ -804,8 +804,8 @@ class Optimizer:
             if op_expr.ret_type == OpRetType.FLOAT:
                 # Q6_2
                 return AggrFrame(self.opt_on).sdql_ir
-            else:
-                raise NotImplementedError
+
+            raise NotImplementedError
         elif self.last_func == LastIterFunc.GroupbyAgg:
             if self.is_joint:
                 # Q3

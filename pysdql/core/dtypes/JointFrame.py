@@ -161,7 +161,7 @@ class JointFrame:
             if self.retriever.last_iter_is_aggr:
                 # Q19
 
-                aggr_info = self.retriever.find_agg()
+                aggr_info = self.retriever.find_aggr()
 
                 aggr_dict = aggr_info.aggr_op
 
@@ -1215,15 +1215,28 @@ class JointFrame:
 
             if self.retriever.last_iter_is_calc:
                 # Q14
+                # Q17
                 rec_list = []
 
-                for i in self.col_ins:
-                    if isinstance(self.col_ins[i], IfExpr):
-                        rec_list.append((i, self.col_ins[i]))
-                    elif isinstance(self.col_ins[i], SDQLIR):
-                        rec_list.append((i, self.col_ins[i].sdql_ir))
+                col_inserted = self.retriever.findall_col_insert()
+
+                for i in self.retriever.findall_col_insert().keys():
+                    if isinstance(col_inserted[i], IfExpr):
+                        rec_list.append((i, col_inserted[i]))
+                    elif isinstance(col_inserted[i], SDQLIR):
+                        rec_list.append((i, col_inserted[i].sdql_ir))
                     else:
-                        raise TypeError(f'Unsupported Type {type(self.col_ins[i])}')
+                        raise TypeError(f'Unsupported Type {type(col_inserted[i])}')
+
+                col_renamed = self.retriever.findall_col_rename()
+
+                for j in self.retriever.findall_col_rename().keys():
+                    if isinstance(col_renamed[j], IfExpr):
+                        rec_list.append((j, col_renamed[j]))
+                    elif isinstance(col_renamed[j], SDQLIR):
+                        rec_list.append((j, col_renamed[j].sdql_ir))
+                    else:
+                        raise TypeError(f'Unsupported Type {type(col_renamed[j])}')
 
                 rec = RecConsExpr(rec_list)
 
@@ -1252,6 +1265,8 @@ class JointFrame:
             # Q7
             # Q8
             # Q10
+            # Q17
+            # Q18
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
@@ -1380,6 +1395,7 @@ class JointFrame:
                 else:
                     # Q7
                     # Q8
+                    # Q17
                     # Q18
 
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
@@ -1449,6 +1465,39 @@ class JointFrame:
                                                   self.part_lookup(
                                                       self.retriever.find_col_rename(col_name=i,
                                                                                      by='val'))))
+                        elif self.probe_frame.retriever.was_groupby_aggr:
+                            groupby_aggr_expr = self.probe_frame.retriever.find_groupby_aggr()
+                            groupby_cols = groupby_aggr_expr.groupby_cols
+                            aggr_dict = groupby_aggr_expr.origin_dict
+
+                            if i in groupby_cols:
+                                dict_val_list.append((i,
+                                                      self.probe_access(i)))
+                            elif i in aggr_dict.keys():
+                                if isinstance(aggr_dict[i], tuple):
+                                    if aggr_dict[i][1] == 'sum':
+                                        dict_val_list.append((i,
+                                                              self.probe_access(aggr_dict[i][0])))
+                                    elif aggr_dict[i][1] == 'count':
+                                        dict_val_list.append((i,
+                                                              ConstantExpr(1)))
+                                    else:
+                                        raise NotImplementedError
+                                elif isinstance(aggr_dict[i], str):
+                                    if aggr_dict[i] == 'sum':
+                                        dict_val_list.append((i,
+                                                              self.probe_access(i)))
+                                    elif aggr_dict[i] == 'count':
+                                        dict_val_list.append((i,
+                                                              ConstantExpr(1)))
+                                    else:
+                                        raise NotImplementedError
+                                else:
+                                    raise ValueError(f'Unexpected aggrgation function: {aggr_dict}')
+                            else:
+                                raise NotImplementedError
+                        else:
+                            raise IndexError(f'Cannot find column {i}')
 
                     dict_val_ir = RecConsExpr(dict_val_list) if dict_val_list else ConstantExpr(True)
 
@@ -1536,16 +1585,30 @@ class JointFrame:
         # Q14
         # Q15
         # Q16
+        # Q17
         # Q18
         # Q19
         if not self.part_frame.is_joint and not self.probe_frame.is_joint:
             # print(f'{self.joint.name}: neither joint')
 
             if self.probe_frame.retriever.was_groupby_aggr:
-                result = SDQLInspector.concat_bindings([self.probe_frame.probe_on.get_groupby_aggr(),
-                                                        self.part_frame.get_part_expr(),
-                                                        self.get_probe_expr(next_op)])
-                return result
+                if self.probe_frame.retriever.find_cond_after(GroupbyAggrExpr):
+                    # Q15
+                    # Q18
+
+                    # groupby having (condition after groupby aggregation)
+
+                    result = SDQLInspector.concat_bindings([self.probe_frame.probe_on.get_groupby_aggr(),
+                                                            self.part_frame.get_part_expr(),
+                                                            self.get_probe_expr(next_op)])
+                    return result
+                else:
+                    # Q17
+                    return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
+
+            # Q14
+            # Q16
+            # Q19
 
             return self.part_frame.get_part_expr(self.get_probe_expr(next_op))
         # Q10
