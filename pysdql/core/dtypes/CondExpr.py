@@ -23,6 +23,7 @@ from pysdql.core.dtypes.sdql_ir import (
 from pysdql.core.dtypes.EnumUtil import (
     LogicSymbol,
 )
+from pysdql.extlib.sdqlpy.lib.sdql_ir import ConstantExpr
 
 
 class CondExpr(SDQLIR):
@@ -306,7 +307,7 @@ class CondExpr(SDQLIR):
         if self.op == LogicSymbol.OR:
             return AddExpr(input_fmt(self.unit1), input_fmt(self.unit2))
         if self.op == LogicSymbol.NOT:
-            raise NotImplemented()
+            return CompareExpr(CompareSymbol.EQ, input_fmt(self.unit1), input_fmt(False))
 
         # if self.op == LogicSymbol.AND:
         #     return MulExpr(self.unit1, self.unit2)

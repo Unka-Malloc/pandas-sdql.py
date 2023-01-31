@@ -49,6 +49,13 @@ class Retriever:
             cols += Retriever.find_cols(expr_obj.unit2)
         elif isinstance(expr_obj, ExternalExpr):
             cols += Retriever.find_cols(expr_obj.col)
+        elif isinstance(expr_obj, GroupbyAggrExpr):
+            cols += expr_obj.groupby_cols
+            if isinstance(list(expr_obj.origin_dict.values())[0], tuple):
+                for v in expr_obj.origin_dict.values():
+                    cols.append(v[0])
+            else:
+                raise NotImplementedError
         return cols
 
     def find_cols_used(self, mode='', only_next=True):
@@ -813,6 +820,17 @@ class Retriever:
         return False
 
     @property
+    def as_aggr_for_next_join(self):
+        next_merge = self.find_merge('as_part')
+        if next_merge.joint.retriever.findall_groupby_aggr(drop_last=True):
+            groupby_aggr_expr = next_merge.joint.retriever.findall_groupby_aggr()[0]
+            if next_merge.joint.retriever.has_multi_gourpby_aggr:
+                if all([i in self.target.columns or i == next_merge.right_on
+                        for i in self.find_cols(groupby_aggr_expr)]):
+                    return True
+        return False
+
+    @property
     def is_joint(self) -> bool:
         for op_expr in self.history:
             op_body = op_expr.op
@@ -1028,12 +1046,28 @@ class Retriever:
     GroupbyAgg
     '''
 
+    def findall_groupby_aggr(self, body_only=True, drop_last=True):
+        expr_list = []
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                if body_only:
+                    expr_list.append(op_body)
+                else:
+                    expr_list.append(op_expr)
+
+        if drop_last:
+            return expr_list[:-1]
+        else:
+            return expr_list
+
     def find_groupby_aggr(self, body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
         :return:
         """
-        for op_expr in self.history:
+        for op_expr in reversed(self.history):
             op_body = op_expr.op
 
             if isinstance(op_body, GroupbyAggrExpr):
@@ -1060,6 +1094,27 @@ class Retriever:
 
             if isinstance(op_body, op_type):
                 return None
+        else:
+            return None
+
+    def find_groupby_aggr_after(self, op_type, body_only=True):
+        """
+        It returns a list that contains all groupby aggregation operations.
+        :return:
+        """
+        target_located = False
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, op_type):
+                target_located = True
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                if target_located:
+                    if body_only:
+                        return op_body
+                    else:
+                        return op_expr
         else:
             return None
 
@@ -1192,6 +1247,20 @@ class Retriever:
                 return True
 
         return False
+
+    @property
+    def has_multi_gourpby_aggr(self):
+        groupby_aggr_list = []
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                groupby_aggr_list.append(op_body)
+
+        if len(groupby_aggr_list) > 1:
+            return True
+        else:
+            return False
 
     def find_col_proj(self, body_only=True):
         for op_expr in self.history:

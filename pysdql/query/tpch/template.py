@@ -1,3 +1,5 @@
+import pandas as pd
+
 def tpch_q1(lineitem):
     li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
     li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
@@ -282,6 +284,25 @@ def tpch_q12(orders, lineitem):
     result = li_ord_join.groupby(['l_shipmode'], as_index=False) \
         .agg(high_line_count=('high_line_priority', 'sum'),
              low_line_count=('low_line_priority', 'sum'))
+
+    return result
+
+
+def tpch_q13(customer, orders):
+    ord_filt = orders[~((orders['o_comment'].str.find('special') != -1)
+                        & (orders['o_comment'].str.find('requests') > (orders['o_comment'].str.find('special') + 6)))]
+
+    # customer left outer join ord_filt
+    # is equivalent to
+    # ord_filt right outer join customer
+
+    cu_ord_join = ord_filt.merge(customer, how='right', left_on='o_custkey', right_on='c_custkey')
+
+    c_orders = cu_ord_join.groupby(['c_custkey'], as_index=False) \
+        .agg(c_count=('o_orderkey', 'count'))
+
+    result = c_orders.groupby(['c_count'], as_index=False) \
+        .agg(custdist=('c_custkey', 'count'))
 
     return result
 

@@ -6,7 +6,8 @@ from pysdql.core.dtypes.sdql_ir import (
     RecConsExpr,
     SumExpr,
     LetExpr,
-    ConstantExpr
+    ConstantExpr,
+    RecAccessExpr
 )
 from pysdql.core.util.df_retriever import Retriever
 
@@ -161,10 +162,51 @@ class JoinPartFrame:
                 next_probe_op = ConstantExpr(True)
 
         if isinstance(self.part_key, str):
-            part_left_op = DicConsExpr([(
-                self.part_on.key_access(self.group_key),
-                self.col_proj_ir
-            )])
+            if self.retriever.as_aggr_for_next_join:
+                next_merge = self.retriever.find_merge('as_part')
+                groupby_aggr_expr = next_merge.joint.retriever.findall_groupby_aggr()[0]
+
+                groupby_cols = groupby_aggr_expr.groupby_cols
+                aggr_dict = groupby_aggr_expr.aggr_dict
+
+                if len(groupby_cols) == 0:
+                    raise ValueError()
+                elif len(groupby_cols) == 1:
+                    dict_key_ir = self.part_on.key_access(self.part_key)
+                else:
+                    key_tuples = []
+                    for c in groupby_cols:
+                        if c == next_merge.right_on:
+                            key_tuples.append((c, self.part_on.key_access(self.part_key)))
+                        elif c in self.part_on.columns:
+                            key_tuples.append((c, self.part_on.key_access(c)))
+                        else:
+                            raise IndexError(f'Cannot find such a column {c} '
+                                             f'in part side {self.part_on.name}')
+                    dict_key_ir = RecConsExpr(key_tuples)
+
+                val_tuples = []
+                for k in aggr_dict.keys():
+                    v = aggr_dict[k]
+
+                    if isinstance(v, RecAccessExpr):
+                        # (, 'sum')
+                        if v.name in self.part_on.columns:
+                            val_tuples.append((k, self.part_on.key_access(v.name)))
+                        else:
+                            raise IndexError(f'Cannot find column {v.name} in {self.part_on.columns}')
+                    elif isinstance(v, ConstantExpr):
+                        # (, 'count')
+                        val_tuples.append((k, v))
+                    else:
+                        raise NotImplementedError
+                dict_val_ir = RecConsExpr(val_tuples)
+
+                part_left_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
+            else:
+                part_left_op = DicConsExpr([(
+                self.part_on.key_access(self.part_key),
+                self.col_proj_ir)])
 
             if self.part_cond:
                 part_left_op = IfExpr(condExpr=self.part_cond,
