@@ -56,7 +56,7 @@ def sdql_to_df(sdql_obj):
                     res_list.append(sdql_record_to_pydict(k))
             else:
                 return pandas.DataFrame(concat_pydict(res_list))
-    elif isinstance(sdql_obj, float):
+    elif isinstance(sdql_obj, (int, float)):
         return pandas.DataFrame({'result': [sdql_obj]})
     elif sdql_obj is None:
         return pandas.DataFrame({'result': [sdql_obj]})

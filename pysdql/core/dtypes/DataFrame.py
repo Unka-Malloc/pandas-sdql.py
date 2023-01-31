@@ -147,7 +147,8 @@ class DataFrame(SemiRing, Retrivable):
     def add_const(self, const):
         if type(const) == str:
             if const not in self.context_constant.keys():
-                tmp_vname = (''.join(re.split(r'[^A-Za-z]', const))).lower() + ''.join([i for i in const if i.isdigit()])
+                tmp_vname = (''.join(re.split(r'[^A-Za-z]', const))).lower() + ''.join(
+                    [i for i in const if i.isdigit()])
                 tmp_var = VarExpr(tmp_vname)
                 self.context_constant[const] = tmp_var
                 self.context_variable[tmp_vname] = tmp_var
@@ -542,6 +543,8 @@ class DataFrame(SemiRing, Retrivable):
                 return self.rename_col_scalar(key, value)
             if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
                 return self.rename_col_expr(key, value)
+            if type(value) in (IfExpr,):
+                return self.rename_col_expr(key, value)
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
@@ -563,22 +566,16 @@ class DataFrame(SemiRing, Retrivable):
                                         op_iter=False))
 
     def rename_col_scalar(self, key, value):
-        pass
+        raise NotImplementedError
 
     def rename_col_expr(self, key, value):
-        pass
+        self.operations.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+                                                        col_expr=value),
+                                    op_on=self,
+                                    op_iter=False))
 
     def insert_col_scalar(self, key, value):
-        pass
-        # next_name = self.gen_tmp_name()
-        # next_df = DataFrame(name=next_name, operations=self.operations)
-        #
-        # value = to_scalar(value)
-        # var = VarExpr(next_name, IterStmt(self.iter_expr,
-        #                                   DictEl({ConcatExpr(self.iter_expr.key, RecEl({key: value}))
-        #                                           : 1})))
-        #
-        # next_df.push(OpExpr('', var))
+        raise NotImplementedError
 
     def insert_col_expr(self, key, value):
         self.operations.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
@@ -1110,7 +1107,7 @@ class DataFrame(SemiRing, Retrivable):
 
                     if only_for == self.partition_side.name:
                         apply_cond = cond.replace(rec=DicLookupExpr(self.joint_frame.part_frame.part_on_var,
-                                                                     self.joint_frame.probe_frame.probe_key_sdql_ir),
+                                                                    self.joint_frame.probe_frame.probe_key_sdql_ir),
                                                   inplace=False)
 
                         if isinstance(op, SDQLIR):
@@ -1178,8 +1175,22 @@ class DataFrame(SemiRing, Retrivable):
                     else:
                         raise NotImplementedError
                 else:
-                    print(cond_on)
-                    print(cond)
+                    cond_mapper = {tuple(self.partition_side.cols_out):
+                                       self.joint_frame.part_lookup(),
+                                   tuple(self.probe_side.cols_out): self.probe_side.iter_el.key}
+
+                    apply_cond = cond.replace(rec=None, inplace=False, mapper=cond_mapper)
+
+                    if isinstance(op, SDQLIR):
+                        apply_op = op.sdql_ir
+                    else:
+                        apply_op = op
+
+                    return IfExpr(condExpr=self.joint_frame.part_nonull(),
+                                  thenBodyExpr=IfExpr(condExpr=apply_cond,
+                                                      thenBodyExpr=apply_op,
+                                                      elseBodyExpr=ConstantExpr(lamb_else)),
+                                  elseBodyExpr=ConstantExpr(lamb_else))
             else:
                 raise NotImplementedError
         else:
@@ -1201,3 +1212,6 @@ class DataFrame(SemiRing, Retrivable):
     @property
     def retriever(self) -> Retriever:
         return self.__retriever
+
+    def drop_duplicates(self):
+        return self

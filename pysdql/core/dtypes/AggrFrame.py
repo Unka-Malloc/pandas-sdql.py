@@ -17,7 +17,7 @@ class AggrFrame:
     def sdql_ir(self):
         # Q6
 
-        aggr_info = self.retriever.find_agg()
+        aggr_info = self.retriever.find_aggr()
 
         aggr_dict = aggr_info.aggr_op
 
