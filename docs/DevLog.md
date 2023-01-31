@@ -1,7 +1,7 @@
 # Waiting for verification
 1. Q2 (Suspended: Waiting for minimum promotion implementation by Hesam)
 2. Q9 (Issue: Query provided by Hesam FAILED)
-3. Q11 
+3. Q11 (Issue: Query provided by Hesam FAILED)
 4. Q20
 5. Q21
 6. Q22

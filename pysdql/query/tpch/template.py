@@ -286,6 +286,33 @@ def tpch_q10(customer, orders, lineitem, nation):
 
     return result
 
+def tpch_q11(partsupp, supplier, nation):
+    # 1G
+    var1 = 'GERMANY'
+
+    # 1M
+    var1 = 'PERU'
+    na_filt = nation[(nation['n_name'] == var1)]
+
+    na_su_join = na_filt.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+
+    all_join = na_su_join.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
+
+    agg_val = (all_join['ps_supplycost'] * all_join['ps_availqty']).sum() * 0.0001
+
+    # GOURPBY HAVING
+    all_join_filt = all_join.groupby(['ps_partkey']).filter(
+        lambda x: (x['ps_supplycost'] * x['ps_availqty']).sum() > agg_val
+    )
+
+    all_join_filt['value'] = all_join_filt['ps_supplycost'] * all_join_filt['ps_availqty']
+
+    # SELECT GROUPBY AGGREGATION
+    result = all_join_filt.groupby(['ps_partkey'], as_index=False) \
+        .agg({'value': 'sum'})
+
+    return result
+
 
 def tpch_q12(orders, lineitem):
     var1 = ('MAIL', 'SHIP')
