@@ -1,3 +1,11 @@
+# Waiting for verification
+1. Q2 (Suspended: Waiting for minimum promotion)
+2. Q9
+3. Q11
+4. Q20
+5. Q21
+6. Q22
+
 # Apply
 1. Q8
 2. Q14
@@ -6,8 +14,7 @@
 # Seems like not implemented
 1. min in Q2
 2. max in Q15
-3. left outer join in Q13
-4. Q16: if a dict `d` is None, then `d[0]` should be None, and `d[0].a` should also be None.
+3. Q16: if a dict `d` is None, then `d[0]` should be None, and `d[0].a` should also be None.
 
 # Q5
 Exceptionally difficult implementation.  
