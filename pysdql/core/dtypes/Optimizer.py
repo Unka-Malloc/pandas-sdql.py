@@ -57,11 +57,9 @@ class Optimizer:
 
         self.vname_groupby_agg = f'{opt_on.name}_groupby_agg'
         self.var_groupby_agg = VarExpr(self.vname_groupby_agg)
-        # self.opt_on.add_context_variable(self.vname_groupby_agg, self.var_groupby_agg)
 
         self.vname_groupby_agg_concat = f'{opt_on.name}_groupby_agg_concat'
         self.var_groupby_agg_concat = VarExpr(self.vname_groupby_agg_concat)
-        # self.opt_on.add_context_variable(self.vname_groupby_agg_concat, self.var_groupby_agg_concat)
 
         self.groupby_aggr_info = {
             'groupby_cols': [],
@@ -524,249 +522,9 @@ class Optimizer:
 
         return tmp_joint_frame
 
-    def merge_partition_stmt(self, let_next=None) -> LetExpr:
-        merge_left_on_ir = self.opt_on.key_access(self.last_merge_info['left_on'])
-
-        if self.has_cond:
-            part_left_op = IfExpr(condExpr=self.get_cond_ir(),
-                                  thenBodyExpr=DicConsExpr([(
-                                      merge_left_on_ir,
-                                      self.get_col_proj_ir(MergeType.PARTITION)
-                                  )]),
-                                  elseBodyExpr=EmptyDicConsExpr())
-        else:
-            part_left_op = DicConsExpr([(
-                merge_left_on_ir,
-                self.get_col_proj_ir(MergeType.PARTITION)
-            )])
-
-        self.merge_left_info['merge_left_sum_op'] = part_left_op
-
-        part_left_sum = SumExpr(varExpr=self.merge_left_info['merge_left_sum_el'],
-                                dictExpr=self.merge_left_info['merge_left_sum_on'],
-                                bodyExpr=self.merge_left_info['merge_left_sum_op'],
-                                isAssignmentSum=True)
-
-        self.merge_left_info['merge_left_let_val'] = part_left_sum
-        self.merge_left_info['merge_left_let_next'] = ConstantExpr('placeholder_merge_partition_statement')
-
-        if let_next:
-            return LetExpr(varExpr=self.merge_left_info['merge_left_let_var'],
-                           valExpr=self.merge_left_info['merge_left_let_val'],
-                           bodyExpr=let_next)
-        else:
-            return LetExpr(varExpr=self.merge_left_info['merge_left_let_var'],
-                           valExpr=self.merge_left_info['merge_left_let_val'],
-                           bodyExpr=self.merge_left_info['merge_left_let_next'])
-
-    def merge_probe_stmt(self, let_next=None, isAssign=False) -> LetExpr:
-        merge_left_opt = self.last_merge_info['left'].get_opt(OptGoal.JoinPartition)
-        merge_left_var = merge_left_opt.merge_left_info['merge_left_let_var']
-
-        merge_right_on_ir = self.opt_on.key_access(self.last_merge_info['right_on'])
-
-        if self.has_cond:
-            if self.was_merge_probe and self.is_next_merge_partition:
-                right_op = IfExpr(condExpr=self.get_cond_ir(),
-                                  thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                           leftExpr=DicLookupExpr(
-                                                                               dicExpr=merge_left_var,
-                                                                               keyExpr=merge_right_on_ir),
-                                                                           rightExpr=ConstantExpr(None)),
-                                                      thenBodyExpr=DicConsExpr([(
-                                                          self.opt_on.key_access(self.merge_left_info['merge_left_on']),
-                                                          self.get_col_proj_ir(MergeType.PROBE)
-                                                      )]),
-                                                      elseBodyExpr=EmptyDicConsExpr()),
-                                  elseBodyExpr=EmptyDicConsExpr())
-            else:
-                right_op = IfExpr(condExpr=self.get_cond_ir(),
-                                  thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                           leftExpr=DicLookupExpr(
-                                                                               dicExpr=merge_left_var,
-                                                                               keyExpr=merge_right_on_ir),
-                                                                           rightExpr=ConstantExpr(None)),
-                                                      thenBodyExpr=DicConsExpr([(
-                                                          merge_right_on_ir,
-                                                          self.get_col_proj_ir(MergeType.PROBE)
-                                                      )]),
-                                                      elseBodyExpr=EmptyDicConsExpr()),
-                                  elseBodyExpr=EmptyDicConsExpr())
-        else:
-            right_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                   leftExpr=DicLookupExpr(dicExpr=merge_left_var,
-                                                                          keyExpr=merge_right_on_ir),
-                                                   rightExpr=ConstantExpr(None)),
-                              thenBodyExpr=DicConsExpr([(
-                                  merge_right_on_ir,
-                                  self.get_col_proj_ir(MergeType.PROBE)
-                              )]),
-                              elseBodyExpr=EmptyDicConsExpr())
-
-        self.merge_right_info['merge_right_sum_op'] = right_op
-
-        right_sum = SumExpr(varExpr=self.merge_right_info['merge_right_sum_el'],
-                            dictExpr=self.merge_right_info['merge_right_sum_on'],
-                            bodyExpr=self.merge_right_info['merge_right_sum_op'],
-                            isAssignmentSum=isAssign)
-
-        self.merge_right_info['merge_right_let_val'] = right_sum
-        self.merge_right_info['merge_right_let_next'] = ConstantExpr('placeholder_merge_probe_statement')
-
-        if let_next:
-            let_expr = LetExpr(varExpr=self.merge_right_info['merge_right_let_var'],
-                               valExpr=self.merge_right_info['merge_right_let_val'],
-                               bodyExpr=let_next)
-        else:
-            let_expr = LetExpr(varExpr=self.merge_right_info['merge_right_let_var'],
-                               valExpr=self.merge_right_info['merge_right_let_val'],
-                               bodyExpr=self.merge_right_info['merge_right_let_next'])
-
-        return merge_left_opt.merge_partition_stmt(let_expr)
-
-    @property
-    def was_merge_partition(self):
-        for op_expr in self.opt_on.operations:
-            if op_expr.op_type == MergeExpr:
-                if op_expr.op.left.name == self.opt_on.name:
-                    return True
-        return False
-
-    @property
-    def was_merge_probe(self):
-        for op_expr in self.opt_on.operations:
-            if op_expr.op_type == MergeExpr:
-                if op_expr.op.right.name == self.opt_on.name:
-                    return True
-        return False
-
-    @property
-    def is_next_merge_partition(self):
-        if self.last_merge_info['left'].name == self.opt_on.name:
-            return True
-        else:
-            return False
-
-    @property
-    def is_next_merge_probe(self):
-        if self.last_merge_info['right'].name == self.opt_on.name:
-            return True
-        else:
-            return False
-
-    @property
-    def groupby_aggr_with_merge_stmt(self):
-        groupby_cols = self.groupby_aggr_info['groupby_cols']
-        aggr_dict = self.groupby_aggr_info['aggr_dict']
-
-        right_on_ir = self.opt_on.key_access(self.merge_right_info['merge_right_on'])
-
-        # aggr_key_ir
-        key_rec_list = []
-        for i in groupby_cols:
-            if i == self.merge_right_info['merge_right_on']:
-                key_rec_list.append((i, self.opt_on.key_access(i)))
-            if i in self.last_merge_info['left'].cols_out:
-                key_rec_list.append(
-                    (i, RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.last_merge_info['left'].var_probe,
-                                                            keyExpr=self.last_merge_info['left'].key_access(i)),
-                                      fieldName=i)))
-
-        aggr_key_ir = RecConsExpr(key_rec_list)
-
-        # aggr_val_ir
-        val_rec_list = []
-        if self.col_ins:
-            for k in aggr_dict.keys():
-                v = aggr_dict[k]
-                if v.name in self.col_ins.keys():
-                    col_expr = self.col_ins[v.name].sdql_ir
-                else:
-                    col_expr = v
-                val_rec_list.append((k, col_expr))
-
-        aggr_val_ir = RecConsExpr(val_rec_list)
-
-        if self.has_cond:
-            merge_groupby_aggr_op = IfExpr(condExpr=self.get_cond_ir(),
-                                           thenBodyExpr=IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                                    leftExpr=DicLookupExpr(
-                                                                                        dicExpr=self.opt_on.var_expr,
-                                                                                        keyExpr=right_on_ir),
-                                                                                    rightExpr=ConstantExpr(None)),
-                                                               thenBodyExpr=DicConsExpr([(
-                                                                   aggr_key_ir,
-                                                                   aggr_val_ir
-                                                               )]),
-                                                               elseBodyExpr=EmptyDicConsExpr()),
-                                           elseBodyExpr=EmptyDicConsExpr())
-        else:
-            merge_groupby_aggr_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
-                                                                leftExpr=DicLookupExpr(dicExpr=self.opt_on.var_expr,
-                                                                                       keyExpr=right_on_ir),
-                                                                rightExpr=ConstantExpr(None)),
-                                           thenBodyExpr=DicConsExpr([(aggr_key_ir,
-                                                                      aggr_val_ir
-                                                                      )]),
-                                           elseBodyExpr=EmptyDicConsExpr())
-
-        next_sum = SumExpr(varExpr=self.opt_on.iter_el.el,
-                           dictExpr=self.opt_on.var_expr,
-                           bodyExpr=merge_groupby_aggr_op,
-                           isAssignmentSum=False)
-
-        result = VarExpr('result')
-
-        next_let = LetExpr(varExpr=self.opt_on.var_probe,
-                           valExpr=next_sum,
-                           bodyExpr=LetExpr(varExpr=result,
-                                            valExpr=SumBuilder(
-                                                lambda p: DicConsExpr([(ConcatExpr(p[0], p[1]), ConstantExpr(True))]),
-                                                self.opt_on.var_probe,
-                                                True),
-                                            bodyExpr=LetExpr(VarExpr('out'), result, ConstantExpr(True))))
-
-        return self.last_merge_info['left'].merge_probe_stmt(let_next=next_let)
-
     @property
     def aggr_frame(self):
         return AggrFrame(self.opt_on)
-
-    @property
-    def aggr_stmt(self):
-        if len(self.agg_dict_info['cond_then'].keys()) == 1:
-            agg_list = []
-            for agg_key in self.agg_dict_info['cond_then'].keys():
-                v = self.agg_dict_info['cond_then'][agg_key]
-                if self.col_ins:
-                    if v in self.col_ins.keys():
-                        col_expr = self.col_ins[v].sdql_ir
-                    else:
-                        col_expr = v
-                    agg_list.append((agg_key, col_expr))
-                else:
-                    agg_list.append((agg_key, v))
-
-            sum_op = DicConsExpr(agg_list)
-
-            if self.has_cond:
-                sum_op = IfExpr(self.get_cond_ir(),
-                                sum_op,
-                                EmptyDicConsExpr())
-
-            self.agg_dict_info['sum_op'] = sum_op
-
-            out = VarExpr('out')
-            self.opt_on.add_context_variable(vname='out',
-                                             vobj=out)
-
-            return LetExpr(out,
-                           SumExpr(self.agg_dict_info['sum_el'],
-                                   self.agg_dict_info['sum_on'],
-                                   self.agg_dict_info['sum_op']),
-                           ConstantExpr(True))
-        else:
-            raise NotImplementedError
 
     @property
     def retriever(self) -> Retriever:
@@ -775,20 +533,6 @@ class Optimizer:
     @property
     def last_func(self):
         return self.retriever.find_last_iter(as_enum=True)
-
-    @property
-    def info(self):
-        if self.opt_goal == OptGoal.JoinPartition:
-            col_proj_ir = self.get_col_proj_ir(MergeType.PARTITION)
-        elif self.opt_goal == OptGoal.JoinProbe:
-            col_proj_ir = self.get_col_proj_ir(MergeType.PROBE)
-        else:
-            col_proj_ir = self.get_col_proj_ir(MergeType.NONE)
-
-        return {
-            'cond': self.get_cond_ir(),
-            'col_proj': col_proj_ir,
-        }
 
     @property
     def output(self) -> LetExpr:
@@ -819,6 +563,7 @@ class Optimizer:
             return GroupbyAggrFrame(self.opt_on).sdql_ir
         elif self.last_func == LastIterFunc.Joint:
             # Q15
+            # Q20
             return self.joint_frame.sdql_ir
         elif self.last_func == LastIterFunc.Calc:
             # Q14

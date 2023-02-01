@@ -527,31 +527,41 @@ def tpch_q19(lineitem, part):
 
 
 def tpch_q20(supplier, nation, partsupp, part, lineitem):
-    li_filt = lineitem[(lineitem['l_shipdate'] >= '1994-01-01') & (lineitem['l_shipdate'] < '1995-01-01')]
+    # 1G
+    var1 = 'forest'
+    var2 = '1994-01-01'
+    var3 = '1995-01-01'  # var1 + interval '1' year
+    var4 = 'CANADA'
+
+    # 1M
+    # var1 = 'orange'
+    # var2 = '1995-01-01'
+    # var3 = '1996-01-01'  # var2 + 1 year
+    # var4 = 'UNITED STATES'
+
+    li_filt = lineitem[(lineitem['l_shipdate'] >= var2) & (lineitem['l_shipdate'] < var3)]
+
+    pa_filt = part[part['p_name'].str.startswith(var1)]
+
+    li_filt = li_filt[(li_filt['l_partkey'].isin(pa_filt['p_partkey']))]
+
+    li_filt = li_filt[(li_filt['l_suppkey'].isin(supplier['s_suppkey']))]
 
     agg_lineitem = li_filt.groupby(['l_partkey', 'l_suppkey'], as_index=False) \
         .agg(sum_quantity=('l_quantity', 'sum'))
 
-    agg_lineitem['agg_partkey'] = agg_lineitem['l_partkey']
-    agg_lineitem['agg_suppkey'] = agg_lineitem['l_suppkey']
-    agg_lineitem['agg_quantity'] = agg_lineitem['sum_quantity'] * 0.5
-
     li_ps_join = agg_lineitem.merge(partsupp,
-                                    left_on=['agg_partkey', 'agg_suppkey'],
+                                    left_on=['l_partkey', 'l_suppkey'],
                                     right_on=['ps_partkey', 'ps_suppkey'])
 
-    pa_filt = part[part['p_name'].str.startswith('forest')]
+    li_ps_filt = li_ps_join[li_ps_join['ps_availqty'] > li_ps_join['sum_quantity'] * 0.5]
 
-    li_ps_filt = li_ps_join[(li_ps_join['ps_partkey'].isin(pa_filt['p_partkey']))]
+    na_filt = nation[(nation['n_name'] == var4)]
 
-    ps_li_filt = li_ps_filt[li_ps_filt['ps_availqty'] > li_ps_filt['agg_quantity']]
+    su_filt = supplier[(supplier['s_suppkey'].isin(li_ps_filt['l_suppkey']))]
 
-    na_filt = nation[(nation['n_name'] == 'CANADA')]
+    na_su_join = na_filt.merge(su_filt, left_on='n_nationkey', right_on='s_nationkey')
 
-    na_su_join = na_filt.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
-
-    na_su_filt = na_su_join[(na_su_join['s_suppkey'].isin(ps_li_filt['ps_suppkey']))]
-
-    result = na_su_filt[['s_name', 's_address']]
+    result = na_su_join[['s_name', 's_address']]
 
     return result

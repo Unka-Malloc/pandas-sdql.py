@@ -90,6 +90,8 @@ def concat_pydict(res_list: List[dict]):
 
 
 def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False):
+    print('>> Comparing SDQL with Pandas ... <<')
+
     if sdql_df is None:
         if pd_df is None:
             print('SDQL and Pandas results are both None!')
