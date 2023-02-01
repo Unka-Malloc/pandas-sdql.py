@@ -348,6 +348,11 @@ class Retriever:
                 else:
                     raise TypeError('Groupby aggregation dictionary must be dict.')
 
+            # Isin
+            if isinstance(op_body, IsInExpr):
+                cols_used.append(op_body.col_part.col_name)
+                cols_used.append(op_body.col_probe.col_name)
+
         # Remove Duplications
         cleaned_cols_used = []
         [cleaned_cols_used.append(x) for x in sorted(cols_used) if x not in cleaned_cols_used]
@@ -739,7 +744,7 @@ class Retriever:
 
         return cleaned_all_merges
 
-    def find_merge(self, mode: str):
+    def find_merge(self, mode=''):
         """
 
         :param mode: ['as_part', 'as_probe', 'as_joint']
@@ -759,6 +764,8 @@ class Retriever:
                 elif mode == 'as_probe':
                     if self.target.name == op_body.right.name:
                         return op_body
+                else:
+                    return op_body
 
         return None
 
@@ -1155,9 +1162,9 @@ class Retriever:
     isin()
     '''
 
-    def find_isin(self, body_only=True):
+    def find_isin(self, mode='as_probe', body_only=True):
         """
-        It returns a list that contains all groupby aggregation operations.
+
         :return:
         """
 
@@ -1165,14 +1172,22 @@ class Retriever:
             op_body = op_expr.op
 
             if isinstance(op_body, IsInExpr):
-                if body_only:
-                    return op_body
-                else:
-                    return op_expr
+                if mode == 'as_probe':
+                    if op_body.probe_on.name == self.target.name:
+                        if body_only:
+                            return op_body
+                        else:
+                            return op_expr
+                if mode == 'as_part':
+                    if op_body.part_on.name == self.target.name:
+                        if body_only:
+                            return op_body
+                        else:
+                            return op_expr
         else:
             return None
 
-    def find_isin_before(self, op_type, body_only=True):
+    def find_isin_before(self, op_type, mode='as_probe',body_only=True):
         """
         It returns a list that contains all groupby aggregation operations.
         :return:
@@ -1182,10 +1197,18 @@ class Retriever:
             op_body = op_expr.op
 
             if isinstance(op_body, IsInExpr):
-                if body_only:
-                    return op_body
-                else:
-                    return op_expr
+                if mode == 'as_probe':
+                    if op_body.probe_on.name == self.target.name:
+                        if body_only:
+                            return op_body
+                        else:
+                            return op_expr
+                if mode == 'as_part':
+                    if op_body.part_on.name == self.target.name:
+                        if body_only:
+                            return op_body
+                        else:
+                            return op_expr
 
             if isinstance(op_body, op_type):
                 return None
