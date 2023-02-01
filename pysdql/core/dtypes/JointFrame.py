@@ -1185,11 +1185,58 @@ class JointFrame:
                     if probe_isin:
                         print(probe_isin.get_as_part())
 
+                    print({
+                        'part': self.part_frame.part_on.name,
+                        'probe': self.probe_frame.probe_on.name
+                    })
+
                     raise NotImplementedError
                 else:
                     if isinstance(self.part_frame.get_part_key(), list) and \
                             isinstance(self.probe_frame.get_probe_key(), list):
+                        # aggr_key_ir
+                        key_rec_list = []
+
+                        print(part_key)
+                        print(probe_key)
+
+                        print(self.retriever.history)
+
+                        print(self.retriever.findall_cols_used(only_next=True))
+
+                        aggr_key_ir = RecConsExpr(key_rec_list)
+
+                        print(aggr_key_ir)
+
                         raise NotImplementedError
+
+                        joint_op = IfExpr(
+                            condExpr=CompareExpr(CompareSymbol.NE,
+                                                 DicLookupExpr(dicExpr=part_var,
+                                                               keyExpr=probe_on.key_access(
+                                                                   probe_key)),
+                                                 ConstantExpr(None)),
+                            thenBodyExpr=DicConsExpr([(aggr_key_ir, ConstantExpr(True))]),
+                            elseBodyExpr=ConstantExpr(None)
+                        )
+
+                        if probe_cond:
+                            joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=ConstantExpr(None))
+
+                        joint_sum = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                            dictExpr=probe_on.var_expr,
+                                            bodyExpr=joint_op,
+                                            isAssignmentSum=False)
+
+                        var_res = VarExpr('results')
+                        self.joint.add_context_variable('results', var_res)
+
+                        out = LetExpr(var_res, joint_sum, ConstantExpr(True))
+
+                        return out
+
                     if isinstance(self.part_frame.get_part_key(), str) \
                             and isinstance(self.probe_frame.get_probe_key(), str):
 

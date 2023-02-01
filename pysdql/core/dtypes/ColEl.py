@@ -354,6 +354,13 @@ class ColEl(FlexIR):
                                       op_iter=True,
                                       iter_on=None,
                                       ret_type=None))
+
+            vals.relation.push(OpExpr(op_obj=isin_expr,
+                                      op_on=self.R,
+                                      op_iter=True,
+                                      iter_on=None,
+                                      ret_type=None))
+
             return isin_expr
 
     # def isin(self, vals, ext=None):

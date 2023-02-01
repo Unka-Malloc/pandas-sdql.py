@@ -41,9 +41,15 @@ class IsInExpr(IgnoreExpr):
 
         groupby_aggr_info = part_retriever.find_groupby_aggr()
 
+        merge_info = part_retriever.find_merge('as_joint')
+
+        # print(merge_info)
+        #
+        print(merge_info.joint.joint_frame.get_joint_expr())
+
         if groupby_aggr_info:
             # Q18
-            print('Found Isin Groupby Aggr')
+            # print('Found Isin Groupby Aggr')
 
             groupby_cols = groupby_aggr_info.groupby_cols
             aggr_dict = groupby_aggr_info.aggr_dict
