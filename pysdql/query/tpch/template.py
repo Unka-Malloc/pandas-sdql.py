@@ -375,7 +375,9 @@ def tpch_q14(lineitem, part):
         axis=1)
     li_pa_join["B"] = li_pa_join['l_extendedprice'] * (1.0 - li_pa_join['l_discount'])
 
-    result = li_pa_join['A'].sum() / li_pa_join['B'].sum() * 100.0
+    print(type(li_pa_join['A'].sum()))
+
+    result = li_pa_join['A'].sum() * 100.0 / li_pa_join['B'].sum()
 
     return result
 

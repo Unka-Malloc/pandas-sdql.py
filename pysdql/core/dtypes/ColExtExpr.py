@@ -1,13 +1,20 @@
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.ColExpr import ColExpr
+from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.EnumUtil import MathSymbol, LogicSymbol
 
 from pysdql.core.dtypes.sdql_ir import *
 
 
-class ExternalExpr(SDQLIR):
+class ColExtExpr(FlexIR):
     def __init__(self, col, ext_func, args=None, isinvert=False):
+        """
+
+        :param ColEl col:
+        :param ext_func:
+        :param args:
+        :param isinvert:
+        """
         self.col = col
         self.func = ext_func
         self.args = args
@@ -17,7 +24,7 @@ class ExternalExpr(SDQLIR):
         self.isinvert = isinvert
 
     def replace(self, rec, inplace=False, mapper=None):
-        return ExternalExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
+        return ColExtExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
 
     def gen_cond_expr(self, operator, unit2):
         """
@@ -106,13 +113,29 @@ class ExternalExpr(SDQLIR):
                         unit2=other)
 
     def __add__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.ADD,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.ADD,
+                         unit2=other)
+
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return True
+
+    @property
+    def oid(self):
+        return hash((
+            self.col.oid,
+            self.func,
+            self.args
+        ))
 
     @property
     def sdql_ir(self):
-        if isinstance(self.col, SDQLIR):
+        if isinstance(self.col, FlexIR):
             col_expr = self.col.sdql_ir
         elif isinstance(self.col, Expr):
             col_expr = self.col

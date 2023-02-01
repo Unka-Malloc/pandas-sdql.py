@@ -3,11 +3,11 @@ from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.ColExpr import ColExpr
+from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 
 from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol,
@@ -31,15 +31,14 @@ from pysdql.core.dtypes.EnumUtil import (
 )
 
 
-class ColEl(SDQLIR):
-    def __init__(self, relation, field: str, promoted=None):
+class ColEl(FlexIR):
+    def __init__(self, col_of, col_name: str, promoted=None):
         """
-        ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
-        :param relation: DataFrame
-        :param field:
+        :param col_of: DataFrame
+        :param col_name:
         """
-        self.__relation = relation
-        self.__field = field
+        self.__relation = col_of
+        self.__field = col_name
         self.promoted = promoted
         self.follow_promotion = None
         self.data_type = ''
@@ -66,12 +65,20 @@ class ColEl(SDQLIR):
         return self.__field
 
     @property
+    def col_of(self):
+        return self.__relation
+
+    @property
+    def col_name(self):
+        return self.__field
+
+    @property
     def col(self):
         return self.relation.key_access(self.field)
 
     @property
     def year(self):
-        return ExternalExpr(col=self, ext_func=ExtFuncSymbol.ExtractYear)
+        return ColExtExpr(col=self, ext_func=ExtFuncSymbol.ExtractYear)
 
     @property
     def month(self):
@@ -262,27 +269,27 @@ class ColEl(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.ADD,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.ADD,
+                         unit2=other)
         # return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __mul__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.MUL,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.MUL,
+                         unit2=other)
         # return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __sub__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.SUB,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.SUB,
+                         unit2=other)
         # return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __truediv__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.DIV,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.DIV,
+                         unit2=other)
         # return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.R)
 
     '''
@@ -290,27 +297,27 @@ class ColEl(SDQLIR):
     '''
 
     def __radd__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.ADD,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.ADD,
+                         unit2=self)
         # return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rmul__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.MUL,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.MUL,
+                         unit2=self)
         # return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rsub__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.SUB,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.SUB,
+                         unit2=self)
         # return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rtruediv__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.DIV,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.DIV,
+                         unit2=self)
         # return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.R)
 
     def isin(self, vals):
@@ -408,7 +415,7 @@ class ColEl(SDQLIR):
     def startswith(self, pattern: str):
         # A%
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.StartsWith, self.get_const_var(pattern))
+        return ColExtExpr(self, ExtFuncSymbol.StartsWith, self.get_const_var(pattern))
         # return ExternalExpr(self, 'StrStartsWith', pattern)
 
     def endswith(self, pattern: str):
@@ -418,8 +425,7 @@ class ColEl(SDQLIR):
     def contains(self, pattern):
         # %A%
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
-        # return ExternalExpr(self, 'StrContains', args)
+        return ColExtExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
 
     def contains_in_order(self, *args):
         # %A%B%
@@ -438,7 +444,7 @@ class ColEl(SDQLIR):
 
     def find(self, pattern):
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
+        return ColExtExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
         # return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
     def exists(self, bind_on, cond=None):
@@ -452,10 +458,11 @@ class ColEl(SDQLIR):
         return self
 
     def sum(self):
-        aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
+        aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
                              aggr_on=self.relation,
                              aggr_op={self.field: self.sdql_ir},
-                             aggr_else=ConstantExpr(0.0))
+                             aggr_else=ConstantExpr(0.0),
+                             origin_dict={self.field: (self.field, 'sum')})
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self.relation,
@@ -495,6 +502,21 @@ class ColEl(SDQLIR):
             return rec
 
         return RecAccessExpr(rec, self.field)
+
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return True
+
+    @property
+    def oid(self):
+        return hash((
+            self.col_of.name,
+            self.col_name
+        ))
 
     @property
     def sdql_ir(self):

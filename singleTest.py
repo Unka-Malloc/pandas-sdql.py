@@ -1,5 +1,7 @@
 import pysdql
 
+from pysdql.core.dtypes.EnumUtil import AggrType
+
 from pysdql.query.tpch.template import *
 
 if __name__ == '__main__':
@@ -12,4 +14,3 @@ if __name__ == '__main__':
     tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir()
 
     # test_one = pysdql.tpch_query(20)
-

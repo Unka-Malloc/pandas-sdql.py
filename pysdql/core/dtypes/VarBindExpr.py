@@ -1,11 +1,11 @@
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.sdql_ir import (
     LetExpr,
     ConstantExpr
 )
 
 
-class VarBindExpr(SDQLIR):
+class VarBindExpr(FlexIR):
     def __init__(self, var_expr, var_value, next_expr=None):
         self.var_expr = var_expr
         self.var_value = var_value
@@ -43,6 +43,14 @@ class VarBindExpr(SDQLIR):
 
     def __iadd__(self, other):
         return self.concat(other)
+
+    @property
+    def replaceable(self):
+        return False
+
+    @property
+    def oid(self):
+        return True
 
     @property
     def sdql_ir(self):

@@ -6,18 +6,18 @@ from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColEl import ColEl
-from pysdql.core.dtypes.ColExpr import ColExpr
+from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -63,7 +63,7 @@ from pysdql.core.interfaces import (
 )
 
 
-class DataFrame(SemiRing, Retrivable):
+class DataFrame(FlexIR, Retrivable):
     def __init__(self,
                  data=None,
                  index=None,
@@ -449,6 +449,18 @@ class DataFrame(SemiRing, Retrivable):
 
         return '\n'.join(query_list)
 
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return False
+
+    @property
+    def oid(self):
+        return hash((self.name))
+
     @property
     def sdql_ir(self):
         opt = self.get_opt()
@@ -517,7 +529,7 @@ class DataFrame(SemiRing, Retrivable):
 
             return self
 
-        if isinstance(item, ExternalExpr):
+        if isinstance(item, ColExtExpr):
             if item.func in [ExtFuncSymbol.StringContains,
                              ExtFuncSymbol.StartsWith]:
 
@@ -552,14 +564,14 @@ class DataFrame(SemiRing, Retrivable):
         if key in self.columns:
             if type(value) in (bool, int, float, str):
                 return self.rename_col_scalar(key, value)
-            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr):
                 return self.rename_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.rename_col_expr(key, value)
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
-            if type(value) in (ColEl, ColExpr, CaseExpr, ExternalExpr):
+            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
@@ -674,6 +686,10 @@ class DataFrame(SemiRing, Retrivable):
             return self.agg_kwargs_parse(agg_kwargs)
 
     def agg_dict_parse(self, input_aggr_dict):
+        aggr_tuple_dict = {}
+        for k in input_aggr_dict.keys():
+            aggr_tuple_dict[k] = (k, input_aggr_dict[k])
+
         output_aggr_dict = {}
 
         for aggr_key in input_aggr_dict.keys():
@@ -684,10 +700,11 @@ class DataFrame(SemiRing, Retrivable):
             if aggr_func == 'count':
                 output_aggr_dict[aggr_key] = ConstantExpr(1)
 
-        aggr_expr = AggrExpr(aggr_type=AggrType.DICT,
+        aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
                              aggr_on=self,
                              aggr_op=output_aggr_dict,
-                             aggr_else=EmptyDicConsExpr())
+                             aggr_else=ConstantExpr(None),
+                             origin_dict=aggr_tuple_dict)
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self,
@@ -699,15 +716,15 @@ class DataFrame(SemiRing, Retrivable):
 
         return self
 
-    def agg_kwargs_parse(self, agg_tuple_dict):
+    def agg_kwargs_parse(self, aggr_tuple_dict):
         agg_dict = {}
 
-        for agg_key in agg_tuple_dict.keys():
-            agg_val = agg_tuple_dict[agg_key]
+        for agg_key in aggr_tuple_dict.keys():
+            agg_val = aggr_tuple_dict[agg_key]
             if not isinstance(agg_val, tuple):
                 raise ValueError()
 
-            agg_flag = agg_tuple_dict[agg_key][1]
+            agg_flag = aggr_tuple_dict[agg_key][1]
 
             if agg_flag == 'sum':
                 agg_dict[agg_key] = self.key_access(agg_val[0])
@@ -717,10 +734,11 @@ class DataFrame(SemiRing, Retrivable):
                 # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)
 
-        aggr_expr = AggrExpr(aggr_type=AggrType.DICT,
+        aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
                              aggr_on=self,
                              aggr_op=agg_dict,
-                             aggr_else=EmptyDicConsExpr())
+                             aggr_else=EmptyDicConsExpr(),
+                             origin_dict=aggr_tuple_dict)
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self,
@@ -1072,7 +1090,7 @@ class DataFrame(SemiRing, Retrivable):
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
         if self.is_joint:
-            if isinstance(cond, ExternalExpr):
+            if isinstance(cond, ColExtExpr):
                 col_name = cond.col.field
                 if col_name in self.partition_side.columns:
                     self.partition_side.push(OpExpr(op_obj=cond,
@@ -1110,7 +1128,7 @@ class DataFrame(SemiRing, Retrivable):
                                                                     self.joint_frame.probe_frame.probe_key_sdql_ir),
                                                   inplace=False)
 
-                        if isinstance(op, SDQLIR):
+                        if isinstance(op, FlexIR):
                             apply_op = op.sdql_ir
                         else:
                             apply_op = op
@@ -1122,7 +1140,7 @@ class DataFrame(SemiRing, Retrivable):
                         apply_cond = cond.replace(rec=self.probe_side.iter_el.key,
                                                   inplace=False)
 
-                        if isinstance(op, SDQLIR):
+                        if isinstance(op, FlexIR):
                             apply_op = op.sdql_ir
                         else:
                             apply_op = op
@@ -1158,7 +1176,7 @@ class DataFrame(SemiRing, Retrivable):
                                 if cols_inserted:
                                     new_col_op = cols_inserted[op.field]
 
-                                    if isinstance(new_col_op, SDQLIR):
+                                    if isinstance(new_col_op, FlexIR):
                                         apply_op = op.replace(
                                             rec=new_col_op.sdql_ir,
                                             inplace=True)
@@ -1181,7 +1199,7 @@ class DataFrame(SemiRing, Retrivable):
 
                     apply_cond = cond.replace(rec=None, inplace=False, mapper=cond_mapper)
 
-                    if isinstance(op, SDQLIR):
+                    if isinstance(op, FlexIR):
                         apply_op = op.sdql_ir
                     else:
                         apply_op = op

@@ -3,8 +3,8 @@ from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
@@ -449,7 +449,7 @@ class Optimizer:
 
             self.has_isin = True
 
-        if op_expr.op_type == ExternalExpr:
+        if op_expr.op_type == ColExtExpr:
             self.cond_info['cond_if'] = op_expr.op
 
     @property

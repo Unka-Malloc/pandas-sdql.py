@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
@@ -36,7 +36,7 @@ def input_fmt(data):
         return ConstantExpr(data)
     elif isinstance(data, Expr):
         return data
-    elif isinstance(data, SDQLIR):
+    elif isinstance(data, FlexIR):
         return data.sdql_ir
     elif isinstance(data, IgnoreExpr):
         return ConstantExpr(True)

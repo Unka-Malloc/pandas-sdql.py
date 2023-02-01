@@ -22,9 +22,9 @@ class MathSymbol(Enum):
 
 @unique
 class AggrType(Enum):
-    VAL = 0
-    DICT = 1
-    REC = 2
+    Scalar = 0
+    Dict = 1
+    Record = 2
 
 
 @unique
