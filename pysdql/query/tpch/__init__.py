@@ -10,9 +10,18 @@ from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
 sep_line = '#' * 60
 
+issue_info = {
+    2: 'Not Implemented: Waiting for minimum promotion...',
+    9: 'Mismatch Answer: Incorrect n_name due to string addition (Example: MOROCCOMOROCCOMOROCCOMOROCCOMOROCCOMOROCCOMOROCCO)',
+    11: 'Crash: Query provided by Hesam FAILED...',
+    16: 'Weak: If a dict is empty, then dict[key] should be None instead of asserting an Exception'
+}
+
 
 def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> bool:
-    done = [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    done = [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    error_info = {}
 
     if isinstance(qindex, int):
         if qindex not in done:
@@ -28,7 +37,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(f'Query {q} has not been verified.')
                 return False
 
-            print(f'>> Query {q} <<')
+            print(f'>> Query {q} (Q{q}) <<')
 
             sdql_df = None
             pandas_df = None
@@ -41,14 +50,16 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
 
                 sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
             except:
-                check_dict[q] = 'Error'
+                check_dict[q] = '\033[31m Error \033[0m'
 
                 if verbose:
                     print_error_text(q)
                 else:
                     print(f'Query {q}: Error')
 
-                print(traceback.print_exc())
+                traceback.print_exc()
+
+                error_info[q] = traceback.format_exc()
 
                 continue
 
@@ -64,14 +75,16 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
 
                 pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
             except:
-                check_dict[q] = 'Error'
+                check_dict[q] = '\033[31m Error \033[0m'
 
                 if verbose:
                     print_error_text(q)
                 else:
                     print(f'Query {q}: Error')
 
-                print(traceback.print_exc())
+                traceback.print_exc()
+
+                error_info[q] = traceback.format_exc()
 
                 continue
 
@@ -81,23 +94,34 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(pandas_result)
 
             if compare_dataframe(sdql_df, pandas_df, verbose):
-                check_dict[q] = 'Pass'
+                check_dict[q] = '\033[32m Pass \033[0m'
                 if verbose:
                     print_pass_text(q)
                 else:
                     print(f'Query {q}: Pass')
             else:
-                check_dict[q] = 'Fail'
+                check_dict[q] = '\033[0m Fail \033[0m'
                 if verbose:
                     print_fail_text(q)
                 else:
                     print(f'Query {q}: Fail')
         else:
-            pprint.pprint(check_dict)
+            if verbose:
+                for k in error_info.keys():
+                    print(f'>> Traceback Q{k} <<')
+                    print()
+                    print(error_info[k])
+                    print(sep_line)
+
+            for k in check_dict.keys():
+                if k in issue_info.keys():
+                    print(f'{k}: {check_dict[k]} (\033[31m {issue_info[k]} \033[0m)')
+                else:
+                    print(f'{k}: {check_dict[k]}')
             print(sep_line)
 
             for k in check_dict.keys():
-                if check_dict[k] != 'Pass':
+                if 'Pass' not in check_dict[k]:
                     return False
             else:
                 return True
@@ -108,13 +132,14 @@ def print_pass_text(q):
     print(sep_line)
     print(f'''
     {art_map[q]}
+    \033[32m
            ██████╗  █████╗ ███████╗███████╗
            ██╔══██╗██╔══██╗██╔════╝██╔════╝
            ██████╔╝███████║███████╗███████╗
            ██╔═══╝ ██╔══██║╚════██║╚════██║
            ██║     ██║  ██║███████║███████║
            ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝                                                                  
-    ''')
+    \033[0m''')
     print(sep_line)
 
 
@@ -138,6 +163,7 @@ def print_error_text(q):
     print(sep_line)
     print(f'''
     {art_map[q]}
+    \033[31m
          ▓█████  ██▀███   ██▀███   ▒█████   ██▀███  
          ▓█   ▀ ▓██ ▒ ██▒▓██ ▒ ██▒▒██▒  ██▒▓██ ▒ ██▒
          ▒███   ▓██ ░▄█ ▒▓██ ░▄█ ▒▒██░  ██▒▓██ ░▄█ ▒
@@ -147,7 +173,7 @@ def print_error_text(q):
           ░ ░  ░  ░▒ ░ ▒░  ░▒ ░ ▒░  ░ ▒ ▒░   ░▒ ░ ▒░
             ░     ░░   ░   ░░   ░ ░ ░ ░ ▒    ░░   ░ 
             ░  ░   ░        ░         ░ ░     ░                 
-    ''')
+    \033[0m''')
     print(sep_line)
 
 

@@ -518,13 +518,15 @@ class DataFrame(SemiRing, Retrivable):
             return self
 
         if isinstance(item, ExternalExpr):
-            if item.func == ExtFuncSymbol.StringContains:
+            if item.func in [ExtFuncSymbol.StringContains,
+                             ExtFuncSymbol.StartsWith]:
+
                 self.operations.push(OpExpr(op_obj=item,
                                             op_on=self,
                                             op_iter=False))
                 return self
             else:
-                raise NotImplementedError
+                raise NotImplementedError(f'Unsupported external function {item.func}')
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -652,17 +654,6 @@ class DataFrame(SemiRing, Retrivable):
                            op_iter=True))
 
         return tmp_df
-
-    def merge_partition_stmt(self):
-        return self.get_opt(OptGoal.JoinPartition).merge_partition_stmt()
-
-    def merge_probe_stmt(self, let_next=None, sum_type=SumIterType.Update):
-        isAssign = False
-        if sum_type == SumIterType.Assign:
-            isAssign = True
-        if sum_type == SumIterType.Update:
-            isAssign = False
-        return self.get_opt(OptGoal.JoinProbe).merge_probe_stmt(let_next, isAssign)
 
     def get_opt(self, opt_goal=OptGoal.UnOptimized):
         opt = Optimizer(opt_on=self,

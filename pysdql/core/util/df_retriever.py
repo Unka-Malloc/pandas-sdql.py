@@ -1225,6 +1225,17 @@ class Retriever:
         return False
 
     @property
+    def was_isin(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, IsInExpr):
+                if op_body.probe_on.name == self.target.name:
+                    return True
+
+        return False
+
+    @property
     def was_aggregated(self):
         for op_expr in self.history:
             op_body = op_expr.op

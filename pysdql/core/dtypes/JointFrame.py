@@ -1070,7 +1070,7 @@ class JointFrame:
                     key_rec_list = []
 
                     if self.probe_frame.retriever.was_aggr:
-                        pass
+                        raise NotImplementedError
                     elif self.probe_frame.retriever.was_groupby_aggr:
                         groupby_aggr_info = self.probe_frame.retriever.find_groupby_aggr()
 
@@ -1176,12 +1176,22 @@ class JointFrame:
                             raise NotImplementedError
                     else:
                         raise NotImplementedError
+
+                elif self.probe_frame.retriever.was_probed:
+                    probe_isin = self.probe_frame.retriever.find_isin()
+
+                    if probe_isin:
+                        print(probe_isin.get_as_part())
+
                 else:
+                    # Q20
+
                     if isinstance(self.part_frame.get_part_key(), list) and \
                             isinstance(self.probe_frame.get_probe_key(), list):
                         raise NotImplementedError
                     if isinstance(self.part_frame.get_part_key(), str) \
                             and isinstance(self.probe_frame.get_probe_key(), str):
+                        # Q20
 
                         # aggr_key_ir
                         key_rec_list = []
