@@ -1,12 +1,13 @@
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import LastIterFunc
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.interfaces import Retrivable
 
 from pysdql.core.dtypes import (
     ColEl,
-    ColExpr,
+    ColOpExpr,
     ColProjExpr,
     NewColOpExpr,
     OldColOpExpr,
@@ -14,10 +15,12 @@ from pysdql.core.dtypes import (
     MergeExpr,
     AggrExpr,
     GroupbyAggrExpr,
-    ExternalExpr,
+    ColExtExpr,
 )
 
 from pysdql.core.dtypes.sdql_ir import *
+
+from pysdql.core.dtypes.sdql_ir import Expr as SdqlExpr
 
 
 class Retriever:
@@ -41,13 +44,13 @@ class Retriever:
         cols = []
         if isinstance(expr_obj, ColEl):
             cols.append(expr_obj.field)
-        elif isinstance(expr_obj, ColExpr):
+        elif isinstance(expr_obj, ColOpExpr):
             cols += Retriever.find_cols(expr_obj.unit1)
             cols += Retriever.find_cols(expr_obj.unit2)
         elif isinstance(expr_obj, CondExpr):
             cols += Retriever.find_cols(expr_obj.unit1)
             cols += Retriever.find_cols(expr_obj.unit2)
-        elif isinstance(expr_obj, ExternalExpr):
+        elif isinstance(expr_obj, ColExtExpr):
             cols += Retriever.find_cols(expr_obj.col)
         elif isinstance(expr_obj, GroupbyAggrExpr):
             cols += expr_obj.groupby_cols
@@ -196,7 +199,7 @@ class Retriever:
                         # both columns are owned by the joint one.
                         cols_own.append(op_body.col_var)
                         cols_used.append(op_body.col_expr)
-                    elif isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                    elif isinstance(op_body.col_expr, (ColEl, ColOpExpr)):
                         cols_used += self.find_cols(op_body.col_expr)
                     elif isinstance(op_body.col_expr, Expr):
                         cols_used += SDQLInspector.find_cols(op_body.col_expr)
@@ -278,7 +281,7 @@ class Retriever:
                 else:
                     TypeError('New Column: The names of new columns must be str.')
 
-                if isinstance(op_body.col_expr, (ColEl, ColExpr, ExternalExpr)):
+                if isinstance(op_body.col_expr, (ColEl, ColOpExpr, ColExtExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
@@ -298,7 +301,7 @@ class Retriever:
                     # both columns are owned by the joint one.
                     cols_own.append(op_body.col_var)
                     cols_used.append(op_body.col_expr)
-                elif isinstance(op_body.col_expr, (ColEl, ColExpr)):
+                elif isinstance(op_body.col_expr, (ColEl, ColOpExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
@@ -532,7 +535,7 @@ class Retriever:
             for n in mapper.keys():
                 if col_name in mapper[n]:
                     on.append(n)
-        elif isinstance(cond.unit1, ColExpr):
+        elif isinstance(cond.unit1, ColOpExpr):
             for col_name in Retriever.find_cols(cond.unit1):
                 for n in mapper.keys():
                     if col_name in mapper[n]:
@@ -551,7 +554,7 @@ class Retriever:
             for n in mapper.keys():
                 if col_name in mapper[n]:
                     on.append(n)
-        elif isinstance(cond.unit2, ColExpr):
+        elif isinstance(cond.unit2, ColOpExpr):
             for col_name in Retriever.find_cols(cond.unit2):
                 for n in mapper.keys():
                     if col_name in mapper[n]:
@@ -663,7 +666,7 @@ class Retriever:
                 else:
                     return op_expr
 
-            if isinstance(op_body, ExternalExpr):
+            if isinstance(op_body, ColExtExpr):
                 if op_body.func in [ExtFuncSymbol.StartsWith,
                                     ExtFuncSymbol.EndsWith,
                                     ExtFuncSymbol.StringContains]:
@@ -1309,3 +1312,10 @@ class Retriever:
                         return op_expr
         else:
             return None
+
+    @staticmethod
+    def equal_expr(expr1: FlexIR, expr2: FlexIR) -> bool:
+        if type(expr1) != type(expr2):
+            return False
+
+        return expr1.oid == expr2.oid

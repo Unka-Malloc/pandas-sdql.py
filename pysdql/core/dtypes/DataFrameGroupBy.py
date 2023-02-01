@@ -1,6 +1,6 @@
 from pysdql.core.dtypes import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.sdql_ir import ConstantExpr
 

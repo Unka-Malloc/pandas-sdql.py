@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
     IfExpr,
@@ -254,7 +254,7 @@ class JoinPartFrame:
 
         if isinstance(cond, Expr):
             return cond
-        if isinstance(cond, SDQLIR):
+        if isinstance(cond, FlexIR):
             return cond.sdql_ir
         else:
             Warning(f'NOT safe condition {type(cond)} : {cond} at partition side')

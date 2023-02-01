@@ -1,10 +1,10 @@
-from pysdql.core.dtypes import ColExpr, ColEl, ExternalExpr, GroupbyAggrExpr, AggrExpr, NewColOpExpr, OldColOpExpr
+from pysdql.core.dtypes import ColOpExpr, ColEl, ColExtExpr, GroupbyAggrExpr, AggrExpr, NewColOpExpr, OldColOpExpr
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import OpRetType, AggrType
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 
 from pysdql.core.dtypes.sdql_ir import *
@@ -265,9 +265,9 @@ class JointFrame:
                 if len(aggr_dict.keys()) == 1:
                     dict_key = list(aggr_dict.items())[0][0]
 
-                    if aggr_info.aggr_type == AggrType.DICT:
+                    if aggr_info.aggr_type == AggrType.Dict:
                         format_op = DicConsExpr([(RecConsExpr([(dict_key, var_aggr)]), ConstantExpr(True))])
-                    elif aggr_info.aggr_type == AggrType.VAL:
+                    elif aggr_info.aggr_type == AggrType.Scalar:
                         format_op = var_aggr
                     else:
                         raise NotImplementedError
@@ -450,14 +450,14 @@ class JointFrame:
                                 dict_key_list.append((k, joint_frame.part_lookup(k)))
                             elif k in self.col_ins.keys():
                                 v = self.col_ins[k]
-                                if isinstance(v, (ColEl, ColExpr)):
+                                if isinstance(v, (ColEl, ColOpExpr)):
                                     col_name = v.field
                                     for this_part_side in all_part_sides:
                                         if col_name in this_part_side.columns:
                                             joint_frame = this_part_side.get_retriever().find_merge(
                                                 mode='as_part').joint.get_joint_frame()
                                             dict_key_list.append((k, joint_frame.part_lookup(col_name)))
-                                elif isinstance(v, ExternalExpr):
+                                elif isinstance(v, ColExtExpr):
                                     col_name = v.col.field
                                     if col_name in root_probe_side.columns:
                                         dict_key_list.append((k, v.sdql_ir))
@@ -949,7 +949,7 @@ class JointFrame:
                                         if v_name in joint_col_ins.keys():
                                             col_op = joint_col_ins[v_name]
                                             if isinstance(col_op,
-                                                          (ColEl, ColExpr, ExternalExpr, NewColOpExpr, OldColOpExpr)):
+                                                          (ColEl, ColOpExpr, ColExtExpr, NewColOpExpr, OldColOpExpr)):
                                                 val_tuples.append((k,
                                                                    col_op.replace(probe_on.iter_el.key)))
                                             elif isinstance(col_op, IfExpr):
@@ -1247,7 +1247,7 @@ class JointFrame:
                 for i in self.retriever.findall_col_insert().keys():
                     if isinstance(col_inserted[i], IfExpr):
                         rec_list.append((i, col_inserted[i]))
-                    elif isinstance(col_inserted[i], SDQLIR):
+                    elif isinstance(col_inserted[i], FlexIR):
                         rec_list.append((i, col_inserted[i].sdql_ir))
                     else:
                         raise TypeError(f'Unsupported Type {type(col_inserted[i])}')
@@ -1257,7 +1257,7 @@ class JointFrame:
                 for j in self.retriever.findall_col_rename().keys():
                     if isinstance(col_renamed[j], IfExpr):
                         rec_list.append((j, col_renamed[j]))
-                    elif isinstance(col_renamed[j], SDQLIR):
+                    elif isinstance(col_renamed[j], FlexIR):
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:
                         raise TypeError(f'Unsupported Type {type(col_renamed[j])}')

@@ -1,11 +1,11 @@
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.sdql_ir import (
     PairAccessExpr,
     VarExpr
 )
 
 
-class IterEl(SDQLIR):
+class IterEl(FlexIR):
     def __init__(self, name: str):
         self.__name = name
         self.__el = VarExpr(name)  # x = VarExpr('x')
@@ -37,6 +37,20 @@ class IterEl(SDQLIR):
     @property
     def v(self):
         return self.value
+
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return False
+
+    @property
+    def oid(self):
+        return hash((
+            self.name
+        ))
 
     @property
     def sdql_ir(self):

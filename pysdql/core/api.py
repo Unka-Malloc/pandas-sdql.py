@@ -1,11 +1,5 @@
-from pysdql.core.driver.api import (
-    db_driver,
-)
-
 from pysdql.core.dtypes.api import (
     DataFrame,
-
-    relation,
 
     RecEl,
     DictEl,

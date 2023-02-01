@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.sdql_ir import ExtFuncSymbol
 
 
@@ -8,6 +8,6 @@ class ExtDatetime:
 
     @property
     def year(self):
-        return ExternalExpr(col=self.col, ext_func=ExtFuncSymbol.ExtractYear)
+        return ColExtExpr(col=self.col, ext_func=ExtFuncSymbol.ExtractYear)
 
 

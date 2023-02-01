@@ -11,7 +11,7 @@ def query(li, pa):
     
     part_lineitem = li.sum(lambda x_lineitem: (record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})) if (((x_lineitem[0].l_shipdate >= 19950901) * (x_lineitem[0].l_shipdate < 19951001))) else (None))
     
-    results = ((((part_lineitem.A) / (part_lineitem.B))) * (100.0))
+    results = ((((part_lineitem.A) * (100.0))) / (part_lineitem.B))
     # Complete
 
     return results

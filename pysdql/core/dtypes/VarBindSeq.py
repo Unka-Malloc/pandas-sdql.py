@@ -1,12 +1,12 @@
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.sdql_ir import (
     VarExpr,
     ConstantExpr,
 )
 
 
-class VarBindSeq(SDQLIR):
+class VarBindSeq(FlexIR):
     def __init__(self):
         self.__seq = []
 
@@ -51,6 +51,14 @@ class VarBindSeq(SDQLIR):
             result += f'{expr}\n'
         result += f'{self.peak().next_expr}'
         return result
+
+    @property
+    def replaceable(self):
+        return False
+
+    @property
+    def oid(self):
+        return True
 
     @property
     def sdql_ir(self):

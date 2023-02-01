@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.util.df_retriever import Retriever

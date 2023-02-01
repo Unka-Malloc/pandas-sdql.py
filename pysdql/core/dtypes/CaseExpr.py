@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.VarExpr import VarExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
@@ -23,7 +23,7 @@ class CaseExpr:
 
     def set(self, col_name, next_name, iter_expr):
         cond = self.when
-        if type(cond) == ExternalExpr:
+        if type(cond) == ColExtExpr:
             cond = cond.new_expr(iter_expr.key)
 
         trec = RecEl({col_name: self.then_case})
