@@ -39,9 +39,12 @@ class IsInExpr(IgnoreExpr):
         part_var = self.part_on.get_var_part()
         part_retriever = self.part_on.get_retriever()
 
-        groupby_aggr_info = part_retriever.find_groupby_aggr_before(IsInExpr)
+        groupby_aggr_info = part_retriever.find_groupby_aggr()
 
         if groupby_aggr_info:
+            # Q18
+            print('Found Isin Groupby Aggr')
+
             groupby_cols = groupby_aggr_info.groupby_cols
             aggr_dict = groupby_aggr_info.aggr_dict
 

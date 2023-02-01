@@ -1178,20 +1178,20 @@ class JointFrame:
                         raise NotImplementedError
 
                 elif self.probe_frame.retriever.was_probed:
+                    # Q20
+
                     probe_isin = self.probe_frame.retriever.find_isin()
 
                     if probe_isin:
                         print(probe_isin.get_as_part())
 
+                    raise NotImplementedError
                 else:
-                    # Q20
-
                     if isinstance(self.part_frame.get_part_key(), list) and \
                             isinstance(self.probe_frame.get_probe_key(), list):
                         raise NotImplementedError
                     if isinstance(self.part_frame.get_part_key(), str) \
                             and isinstance(self.probe_frame.get_probe_key(), str):
-                        # Q20
 
                         # aggr_key_ir
                         key_rec_list = []
