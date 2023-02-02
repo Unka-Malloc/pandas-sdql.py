@@ -3,6 +3,7 @@ from pysdql.query.tpch.const import (LINEITEM_TYPE, ORDERS_TYPE, NATION_TYPE, SU
 
 from pysdql.extlib.sdqlpy.sdql_lib import *
 
+
 @sdql_compile({"li": LINEITEM_TYPE, "ord": ORDERS_TYPE, "na": NATION_TYPE, "su": SUPPLIER_TYPE, "pa": PART_TYPE,
                "ps": PARTSUPP_TYPE})
 def query(li, ord, na, su, pa, ps):
@@ -26,7 +27,3 @@ def query(li, ord, na, su, pa, ps):
     # Complete
 
     return results
-
-
-
-

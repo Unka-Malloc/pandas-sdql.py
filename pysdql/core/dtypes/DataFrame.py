@@ -443,7 +443,11 @@ class DataFrame(FlexIR, Retrivable):
 
         print('>> Optimized Query <<')
 
+        print(f'{"=" * 60}')
+
         print('\n'.join(query_list))
+
+        print(f'{"=" * 60}')
 
         query_list = [f'{indent}{i}' for i in query_list]
 
