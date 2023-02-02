@@ -94,18 +94,34 @@ class JointFrame:
 
     def part_lookup(self, col_name=''):
         if col_name:
-            return RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.part_frame.part_var,
-                                                       keyExpr=self.probe_frame.probe_on.key_access(
-                                                           self.probe_frame.probe_key)),
-                                 fieldName=col_name)
+            if isinstance(self.probe_frame.probe_key, str):
+                return RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.part_frame.part_var,
+                                                           keyExpr=self.probe_frame.probe_on.key_access(
+                                                               self.probe_frame.probe_key)),
+                                     fieldName=col_name)
+            elif isinstance(self.probe_frame.probe_key, list):
+                return RecAccessExpr(recExpr=DicLookupExpr(dicExpr=self.part_frame.part_var,
+                                                           keyExpr=RecConsExpr([(c,
+                                                                                 self.probe_access(c))
+                                                                                for c in self.probe_frame.probe_key])),
+                                     fieldName=col_name)
+            else:
+                raise ValueError()
         else:
-            return DicLookupExpr(dicExpr=self.part_frame.part_var,
-                                 keyExpr=self.probe_frame.probe_on.key_access(
-                                     self.probe_frame.probe_key))
+            if isinstance(self.probe_frame.probe_key, str):
+                return DicLookupExpr(
+                    dicExpr=self.part_frame.part_var,
+                    keyExpr=self.probe_frame.probe_on.key_access(
+                        self.probe_frame.probe_key))
+            elif isinstance(self.probe_frame.probe_key, list):
+                return DicLookupExpr(
+                    dicExpr=self.part_frame.part_var,
+                    keyExpr=RecConsExpr([(c,
+                                          self.probe_frame.probe_on.key_access(c))
+                                         for c in self.probe_frame.probe_key]))
 
     def part_nonull(self):
         # print(self.part_frame.get_part_dict_key())
-        #
         # print(self.part_frame.get_part_dict_val())
 
         return CompareExpr(CompareSymbol.NE,
@@ -1182,41 +1198,78 @@ class JointFrame:
 
                     probe_isin = self.probe_frame.retriever.find_isin()
 
+                    dict_key_list = []
+
+                    joint_col_proj = self.retriever.find_col_proj()
+
+                    if joint_col_proj:
+                        joint_col_proj = joint_col_proj.proj_cols
+
+                        for c in joint_col_proj:
+                            dict_key_list.append((c, self.probe_access(c)))
+
+                    dict_key_ir = RecConsExpr(dict_key_list)
+
+                    joint_op = DicConsExpr([(dict_key_ir, ConstantExpr(True))])
+
+                    joint_op = IfExpr(condExpr=self.part_nonull(),
+                                      thenBodyExpr=joint_op,
+                                      elseBodyExpr=ConstantExpr(None))
+
                     if probe_isin:
-                        print(probe_isin.get_as_part())
+                        joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
 
-                    print({
-                        'part': self.part_frame.part_on.name,
-                        'probe': self.probe_frame.probe_on.name
-                    })
+                    joint_sum = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                        dictExpr=probe_on.var_expr,
+                                        bodyExpr=joint_op,
+                                        isAssignmentSum=False)
 
-                    raise NotImplementedError
+                    var_res = VarExpr('results')
+                    self.joint.add_context_variable('results', var_res)
+
+                    if probe_isin:
+                        joint_let = LetExpr(var_res, joint_sum, ConstantExpr(True))
+                        out = probe_isin.get_as_part(joint_let)
+                    else:
+                        out = LetExpr(var_res, joint_sum, ConstantExpr(True))
+
+                    return out
                 else:
                     if isinstance(self.part_frame.get_part_key(), list) and \
                             isinstance(self.probe_frame.get_probe_key(), list):
+                        # Q20
+
                         # aggr_key_ir
                         key_rec_list = []
 
-                        print(part_key)
-                        print(probe_key)
+                        for c in self.retriever.findall_cols_used(only_next=True):
+                            if c in part_key:
+                                icol = part_key.index(c)
+                                key_rec_list.append((c, self.probe_access(probe_key[icol])))
+                        if len(key_rec_list) == 0:
+                            raise NotImplementedError
+                        elif len(key_rec_list) == 1:
+                            aggr_key_ir = key_rec_list[0][1]
+                        else:
+                            aggr_key_ir = RecConsExpr(key_rec_list)
 
-                        print(self.retriever.history)
+                        joint_op = DicConsExpr([(aggr_key_ir, ConstantExpr(True))])
 
-                        print(self.retriever.findall_cols_used(only_next=True))
-
-                        aggr_key_ir = RecConsExpr(key_rec_list)
-
-                        print(aggr_key_ir)
-
-                        raise NotImplementedError
+                        if joint_cond:
+                            cond_mapper = {}
+                            for c in self.part_frame.cols_out:
+                                cond_mapper[c] = self.part_lookup(c)
+                            joint_op = IfExpr(condExpr=joint_cond.replace(rec=None, inplace=True, mapper=cond_mapper),
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=ConstantExpr(None))
 
                         joint_op = IfExpr(
                             condExpr=CompareExpr(CompareSymbol.NE,
-                                                 DicLookupExpr(dicExpr=part_var,
-                                                               keyExpr=probe_on.key_access(
-                                                                   probe_key)),
+                                                 self.part_lookup(),
                                                  ConstantExpr(None)),
-                            thenBodyExpr=DicConsExpr([(aggr_key_ir, ConstantExpr(True))]),
+                            thenBodyExpr=joint_op,
                             elseBodyExpr=ConstantExpr(None)
                         )
 
@@ -1230,10 +1283,13 @@ class JointFrame:
                                             bodyExpr=joint_op,
                                             isAssignmentSum=False)
 
-                        var_res = VarExpr('results')
-                        self.joint.add_context_variable('results', var_res)
+                        if next_op:
+                            out = LetExpr(self.joint.var_expr, joint_sum, next_op)
+                        else:
+                            var_res = VarExpr('results')
+                            self.joint.add_context_variable('results', var_res)
 
-                        out = LetExpr(var_res, joint_sum, ConstantExpr(True))
+                            out = LetExpr(var_res, joint_sum, ConstantExpr(True))
 
                         return out
 
@@ -1648,10 +1704,7 @@ class JointFrame:
             elif self.retriever.is_last_joint():
                 next_op = self.get_probe_expr()
             else:
-                next_op = ConstantExpr('placeholder_probe_next')
-
-        # print(self.partition_frame.is_joint, self.probe_frame.is_joint)
-        # print(self.part_frame.partition_on.name, self.probe_frame.probe_on.name)
+                next_op = ConstantExpr(True)
 
         # Q14
         # Q15

@@ -1,4 +1,5 @@
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
     IfExpr,
@@ -93,12 +94,14 @@ class JoinPartFrame:
     def get_part_dict_val(self) -> list:
         col_proj = self.retriever.find_col_proj().proj_cols
         col_proj = [col for col in col_proj if self.group_key != col]
-        cols_used = self.retriever.findall_cols_used(only_next=True)
+
+        cols_out = self.retriever.findall_cols_used(only_next=True)
+        cols_out += self.retriever.find_cols_probed()
 
         if col_proj:
             return col_proj
         else:
-            return cols_used
+            return cols_out
 
     @property
     def col_proj_ir(self):
@@ -205,8 +208,8 @@ class JoinPartFrame:
                 part_left_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
             else:
                 part_left_op = DicConsExpr([(
-                self.part_on.key_access(self.part_key),
-                self.col_proj_ir)])
+                    self.part_on.key_access(self.part_key),
+                    self.col_proj_ir)])
 
             if self.part_cond:
                 part_left_op = IfExpr(condExpr=self.part_cond,
@@ -224,6 +227,15 @@ class JoinPartFrame:
 
             return part_left_let
         elif isinstance(self.part_key, list):
+            all_isin_expr = self.retriever.findall_isin()
+            all_isin_cond = []
+            all_isin_part = []
+
+            if all_isin_expr:
+                for e in all_isin_expr:
+                    all_isin_cond.append(e.get_as_cond())
+                    all_isin_part.append(e.get_as_part())
+
             if self.retriever.as_bypass_for_next_join:
                 part_left_op = DicConsExpr([(RecConsExpr([(k, self.part_on.key_access(k)) for k in self.group_key]),
                                              ConstantExpr(True))])
@@ -243,8 +255,75 @@ class JoinPartFrame:
                                         bodyExpr=next_probe_op)
 
                 return part_left_let
+            elif self.retriever.was_groupby_aggr:
+                groupby_aggr_expr = self.retriever.find_groupby_aggr()
+
+                groupby_cols = groupby_aggr_expr.groupby_cols
+                aggr_dict = groupby_aggr_expr.aggr_dict
+
+                if len(groupby_cols) == 0:
+                    raise ValueError()
+                elif len(groupby_cols) == 1:
+                    dict_key_ir = self.part_on.key_access(groupby_cols[0])
+                else:
+                    key_tuples = []
+                    for c in groupby_cols:
+                        if c in self.part_on.columns:
+                            key_tuples.append((c, self.part_on.key_access(c)))
+                        else:
+                            raise IndexError(f'Cannot find such a column {c} '
+                                             f'in part side {self.part_on.name}')
+                    dict_key_ir = RecConsExpr(key_tuples)
+
+                val_tuples = []
+                for k in aggr_dict.keys():
+                    v = aggr_dict[k]
+
+                    if isinstance(v, RecAccessExpr):
+                        # (, 'sum')
+                        if v.name in self.part_on.columns:
+                            val_tuples.append((k, self.part_on.key_access(v.name)))
+                        else:
+                            raise IndexError(f'Cannot find column {v.name} in {self.part_on.columns}')
+                    elif isinstance(v, ConstantExpr):
+                        # (, 'count')
+                        val_tuples.append((k, v))
+                    else:
+                        raise NotImplementedError
+                dict_val_ir = RecConsExpr(val_tuples)
+
+                part_left_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
+
+                if all_isin_expr:
+                    for cond in all_isin_cond:
+                        part_left_op = IfExpr(condExpr=cond,
+                                              thenBodyExpr=part_left_op,
+                                              elseBodyExpr=ConstantExpr(None))
             else:
-                raise NotImplementedError
+                part_left_op = DicConsExpr([(
+                    RecConsExpr([(k, self.part_on.key_access(k)) for k in self.group_key]),
+                    self.col_proj_ir)])
+
+            if self.part_cond:
+                part_left_op = IfExpr(condExpr=self.part_cond,
+                                      thenBodyExpr=part_left_op,
+                                      elseBodyExpr=ConstantExpr(None))
+
+            part_left_sum = SumExpr(varExpr=self.part_on_iter_el,
+                                    dictExpr=self.part_on.var_expr,
+                                    bodyExpr=part_left_op,
+                                    isAssignmentSum=True)
+
+            part_left_let = LetExpr(varExpr=self.part_var,
+                                    valExpr=part_left_sum,
+                                    bodyExpr=next_probe_op)
+
+            all_bindings = []
+
+            all_bindings += all_isin_part
+            all_bindings.append(part_left_let)
+
+            return SDQLInspector.concat_bindings(all_bindings)
         else:
             raise NotImplementedError
 

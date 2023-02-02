@@ -43,9 +43,11 @@ class IsInExpr(IgnoreExpr):
 
         merge_info = part_retriever.find_merge('as_joint')
 
-        # print(merge_info)
-        #
-        print(merge_info.joint.joint_frame.get_joint_expr())
+        if merge_info:
+            if next_op:
+                return merge_info.joint.joint_frame.get_joint_expr(next_op)
+            else:
+                return merge_info.joint.joint_frame.get_joint_expr(ConstantExpr(True))
 
         if groupby_aggr_info:
             # Q18
@@ -147,7 +149,7 @@ class IsInExpr(IgnoreExpr):
         return self
 
     def __repr__(self):
-        return f'{self.probe_on.name}.{self.col_probe} in {self.part_on.name}.{self.col_part}'
+        return f'{self.probe_on.name}.{self.col_probe.field} is in {self.part_on.name}.{self.col_part.field}'
 
     @property
     def op_name_suffix(self):
