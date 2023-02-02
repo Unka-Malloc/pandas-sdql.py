@@ -8,7 +8,7 @@ import pysdql.query.tpch.Qpandas
 
 from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
-sep_line = '#' * 60
+sep_line = '=' * 60
 
 issue_info = {
     2: 'Not Implemented: Waiting for minimum promotion...',
@@ -46,8 +46,6 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(f'>> SDQL <<')
 
             try:
-                print('SDQL Running...')
-
                 sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
@@ -71,8 +69,6 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(f'>> Pandas <<')
 
             try:
-                print('Pandas Running...')
-
                 pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
@@ -98,13 +94,17 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 if verbose:
                     print_pass_text(q)
                 else:
-                    print(f'Query {q}: Pass')
+                    print(sep_line)
+                    print(f'\033[32m Query {q}: Pass \033[0m')
+                    print(sep_line)
             else:
                 check_dict[q] = '\033[0m Fail \033[0m'
                 if verbose:
                     print_fail_text(q)
                 else:
-                    print(f'Query {q}: Fail')
+                    print(sep_line)
+                    print(f'\033[0m Query {q}: Fail \033[0m')
+                    print(sep_line)
         else:
             if verbose:
                 for k in error_info.keys():
