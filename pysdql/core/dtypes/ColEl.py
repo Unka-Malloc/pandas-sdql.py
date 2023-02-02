@@ -1,19 +1,13 @@
-import re
-from datetime import datetime
-
+from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
-from pysdql.core.dtypes.SDQLIR import SDQLIR
-from pysdql.core.dtypes.IterStmt import IterStmt
-from pysdql.core.dtypes.RecEl import RecEl
-from pysdql.core.dtypes.DictEl import DictEl
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.ColExpr import ColExpr
+from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
-from pysdql.core.dtypes.CondStmt import CondStmt
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 
 from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol,
@@ -37,15 +31,14 @@ from pysdql.core.dtypes.EnumUtil import (
 )
 
 
-class ColEl(SDQLIR):
-    def __init__(self, relation, field: str, promoted=None):
+class ColEl(FlexIR):
+    def __init__(self, col_of, col_name: str, promoted=None):
         """
-        ColUnit 在被创建的时候总是作为Relation的元素出现，因此必定存在IterExpr
-        :param relation: DataFrame
-        :param field:
+        :param col_of: DataFrame
+        :param col_name:
         """
-        self.__relation = relation
-        self.__field = field
+        self.__relation = col_of
+        self.__field = col_name
         self.promoted = promoted
         self.follow_promotion = None
         self.data_type = ''
@@ -72,23 +65,28 @@ class ColEl(SDQLIR):
         return self.__field
 
     @property
+    def col_of(self):
+        return self.__relation
+
+    @property
+    def col_name(self):
+        return self.__field
+
+    @property
     def col(self):
         return self.relation.key_access(self.field)
 
     @property
     def year(self):
-        return ExternalExpr(col=self,
-                            ext_func='Year')
+        return ColExtExpr(col=self, ext_func=ExtFuncSymbol.ExtractYear)
 
     @property
     def month(self):
-        return ExternalExpr(col=self,
-                            ext_func='Month')
+        raise NotImplementedError
 
     @property
     def day(self):
-        return ExternalExpr(col=self,
-                            ext_func='Day')
+        raise NotImplementedError
 
     def new_expr(self, new_str) -> str:
         if self.isvar:
@@ -271,27 +269,27 @@ class ColEl(SDQLIR):
     '''
 
     def __add__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.ADD,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.ADD,
+                         unit2=other)
         # return ColExpr(value=AddExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __mul__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.MUL,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.MUL,
+                         unit2=other)
         # return ColExpr(value=MulExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __sub__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.SUB,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.SUB,
+                         unit2=other)
         # return ColExpr(value=SubExpr(self.col, input_fmt(other)), relation=self.R)
 
     def __truediv__(self, other):
-        return ColExpr(unit1=self,
-                       operator=MathSymbol.DIV,
-                       unit2=other)
+        return ColOpExpr(unit1=self,
+                         operator=MathSymbol.DIV,
+                         unit2=other)
         # return ColExpr(value=DivExpr(self.col, input_fmt(other)), relation=self.R)
 
     '''
@@ -299,27 +297,27 @@ class ColEl(SDQLIR):
     '''
 
     def __radd__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.ADD,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.ADD,
+                         unit2=self)
         # return ColExpr(value=AddExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rmul__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.MUL,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.MUL,
+                         unit2=self)
         # return ColExpr(value=MulExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rsub__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.SUB,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.SUB,
+                         unit2=self)
         # return ColExpr(value=SubExpr(input_fmt(other), self.col), relation=self.R)
 
     def __rtruediv__(self, other):
-        return ColExpr(unit1=other,
-                       operator=MathSymbol.DIV,
-                       unit2=self)
+        return ColOpExpr(unit1=other,
+                         operator=MathSymbol.DIV,
+                         unit2=self)
         # return ColExpr(value=DivExpr(input_fmt(other), self.col), relation=self.R)
 
     def isin(self, vals):
@@ -356,38 +354,14 @@ class ColEl(SDQLIR):
                                       op_iter=True,
                                       iter_on=None,
                                       ret_type=None))
-            return isin_expr
 
-    # def isin(self, vals, ext=None):
-    #     # print(f'{self.expr} is in {vals}')
-    #     if type(vals) == ColEl:
-    #         tmp_no_dup = vals.relation.drop_duplicates([vals.field]).rename(f'no_dup_{vals.field}')
-    #         tmp_col_el = tmp_no_dup[vals.field]
-    #         return IsinExpr(self, tmp_col_el)
-    #
-    #     if type(vals) == list or type(vals) == tuple:
-    #         if len(vals) == 0:
-    #             raise ValueError()
-    #         if len(vals) == 1:
-    #             return vals[0]
-    #
-    #         tmp_list = []
-    #         for i in vals:
-    #             if type(i) == str:
-    #                 i = f'"{i}"'
-    #             if ext:
-    #                 tmp_list.append(CondExpr(unit1=ext, operator=CompareSymbol.EQ, unit2=i))
-    #             else:
-    #                 tmp_list.append(CondExpr(unit1=self, operator=CompareSymbol.EQ, unit2=i))
-    #
-    #         a = tmp_list.pop()
-    #         b = tmp_list.pop()
-    #         tmp_cond = a | b
-    #         if tmp_list:
-    #             for i in tmp_list:
-    #                 tmp_cond |= i
-    #         # print(tmp_cond)
-    #         return tmp_cond
+            vals.relation.push(OpExpr(op_obj=isin_expr,
+                                      op_on=self.R,
+                                      op_iter=True,
+                                      iter_on=None,
+                                      ret_type=None))
+
+            return isin_expr
 
     @property
     def dt(self):
@@ -417,37 +391,36 @@ class ColEl(SDQLIR):
     def startswith(self, pattern: str):
         # A%
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.StartsWith, self.get_const_var(pattern))
+        return ColExtExpr(self, ExtFuncSymbol.StartsWith, self.get_const_var(pattern))
         # return ExternalExpr(self, 'StrStartsWith', pattern)
 
     def endswith(self, pattern: str):
         # %B
-        return ExternalExpr(self, 'StrEndsWith', pattern)
+        raise NotImplementedError
 
     def contains(self, pattern):
         # %A%
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
-        # return ExternalExpr(self, 'StrContains', args)
+        return ColExtExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
 
     def contains_in_order(self, *args):
         # %A%B%
-        return ExternalExpr(self, 'StrContains_in_order', args)
+        raise NotImplementedError
 
     def not_contains(self, *args):
-        return ExternalExpr(self, 'not_StrContains', args)
+        raise NotImplementedError
 
     def substring(self, start, end):
         # substring
-        return ExternalExpr(self, 'SubString', (start, end))
+        raise NotImplementedError
 
     def slice(self, start, end):
         # substring
-        return ExternalExpr(self, 'SubString', (start, end))
+        raise NotImplementedError
 
     def find(self, pattern):
         self.add_const(pattern)
-        return ExternalExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
+        return ColExtExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
         # return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
     def exists(self, bind_on, cond=None):
@@ -461,10 +434,11 @@ class ColEl(SDQLIR):
         return self
 
     def sum(self):
-        aggr_expr = AggrExpr(aggr_type=AggrType.VAL,
+        aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
                              aggr_on=self.relation,
                              aggr_op={self.field: self.sdql_ir},
-                             aggr_else=ConstantExpr(0.0))
+                             aggr_else=ConstantExpr(0.0),
+                             origin_dict={self.field: (self.field, 'sum')})
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self.relation,
@@ -489,17 +463,24 @@ class ColEl(SDQLIR):
         pass
 
     def replace(self, rec, inplace=False, mapper=None):
-        # print(f'try to replace col {self.sdql_ir} with {rec} as record')
-        # print(f'get {RecAccessExpr(rec, self.field)}')
-
         if mapper:
             if isinstance(mapper, dict):
                 for k in mapper.keys():
-                    if self.field in k:
-                        if inplace:
-                            return mapper[k]
-                        else:
-                            return RecAccessExpr(mapper[k], self.field)
+                    if isinstance(k, (tuple, list)):
+                        if self.field in k:
+                            if inplace:
+                                return mapper[k]
+                            else:
+                                return RecAccessExpr(mapper[k], self.field)
+                    elif isinstance(k, str):
+                        if self.field == k:
+                            if inplace:
+                                return mapper[k]
+                            else:
+                                return RecAccessExpr(mapper[k], self.field)
+                else:
+                    return self.sdql_ir
+                    # raise ValueError(f'cannot find {self.field}')
             else:
                 raise TypeError(f'mapper must be a dict')
 
@@ -507,6 +488,21 @@ class ColEl(SDQLIR):
             return rec
 
         return RecAccessExpr(rec, self.field)
+
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return True
+
+    @property
+    def oid(self):
+        return hash((
+            self.col_of.name,
+            self.col_name
+        ))
 
     @property
     def sdql_ir(self):

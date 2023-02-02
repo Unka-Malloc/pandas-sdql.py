@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.sdql_ir import *
@@ -39,9 +39,20 @@ class IsInExpr(IgnoreExpr):
         part_var = self.part_on.get_var_part()
         part_retriever = self.part_on.get_retriever()
 
-        groupby_aggr_info = part_retriever.find_groupby_aggr_before(IsInExpr)
+        groupby_aggr_info = part_retriever.find_groupby_aggr()
+
+        merge_info = part_retriever.find_merge('as_joint')
+
+        if merge_info:
+            if next_op:
+                return merge_info.joint.joint_frame.get_joint_expr(next_op)
+            else:
+                return merge_info.joint.joint_frame.get_joint_expr(ConstantExpr(True))
 
         if groupby_aggr_info:
+            # Q18
+            # print('Found Isin Groupby Aggr')
+
             groupby_cols = groupby_aggr_info.groupby_cols
             aggr_dict = groupby_aggr_info.aggr_dict
 
@@ -138,7 +149,7 @@ class IsInExpr(IgnoreExpr):
         return self
 
     def __repr__(self):
-        return f'{self.probe_on.name}.{self.col_probe} in {self.part_on.name}.{self.col_part}'
+        return f'{self.probe_on.name}.{self.col_probe.field} is in {self.part_on.name}.{self.col_part.field}'
 
     @property
     def op_name_suffix(self):

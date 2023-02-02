@@ -17,7 +17,7 @@ class AggrFrame:
     def sdql_ir(self):
         # Q6
 
-        aggr_info = self.retriever.find_agg()
+        aggr_info = self.retriever.find_aggr()
 
         aggr_dict = aggr_info.aggr_op
 
@@ -106,9 +106,9 @@ class AggrFrame:
         if len(aggr_dict.keys()) == 1:
             dict_key = list(aggr_dict.items())[0][0]
 
-            if aggr_info.aggr_type == AggrType.DICT:
+            if aggr_info.aggr_type == AggrType.Dict:
                 format_op = DicConsExpr([(RecConsExpr([(dict_key, var_aggr)]), ConstantExpr(True))])
-            elif aggr_info.aggr_type == AggrType.VAL:
+            elif aggr_info.aggr_type == AggrType.Scalar:
                 format_op = var_aggr
             else:
                 raise NotImplementedError

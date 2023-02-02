@@ -1,11 +1,6 @@
 from pysdql.core.api import (
-    # db_driver
-    db_driver,
-
     # dtypes
     DataFrame,
-
-    relation,
 
     IterStmt,
     CondStmt,
@@ -46,7 +41,7 @@ from pysdql.const import (
     REGION_LOAD,
 )
 from pysdql.core.dtypes.ExtDateTime import ExtDatetime
-from pysdql.core.dtypes.ExternalExpr import ExternalExpr
+from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.sdql_ir import ExtFuncExpr, ExtFuncSymbol, RecAccessExpr, PairAccessExpr, ConstantExpr
 
 from pysdql.core.query import *

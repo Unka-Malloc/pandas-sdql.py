@@ -499,3 +499,13 @@ class SDQLInspector:
                         result = SDQLInspector.replace_binding(result, flatten[i])
 
         return result
+
+    @staticmethod
+    def equal_expr(expr1, expr2):
+        if type(expr1) != type(expr2):
+            return False
+
+        if not isinstance(expr1, Expr):
+            raise TypeError(f'Exepcting an sdql expr.')
+
+        return False
