@@ -19,13 +19,13 @@ def match_int(data):
     return re.match(reg_exp, data) is not None
 
 
-def match_real(data):
+def match_float(data):
     """
     Whether data is real type
     :param data:
     :return:
     """
-    reg_exp = r'[+-]?[0-9]+\.[0-9]+([E][+-]?[0-9]+)?$'
+    reg_exp = r'[+-]?[0-9]+\.[0-9]+([e][+-]?[0-9]+)?$'
     return re.match(reg_exp, data) is not None
 
 

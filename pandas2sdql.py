@@ -235,11 +235,10 @@ def q8(pa, su, li, ord, cu, na, re):
 
     all_nations = all_join[['o_year', 'volume', 'nation']]
 
-    # all_nations['val_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
-    all_nations['val_A'] = all_nations['volume'] * 0.2
+    all_nations['volume_A'] = all_nations.apply(lambda x: x['volume'] if x['nation'] == 'BRAZIL' else 0, axis=1)
 
     all_nations_agg = all_nations.groupby(['o_year'], as_index=False) \
-        .agg(A=('val_A', 'sum'),
+        .agg(A=('volume_A', 'sum'),
              B=('volume', 'sum'))
 
     all_nations_agg['mkt_share'] = all_nations_agg['A'] / all_nations_agg['B']
@@ -338,7 +337,8 @@ def q11(ps, su, na):
 
 
 def q12(li, ord):
-    li_filt = li[(li['l_shipmode'].isin((var1, var2)))
+    var1 = ('MAIL', 'SHIP')
+    li_filt = li[(li['l_shipmode'].isin(var1))
                  & (li['l_commitdate'] < li['l_receiptdate'])
                  & (li['l_shipdate'] < li['l_commitdate'])
                  & (li['l_receiptdate'] >= '1995-01-01') & (li['l_receiptdate'] < '1996-01-01')]
@@ -346,17 +346,11 @@ def q12(li, ord):
     li_ord_join = ord.merge(li_filt, left_on='o_orderkey', right_on='l_orderkey')
 
     li_ord_join['high_line_priority'] = li_ord_join.apply(
-        lambda x:
-        1
-        if (li_ord_join['o_orderpriority'] == '1-URGENT') | (li_ord_join['o_orderpriority'] == '2-HIGH')
-        else 0,
+        lambda x: 1 if (li_ord_join['o_orderpriority'] == '1-URGENT') | (li_ord_join['o_orderpriority'] == '2-HIGH') else 0,
         axis=1)
 
     li_ord_join['low_line_priority'] = li_ord_join.apply(
-        lambda x:
-        1
-        if (li_ord_join['o_orderpriority'] != '1-URGENT') | (li_ord_join['o_orderpriority'] != '2-HIGH')
-        else 0,
+        lambda x: 1 if (li_ord_join['o_orderpriority'] != '1-URGENT') | (li_ord_join['o_orderpriority'] != '2-HIGH') else 0,
         axis=1)
 
     result = li_ord_join.groupby(['l_shipmode'], as_index=False) \

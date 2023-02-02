@@ -1,4 +1,4 @@
-from pysdql.core.dtypes.GroupByAgg import GroupbyAggrExpr
+from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.util.df_retriever import Retriever
@@ -58,7 +58,6 @@ class JoinProbeFrame:
                 return True
         return False
 
-
     def get_probe_col_proj(self):
         return self.__col_proj
 
@@ -68,6 +67,10 @@ class JoinProbeFrame:
 
     def get_probe_key(self):
         return self.__probe_key
+
+    @property
+    def probe_key_sdql_ir(self):
+        return self.probe_on.key_access(self.probe_key)
 
     def get_probe_cond(self):
         return self.__iter_cond

@@ -3,13 +3,20 @@ from pysdql.core.dtypes.EnumUtil import (
     MathSymbol,
     OpRetType
 )
-from pysdql.core.dtypes.SDQLIR import SDQLIR
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.Utils import input_fmt
 from pysdql.core.dtypes.sdql_ir import ConstantExpr, DivExpr, MulExpr, RecAccessExpr
 
 
-class CalcExpr(SDQLIR):
+class CalcExpr(FlexIR):
     def __init__(self, unit1, unit2, op, on):
+        """
+        It should be only generated in AggrExpr.
+        :param unit1:
+        :param unit2:
+        :param op:
+        :param on:
+        """
         self.unit1 = unit1
         self.unit2 = unit2
         self.op = op
@@ -27,7 +34,36 @@ class CalcExpr(SDQLIR):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.on)
 
     def __truediv__(self, other):
+        print(input_fmt(self))
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
+
+    @staticmethod
+    def unit_fmt(value):
+        if isinstance(value, RecAccessExpr):
+            return value.name
+        elif isinstance(value, (bool, int, float, str)):
+            return value
+        elif isinstance(value, FlexIR):
+            return value.oid
+        else:
+            return hash(value)
+
+    '''
+    FlexIR
+    '''
+
+    @property
+    def replaceable(self):
+        return False
+
+    @property
+    def oid(self):
+        return hash((
+            self.on.name,
+            self.op,
+            self.unit_fmt(self.unit1),
+            self.unit_fmt(self.unit2)
+        ))
 
     @property
     def sdql_ir(self):

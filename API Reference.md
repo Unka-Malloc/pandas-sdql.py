@@ -368,3 +368,22 @@ else:
     else:
         pass
 ```
+
+# GroupbyAggrExpr and AggrExpr
+GroupbyAggrExpr
+- groupby_cols: `List[str]`
+- origin_dict: `{new_col: (old_col, func)}`
+
+AggrExpr
+- origin_dict: `{new_col: (old_col, func)}`
+
+# FlexIR
+- DataFrame 
+- IterEl
+- ColEl
+- ColOpExpr
+- ColExtExpr
+- AggrExpr
+- GroupbyAggrExpr
+- VarBindExpr
+- VarBindExpr

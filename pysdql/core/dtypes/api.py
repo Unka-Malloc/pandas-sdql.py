@@ -1,4 +1,3 @@
-from pysdql.core.dtypes.relation import relation
 from pysdql.core.dtypes.RecEl import RecEl
 from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.CondExpr import CondExpr

@@ -56,7 +56,7 @@ def sdql_to_df(sdql_obj):
                     res_list.append(sdql_record_to_pydict(k))
             else:
                 return pandas.DataFrame(concat_pydict(res_list))
-    elif isinstance(sdql_obj, float):
+    elif isinstance(sdql_obj, (int, float)):
         return pandas.DataFrame({'result': [sdql_obj]})
     elif sdql_obj is None:
         return pandas.DataFrame({'result': [sdql_obj]})
@@ -89,46 +89,58 @@ def concat_pydict(res_list: List[dict]):
     return res_dict
 
 
-def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, verbose=False):
+def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False):
+    print('>> Comparing SDQL with Pandas ... <<')
+
     if sdql_df is None:
-        if pandas_df is None:
+        if pd_df is None:
             print('SDQL and Pandas results are both None!')
             return True
         else:
             print('Pandas result exists but SDQL result is None')
             return False
     else:
-        if pandas_df is None:
+        if pd_df is None:
             print('SDQL result exists but Pandas result is None')
             return False
 
-    if sdql_df.shape[0] == pandas_df.shape[0]:
+    if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
 
     else:
-        print('Mismatch Shape!')
+        print(f'Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
         return False
 
     for c in sdql_df.columns:
+        if c not in pd_df.columns:
+            print('Mismatch Column!')
+            return False
         if sdql_df[c].dtype == np.float64:
-            sdql_df[c] = sdql_df[c].astype(int)
-            pandas_df[c] = pandas_df[c].astype(int)
+            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
+                sdql_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+            else:
+                sdql_df[c] = sdql_df[c].astype(int)
+                pd_df[c] = pd_df[c].astype(int)
+        if sdql_df[c].dtype == object:
+            if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
+                sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
 
-    for c in pandas_df.columns:
-        if pandas_df[c].dtype == object:
-            if pandas_df[c].apply(lambda x: is_date(x)).all():
-                pandas_df[c] = pandas_df[c].apply(lambda x: np.float64(x.replace('-', '')))
+    for c in pd_df.columns:
+        if pd_df[c].dtype == object:
+            if pd_df[c].apply(lambda x: is_date(x)).all():
+                pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for xi, xrow in sdql_df.iterrows():
 
-        answer_df = pandas_df
+        answer_df = pd_df
 
         for k in xrow.keys():
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
                 print(f'Not found {xrow.to_dict()}')
-                print(f'While looking for {k} == {xrow[k]}')
+                print(f'Failed while looking for {k} == {xrow[k]}')
                 print(f'The answer is as following:')
                 print(answer_df)
                 return False
@@ -138,3 +150,25 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pandas_df: pandas.DataFrame, ve
             return True
     else:
         return True
+
+def exists_duplicates(test_str: str):
+    i = 0
+
+    for j in range(len(test_str)):
+        if test_str[i:j] == test_str[j:j + j - i]:
+            singleton = test_str[i:j]
+            if len(singleton.strip()) > 0:
+                return True
+    else:
+        return False
+
+def remove_duplicates(dup_str: str):
+    i = 0
+
+    for j in range(len(dup_str)):
+        if dup_str[i:j] == dup_str[j:j+j-i]:
+            singleton = dup_str[i:j]
+            if len(singleton.strip()) > 0:
+                return singleton
+    else:
+        return dup_str
