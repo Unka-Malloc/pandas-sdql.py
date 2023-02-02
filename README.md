@@ -31,22 +31,3 @@ Split `expr` and `sdql_expr`
 `expr => __str__()`: `str(x) | print(x)`
 
 `sdql_expr => __repr__()`: `repr(x) | eval(x)`
-
-### Abstract Interface
-
-`SemiRing`:
-1. `expr`
-2. `__str__`
-3. `sdql_expr`
-4. `__repr__`
-
-## Discussion
-
-### to_csv
-1. SDQL external function
-
-OR
-
-2. pysdql.to_csv() with SDQL_HOME env
-
-`SDQL_HOME = "path/to/sdql"`
