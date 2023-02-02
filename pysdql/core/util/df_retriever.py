@@ -692,6 +692,15 @@ class Retriever:
                 else:
                     return op_expr
 
+            if isinstance(op_body, ColExtExpr):
+                if op_body.func in [ExtFuncSymbol.StartsWith,
+                                    ExtFuncSymbol.EndsWith,
+                                    ExtFuncSymbol.StringContains]:
+                    if body_only:
+                        return op_body
+                    else:
+                        return op_expr
+
             if isinstance(op_body, op_type):
                 return None
         else:
@@ -1161,6 +1170,33 @@ class Retriever:
     '''
     isin()
     '''
+
+    def findall_isin(self, mode='as_probe', body_only=True):
+        """
+
+        :return:
+        """
+
+        all_isin = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, IsInExpr):
+                if mode == 'as_probe':
+                    if op_body.probe_on.name == self.target.name:
+                        if body_only:
+                            all_isin.append(op_body)
+                        else:
+                            all_isin.append(op_expr)
+                if mode == 'as_part':
+                    if op_body.part_on.name == self.target.name:
+                        if body_only:
+                            all_isin.append(op_body)
+                        else:
+                            all_isin.append(op_expr)
+        else:
+            return all_isin
 
     def find_isin(self, mode='as_probe', body_only=True):
         """

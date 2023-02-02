@@ -363,37 +363,6 @@ class ColEl(FlexIR):
 
             return isin_expr
 
-    # def isin(self, vals, ext=None):
-    #     # print(f'{self.expr} is in {vals}')
-    #     if type(vals) == ColEl:
-    #         tmp_no_dup = vals.relation.drop_duplicates([vals.field]).rename(f'no_dup_{vals.field}')
-    #         tmp_col_el = tmp_no_dup[vals.field]
-    #         return IsinExpr(self, tmp_col_el)
-    #
-    #     if type(vals) == list or type(vals) == tuple:
-    #         if len(vals) == 0:
-    #             raise ValueError()
-    #         if len(vals) == 1:
-    #             return vals[0]
-    #
-    #         tmp_list = []
-    #         for i in vals:
-    #             if type(i) == str:
-    #                 i = f'"{i}"'
-    #             if ext:
-    #                 tmp_list.append(CondExpr(unit1=ext, operator=CompareSymbol.EQ, unit2=i))
-    #             else:
-    #                 tmp_list.append(CondExpr(unit1=self, operator=CompareSymbol.EQ, unit2=i))
-    #
-    #         a = tmp_list.pop()
-    #         b = tmp_list.pop()
-    #         tmp_cond = a | b
-    #         if tmp_list:
-    #             for i in tmp_list:
-    #                 tmp_cond |= i
-    #         # print(tmp_cond)
-    #         return tmp_cond
-
     @property
     def dt(self):
         self.data_type = 'date'
@@ -497,11 +466,21 @@ class ColEl(FlexIR):
         if mapper:
             if isinstance(mapper, dict):
                 for k in mapper.keys():
-                    if self.field in k:
-                        if inplace:
-                            return mapper[k]
-                        else:
-                            return RecAccessExpr(mapper[k], self.field)
+                    if isinstance(k, (tuple, list)):
+                        if self.field in k:
+                            if inplace:
+                                return mapper[k]
+                            else:
+                                return RecAccessExpr(mapper[k], self.field)
+                    elif isinstance(k, str):
+                        if self.field == k:
+                            if inplace:
+                                return mapper[k]
+                            else:
+                                return RecAccessExpr(mapper[k], self.field)
+                else:
+                    return self.sdql_ir
+                    # raise ValueError(f'cannot find {self.field}')
             else:
                 raise TypeError(f'mapper must be a dict')
 

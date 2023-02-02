@@ -384,7 +384,7 @@ def q20(execution_mode=0, threads_count=1):
 
     tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir()
 
-    # write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir())
+    write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir())
 
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
