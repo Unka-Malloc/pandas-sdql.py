@@ -51,7 +51,6 @@ class IsInExpr(IgnoreExpr):
 
         if groupby_aggr_info:
             # Q18
-            # print('Found Isin Groupby Aggr')
 
             groupby_cols = groupby_aggr_info.groupby_cols
             aggr_dict = groupby_aggr_info.aggr_dict

@@ -158,6 +158,12 @@ class ColExtExpr(FlexIR):
                                self.args,
                                ConstantExpr("Nothing!"))
 
+        if self.func == ExtFuncSymbol.EndsWith:
+            return ExtFuncExpr(self.func,
+                               col_expr,
+                               self.args,
+                               ConstantExpr("Nothing!"))
+
         if self.func == ExtFuncSymbol.StringContains:
             return CompareExpr(CompareSymbol.NE,
                                ExtFuncExpr(ExtFuncSymbol.FirstIndex,

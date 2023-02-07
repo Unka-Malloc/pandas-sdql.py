@@ -396,7 +396,8 @@ class ColEl(FlexIR):
 
     def endswith(self, pattern: str):
         # %B
-        raise NotImplementedError
+        self.add_const(pattern)
+        return ColExtExpr(self, ExtFuncSymbol.EndsWith, self.get_const_var(pattern))
 
     def contains(self, pattern):
         # %A%

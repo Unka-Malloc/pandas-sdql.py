@@ -157,6 +157,12 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += ", "
             code += GenerateSDQLPYCode(AST.inp2, cache)
             code += ")"
+        elif AST.symbol == ExtFuncSymbol.EndsWith:
+            code += "endsWith("
+            code += GenerateSDQLPYCode(AST.inp1, cache)
+            code += ", "
+            code += GenerateSDQLPYCode(AST.inp2, cache)
+            code += ")"
         elif AST.symbol == ExtFuncSymbol.FirstIndex:
             code += "firstIndex("
             code += GenerateSDQLPYCode(AST.inp1, cache)

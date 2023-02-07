@@ -33,6 +33,25 @@ def q1():
 
     return result
 
+def q2():
+    part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
+    supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
+    partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
+    nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
+    region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
+
+    result = tpch_q2(part, supplier, partsupp, nation, region)
+
+    del [[part, supplier, partsupp, nation, region]]
+    gc.collect()
+    part = pd.DataFrame()
+    supplier = pd.DataFrame()
+    partsupp = pd.DataFrame()
+    nation = pd.DataFrame()
+    region = pd.DataFrame()
+
+    return result
+
 
 def q3():
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
