@@ -548,7 +548,8 @@ class DataFrame(FlexIR, Retrivable):
 
         if isinstance(item, ColExtExpr):
             if item.func in [ExtFuncSymbol.StringContains,
-                             ExtFuncSymbol.StartsWith]:
+                             ExtFuncSymbol.StartsWith,
+                             ExtFuncSymbol.EndsWith]:
 
                 self.operations.push(OpExpr(op_obj=item,
                                             op_on=self,

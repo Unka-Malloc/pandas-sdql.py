@@ -16,6 +16,37 @@ def tpch_q1(lineitem):
 
     return result
 
+def tpch_q2(part, supplier, partsupp, nation, region):
+    var1 = 15
+    var2 = 'BRASS'
+    var3 = 'EUROPE'
+
+    ps1 = partsupp.copy()
+
+    re_filt = region[region['r_name'] == var3]
+
+    re_na_join = re_filt.merge(nation, left_on='r_regionkey', right_on='n_regionkey')
+
+    na_su_join = re_na_join.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+
+    pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
+
+    pa_ps1_join = pa_filt.merge(ps1, left_on='p_partkey', right_on='ps_partkey')
+
+    su_ps1_join = na_su_join.merge(pa_ps1_join, left_on='s_suppkey', right_on='ps_suppkey')
+
+    min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False).agg({'ps_supplycost': 'min'})
+
+    ps_filt = partsupp[partsupp['ps_supplycost'].isin(min_agg['ps_supplycost'])]
+
+    pa_ps_join = pa_filt.merge(ps_filt, left_on='p_partkey', right_on='ps_partkey')
+
+    su_ps_join = na_su_join.merge(pa_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
+
+    result = su_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
+
+    return result
+
 
 def tpch_q3(lineitem, customer, orders):
     var1 = "BUILDING"

@@ -38,6 +38,8 @@ class DataFrameGroupBy:
                 output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
             if aggr_func == 'count':
                 output_aggr_dict[aggr_key] = ConstantExpr(1)
+            if aggr_func == 'min':
+                output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
 
         groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
                                       groupby_cols=self.groupby_cols,
