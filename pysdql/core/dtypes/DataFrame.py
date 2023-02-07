@@ -3,6 +3,7 @@ import re
 import string
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
@@ -113,6 +114,9 @@ class DataFrame(FlexIR, Retrivable):
             self.add_context_variable(vname_part,
                                       self.__var_merge_part)
 
+        vname_aggr = f'{self.get_name()}_aggr'
+        self.__var_aggr = VarExpr(vname_aggr)
+
         self.unopt_count = 0
         self.unopt_vars = {}
         self.unopt_consts = {}
@@ -149,6 +153,8 @@ class DataFrame(FlexIR, Retrivable):
             if const not in self.context_constant.keys():
                 tmp_vname = (''.join(re.split(r'[^A-Za-z]', const))).lower() + ''.join(
                     [i for i in const if i.isdigit()])
+                if tmp_vname.isdigit():
+                    tmp_vname = f'v{tmp_vname}'
                 tmp_var = VarExpr(tmp_vname)
                 self.context_constant[const] = tmp_var
                 self.context_variable[tmp_vname] = tmp_var
@@ -346,6 +352,13 @@ class DataFrame(FlexIR, Retrivable):
     @property
     def var_part(self):
         return self.__var_merge_part
+
+    def get_var_aggr(self):
+        return self.__var_aggr
+
+    @property
+    def var_aggr(self):
+        return self.__var_aggr
 
     @property
     def tmp_name_list(self):
@@ -979,6 +992,9 @@ class DataFrame(FlexIR, Retrivable):
                                         var_value=ConstantExpr(const)))
         return result_seq
 
+    def get_aggr(self, next_op=None, as_part=False) -> LetExpr:
+        return AggrFrame(self).get_aggr_expr(next_op, as_part)
+
     def get_groupby_aggr(self, next_op=None) -> LetExpr:
         return GroupbyAggrFrame(self).get_groupby_aggr_expr(next_op)
 
@@ -1236,4 +1252,7 @@ class DataFrame(FlexIR, Retrivable):
         return self.__retriever
 
     def drop_duplicates(self):
+        return self
+
+    def squeeze(self):
         return self

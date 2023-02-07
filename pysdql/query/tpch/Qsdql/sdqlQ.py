@@ -382,8 +382,6 @@ def q20(execution_mode=0, threads_count=1):
     part = pysdql.DataFrame()
     lineitem = pysdql.DataFrame()
 
-    tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir()
-
     write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir())
 
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
@@ -395,3 +393,37 @@ def q20(execution_mode=0, threads_count=1):
     import pysdql.query.tpch.Qsdql.Q20 as Q
 
     return Q.query(supplier_data, nation_data, partsupp_data, part_data, lineitem_data)
+
+def q21(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    supplier = pysdql.DataFrame()
+    lineitem = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+    nation = pysdql.DataFrame()
+
+    # write_query(21, tpch_q21(supplier, lineitem, orders, nation).opt_to_sdqlir())
+
+    supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
+    lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
+    orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
+    nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
+
+    import pysdql.query.tpch.Qsdql.Q21 as Q
+
+    return Q.query(supplier_data, lineitem_data, orders_data, nation_data)
+
+def q22(execution_mode=0, threads_count=1):
+    sdqlpy_init(execution_mode, threads_count)
+
+    customer = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+
+    write_query(22, tpch_q22(customer, orders).opt_to_sdqlir())
+
+    customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
+    orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
+
+    import pysdql.query.tpch.Qsdql.Q22 as Q
+
+    return Q.query(customer_data, customer_data, orders_data)

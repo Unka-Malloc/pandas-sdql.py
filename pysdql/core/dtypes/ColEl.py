@@ -407,21 +407,13 @@ class ColEl(FlexIR):
         # %A%B%
         raise NotImplementedError
 
-    def not_contains(self, *args):
-        raise NotImplementedError
-
-    def substring(self, start, end):
-        # substring
-        raise NotImplementedError
-
     def slice(self, start, end):
         # substring
-        raise NotImplementedError
+        return ColExtExpr(self, ExtFuncSymbol.SubStr, (start, end))
 
     def find(self, pattern):
         self.add_const(pattern)
         return ColExtExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
-        # return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
     def exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond)

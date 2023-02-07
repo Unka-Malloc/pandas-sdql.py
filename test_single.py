@@ -13,4 +13,6 @@ if __name__ == '__main__':
     #
     # tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir()
 
-    test_one = pysdql.tpch_query(20)
+    test_one = pysdql.tpch_query(22)
+
+    # print(pysdql.query.tpch.Qpandas.q22())
