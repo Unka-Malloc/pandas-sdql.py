@@ -1,6 +1,5 @@
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
-from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr

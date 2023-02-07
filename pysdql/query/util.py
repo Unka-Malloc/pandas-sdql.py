@@ -104,6 +104,11 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             print('SDQL result exists but Pandas result is None')
             return False
 
+    if sdql_df.shape[0] == 1 and pd_df.empty:
+        if sdql_df.columns == ['result']:
+            if sdql_df['result'].loc[0] is None:
+                return True
+
     if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')

@@ -15,7 +15,7 @@ def query(su, na, ps, pa, li):
     
     supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: True})
     
-    lineitem_part = li.sum(lambda x_lineitem: ((((({record({"l_partkey": x_lineitem[0].l_partkey, "l_suppkey": x_lineitem[0].l_suppkey}): record({"sum_quantity": x_lineitem[0].l_quantity})}) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) else (None))
+    lineitem_part = li.sum(lambda x_lineitem: ((({record({"l_partkey": x_lineitem[0].l_partkey, "l_suppkey": x_lineitem[0].l_suppkey}): record({"sum_quantity": x_lineitem[0].l_quantity})}) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) else (None))
     
     lineitem_partsupp = ps.sum(lambda x_partsupp: (({x_partsupp[0].ps_suppkey: True}) if (x_partsupp[0].ps_availqty > ((lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})].sum_quantity) * (0.5))) else (None)) if (lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})] != None) else (None))
     
