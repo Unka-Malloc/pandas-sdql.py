@@ -1276,6 +1276,23 @@ class JointFrame:
                                           thenBodyExpr=joint_op,
                                           elseBodyExpr=ConstantExpr(None))
 
+                    if joint_cond:
+                        cond_mapper = {}
+                        for this_part_side in all_part_sides:
+                            this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
+                            cond_mapper[tuple(this_part_side.cols_out)] = DicLookupExpr(
+                                dicExpr=this_part_side.get_var_part(),
+                                keyExpr=root_probe_side.key_access(this_probe_key))
+
+                        if cond_mapper:
+                            joint_cond_ir = joint_cond.replace(rec=None, inplace=False, mapper=cond_mapper)
+                        else:
+                            joint_cond_ir = joint_cond.sdql_ir
+
+                        joint_op = IfExpr(condExpr=joint_cond_ir,
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
+
                     joint_sum = SumExpr(varExpr=root_probe_side.iter_el.sdql_ir,
                                         dictExpr=root_probe_side.var_expr,
                                         bodyExpr=joint_op,
@@ -1487,6 +1504,7 @@ class JointFrame:
                               bodyExpr=LetExpr(var_res, calc_expr, ConstantExpr(True)))
 
                 return out
+
         else:
             # Q2
             # Q5

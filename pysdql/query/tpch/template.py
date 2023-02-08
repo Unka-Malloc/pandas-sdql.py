@@ -29,7 +29,7 @@ def tpch_q2(part, supplier, partsupp, nation, region):
     re_na_join = re_filt.merge(nation, left_on='r_regionkey', right_on='n_regionkey')
 
     na_su_join = re_na_join.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
-    na_su_join = na_su_join[['s_acctbal', 's_name', 'n_name', 's_address', 's_phone', 's_comment']]
+    na_su_join = na_su_join[['s_suppkey', 's_acctbal', 's_name', 'n_name', 's_address', 's_phone', 's_comment']]
 
     su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='ps_suppkey')
 
@@ -39,11 +39,11 @@ def tpch_q2(part, supplier, partsupp, nation, region):
     pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
 
     ps1_ps_join = ps1_min.merge(partsupp, left_on='ps_partkey', right_on='ps_partkey')
-    ps1_ps_join = ps1_ps_join[ps1_ps_join['ps_supplycost'] == ps1_ps_join['min_supplycost']]
 
     su_ps_join = na_su_join.merge(ps1_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
 
     pa_ps_join = pa_filt.merge(su_ps_join, left_on='p_partkey', right_on='ps_partkey')
+    pa_ps_join = pa_ps_join[pa_ps_join['ps_supplycost'] == pa_ps_join['min_supplycost']]
 
     result = pa_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
