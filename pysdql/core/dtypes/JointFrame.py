@@ -1267,15 +1267,6 @@ class JointFrame:
 
                     joint_op = DicConsExpr([(dict_key_ir, ConstantExpr(True))])
 
-                    joint_op = IfExpr(condExpr=self.part_nonull(),
-                                      thenBodyExpr=joint_op,
-                                      elseBodyExpr=ConstantExpr(None))
-
-                    if root_isin:
-                        joint_op = IfExpr(condExpr=root_isin.get_as_cond(),
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=ConstantExpr(None))
-
                     if joint_cond:
                         cond_mapper = {}
                         for this_part_side in all_part_sides:
@@ -1292,6 +1283,36 @@ class JointFrame:
                         joint_op = IfExpr(condExpr=joint_cond_ir,
                                           thenBodyExpr=joint_op,
                                           elseBodyExpr=ConstantExpr(None))
+
+                    for this_part_side in all_part_sides:
+                        this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
+                        if this_probe_key in root_probe_side.columns:
+                            joint_op = IfExpr(
+                                condExpr=CompareExpr(CompareSymbol.NE,
+                                                     DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                   keyExpr=root_probe_side.key_access(
+                                                                       this_probe_key)),
+                                                     ConstantExpr(None)),
+                                thenBodyExpr=joint_op,
+                                elseBodyExpr=ConstantExpr(None)
+                            )
+                        else:
+                            lookup_key = self.retriever.find_lookup_path(self, this_probe_key)
+                            joint_op = IfExpr(
+                                condExpr=CompareExpr(CompareSymbol.NE,
+                                                     DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                   keyExpr=lookup_key),
+                                                     ConstantExpr(None)),
+                                thenBodyExpr=joint_op,
+                                elseBodyExpr=ConstantExpr(None)
+                            )
+
+                    if root_isin:
+                        joint_op = IfExpr(condExpr=root_isin.get_as_cond(),
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
+
+                    # print(probe_on.retriever.find_cond())
 
                     joint_sum = SumExpr(varExpr=root_probe_side.iter_el.sdql_ir,
                                         dictExpr=root_probe_side.var_expr,
@@ -1713,14 +1734,20 @@ class JointFrame:
                                                                                               probe_key)),
                                                                     fieldName=i)))
                         elif i in self.probe_frame.probe_on.columns:
+                            # print(i, 'in', self.probe_frame.probe_on, 'with', self.probe_frame.probe_on.columns)
                             dict_val_list.append((i,
                                                   probe_on.key_access(i)))
 
                         elif i in self.retriever.find_renamed_cols(mode='as_val'):
-                            dict_val_list.append((i,
-                                                  self.part_lookup(
-                                                      self.retriever.find_col_rename(col_name=i,
-                                                                                     by='val'))))
+                            origin_col = self.retriever.find_col_rename(col_name=i, by='val')
+
+                            if origin_col in probe_on.columns:
+                                dict_val_list.append((i,
+                                                      probe_on.key_access(origin_col)))
+                            else:
+                                dict_val_list.append((i,
+                                                      self.part_lookup(origin_col)))
+
                         elif self.probe_frame.retriever.was_groupby_aggr:
                             groupby_aggr_expr = self.probe_frame.retriever.find_groupby_aggr()
                             groupby_cols = groupby_aggr_expr.groupby_cols
@@ -1790,11 +1817,6 @@ class JointFrame:
                                           thenBodyExpr=joint_op,
                                           elseBodyExpr=ConstantExpr(None))
 
-                    if probe_isin:
-                        joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=ConstantExpr(None))
-
                     non_null_cond = CompareExpr(compareType=CompareSymbol.NE,
                                                 leftExpr=DicLookupExpr(dicExpr=part_var,
                                                                        keyExpr=probe_key_ir),
@@ -1803,6 +1825,11 @@ class JointFrame:
                     joint_op = IfExpr(condExpr=non_null_cond,
                                       thenBodyExpr=joint_op,
                                       elseBodyExpr=ConstantExpr(None))
+
+                    if probe_isin:
+                        joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
 
                     if probe_cond:
                         joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
