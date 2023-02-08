@@ -128,9 +128,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
                 pd_df[c] = pd_df[c].astype(int)
-        if sdql_df[c].dtype == object:
-            if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
-                sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
+        # if sdql_df[c].dtype == object:
+        #     if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
+        #         sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
 
     for c in pd_df.columns:
         if pd_df[c].dtype == object:
