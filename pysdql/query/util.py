@@ -119,7 +119,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
 
     for c in sdql_df.columns:
         if c not in pd_df.columns:
-            print('Mismatch Column!')
+            print(f'Column {c} not found!')
             return False
         if sdql_df[c].dtype == np.float64:
             if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():

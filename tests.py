@@ -8,5 +8,3 @@ if __name__ == '__main__':
     print(f'Whether all queries are passed: {test_all}')
 
     # test_some = pysdql.tpch_query([16, 20], verbose=True)
-
-    # test_789 = pysdql.tpch_query([7, 8, 9], verbose=True)
