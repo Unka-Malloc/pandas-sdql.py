@@ -26,14 +26,16 @@ class IsInExpr(IgnoreExpr):
             body = DicLookupExpr(self.part_on.get_var_part(),
                                  self.col_probe.sdql_ir)
 
+        body_other = ConstantExpr(None)
+
         if self.isinvert:
             return CompareExpr(CompareSymbol.EQ,
                                body,
-                               ConstantExpr(None))
+                               body_other)
         else:
             return CompareExpr(CompareSymbol.NE,
                                body,
-                               ConstantExpr(None))
+                               body_other)
 
     def get_as_part(self, next_op=None):
         part_var = self.part_on.get_var_part()

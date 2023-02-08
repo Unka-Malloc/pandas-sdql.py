@@ -70,6 +70,8 @@ class DataFrameGroupBy:
                 agg_dict[agg_key] = agg_calc
             if agg_flag == 'count':
                 agg_dict[agg_key] = ConstantExpr(1)
+            if agg_flag == 'min':
+                agg_dict[agg_key] = agg_calc
             if callable(agg_flag):
                 # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)

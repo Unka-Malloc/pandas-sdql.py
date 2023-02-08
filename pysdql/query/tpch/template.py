@@ -16,6 +16,7 @@ def tpch_q1(lineitem):
 
     return result
 
+
 def tpch_q2(part, supplier, partsupp, nation, region):
     var1 = 15
     var2 = 'BRASS'
@@ -28,22 +29,23 @@ def tpch_q2(part, supplier, partsupp, nation, region):
     re_na_join = re_filt.merge(nation, left_on='r_regionkey', right_on='n_regionkey')
 
     na_su_join = re_na_join.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+    na_su_join = na_su_join[['s_acctbal', 's_name', 'n_name', 's_address', 's_phone', 's_comment']]
+
+    su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='ps_suppkey')
+
+    ps1_min = su_ps1_join.groupby(['ps_partkey'], as_index=False)\
+        .agg(min_supplycost=('ps_supplycost', 'min'))
 
     pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
 
-    pa_ps1_join = pa_filt.merge(ps1, left_on='p_partkey', right_on='ps_partkey')
+    ps1_ps_join = ps1_min.merge(partsupp, left_on='ps_partkey', right_on='ps_partkey')
+    ps1_ps_join = ps1_ps_join[ps1_ps_join['ps_supplycost'] == ps1_ps_join['min_supplycost']]
 
-    su_ps1_join = na_su_join.merge(pa_ps1_join, left_on='s_suppkey', right_on='ps_suppkey')
+    su_ps_join = na_su_join.merge(ps1_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
 
-    min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False).agg({'ps_supplycost': 'min'})
+    pa_ps_join = pa_filt.merge(su_ps_join, left_on='p_partkey', right_on='ps_partkey')
 
-    ps_filt = partsupp[partsupp['ps_supplycost'].isin(min_agg['ps_supplycost'])]
-
-    pa_ps_join = pa_filt.merge(ps_filt, left_on='p_partkey', right_on='ps_partkey')
-
-    su_ps_join = na_su_join.merge(pa_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
-
-    result = su_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
+    result = pa_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
     return result
 
@@ -601,6 +603,7 @@ def tpch_q20(supplier, nation, partsupp, part, lineitem):
 
     return result
 
+
 def tpch_q21(suppier, lineitem, orders, nation):
     var1 = "SAUDI ARABIA"
 
@@ -619,18 +622,19 @@ def tpch_q21(suppier, lineitem, orders, nation):
 
     l1 = lineitem[(lineitem['l_receiptdate'] > lineitem['l_commitdate'])
                   & ((lineitem['l_orderkey'].isin(l2_filt['l_orderkey']))
-                  & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))
+                     & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))
                   & ((lineitem['l_orderkey'].isin(l3_filt['l_orderkey']))
-                  & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))]
+                     & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))]
 
     su_li_join = na_su_join.merge(l1, left_on='s_suppkey', right_on='l_suppkey')
 
     ord_li_join = ord_filt.merge(su_li_join, left_on='o_orderkey', right_on='l_orderkey')
 
-    result = ord_li_join.groupby(['s_name'], as_index=False)\
+    result = ord_li_join.groupby(['s_name'], as_index=False) \
         .agg(numwait=('s_name', 'count'))
 
     return result
+
 
 def tpch_q22(customer, orders):
     var1 = ('13', '31', '23', '29', '30', '18', '17')
@@ -663,6 +667,7 @@ def tpch_q22(customer, orders):
     custsale = cu_filt[~cu_filt['c_custkey'].isin(orders['o_custkey'])]
     custsale['cntrycode'] = customer['c_phone'].str.slice(0, 2)
 
-    result = custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'), totalacctbal=('c_acctbal', 'sum'))
+    result = custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'),
+                                                                 totalacctbal=('c_acctbal', 'sum'))
 
     return result

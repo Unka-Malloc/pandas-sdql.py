@@ -146,13 +146,6 @@ class JointFrame:
         if not next_op:
             if self.__next_op:
                 next_op = self.__next_op
-            else:
-                next_op = ConstantExpr(True)
-
-        next_op_exists = False
-
-        if isinstance(next_op, LetExpr):
-            next_op_exists = True
 
         # df: partition side
         part_on = self.part_frame.part_on
@@ -446,7 +439,6 @@ class JointFrame:
 
                             return joint_let
                     else:
-                        # Q2
                         # Q7
                         # Q8
                         # Q9
@@ -647,8 +639,8 @@ class JointFrame:
                                                                     ConstantExpr(True))]),
                                              isAssignmentSum=True)
 
-                        if next_op_exists:
-                            joint_let = LetExpr(varExpr=probe_on.var_expr,
+                        if next_op:
+                            joint_let = LetExpr(varExpr=self.joint.var_expr,
                                                 valExpr=joint_sum,
                                                 bodyExpr=next_op)
                             return joint_let
@@ -1222,7 +1214,9 @@ class JointFrame:
                         raise NotImplementedError
 
                 elif self.probe_frame.retriever.is_joint:
-                    # all_part_sides = self.retriever.findall_part_for_root_probe('as_body')
+                    # Q2
+
+                    all_part_sides = self.retriever.findall_part_for_root_probe('as_body')
 
                     root_probe_side = self.retriever.find_root_probe()
 
@@ -1236,7 +1230,38 @@ class JointFrame:
                         joint_col_proj = joint_col_proj.proj_cols
 
                         for c in joint_col_proj:
-                            dict_key_list.append((c, self.probe_access(c)))
+                            if c == probe_key:
+                                dict_key_list.append((c, root_probe_side.key_access(probe_key)))
+                            elif c == part_key:
+                                dict_key_list.append((c, root_probe_side.key_access(probe_key)))
+                            elif c in root_probe_side.columns:
+                                dict_key_list.append((c, root_probe_side.key_access(c)))
+                            else:
+                                c_found = False
+                                for this_part_side in all_part_sides:
+                                    if c_found:
+                                        continue
+
+                                    if c in this_part_side.columns:
+                                        this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
+                                        if isinstance(this_probe_key, list):
+                                            key_rec = RecConsExpr([(c, this_part_side.key_access(c))
+                                                                   for c in this_probe_key])
+                                            dict_key_list.append((c, RecAccessExpr(
+                                                recExpr=DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                      keyExpr=key_rec),
+                                                fieldName=c)))
+                                        else:
+                                            dict_key_list.append((c, RecAccessExpr(
+                                                recExpr=DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                      keyExpr=root_probe_side.key_access(
+                                                                          this_probe_key)),
+                                                fieldName=c
+                                            )))
+                                        c_found = True
+
+                                if not c_found:
+                                    raise ValueError(f'Not found {c}')
 
                     dict_key_ir = RecConsExpr(dict_key_list)
 
@@ -1261,6 +1286,7 @@ class JointFrame:
 
                     if root_isin:
                         joint_let = LetExpr(var_res, joint_sum, ConstantExpr(True))
+
                         out = root_isin.get_as_part(joint_let)
                     else:
                         out = LetExpr(var_res, joint_sum, ConstantExpr(True))
@@ -1268,7 +1294,6 @@ class JointFrame:
                     return out
 
                 elif self.probe_frame.retriever.was_isin:
-                    # Q2
                     # Q20
 
                     probe_isin = self.probe_frame.retriever.find_isin()
@@ -1463,6 +1488,7 @@ class JointFrame:
 
                 return out
         else:
+            # Q2
             # Q5
             # Q7
             # Q8
@@ -1486,7 +1512,11 @@ class JointFrame:
 
                     key_col = next_merge_expr.left_on
 
-                    dict_key_ir = root_probe_side.key_access(key_col)
+                    if isinstance(key_col, list):
+                        dict_key_ir = RecConsExpr([(c, root_probe_side.key_access(c))
+                                                   for c in key_col])
+                    else:
+                        dict_key_ir = root_probe_side.key_access(key_col)
 
                     # dict vals
                     val_cols = [x for x in self.retriever.findall_cols_used()
@@ -1595,6 +1625,7 @@ class JointFrame:
 
                 # probe side is not joint
                 else:
+                    # Q2
                     # Q7
                     # Q8
                     # Q17
@@ -1635,6 +1666,11 @@ class JointFrame:
                                     and x != key_col
                                     and x not in self.retriever.find_renamed_cols())
                                 or (x in self.retriever.findall_cols_for_groupby_aggr())]
+
+                    if not val_cols:
+                        if joint_col_proj:
+                            for i in joint_col_proj.proj_cols:
+                                val_cols.append(i)
 
                     dict_val_list = []
 
@@ -1831,9 +1867,8 @@ class JointFrame:
         if self.part_frame.is_joint and self.probe_frame.is_joint:
             # print(f'{self.joint.name}: both joint')
 
-            # Q2
-            if self.retriever.find_illegal_dup_col():
-                raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')
+            # if self.retriever.find_illegal_dup_col():
+            #     raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')
 
             '''
             For any joint:
@@ -1866,8 +1901,13 @@ class JointFrame:
             
             '''
 
+            # Q2
+
             all_bindings = []
-            all_bindings += self.retriever.findall_part_for_root_probe('as_expr')
+
+            all_part_expr = self.retriever.findall_part_for_root_probe('as_expr')
+
+            all_bindings += all_part_expr
             all_bindings.append(self.get_probe_expr(next_op))
 
             # for i in all_bindings:
