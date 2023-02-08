@@ -16,7 +16,7 @@ def tpch_q1(lineitem):
 
     return result
 
-# def tpch_q2(part, supplier, partsupp, nation, region):
+# def tpch_q2_s(part, supplier, partsupp, nation, region):
 #     var1 = 15
 #     var2 = 'BRASS'
 #     var3 = 'EUROPE'
@@ -68,23 +68,24 @@ def tpch_q2(part, supplier, partsupp, nation, region):
 
     ps1.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
 
-    pa_ps_join = pa_filt.merge(ps1, left_on='p_partkey', right_on='ps_partkey')
+    pa_ps1_join = pa_filt.merge(ps1, left_on='p_partkey', right_on='ps_partkey')
 
-    ps1_all_join = na_su_join.merge(pa_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
+    ps1_all_join = na_su_join.merge(pa_ps1_join, left_on='s_suppkey', right_on='ps_suppkey')
     min_agg = ps1_all_join[['ps_partkey', 'min_supplycost']].drop_duplicates(['ps_partkey'])
 
     # min_agg = ps1_all_join.groupby(['ps_partkey'], as_index=False)\
     #     .agg({'min_supplycost': 'min'})
 
-    # su_ps_join = na_su_join.merge(partsupp, left_on='s_suppkey', right_on='ps_suppkey')
-    # pa_ps_join = pa_filt.merge(su_ps_join, left_on='p_partkey', right_on='ps_partkey')
-    #
-    # all_join = min_agg.merge(pa_ps_join, left_on='ps_partkey', right_on='p_partkey')
-    # all_join = all_join[all_join['ps_supplycost'] == all_join['min_supplycost']]
-    #
-    # result = all_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']].drop_duplicates()
+    pa_ps_join = pa_filt.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
 
-    return min_agg
+    min_ps_join = min_agg.merge(pa_ps_join, left_on='ps_partkey', right_on='ps_partkey')
+    min_ps_join = min_ps_join[min_ps_join['ps_supplycost'] == min_ps_join['min_supplycost']]
+
+    all_join = na_su_join.merge(min_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
+
+    result = all_join[['s_acctbal', 's_name', 'n_name', 'ps_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']].drop_duplicates()
+
+    return result
 
 
 def tpch_q3(lineitem, customer, orders):
