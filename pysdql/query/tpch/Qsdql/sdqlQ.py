@@ -16,7 +16,7 @@ from pysdql.query.tpch.const import (
 
 from pysdql.extlib.sdqlpy.sdql_lib import (
     read_csv,
-    sdqlpy_init
+    sdqlpy_init, record, string
 )
 
 from pysdql.query.tpch.template import *
@@ -69,9 +69,7 @@ def q2(execution_mode=0, threads_count=1):
     nation = pysdql.DataFrame()
     region = pysdql.DataFrame()
 
-    # tpch_q2(part, supplier, partsupp, nation, region).opt_to_sdqlir()
-
-    # write_query(2, tpch_q2(part, supplier, partsupp, nation, region).opt_to_sdqlir())
+    write_query(2, tpch_q2(part, supplier, partsupp, nation, region).opt_to_sdqlir())
 
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
