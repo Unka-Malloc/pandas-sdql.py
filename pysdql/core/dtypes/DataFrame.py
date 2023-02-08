@@ -305,7 +305,10 @@ class DataFrame(FlexIR, Retrivable):
         else:
             if tmp_cols:
                 for k in rename_cols.keys():
-                    tmp_cols[tmp_cols.index(k)] = rename_cols[k]
+                    if k in tmp_cols:
+                        tmp_cols[tmp_cols.index(k)] = rename_cols[k]
+                    else:
+                        raise IndexError(f'{k} not found in {self.name} columns {tmp_cols}')
                 return tmp_cols
             else:
                 return self.cols_in

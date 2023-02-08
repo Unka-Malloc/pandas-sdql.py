@@ -1002,12 +1002,17 @@ class Retriever:
                         parts.append(op_body.left.get_part_frame())
                     if mode == 'as_expr':
                         if op_body.left.get_retriever().is_joint:
-                            parts.append(op_body.left.get_joint_frame().get_joint_expr())
+                            for i in SDQLInspector.split_bindings(op_body.left.get_joint_frame().get_joint_expr()):
+                                parts.append(i)
                         else:
                             parts.append(op_body.left.get_part_frame().get_part_expr())
 
                     if op_body.right.get_retriever().is_joint:
-                        parts += op_body.right.get_retriever().findall_part_for_root_probe(mode)
+                        for i in op_body.right.get_retriever().findall_part_for_root_probe(mode):
+                            parts.append(i)
+
+        if mode == 'as_expr':
+            return SDQLInspector.remove_dup_bindings(parts)
 
         return parts
 
