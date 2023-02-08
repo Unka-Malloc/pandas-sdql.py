@@ -16,6 +16,7 @@ def tpch_q1(lineitem):
 
     return result
 
+
 # def tpch_q2_s(part, supplier, partsupp, nation, region):
 #     var1 = 15
 #     var2 = 'BRASS'
@@ -66,24 +67,25 @@ def tpch_q2(part, supplier, partsupp, nation, region):
 
     pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
 
-    ps1.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
+    # Minimum aggregation
 
-    pa_ps1_join = pa_filt.merge(ps1, left_on='p_partkey', right_on='ps_partkey')
+    ps1.rename({'ps_partkey': 'min_partkey',
+                'ps_suppkey': 'min_suppkey',
+                'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
 
-    ps1_all_join = na_su_join.merge(pa_ps1_join, left_on='s_suppkey', right_on='ps_suppkey')
-    min_agg = ps1_all_join[['ps_partkey', 'min_supplycost']].drop_duplicates(['ps_partkey'])
+    su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='min_suppkey')
 
-    # min_agg = ps1_all_join.groupby(['ps_partkey'], as_index=False)\
-    #     .agg({'min_supplycost': 'min'})
+    min_agg = su_ps1_join.groupby(['min_partkey'], as_index=False)\
+        .agg({'min_supplycost': 'sum'})
 
-    pa_ps_join = pa_filt.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
+    pa_ps_min = pa_filt.merge(min_agg, left_on='p_partkey', right_on='min_partkey')
 
-    min_ps_join = min_agg.merge(pa_ps_join, left_on='ps_partkey', right_on='ps_partkey')
-    min_ps_join = min_ps_join[min_ps_join['ps_supplycost'] == min_ps_join['min_supplycost']]
+    pa_ps_join = pa_ps_min.merge(partsupp, left_on='min_partkey', right_on='ps_partkey')
+    pa_ps_join = pa_ps_join[pa_ps_join['ps_supplycost'] == pa_ps_join['min_supplycost']]
 
-    all_join = na_su_join.merge(min_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
+    all_join = na_su_join.merge(pa_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
 
-    result = all_join[['s_acctbal', 's_name', 'n_name', 'ps_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']].drop_duplicates()
+    result = all_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
 
     return result
 
