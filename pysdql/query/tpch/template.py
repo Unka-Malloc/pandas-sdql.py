@@ -656,10 +656,10 @@ def tpch_q21(suppier, lineitem, orders, nation):
 
     ord_filt = orders[orders['o_orderstatus'] == "F"]
 
-    l2_filt = l2.groupby('l_orderkey', as_index=False).agg({"l_suppkey": lambda x: x.nunique()})
+    l2_filt = l2.drop_duplicates(['l_orderkey', 'l_suppkey'])
 
     l3_filt = l3[(l3['l_receiptdate'] > l3['l_commitdate'])]
-    l3_filt = l3_filt.groupby('l_orderkey', as_index=False).agg({"l_suppkey": lambda x: x.nunique()})
+    l3_filt = l3_filt.drop_duplicates(['l_orderkey', 'l_suppkey'])
 
     l1 = lineitem[(lineitem['l_receiptdate'] > lineitem['l_commitdate'])
                   & ((lineitem['l_orderkey'].isin(l2_filt['l_orderkey']))
