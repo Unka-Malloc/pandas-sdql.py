@@ -57,31 +57,31 @@ def query(pa, su, ps, ps1, na, re):
         }
     )
 
-    results = ps_probed.sum(lambda p: {record({'ps_partkey': p[0], 'min_supplycost': p[1]}): True})
+    # results = ps_probed.sum(lambda p: {record({'ps_partkey': p[0], 'min_supplycost': p[1]}): True})
 
-    # results = ps.sum(lambda p:
-    #                  {
-    #                      unique(record(
-    #                          {
-    #                              "s_acctbal": su_probed[p[0].ps_suppkey].s_acctbal,
-    #                              "s_name": su_probed[p[0].ps_suppkey].s_name,
-    #                              "n_name": su_probed[p[0].ps_suppkey].n_name,
-    #                              "p_partkey": p[0].ps_partkey,
-    #                              "p_mfgr": pa_indexed[p[0].ps_partkey].p_mfgr,
-    #                              "s_address": su_probed[p[0].ps_suppkey].s_address,
-    #                              "s_phone": su_probed[p[0].ps_suppkey].s_phone,
-    #                              "s_comment": su_probed[p[0].ps_suppkey].s_comment
-    #                          }
-    #                      )):
-    #                          True
-    #                  }
-    #                  if
-    #                  ps_probed[p[0].ps_partkey] != None
-    #                  and ps_probed[p[0].ps_partkey] == p[0].ps_supplycost
-    #                  and su_probed[p[0].ps_suppkey] != None
-    #                  else
-    #                  None
-    #                  )
+    results = ps.sum(lambda p:
+                     {
+                         unique(record(
+                             {
+                                 "s_acctbal": su_probed[p[0].ps_suppkey].s_acctbal,
+                                 "s_name": su_probed[p[0].ps_suppkey].s_name,
+                                 "n_name": su_probed[p[0].ps_suppkey].n_name,
+                                 "p_partkey": p[0].ps_partkey,
+                                 "p_mfgr": pa_indexed[p[0].ps_partkey].p_mfgr,
+                                 "s_address": su_probed[p[0].ps_suppkey].s_address,
+                                 "s_phone": su_probed[p[0].ps_suppkey].s_phone,
+                                 "s_comment": su_probed[p[0].ps_suppkey].s_comment
+                             }
+                         )):
+                             True
+                     }
+                     if
+                     ps_probed[p[0].ps_partkey] != None
+                     and ps_probed[p[0].ps_partkey] == p[0].ps_supplycost
+                     and su_probed[p[0].ps_suppkey] != None
+                     else
+                     None
+                     )
     # COMPLETE
 
     return results
