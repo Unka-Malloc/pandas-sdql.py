@@ -313,7 +313,9 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
 
     ord_li_join = orders.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
 
-    all_join = su_ps_join.merge(ord_li_join, left_on='ps_suppkey', right_on='l_suppkey', how='inner')
+    all_join = su_ps_join.merge(ord_li_join,
+                                left_on=['ps_partkey', 'ps_suppkey'],
+                                right_on=['l_partkey', 'l_suppkey'])
 
     all_join['nation'] = all_join['n_name']
     all_join['o_year'] = all_join['o_orderdate'].dt.year

@@ -5,13 +5,16 @@ from pysdql.core.dtypes.sdql_ir import *
 from pysdql.query.tpch.template import *
 
 if __name__ == '__main__':
-    # partsupp = pysdql.DataFrame()
-    # supplier = pysdql.DataFrame()
-    # nation = pysdql.DataFrame()
-    #
-    # tpch_q11(partsupp, supplier, nation).opt_to_sdqlir()
+    lineitem = pysdql.DataFrame()
+    orders = pysdql.DataFrame()
+    nation = pysdql.DataFrame()
+    supplier = pysdql.DataFrame()
+    part = pysdql.DataFrame()
+    partsupp = pysdql.DataFrame()
 
-    test_one = pysdql.tpch_query(5, verbose=False)
+    tpch_q9(lineitem, orders, nation, supplier, part, partsupp).opt_to_sdqlir()
+
+    test_one = pysdql.tpch_query(9, verbose=False)
 
     # print(pysdql.query.tpch.Qpandas.q21())
 

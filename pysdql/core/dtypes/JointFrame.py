@@ -639,7 +639,6 @@ class JointFrame:
                         all_part_sides = self.retriever.findall_part_for_root_probe('as_body')
 
                         root_probe_side = self.retriever.find_root_probe()
-                        root_part_side = self.retriever.find_root_part()
 
                         # keys
                         dict_key_list = []
@@ -708,10 +707,17 @@ class JointFrame:
 
                                         for this_part_side in all_part_sides:
                                             this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
-                                            col_mapper[tuple(this_part_side.cols_out)] = DicLookupExpr(
-                                                dicExpr=this_part_side.get_var_part(),
-                                                keyExpr=root_probe_side.key_access(
-                                                    this_probe_key))
+                                            if isinstance(this_probe_key, list):
+                                                col_mapper[tuple(this_part_side.cols_out)] = DicLookupExpr(
+                                                    dicExpr=this_part_side.get_var_part(),
+                                                    keyExpr=RecConsExpr([(c,
+                                                                          root_probe_side.key_access(c))
+                                                                         for c in self.probe_frame.probe_key]))
+                                            else:
+                                                col_mapper[tuple(this_part_side.cols_out)] = DicLookupExpr(
+                                                    dicExpr=this_part_side.get_var_part(),
+                                                    keyExpr=root_probe_side.key_access(
+                                                        this_probe_key))
 
                                         dict_val_list.append(
                                             (k, new_col.replace(rec=None, inplace=False, mapper=col_mapper)))
@@ -769,15 +775,30 @@ class JointFrame:
                                     elseBodyExpr=ConstantExpr(None)
                                 )
                             else:
-                                lookup_key = self.retriever.find_lookup_path(self, this_probe_key)
-                                joint_op = IfExpr(
-                                    condExpr=CompareExpr(CompareSymbol.NE,
-                                                         DicLookupExpr(dicExpr=this_part_side.get_var_part(),
-                                                                       keyExpr=lookup_key),
-                                                         ConstantExpr(None)),
-                                    thenBodyExpr=joint_op,
-                                    elseBodyExpr=ConstantExpr(None)
-                                )
+                                if isinstance(this_probe_key, list):
+                                    lookup_list = []
+                                    for k in this_probe_key:
+                                        lookup_key = self.retriever.find_lookup_path(self, k)
+                                        lookup_list.append((k, lookup_key))
+
+                                    joint_op = IfExpr(
+                                        condExpr=CompareExpr(CompareSymbol.NE,
+                                                             DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                           keyExpr=RecConsExpr(lookup_list)),
+                                                             ConstantExpr(None)),
+                                        thenBodyExpr=joint_op,
+                                        elseBodyExpr=ConstantExpr(None)
+                                    )
+                                else:
+                                    lookup_key = self.retriever.find_lookup_path(self, this_probe_key)
+                                    joint_op = IfExpr(
+                                        condExpr=CompareExpr(CompareSymbol.NE,
+                                                             DicLookupExpr(dicExpr=this_part_side.get_var_part(),
+                                                                           keyExpr=lookup_key),
+                                                             ConstantExpr(None)),
+                                        thenBodyExpr=joint_op,
+                                        elseBodyExpr=ConstantExpr(None)
+                                    )
 
                         probe_side_conds = root_probe_side.get_retriever().findall_cond()
                         if probe_side_conds:
