@@ -5,8 +5,8 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 
 
 @sdql_compile({"pa": PART_TYPE, "su": SUPPLIER_TYPE, "li": LINEITEM_TYPE, "ord": ORDERS_TYPE, "cu": CUSTOMER_TYPE,
-               "n1": NATION_TYPE, "n2": NATION_TYPE, "re": REGION_TYPE})
-def query(pa, su, li, ord, cu, n1, n2, re):
+               "na": NATION_TYPE, "n1": NATION_TYPE, "n2": NATION_TYPE, "re": REGION_TYPE})
+def query(pa, su, li, ord, cu, na, n1, n2, re):
 
     # Insert
     economyanodizedsteel = "ECONOMY ANODIZED STEEL"
