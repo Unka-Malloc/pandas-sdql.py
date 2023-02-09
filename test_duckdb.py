@@ -1,6 +1,10 @@
 import duckdb
 import pandas as pd
 
+import pysdql
+
+from pysdql.query.util import compare_dataframe, sdql_to_df
+
 from pysdql.query.tpch.const import (
     DATAPATH,
     LINEITEM_COLS,
@@ -55,16 +59,64 @@ where
         )
 """
 
+q21 = """
+-- TPC-H Query 21
+select
+        s_name,
+        count(*) as numwait
+from
+        supplier,
+        lineitem l1,
+        orders,
+        nation
+where
+        s_suppkey = l1.l_suppkey
+        and o_orderkey = l1.l_orderkey
+        and o_orderstatus = 'F'
+        and l1.l_receiptdate > l1.l_commitdate
+        and exists (
+                select
+                        *
+                from
+                        lineitem l2
+                where
+                        l2.l_orderkey = l1.l_orderkey
+                        and l2.l_suppkey <> l1.l_suppkey
+        )
+        and not exists (
+                select
+                        *
+                from
+                        lineitem l3
+                where
+                        l3.l_orderkey = l1.l_orderkey
+                        and l3.l_suppkey <> l1.l_suppkey
+                        and l3.l_receiptdate > l3.l_commitdate
+        )
+        and s_nationkey = n_nationkey
+        and n_name = 'SAUDI ARABIA'
+group by
+        s_name
+"""
+
 if __name__ == '__main__':
     # to start an in-memory database
     con = duckdb.connect(database=':memory:')
 
-    part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
-    partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
+    lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
+    orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
     region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
+    part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
+    partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
 
-    res = con.execute(q2).df()
+    res = con.execute(q21).df()
 
-    print(res)
+    df1 = res
+
+    # df2 = sdql_to_df(pysdql.query.tpch.Qsdql.q21())
+    # print(compare_dataframe(df1, df2))
+
+    df3 = pysdql.query.tpch.Qpandas.q21()
+    print(compare_dataframe(df1, df3))

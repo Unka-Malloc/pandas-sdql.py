@@ -431,7 +431,7 @@ def q21(execution_mode=0, threads_count=1):
     orders = pysdql.DataFrame()
     nation = pysdql.DataFrame()
 
-    # write_query(21, tpch_q21(supplier, lineitem, orders, nation).opt_to_sdqlir())
+    write_query(21, tpch_q21(supplier, lineitem, orders, nation).opt_to_sdqlir())
 
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
@@ -440,7 +440,7 @@ def q21(execution_mode=0, threads_count=1):
 
     import pysdql.query.tpch.Qsdql.Q21 as Q
 
-    return Q.query(supplier_data, lineitem_data, orders_data, nation_data)
+    return Q.query(supplier_data, lineitem_data, lineitem_data, lineitem_data, orders_data, nation_data)
 
 
 def q22(execution_mode=0, threads_count=1):

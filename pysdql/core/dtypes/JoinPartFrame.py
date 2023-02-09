@@ -106,6 +106,7 @@ class JoinPartFrame:
     @property
     def col_proj_ir(self):
         col_proj = self.retriever.find_col_proj()
+        col_agg_dict = self.retriever.find_groupby_aggr()
 
         if col_proj:
             col_proj = col_proj.proj_cols
@@ -113,7 +114,20 @@ class JoinPartFrame:
             if len(col_proj) == 0:
                 return ConstantExpr(True)
             else:
-                return RecConsExpr([(i, self.part_on.key_access(i)) for i in col_proj])
+                cols_out = []
+                for i in col_proj:
+                    if col_agg_dict:
+                        if i in col_agg_dict.origin_dict.keys():
+                            if col_agg_dict.origin_dict[i][1] == 'sum':
+                                cols_out.append((i, self.part_on.key_access(col_agg_dict.origin_dict[i][0])))
+                            elif col_agg_dict.origin_dict[i][1] == 'count':
+                                cols_out.append((i, ConstantExpr(1)))
+                            else:
+                                cols_out.append((i, self.part_on.key_access(col_agg_dict.origin_dict[i][0])))
+                    else:
+                        cols_out.append((i, self.part_on.key_access(i)))
+
+                return RecConsExpr(cols_out)
         else:
             if self.retriever.as_bypass_for_next_join:
                 return ConstantExpr(True)

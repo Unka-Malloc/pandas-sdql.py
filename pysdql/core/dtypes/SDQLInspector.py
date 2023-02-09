@@ -468,7 +468,6 @@ class SDQLInspector:
                 if not any([b.varExpr.name == r.varExpr.name for r in result]):
                     result.append(b)
                     unique_names.append(b.varExpr.name)
-        # print(unique_names)
         return result
 
     @staticmethod
