@@ -9,12 +9,12 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, ord, na, su, pa, ps):
 
     # Insert
-    green = "green"
+    g = "g"
     nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
     
     nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
     
-    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
+    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, g) != ((-1) * (1))) else (None))
     
     nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: ({x_partsupp[0].ps_suppkey: record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
     

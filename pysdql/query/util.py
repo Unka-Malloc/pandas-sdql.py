@@ -89,8 +89,11 @@ def concat_pydict(res_list: List[dict]):
     return res_dict
 
 
-def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False):
-    print('>> Comparing SDQL with Pandas ... <<')
+def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False, for_duck=False):
+    if for_duck:
+        print('>> Comparing Pandas with Duck ... <<')
+    else:
+        print('>> Comparing SDQL with Pandas ... <<')
 
     if sdql_df is None:
         if pd_df is None:
@@ -122,17 +125,20 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             print(f'Column {c} not found!')
             return False
         if sdql_df[c].dtype == np.float64:
-            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
-                sdql_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
-                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+            if sdql_df[c].apply(lambda x: x < np.float64(1.0)).any():
+                sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
-                pd_df[c] = pd_df[c].astype(int)
-        # if sdql_df[c].dtype == object:
-        #     if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
-        #         sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
+        if sdql_df[c].dtype == object:
+            if sdql_df[c].apply(lambda x: is_date(x)).all():
+                sdql_df[c] = sdql_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for c in pd_df.columns:
+        if pd_df[c].dtype == np.float64:
+            if pd_df[c].apply(lambda x: x < np.float64(1.0)).any():
+                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+            else:
+                pd_df[c] = pd_df[c].astype(int)
         if pd_df[c].dtype == object:
             if pd_df[c].apply(lambda x: is_date(x)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))

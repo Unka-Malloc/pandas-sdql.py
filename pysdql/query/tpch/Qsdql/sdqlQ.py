@@ -199,7 +199,7 @@ def q8(execution_mode=0, threads_count=1):
 
     import pysdql.query.tpch.Qsdql.Q8 as Q
 
-    return Q.query(part_data, supplier_data, lineitem_data, orders_data, customer_data, nation_data, nation_data,
+    return Q.query(part_data, supplier_data, lineitem_data, orders_data, customer_data, nation_data, nation_data, nation_data,
                    region_data)
 
 
@@ -253,8 +253,6 @@ def q11(execution_mode=0, threads_count=1):
     partsupp = pysdql.DataFrame()
     supplier = pysdql.DataFrame()
     nation = pysdql.DataFrame()
-
-    # tpch_q11(partsupp, supplier, nation).opt_to_sdqlir()
 
     write_query(11, tpch_q11(partsupp, supplier, nation).opt_to_sdqlir())
 
