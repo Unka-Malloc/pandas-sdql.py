@@ -331,7 +331,7 @@ def tpch_q11(partsupp, supplier, nation):
     var1 = 'GERMANY'
 
     # 1M
-    var1 = 'PERU'
+    # var1 = 'PERU'
     na_filt = nation[(nation['n_name'] == var1)]
 
     na_su_join = na_filt.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
@@ -369,7 +369,7 @@ def tpch_q12(orders, lineitem):
         axis=1)
 
     li_ord_join['low_line_priority'] = li_ord_join.apply(
-        lambda x: 1 if ((x['o_orderpriority'] != '1-URGENT') | (x['o_orderpriority'] != '2-HIGH')) else 0,
+        lambda x: 1 if ((x['o_orderpriority'] != '1-URGENT') & (x['o_orderpriority'] != '2-HIGH')) else 0,
         axis=1)
 
     result = li_ord_join.groupby(['l_shipmode'], as_index=False) \
