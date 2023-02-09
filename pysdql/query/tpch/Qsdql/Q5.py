@@ -13,7 +13,7 @@ def query(li, cu, ord, re, na, su):
     
     region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"c_nationkey": x_customer[0].c_nationkey, "n_name": region_nation[x_customer[0].c_nationkey].n_name})}) if (region_nation[x_customer[0].c_nationkey] != None) else (None))
     
-    region_nation_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey, "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19950101) * (x_orders[0].o_orderdate < 19961231))) else (None))
+    region_nation_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey, "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19961231))) else (None))
     
     supplier_part = su.sum(lambda x_supplier: {record({"s_suppkey": x_supplier[0].s_suppkey, "s_nationkey": x_supplier[0].s_nationkey}): True})
     
