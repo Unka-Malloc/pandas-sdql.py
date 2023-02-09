@@ -256,7 +256,7 @@ def q11(execution_mode=0, threads_count=1):
 
     # tpch_q11(partsupp, supplier, nation).opt_to_sdqlir()
 
-    # write_query(11, tpch_q11(partsupp, supplier, nation).opt_to_sdqlir())
+    write_query(11, tpch_q11(partsupp, supplier, nation).opt_to_sdqlir())
 
     partsupp_data = read_csv(rf'{DATAPATH}/partsupp.tbl', PARTSUPP_TYPE, "ps")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")

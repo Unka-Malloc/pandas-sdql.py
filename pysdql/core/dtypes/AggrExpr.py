@@ -1,9 +1,11 @@
+from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import (
-    AggrType, MathSymbol,
+    AggrType, MathSymbol, LogicSymbol,
 )
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.Utils import input_fmt
+from pysdql.core.dtypes.sdql_ir import CompareSymbol
 
 
 class AggrExpr(FlexIR):
@@ -57,6 +59,9 @@ class AggrExpr(FlexIR):
 
     def __truediv__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.aggr_on)
+
+    def __gt__(self, other):
+        return AggrFiltCond(self, other, CompareSymbol.GT)
 
     def __repr__(self):
         return f'{self.aggr_op}'

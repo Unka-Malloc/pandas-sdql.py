@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import LastIterFunc
 from pysdql.core.dtypes.FlexIR import FlexIR
@@ -1310,8 +1311,31 @@ class Retriever:
             return None
 
     '''
+    AggrFiltCond
+    '''
+
+    def find_aggr_filt(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrFiltCond):
+                return op_body
+
+        return None
+
+    '''
     
     '''
+
+    @property
+    def was_filter(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrFiltCond):
+                return True
+
+        return False
 
     @property
     def was_probed(self):

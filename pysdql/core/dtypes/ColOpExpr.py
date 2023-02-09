@@ -30,9 +30,9 @@ class ColOpExpr(FlexIR):
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
                              aggr_on=None,
-                             aggr_op={f'sum_{self.oid}': self.sdql_ir},
+                             aggr_op={f'sum_agg': self.sdql_ir},
                              aggr_else=ConstantExpr(0.0),
-                             origin_dict={f'sum_{self.oid}': (self.sdql_ir, 'sum')})
+                             origin_dict={f'sum_agg': (self.sdql_ir, 'sum')})
 
         return aggr_expr
 
