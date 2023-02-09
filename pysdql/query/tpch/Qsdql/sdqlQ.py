@@ -254,7 +254,7 @@ def q11(execution_mode=0, threads_count=1):
     supplier = pysdql.DataFrame()
     nation = pysdql.DataFrame()
 
-    tpch_q11(partsupp, supplier, nation).opt_to_sdqlir()
+    # tpch_q11(partsupp, supplier, nation).opt_to_sdqlir()
 
     # write_query(11, tpch_q11(partsupp, supplier, nation).opt_to_sdqlir())
 

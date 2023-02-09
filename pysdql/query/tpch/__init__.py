@@ -11,10 +11,9 @@ from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 sep_line = '=' * 60
 
 issue_info = {
-    2: 'Not Implemented: Waiting for minimum promotion...',
+    2: 'Not Implemented: Minimum promotion',
     9: 'Mismatch Answer: Incorrect n_name due to string addition (Example: PERUPERUPERUPERU)',
-    11: 'Crash: Query provided by Hesam FAILED...',
-    12: 'Mismatch Answer: Incorrect n_name due to string addition (Example: SHIPSHIPSHIP)',
+    12: 'Mismatch Answer: Incorrect l_shipmode due to string addition (Example: SHIPSHIPSHIP)',
     16: 'Weak: If a dict is empty, then dict[key] should be None instead of asserting an Exception'
 }
 
