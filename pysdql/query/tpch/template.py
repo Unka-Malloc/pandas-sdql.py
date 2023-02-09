@@ -303,6 +303,12 @@ def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
 def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
     var1 = tpch_vars[9][0]
 
+    '''
+    由于n_name作为record的value会被concatenate, 
+    所以我们直接取nation_part中的n_name,
+    以此绕过SDQL.py的缺陷
+    '''
+
     na_su_join = nation.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
 
     pa_filt = part[part['p_name'].str.contains(var1)]
