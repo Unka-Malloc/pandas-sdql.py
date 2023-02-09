@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 def tpch_q1(lineitem):
     li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
     li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
@@ -15,41 +12,6 @@ def tpch_q1(lineitem):
              count_order=("l_quantity", "count"))
 
     return result
-
-
-# def tpch_q2_s(part, supplier, partsupp, nation, region):
-#     var1 = 15
-#     var2 = 'BRASS'
-#     var3 = 'EUROPE'
-#
-#     ps1 = partsupp.copy()
-#
-#     re_filt = region[region['r_name'] == var3]
-#
-#     re_na_join = re_filt.merge(nation, left_on='r_regionkey', right_on='n_regionkey')
-#
-#     na_su_join = re_na_join.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
-#     na_su_join = na_su_join[['s_suppkey', 's_acctbal', 's_name', 'n_name', 's_address', 's_phone', 's_comment']]
-#
-#     ps1.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
-#
-#     su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='ps_suppkey')
-#     su_ps1_join = su_ps1_join[['ps_partkey', 'min_supplycost']]
-#
-#     # ps1_min = su_ps1_join.groupby(['ps_partkey'], as_index=False)\
-#     #     .agg({'min_supplycost': 'min'})
-#
-#     ps1_ps_join = su_ps1_join.merge(partsupp, left_on='ps_partkey', right_on='ps_partkey')
-#
-#     su_ps_join = na_su_join.merge(ps1_ps_join, left_on='s_suppkey', right_on='ps_suppkey')
-#
-#     pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
-#     pa_ps_join = pa_filt.merge(su_ps_join, left_on='p_partkey', right_on='ps_partkey')
-#     pa_ps_join = pa_ps_join[pa_ps_join['ps_supplycost'] == pa_ps_join['min_supplycost']]
-#
-#     result = pa_ps_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
-#
-#     return result
 
 
 def tpch_q2(part, supplier, partsupp, nation, region):
@@ -656,20 +618,23 @@ def tpch_q21(suppier, lineitem, orders, nation):
 
     ord_filt = orders[orders['o_orderstatus'] == "F"]
 
-    l2_filt = l2.drop_duplicates(['l_orderkey', 'l_suppkey'])
+    l2_agg = l2.groupby(['l_orderkey'], as_index=False).agg(l2_size=('l_suppkey', 'count'))
+    l2_filt = l2_agg[['l_orderkey', 'l2_size']]
 
     l3_filt = l3[(l3['l_receiptdate'] > l3['l_commitdate'])]
-    l3_filt = l3_filt.drop_duplicates(['l_orderkey', 'l_suppkey'])
+    l3_agg = l3_filt.groupby(['l_orderkey'], as_index=False).agg(l3_size=('l_suppkey', 'count'))
+    l3_filt = l3_agg[['l_orderkey', 'l3_size']]
 
-    l1 = lineitem[(lineitem['l_receiptdate'] > lineitem['l_commitdate'])
-                  & ((lineitem['l_orderkey'].isin(l2_filt['l_orderkey']))
-                     & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))
-                  & ((lineitem['l_orderkey'].isin(l3_filt['l_orderkey']))
-                     & ~(lineitem['l_suppkey'].isin(l2_filt['l_suppkey'])))]
+    l1 = lineitem[(lineitem['l_receiptdate'] > lineitem['l_commitdate'])]
 
-    su_li_join = na_su_join.merge(l1, left_on='s_suppkey', right_on='l_suppkey')
+    l1_l2_join = l2_filt.merge(l1, left_on='l_orderkey', right_on='l_orderkey')
+
+    l1_l3_join = l3_filt.merge(l1_l2_join, left_on='l_orderkey', right_on='l_orderkey')
+
+    su_li_join = na_su_join.merge(l1_l3_join, left_on='s_suppkey', right_on='l_suppkey')
 
     ord_li_join = ord_filt.merge(su_li_join, left_on='o_orderkey', right_on='l_orderkey')
+    ord_li_join = ord_li_join[(ord_li_join['l2_size'] > 1) & (ord_li_join['l3_size'] == 1)]
 
     result = ord_li_join.groupby(['s_name'], as_index=False) \
         .agg(numwait=('s_name', 'count'))

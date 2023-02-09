@@ -143,6 +143,12 @@ def GenerateSDQLPYCode(AST: Expr, cache):
         code += "})"
         return code
     elif inputType == VecConsExpr:
+        code += "vector({"
+        for k in AST.exprList:
+            code += GenerateSDQLPYCode(k, cache)
+            code += ", "
+        code = code[:-2]
+        code += "})"
         return code
     elif inputType == ConcatExpr:
         code += GenerateSDQLPYCode(AST.rec1, cache)
@@ -181,6 +187,10 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += GenerateSDQLPYCode(AST.inp2, cache)
             code += ", "
             code += GenerateSDQLPYCode(AST.inp3, cache)
+            code += ")"
+        elif AST.symbol == ExtFuncSymbol.DictSize:
+            code += "dictSize("
+            code += GenerateSDQLPYCode(AST.inp1, cache)
             code += ")"
         else:
             print("Error: ExtFunc not defined!")

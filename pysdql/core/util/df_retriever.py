@@ -923,6 +923,17 @@ class Retriever:
         else:
             raise ValueError('Cannot find the root probe side.')
 
+    def find_root_part(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if op_body.right.get_retriever().is_joint:
+                        return op_body.right.get_retriever().find_root_part()
+                    else:
+                        return op_body.left
+        else:
+            raise ValueError('Cannot find the root probe side.')
     def find_root_probe(self):
         for op_expr in self.history:
             op_body = op_expr.op
@@ -1037,16 +1048,22 @@ class Retriever:
             lookup_expr = root_probe.key_access(root_probe_key)
 
             # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         if key_to == root_probe_key:
             lookup_expr = root_probe.key_access(root_probe_key)
 
             # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         elif key_to in root_part.columns:
             lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
                                                               keyExpr=root_probe.key_access(root_probe_key)),
                                         fieldName=key_to)
 
             # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         else:
             for part in all_parts:
                 if key_to in part.columns:

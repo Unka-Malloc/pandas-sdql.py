@@ -1,5 +1,8 @@
 from pysdql.core.dtypes.sdql_ir import *
 
+from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
+
+
 def q1():
     lineitem_probed = VarExpr("lineitem_probed")
     results = VarExpr("results")
@@ -7,54 +10,54 @@ def q1():
     li = VarExpr("db->li_dataset")
 
     q1 = LetExpr(lineitem_probed, SumBuilder(lambda p: IfExpr((p[0].l_shipdate <= ConstantExpr(19980902)), DicConsExpr([
-                                                                                                                           (
-                                                                                                                           RecConsExpr(
-                                                                                                                               [
-                                                                                                                                   (
-                                                                                                                                   "l_returnflag",
-                                                                                                                                   p[
-                                                                                                                                       0].l_returnflag),
-                                                                                                                                   (
-                                                                                                                                   "l_linestatus",
-                                                                                                                                   p[
-                                                                                                                                       0].l_linestatus)]),
-                                                                                                                           RecConsExpr(
-                                                                                                                               [
-                                                                                                                                   (
-                                                                                                                                   "sum_qty",
-                                                                                                                                   p[
-                                                                                                                                       0].l_quantity),
-                                                                                                                                   (
-                                                                                                                                   "sum_base_price",
-                                                                                                                                   p[
-                                                                                                                                       0].l_extendedprice),
-                                                                                                                                   (
-                                                                                                                                   "sum_disc_price",
-                                                                                                                                   (
-                                                                                                                                               p[
-                                                                                                                                                   0].l_extendedprice * (
-                                                                                                                                                           ConstantExpr(
-                                                                                                                                                               1.0) -
-                                                                                                                                                           p[
-                                                                                                                                                               0].l_discount))),
-                                                                                                                                   (
-                                                                                                                                   "sum_charge",
-                                                                                                                                   (
-                                                                                                                                               (
-                                                                                                                                                           p[
-                                                                                                                                                               0].l_extendedprice * (
-                                                                                                                                                                       ConstantExpr(
-                                                                                                                                                                           1.0) -
-                                                                                                                                                                       p[
-                                                                                                                                                                           0].l_discount)) * (
-                                                                                                                                                           ConstantExpr(
-                                                                                                                                                               1.0) +
-                                                                                                                                                           p[
-                                                                                                                                                               0].l_tax))),
-                                                                                                                                   (
-                                                                                                                                   "count_order",
-                                                                                                                                   ConstantExpr(
-                                                                                                                                       1))]))]),
+        (
+            RecConsExpr(
+                [
+                    (
+                        "l_returnflag",
+                        p[
+                            0].l_returnflag),
+                    (
+                        "l_linestatus",
+                        p[
+                            0].l_linestatus)]),
+            RecConsExpr(
+                [
+                    (
+                        "sum_qty",
+                        p[
+                            0].l_quantity),
+                    (
+                        "sum_base_price",
+                        p[
+                            0].l_extendedprice),
+                    (
+                        "sum_disc_price",
+                        (
+                                p[
+                                    0].l_extendedprice * (
+                                        ConstantExpr(
+                                            1.0) -
+                                        p[
+                                            0].l_discount))),
+                    (
+                        "sum_charge",
+                        (
+                                (
+                                        p[
+                                            0].l_extendedprice * (
+                                                ConstantExpr(
+                                                    1.0) -
+                                                p[
+                                                    0].l_discount)) * (
+                                        ConstantExpr(
+                                            1.0) +
+                                        p[
+                                            0].l_tax))),
+                    (
+                        "count_order",
+                        ConstantExpr(
+                            1))]))]),
                                                               ConstantExpr(None)), li, False), LetExpr(results,
                                                                                                        SumBuilder(lambda
                                                                                                                       p: DicConsExpr(
@@ -67,11 +70,12 @@ def q1():
                                                                                                                   True),
                                                                                                        LetExpr(VarExpr(
                                                                                                            "out"),
-                                                                                                               results,
-                                                                                                               ConstantExpr(
-                                                                                                                   True))))
+                                                                                                           results,
+                                                                                                           ConstantExpr(
+                                                                                                               True))))
 
     print(q1)
+
 
 def q2():
     brass = VarExpr("brass")
@@ -94,7 +98,7 @@ def q2():
                                                                                                                     "r_regionkey",
                                                                                                                     lambda
                                                                                                                         p: (
-                                                                                                                                p.r_name == europe),
+                                                                                                                            p.r_name == europe),
                                                                                                                     []),
                                                                                                LetExpr(na_probed,
                                                                                                        JoinProbeBuilder(
@@ -108,8 +112,8 @@ def q2():
                                                                                                                indexedDictValue,
                                                                                                                probeDictKey: DicConsExpr(
                                                                                                                [(
-                                                                                                                probeDictKey.n_nationkey,
-                                                                                                                probeDictKey.n_name)]),
+                                                                                                                   probeDictKey.n_nationkey,
+                                                                                                                   probeDictKey.n_name)]),
                                                                                                            True),
                                                                                                        LetExpr(
                                                                                                            su_probed,
@@ -124,27 +128,27 @@ def q2():
                                                                                                                    indexedDictValue,
                                                                                                                    probeDictKey: DicConsExpr(
                                                                                                                    [(
-                                                                                                                    probeDictKey.s_suppkey,
-                                                                                                                    RecConsExpr(
-                                                                                                                        [
-                                                                                                                            (
-                                                                                                                            "s_acctbal",
-                                                                                                                            probeDictKey.s_acctbal),
-                                                                                                                            (
-                                                                                                                            "s_name",
-                                                                                                                            probeDictKey.s_name),
-                                                                                                                            (
-                                                                                                                            "n_name",
-                                                                                                                            indexedDictValue),
-                                                                                                                            (
-                                                                                                                            "s_address",
-                                                                                                                            probeDictKey.s_address),
-                                                                                                                            (
-                                                                                                                            "s_phone",
-                                                                                                                            probeDictKey.s_phone),
-                                                                                                                            (
-                                                                                                                            "s_comment",
-                                                                                                                            probeDictKey.s_comment)]))]),
+                                                                                                                       probeDictKey.s_suppkey,
+                                                                                                                       RecConsExpr(
+                                                                                                                           [
+                                                                                                                               (
+                                                                                                                                   "s_acctbal",
+                                                                                                                                   probeDictKey.s_acctbal),
+                                                                                                                               (
+                                                                                                                                   "s_name",
+                                                                                                                                   probeDictKey.s_name),
+                                                                                                                               (
+                                                                                                                                   "n_name",
+                                                                                                                                   indexedDictValue),
+                                                                                                                               (
+                                                                                                                                   "s_address",
+                                                                                                                                   probeDictKey.s_address),
+                                                                                                                               (
+                                                                                                                                   "s_phone",
+                                                                                                                                   probeDictKey.s_phone),
+                                                                                                                               (
+                                                                                                                                   "s_comment",
+                                                                                                                                   probeDictKey.s_comment)]))]),
                                                                                                                True),
                                                                                                            LetExpr(
                                                                                                                pa_indexed,
@@ -153,16 +157,16 @@ def q2():
                                                                                                                    "p_partkey",
                                                                                                                    lambda
                                                                                                                        p: (
+                                                                                                                           (
                                                                                                                                (
-                                                                                                                               (
-                                                                                                                                           p.p_size == ConstantExpr(
-                                                                                                                                       15))) * (
-                                                                                                                                   ExtFuncExpr(
-                                                                                                                                       ExtFuncSymbol.EndsWith,
-                                                                                                                                       p.p_type,
-                                                                                                                                       brass,
-                                                                                                                                       ConstantExpr(
-                                                                                                                                           "Nothing!")))),
+                                                                                                                                       p.p_size == ConstantExpr(
+                                                                                                                                   15))) * (
+                                                                                                                               ExtFuncExpr(
+                                                                                                                                   ExtFuncSymbol.EndsWith,
+                                                                                                                                   p.p_type,
+                                                                                                                                   brass,
+                                                                                                                                   ConstantExpr(
+                                                                                                                                       "Nothing!")))),
                                                                                                                    [
                                                                                                                        "p_mfgr"]),
                                                                                                                LetExpr(
@@ -173,85 +177,85 @@ def q2():
                                                                                                                        "ps_suppkey",
                                                                                                                        lambda
                                                                                                                            p: (
-                                                                                                                                   pa_indexed[
-                                                                                                                                       p.ps_partkey] != ConstantExpr(
-                                                                                                                               None)),
+                                                                                                                               pa_indexed[
+                                                                                                                                   p.ps_partkey] != ConstantExpr(
+                                                                                                                           None)),
                                                                                                                        lambda
                                                                                                                            indexedDictValue,
                                                                                                                            probeDictKey: DicConsExpr(
                                                                                                                            [
                                                                                                                                (
-                                                                                                                               probeDictKey.ps_partkey,
-                                                                                                                               probeDictKey.ps_supplycost)])),
+                                                                                                                                   probeDictKey.ps_partkey,
+                                                                                                                                   probeDictKey.ps_supplycost)])),
                                                                                                                    LetExpr(
                                                                                                                        results,
                                                                                                                        SumBuilder(
                                                                                                                            lambda
                                                                                                                                p: IfExpr(
                                                                                                                                (
+                                                                                                                                       (
                                                                                                                                            (
-                                                                                                                                           (
-                                                                                                                                                       ps_probed[
-                                                                                                                                                           p[
-                                                                                                                                                               0].ps_partkey] != ConstantExpr(
-                                                                                                                                                   None))) * (
-                                                                                                                                           (
-                                                                                                                                                       ps_probed[
-                                                                                                                                                           p[
-                                                                                                                                                               0].ps_partkey] ==
+                                                                                                                                                   ps_probed[
                                                                                                                                                        p[
-                                                                                                                                                           0].ps_supplycost)) * (
+                                                                                                                                                           0].ps_partkey] != ConstantExpr(
+                                                                                                                                               None))) * (
                                                                                                                                            (
-                                                                                                                                                       su_probed[
-                                                                                                                                                           p[
-                                                                                                                                                               0].ps_suppkey] != ConstantExpr(
-                                                                                                                                                   None)))),
+                                                                                                                                                   ps_probed[
+                                                                                                                                                       p[
+                                                                                                                                                           0].ps_partkey] ==
+                                                                                                                                                   p[
+                                                                                                                                                       0].ps_supplycost)) * (
+                                                                                                                                           (
+                                                                                                                                                   su_probed[
+                                                                                                                                                       p[
+                                                                                                                                                           0].ps_suppkey] != ConstantExpr(
+                                                                                                                                               None)))),
                                                                                                                                DicConsExpr(
                                                                                                                                    [
                                                                                                                                        (
-                                                                                                                                       RecConsExpr(
-                                                                                                                                           [
-                                                                                                                                               (
-                                                                                                                                               "s_acctbal",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].s_acctbal),
-                                                                                                                                               (
-                                                                                                                                               "s_name",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].s_name),
-                                                                                                                                               (
-                                                                                                                                               "n_name",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].n_name),
-                                                                                                                                               (
-                                                                                                                                               "p_partkey",
-                                                                                                                                               p[
-                                                                                                                                                   0].ps_partkey),
-                                                                                                                                               (
-                                                                                                                                               "p_mfgr",
-                                                                                                                                               pa_indexed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_partkey].p_mfgr),
-                                                                                                                                               (
-                                                                                                                                               "s_address",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].s_address),
-                                                                                                                                               (
-                                                                                                                                               "s_phone",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].s_phone),
-                                                                                                                                               (
-                                                                                                                                               "s_comment",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].ps_suppkey].s_comment)]),
-                                                                                                                                       ConstantExpr(
-                                                                                                                                           True))]),
+                                                                                                                                           RecConsExpr(
+                                                                                                                                               [
+                                                                                                                                                   (
+                                                                                                                                                       "s_acctbal",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].s_acctbal),
+                                                                                                                                                   (
+                                                                                                                                                       "s_name",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].s_name),
+                                                                                                                                                   (
+                                                                                                                                                       "n_name",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].n_name),
+                                                                                                                                                   (
+                                                                                                                                                       "p_partkey",
+                                                                                                                                                       p[
+                                                                                                                                                           0].ps_partkey),
+                                                                                                                                                   (
+                                                                                                                                                       "p_mfgr",
+                                                                                                                                                       pa_indexed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_partkey].p_mfgr),
+                                                                                                                                                   (
+                                                                                                                                                       "s_address",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].s_address),
+                                                                                                                                                   (
+                                                                                                                                                       "s_phone",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].s_phone),
+                                                                                                                                                   (
+                                                                                                                                                       "s_comment",
+                                                                                                                                                       su_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].ps_suppkey].s_comment)]),
+                                                                                                                                           ConstantExpr(
+                                                                                                                                               True))]),
                                                                                                                                ConstantExpr(
                                                                                                                                    None)),
                                                                                                                            ps,
@@ -263,8 +267,8 @@ def q2():
                                                                                                                            ConstantExpr(
                                                                                                                                True))))))))))
 
-
     print(q2)
+
 
 def q3():
     building = VarExpr("building")
@@ -330,6 +334,7 @@ def q3():
     LetExpr(building, ConstantExpr("BUILDING"), LetExpr(customer_indexed, SumExpr(v1, db->cu_dataset, IfExpr(CompareExpr(CompareSymbol.EQ, RecAccessExpr(PairAccessExpr(v1, 0), 'c_mktsegment'), building), DicConsExpr([(RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'), RecConsExpr([('c_custkey', RecAccessExpr(PairAccessExpr(v1, 0), 'c_custkey'))]))]), EmptyDicConsExpr()), True), LetExpr(order_probed, LetExpr(v3, customer_indexed, SumExpr(v4, db->ord_dataset, IfExpr(CompareExpr(CompareSymbol.LT, RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderdate'), ConstantExpr(19950315)), IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(v3, RecAccessExpr(PairAccessExpr(v4, 0), 'o_custkey')), ConstantExpr(None)), DicConsExpr([(RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderkey'), RecConsExpr([('o_orderdate', RecAccessExpr(PairAccessExpr(v4, 0), 'o_orderdate')), ('o_shippriority', RecAccessExpr(PairAccessExpr(v4, 0), 'o_shippriority'))]))]), EmptyDicConsExpr()), EmptyDicConsExpr()), True)), LetExpr(lineitem_probed, LetExpr(v6, order_probed, SumExpr(v7, db->li_dataset, IfExpr(CompareExpr(CompareSymbol.GT, RecAccessExpr(PairAccessExpr(v7, 0), 'l_shipdate'), ConstantExpr(19950315)), IfExpr(CompareExpr(CompareSymbol.NE, DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), ConstantExpr(None)), DicConsExpr([(RecConsExpr([('l_orderkey', RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), ('o_orderdate', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_orderdate')), ('o_shippriority', RecAccessExpr(DicLookupExpr(v6, RecAccessExpr(PairAccessExpr(v7, 0), 'l_orderkey')), 'o_shippriority'))]), RecConsExpr([('revenue', MulExpr(RecAccessExpr(PairAccessExpr(v7, 0), 'l_extendedprice'), SubExpr(ConstantExpr(1.0), RecAccessExpr(PairAccessExpr(v7, 0), 'l_discount'))))]))]), EmptyDicConsExpr()), EmptyDicConsExpr()), False)), LetExpr(results, SumExpr(v9, lineitem_probed, DicConsExpr([(ConcatExpr(PairAccessExpr(v9, 0), PairAccessExpr(v9, 1)), ConstantExpr(True))]), True), LetExpr(out, results, ConstantExpr(True)))))))
     '''
 
+
 def q4():
     li_indexed = VarExpr("li_indexed")
     ord_probed = VarExpr("ord_probed")
@@ -345,32 +350,32 @@ def q4():
                                                                                                           ord,
                                                                                                           "o_orderkey",
                                                                                                           lambda p: (((
-                                                                                                                      p.o_orderdate >= ConstantExpr(
-                                                                                                                  19930701))) * (
-                                                                                                                     (
+                                                                                                                  p.o_orderdate >= ConstantExpr(
+                                                                                                              19930701))) * (
+                                                                                                                         (
                                                                                                                                  p.o_orderdate < ConstantExpr(
                                                                                                                              19931001)))),
                                                                                                           lambda
                                                                                                               indexedDictValue,
                                                                                                               probeDictKey: DicConsExpr(
                                                                                                               [(
-                                                                                                               probeDictKey.o_orderpriority,
-                                                                                                               ConstantExpr(
-                                                                                                                   1))])),
+                                                                                                                  probeDictKey.o_orderpriority,
+                                                                                                                  ConstantExpr(
+                                                                                                                      1))])),
                                                                                          LetExpr(results, SumBuilder(
                                                                                              lambda p: DicConsExpr([(
-                                                                                                                    RecConsExpr(
-                                                                                                                        [
-                                                                                                                            (
-                                                                                                                            "o_orderpriority",
-                                                                                                                            p[
-                                                                                                                                0]),
-                                                                                                                            (
-                                                                                                                            "order_count",
-                                                                                                                            p[
-                                                                                                                                1])]),
-                                                                                                                    ConstantExpr(
-                                                                                                                        True))]),
+                                                                                                 RecConsExpr(
+                                                                                                     [
+                                                                                                         (
+                                                                                                             "o_orderpriority",
+                                                                                                             p[
+                                                                                                                 0]),
+                                                                                                         (
+                                                                                                             "order_count",
+                                                                                                             p[
+                                                                                                                 1])]),
+                                                                                                 ConstantExpr(
+                                                                                                     True))]),
                                                                                              ord_probed, True),
                                                                                                  LetExpr(VarExpr("out"),
                                                                                                          results,
@@ -378,6 +383,7 @@ def q4():
                                                                                                              True)))))
 
     print(q4)
+
 
 def q5():
     asia = VarExpr("asia")
@@ -406,44 +412,44 @@ def q5():
                                                                            lambda p: ConstantExpr(True),
                                                                            lambda indexedDictValue,
                                                                                   probeDictKey: DicConsExpr([(
-                                                                                                             probeDictKey.c_custkey,
-                                                                                                             RecConsExpr(
-                                                                                                                 [(
-                                                                                                                  "n_name",
-                                                                                                                  indexedDictValue),
-                                                                                                                  (
-                                                                                                                  "c_nationkey",
-                                                                                                                  probeDictKey.c_nationkey)]))]),
+                                                                               probeDictKey.c_custkey,
+                                                                               RecConsExpr(
+                                                                                   [(
+                                                                                       "n_name",
+                                                                                       indexedDictValue),
+                                                                                       (
+                                                                                           "c_nationkey",
+                                                                                           probeDictKey.c_nationkey)]))]),
                                                                            True), LetExpr(order_probed,
                                                                                           JoinProbeBuilder(
                                                                                               customer_probed, ord,
                                                                                               "o_custkey", lambda p: ((
-                                                                                                                                  p.o_orderdate < ConstantExpr(
-                                                                                                                              19950101)) * (
-                                                                                                                                  p.o_orderdate >= ConstantExpr(
-                                                                                                                              19940101))),
+                                                                                                                              p.o_orderdate < ConstantExpr(
+                                                                                                                          19950101)) * (
+                                                                                                                              p.o_orderdate >= ConstantExpr(
+                                                                                                                          19940101))),
                                                                                               lambda indexedDictValue,
                                                                                                      probeDictKey: DicConsExpr(
                                                                                                   [(
-                                                                                                   probeDictKey.o_orderkey,
-                                                                                                   RecConsExpr([(
-                                                                                                                "n_name",
-                                                                                                                indexedDictValue.n_name),
-                                                                                                                (
-                                                                                                                "c_nationkey",
-                                                                                                                indexedDictValue.c_nationkey)]))]),
+                                                                                                      probeDictKey.o_orderkey,
+                                                                                                      RecConsExpr([(
+                                                                                                          "n_name",
+                                                                                                          indexedDictValue.n_name),
+                                                                                                          (
+                                                                                                              "c_nationkey",
+                                                                                                              indexedDictValue.c_nationkey)]))]),
                                                                                               True),
                                                                                           LetExpr(supplier_project,
                                                                                                   SumBuilder(lambda
                                                                                                                  p: DicConsExpr(
                                                                                                       [(RecConsExpr([(
-                                                                                                                     "s_suppkey",
-                                                                                                                     p[
-                                                                                                                         0].s_suppkey),
-                                                                                                                     (
-                                                                                                                     "s_nationkey",
-                                                                                                                     p[
-                                                                                                                         0].s_nationkey)]),
+                                                                                                          "s_suppkey",
+                                                                                                          p[
+                                                                                                              0].s_suppkey),
+                                                                                                          (
+                                                                                                              "s_nationkey",
+                                                                                                              p[
+                                                                                                                  0].s_nationkey)]),
                                                                                                         ConstantExpr(
                                                                                                             True))]),
                                                                                                              su, True),
@@ -460,23 +466,23 @@ def q5():
                                                                                                               indexedDictValue,
                                                                                                               probeDictKey: IfExpr(
                                                                                                               (
-                                                                                                                          supplier_project[
-                                                                                                                              RecConsExpr(
-                                                                                                                                  [
-                                                                                                                                      (
+                                                                                                                      supplier_project[
+                                                                                                                          RecConsExpr(
+                                                                                                                              [
+                                                                                                                                  (
                                                                                                                                       "l_suppkey",
                                                                                                                                       probeDictKey.l_suppkey),
-                                                                                                                                      (
+                                                                                                                                  (
                                                                                                                                       "c_nationkey",
                                                                                                                                       indexedDictValue.c_nationkey)])] != ConstantExpr(
-                                                                                                                      None)),
+                                                                                                                  None)),
                                                                                                               DicConsExpr(
                                                                                                                   [(
-                                                                                                                   indexedDictValue.n_name,
-                                                                                                                   (
-                                                                                                                               probeDictKey.l_extendedprice * (
-                                                                                                                                   ConstantExpr(
-                                                                                                                                       1.0) - probeDictKey.l_discount)))]),
+                                                                                                                      indexedDictValue.n_name,
+                                                                                                                      (
+                                                                                                                              probeDictKey.l_extendedprice * (
+                                                                                                                              ConstantExpr(
+                                                                                                                                  1.0) - probeDictKey.l_discount)))]),
                                                                                                               ConstantExpr(
                                                                                                                   None))),
                                                                                                       LetExpr(results,
@@ -484,18 +490,18 @@ def q5():
                                                                                                                   lambda
                                                                                                                       p: DicConsExpr(
                                                                                                                       [(
-                                                                                                                       RecConsExpr(
-                                                                                                                           [
-                                                                                                                               (
-                                                                                                                               "n_name",
-                                                                                                                               p[
-                                                                                                                                   0]),
-                                                                                                                               (
-                                                                                                                               "revenue",
-                                                                                                                               p[
-                                                                                                                                   1])]),
-                                                                                                                       ConstantExpr(
-                                                                                                                           True))]),
+                                                                                                                          RecConsExpr(
+                                                                                                                              [
+                                                                                                                                  (
+                                                                                                                                      "n_name",
+                                                                                                                                      p[
+                                                                                                                                          0]),
+                                                                                                                                  (
+                                                                                                                                      "revenue",
+                                                                                                                                      p[
+                                                                                                                                          1])]),
+                                                                                                                          ConstantExpr(
+                                                                                                                              True))]),
                                                                                                                   lineitem_probed,
                                                                                                                   True),
                                                                                                               LetExpr(
@@ -506,6 +512,7 @@ def q5():
                                                                                                                       True))))))))))
 
     print(q5)
+
 
 def q6():
     results = VarExpr("results")
@@ -520,6 +527,7 @@ def q6():
                                      li, ), LetExpr(VarExpr("out"), results, ConstantExpr(True)))
 
     print(q6)
+
 
 def q7():
     france = VarExpr("france")
@@ -542,8 +550,8 @@ def q7():
                                                                                                        na,
                                                                                                        "n_nationkey",
                                                                                                        lambda p: (((
-                                                                                                                   p.n_name == france)) + (
-                                                                                                                  (
+                                                                                                               p.n_name == france)) + (
+                                                                                                                      (
                                                                                                                               p.n_name == germany))),
                                                                                                        ["n_name"]),
                                                                                                    LetExpr(cu_probed,
@@ -558,8 +566,8 @@ def q7():
                                                                                                                    indexedDictValue,
                                                                                                                    probeDictKey: DicConsExpr(
                                                                                                                    [(
-                                                                                                                    probeDictKey.c_custkey,
-                                                                                                                    indexedDictValue.n_name)]),
+                                                                                                                       probeDictKey.c_custkey,
+                                                                                                                       indexedDictValue.n_name)]),
                                                                                                                True),
                                                                                                            LetExpr(
                                                                                                                ord_probed,
@@ -575,8 +583,8 @@ def q7():
                                                                                                                        probeDictKey: DicConsExpr(
                                                                                                                        [
                                                                                                                            (
-                                                                                                                           probeDictKey.o_orderkey,
-                                                                                                                           indexedDictValue)]),
+                                                                                                                               probeDictKey.o_orderkey,
+                                                                                                                               indexedDictValue)]),
                                                                                                                    True),
                                                                                                                LetExpr(
                                                                                                                    su_probed,
@@ -592,8 +600,8 @@ def q7():
                                                                                                                            probeDictKey: DicConsExpr(
                                                                                                                            [
                                                                                                                                (
-                                                                                                                               probeDictKey.s_suppkey,
-                                                                                                                               indexedDictValue.n_name)]),
+                                                                                                                                   probeDictKey.s_suppkey,
+                                                                                                                                   indexedDictValue.n_name)]),
                                                                                                                        True),
                                                                                                                    LetExpr(
                                                                                                                        li_probed,
@@ -601,79 +609,79 @@ def q7():
                                                                                                                            lambda
                                                                                                                                p: IfExpr(
                                                                                                                                (
+                                                                                                                                       (
                                                                                                                                            (
+                                                                                                                                                   p[
+                                                                                                                                                       0].l_shipdate >= ConstantExpr(
+                                                                                                                                               19950101))) * (
                                                                                                                                            (
+                                                                                                                                                   p[
+                                                                                                                                                       0].l_shipdate <= ConstantExpr(
+                                                                                                                                               19961231))) * (
+                                                                                                                                           (
+                                                                                                                                                   ord_probed[
                                                                                                                                                        p[
-                                                                                                                                                           0].l_shipdate >= ConstantExpr(
-                                                                                                                                                   19950101))) * (
+                                                                                                                                                           0].l_orderkey] != ConstantExpr(
+                                                                                                                                               None))) * (
                                                                                                                                            (
+                                                                                                                                                   su_probed[
                                                                                                                                                        p[
-                                                                                                                                                           0].l_shipdate <= ConstantExpr(
-                                                                                                                                                   19961231))) * (
+                                                                                                                                                           0].l_suppkey] != ConstantExpr(
+                                                                                                                                               None))) * (
                                                                                                                                            (
-                                                                                                                                                       ord_probed[
-                                                                                                                                                           p[
-                                                                                                                                                               0].l_orderkey] != ConstantExpr(
-                                                                                                                                                   None))) * (
-                                                                                                                                           (
-                                                                                                                                                       su_probed[
-                                                                                                                                                           p[
-                                                                                                                                                               0].l_suppkey] != ConstantExpr(
-                                                                                                                                                   None))) * (
-                                                                                                                                           (
+                                                                                                                                                   (
                                                                                                                                                        (
+                                                                                                                                                               (
+                                                                                                                                                                   (
+                                                                                                                                                                           ord_probed[
+                                                                                                                                                                               p[
+                                                                                                                                                                                   0].l_orderkey] == france)) * (
+                                                                                                                                                                   (
+                                                                                                                                                                           su_probed[
+                                                                                                                                                                               p[
+                                                                                                                                                                                   0].l_suppkey] == germany)))) + (
                                                                                                                                                        (
+                                                                                                                                                               (
                                                                                                                                                                    (
+                                                                                                                                                                           ord_probed[
+                                                                                                                                                                               p[
+                                                                                                                                                                                   0].l_orderkey] == germany)) * (
                                                                                                                                                                    (
-                                                                                                                                                                               ord_probed[
-                                                                                                                                                                                   p[
-                                                                                                                                                                                       0].l_orderkey] == france)) * (
-                                                                                                                                                                   (
-                                                                                                                                                                               su_probed[
-                                                                                                                                                                                   p[
-                                                                                                                                                                                       0].l_suppkey] == germany)))) + (
-                                                                                                                                                       (
-                                                                                                                                                                   (
-                                                                                                                                                                   (
-                                                                                                                                                                               ord_probed[
-                                                                                                                                                                                   p[
-                                                                                                                                                                                       0].l_orderkey] == germany)) * (
-                                                                                                                                                                   (
-                                                                                                                                                                               su_probed[
-                                                                                                                                                                                   p[
-                                                                                                                                                                                       0].l_suppkey] == france))))))),
+                                                                                                                                                                           su_probed[
+                                                                                                                                                                               p[
+                                                                                                                                                                                   0].l_suppkey] == france))))))),
                                                                                                                                DicConsExpr(
                                                                                                                                    [
                                                                                                                                        (
-                                                                                                                                       RecConsExpr(
-                                                                                                                                           [
-                                                                                                                                               (
-                                                                                                                                               "supp_nation",
-                                                                                                                                               su_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].l_suppkey]),
-                                                                                                                                               (
-                                                                                                                                               "cust_nation",
-                                                                                                                                               ord_probed[
-                                                                                                                                                   p[
-                                                                                                                                                       0].l_orderkey]),
-                                                                                                                                               (
-                                                                                                                                               "l_year",
-                                                                                                                                               ExtFuncExpr(
-                                                                                                                                                   ExtFuncSymbol.ExtractYear,
-                                                                                                                                                   p[
-                                                                                                                                                       0].l_shipdate,
-                                                                                                                                                   ConstantExpr(
-                                                                                                                                                       "Nothing!"),
-                                                                                                                                                   ConstantExpr(
-                                                                                                                                                       "Nothing!")))]),
-                                                                                                                                       RecConsExpr(
-                                                                                                                                           [
-                                                                                                                                               (
-                                                                                                                                               "revenue",
-                                                                                                                                               (
+                                                                                                                                           RecConsExpr(
+                                                                                                                                               [
+                                                                                                                                                   (
+                                                                                                                                                       "supp_nation",
+                                                                                                                                                       su_probed[
                                                                                                                                                            p[
-                                                                                                                                                               0].l_extendedprice * (
+                                                                                                                                                               0].l_suppkey]),
+                                                                                                                                                   (
+                                                                                                                                                       "cust_nation",
+                                                                                                                                                       ord_probed[
+                                                                                                                                                           p[
+                                                                                                                                                               0].l_orderkey]),
+                                                                                                                                                   (
+                                                                                                                                                       "l_year",
+                                                                                                                                                       ExtFuncExpr(
+                                                                                                                                                           ExtFuncSymbol.ExtractYear,
+                                                                                                                                                           p[
+                                                                                                                                                               0].l_shipdate,
+                                                                                                                                                           ConstantExpr(
+                                                                                                                                                               "Nothing!"),
+                                                                                                                                                           ConstantExpr(
+                                                                                                                                                               "Nothing!")))]),
+                                                                                                                                           RecConsExpr(
+                                                                                                                                               [
+                                                                                                                                                   (
+                                                                                                                                                       "revenue",
+                                                                                                                                                       (
+                                                                                                                                                               p[
+                                                                                                                                                                   0].l_extendedprice * (
                                                                                                                                                                        ConstantExpr(
                                                                                                                                                                            1.0) -
                                                                                                                                                                        p[
@@ -689,13 +697,13 @@ def q7():
                                                                                                                                    p: DicConsExpr(
                                                                                                                                    [
                                                                                                                                        (
-                                                                                                                                       ConcatExpr(
-                                                                                                                                           p[
-                                                                                                                                               0],
-                                                                                                                                           p[
-                                                                                                                                               1]),
-                                                                                                                                       ConstantExpr(
-                                                                                                                                           True))]),
+                                                                                                                                           ConcatExpr(
+                                                                                                                                               p[
+                                                                                                                                                   0],
+                                                                                                                                               p[
+                                                                                                                                                   1]),
+                                                                                                                                           ConstantExpr(
+                                                                                                                                               True))]),
                                                                                                                                li_probed,
                                                                                                                                True),
                                                                                                                            LetExpr(
@@ -706,6 +714,7 @@ def q7():
                                                                                                                                    True))))))))))
 
     print(q7)
+
 
 def q8():
     steel = VarExpr("steel")
@@ -735,7 +744,7 @@ def q8():
                                                                                         JoinPartitionBuilder(re,
                                                                                                              "r_regionkey",
                                                                                                              lambda p: (
-                                                                                                                         p.r_name == america),
+                                                                                                                     p.r_name == america),
                                                                                                              []),
                                                                                         LetExpr(na_probed,
                                                                                                 JoinProbeBuilder(
@@ -747,9 +756,9 @@ def q8():
                                                                                                         indexedDictValue,
                                                                                                         probeDictKey: DicConsExpr(
                                                                                                         [(
-                                                                                                         probeDictKey.n_nationkey,
-                                                                                                         ConstantExpr(
-                                                                                                             True))]),
+                                                                                                            probeDictKey.n_nationkey,
+                                                                                                            ConstantExpr(
+                                                                                                                True))]),
                                                                                                     True),
                                                                                                 LetExpr(na_indexed,
                                                                                                         JoinPartitionBuilder(
@@ -776,10 +785,10 @@ def q8():
                                                                                                                         p: DicConsExpr(
                                                                                                                         [
                                                                                                                             (
-                                                                                                                            p[
-                                                                                                                                0].c_custkey,
-                                                                                                                            p[
-                                                                                                                                0].c_nationkey)]),
+                                                                                                                                p[
+                                                                                                                                    0].c_custkey,
+                                                                                                                                p[
+                                                                                                                                    0].c_nationkey)]),
                                                                                                                     cu,
                                                                                                                     True,
                                                                                                                     "dense_array(200000)"),
@@ -790,7 +799,7 @@ def q8():
                                                                                                                         "p_partkey",
                                                                                                                         lambda
                                                                                                                             p: (
-                                                                                                                                    p.p_type == steel),
+                                                                                                                                p.p_type == steel),
                                                                                                                         []),
                                                                                                                     LetExpr(
                                                                                                                         ord_indexed,
@@ -799,13 +808,13 @@ def q8():
                                                                                                                             "o_orderkey",
                                                                                                                             lambda
                                                                                                                                 p: (
+                                                                                                                                    (
                                                                                                                                         (
+                                                                                                                                                p.o_orderdate >= ConstantExpr(
+                                                                                                                                            19950101))) * (
                                                                                                                                         (
-                                                                                                                                                    p.o_orderdate >= ConstantExpr(
-                                                                                                                                                19950101))) * (
-                                                                                                                                        (
-                                                                                                                                                    p.o_orderdate <= ConstantExpr(
-                                                                                                                                                19961231)))),
+                                                                                                                                                p.o_orderdate <= ConstantExpr(
+                                                                                                                                            19961231)))),
                                                                                                                             [
                                                                                                                                 "o_custkey",
                                                                                                                                 "o_orderdate"]),
@@ -822,47 +831,47 @@ def q8():
                                                                                                                                     indexedDictValue,
                                                                                                                                     probeDictKey: IfExpr(
                                                                                                                                     (
+                                                                                                                                            (
                                                                                                                                                 (
+                                                                                                                                                        ord_indexed[
+                                                                                                                                                            probeDictKey.l_orderkey] != ConstantExpr(
+                                                                                                                                                    None))) * (
                                                                                                                                                 (
-                                                                                                                                                            ord_indexed[
-                                                                                                                                                                probeDictKey.l_orderkey] != ConstantExpr(
-                                                                                                                                                        None))) * (
-                                                                                                                                                (
-                                                                                                                                                            na_probed[
-                                                                                                                                                                cu_indexed[
-                                                                                                                                                                    ord_indexed[
-                                                                                                                                                                        probeDictKey.l_orderkey].o_custkey]] != ConstantExpr(
-                                                                                                                                                        None)))),
+                                                                                                                                                        na_probed[
+                                                                                                                                                            cu_indexed[
+                                                                                                                                                                ord_indexed[
+                                                                                                                                                                    probeDictKey.l_orderkey].o_custkey]] != ConstantExpr(
+                                                                                                                                                    None)))),
                                                                                                                                     DicConsExpr(
                                                                                                                                         [
                                                                                                                                             (
-                                                                                                                                            ExtFuncExpr(
-                                                                                                                                                ExtFuncSymbol.ExtractYear,
-                                                                                                                                                ord_indexed[
-                                                                                                                                                    probeDictKey.l_orderkey].o_orderdate,
-                                                                                                                                                ConstantExpr(
-                                                                                                                                                    "Nothing!"),
-                                                                                                                                                ConstantExpr(
-                                                                                                                                                    "Nothing!")),
-                                                                                                                                            RecConsExpr(
-                                                                                                                                                [
-                                                                                                                                                    (
-                                                                                                                                                    "A",
-                                                                                                                                                    IfExpr(
+                                                                                                                                                ExtFuncExpr(
+                                                                                                                                                    ExtFuncSymbol.ExtractYear,
+                                                                                                                                                    ord_indexed[
+                                                                                                                                                        probeDictKey.l_orderkey].o_orderdate,
+                                                                                                                                                    ConstantExpr(
+                                                                                                                                                        "Nothing!"),
+                                                                                                                                                    ConstantExpr(
+                                                                                                                                                        "Nothing!")),
+                                                                                                                                                RecConsExpr(
+                                                                                                                                                    [
                                                                                                                                                         (
-                                                                                                                                                                    na_indexed[
-                                                                                                                                                                        su_indexed[
-                                                                                                                                                                            probeDictKey.l_suppkey].s_nationkey].n_name == brazil),
-                                                                                                                                                        (
-                                                                                                                                                                    probeDictKey.l_extendedprice * (
+                                                                                                                                                            "A",
+                                                                                                                                                            IfExpr(
+                                                                                                                                                                (
+                                                                                                                                                                        na_indexed[
+                                                                                                                                                                            su_indexed[
+                                                                                                                                                                                probeDictKey.l_suppkey].s_nationkey].n_name == brazil),
+                                                                                                                                                                (
+                                                                                                                                                                        probeDictKey.l_extendedprice * (
                                                                                                                                                                         ConstantExpr(
                                                                                                                                                                             1.0) - probeDictKey.l_discount)),
-                                                                                                                                                        ConstantExpr(
-                                                                                                                                                            0.0))),
-                                                                                                                                                    (
-                                                                                                                                                    "B",
-                                                                                                                                                    (
-                                                                                                                                                                probeDictKey.l_extendedprice * (
+                                                                                                                                                                ConstantExpr(
+                                                                                                                                                                    0.0))),
+                                                                                                                                                        (
+                                                                                                                                                            "B",
+                                                                                                                                                            (
+                                                                                                                                                                    probeDictKey.l_extendedprice * (
                                                                                                                                                                     ConstantExpr(
                                                                                                                                                                         1.0) - probeDictKey.l_discount)))]))]),
                                                                                                                                     ConstantExpr(
@@ -874,21 +883,21 @@ def q8():
                                                                                                                                         p: DicConsExpr(
                                                                                                                                         [
                                                                                                                                             (
-                                                                                                                                            RecConsExpr(
-                                                                                                                                                [
-                                                                                                                                                    (
-                                                                                                                                                    "o_year",
-                                                                                                                                                    p[
-                                                                                                                                                        0]),
-                                                                                                                                                    (
-                                                                                                                                                    "mkt_share",
-                                                                                                                                                    (
-                                                                                                                                                                p[
-                                                                                                                                                                    1].A /
-                                                                                                                                                                p[
-                                                                                                                                                                    1].B))]),
-                                                                                                                                            ConstantExpr(
-                                                                                                                                                True))]),
+                                                                                                                                                RecConsExpr(
+                                                                                                                                                    [
+                                                                                                                                                        (
+                                                                                                                                                            "o_year",
+                                                                                                                                                            p[
+                                                                                                                                                                0]),
+                                                                                                                                                        (
+                                                                                                                                                            "mkt_share",
+                                                                                                                                                            (
+                                                                                                                                                                    p[
+                                                                                                                                                                        1].A /
+                                                                                                                                                                    p[
+                                                                                                                                                                        1].B))]),
+                                                                                                                                                ConstantExpr(
+                                                                                                                                                    True))]),
                                                                                                                                     li_probed,
                                                                                                                                     True),
                                                                                                                                 LetExpr(
@@ -898,6 +907,7 @@ def q8():
                                                                                                                                     ConstantExpr(
                                                                                                                                         True))))))))))))))
     print(q8)
+
 
 def q9():
     nation_indexed = VarExpr("nation_indexed")
@@ -943,21 +953,21 @@ def q9():
                                                                                                              indexedDictValue,
                                                                                                              probeDictKey: DicConsExpr(
                                                                                                              [(
-                                                                                                              RecConsExpr(
-                                                                                                                  [(
-                                                                                                                   "ps_partkey",
-                                                                                                                   probeDictKey.ps_partkey),
-                                                                                                                   (
-                                                                                                                   "ps_suppkey",
-                                                                                                                   probeDictKey.ps_suppkey)]),
-                                                                                                              RecConsExpr(
-                                                                                                                  [(
-                                                                                                                   "n_name",
-                                                                                                                   supplier_probed[
-                                                                                                                       probeDictKey.ps_suppkey]),
-                                                                                                                   (
-                                                                                                                   "ps_supplycost",
-                                                                                                                   probeDictKey.ps_supplycost)]))]),
+                                                                                                                 RecConsExpr(
+                                                                                                                     [(
+                                                                                                                         "ps_partkey",
+                                                                                                                         probeDictKey.ps_partkey),
+                                                                                                                         (
+                                                                                                                             "ps_suppkey",
+                                                                                                                             probeDictKey.ps_suppkey)]),
+                                                                                                                 RecConsExpr(
+                                                                                                                     [(
+                                                                                                                         "n_name",
+                                                                                                                         supplier_probed[
+                                                                                                                             probeDictKey.ps_suppkey]),
+                                                                                                                         (
+                                                                                                                             "ps_supplycost",
+                                                                                                                             probeDictKey.ps_supplycost)]))]),
                                                                                                          True), LetExpr(
                                                                                                      ord_indexed,
                                                                                                      SumBuilder(lambda
@@ -974,70 +984,70 @@ def q9():
                                                                                                                  lambda
                                                                                                                      p: IfExpr(
                                                                                                                      (
-                                                                                                                                 partsupp_probe[
-                                                                                                                                     RecConsExpr(
-                                                                                                                                         [
-                                                                                                                                             (
+                                                                                                                             partsupp_probe[
+                                                                                                                                 RecConsExpr(
+                                                                                                                                     [
+                                                                                                                                         (
                                                                                                                                              "ps_partkey",
                                                                                                                                              p[
                                                                                                                                                  0].l_partkey),
-                                                                                                                                             (
+                                                                                                                                         (
                                                                                                                                              "ps_suppkey",
                                                                                                                                              p[
                                                                                                                                                  0].l_suppkey)])] != ConstantExpr(
-                                                                                                                             None)),
+                                                                                                                         None)),
                                                                                                                      DicConsExpr(
                                                                                                                          [
                                                                                                                              (
-                                                                                                                             RecConsExpr(
-                                                                                                                                 [
-                                                                                                                                     (
-                                                                                                                                     "nation",
-                                                                                                                                     partsupp_probe[
-                                                                                                                                         RecConsExpr(
-                                                                                                                                             [
-                                                                                                                                                 (
-                                                                                                                                                 "ps_partkey",
-                                                                                                                                                 p[
-                                                                                                                                                     0].l_partkey),
-                                                                                                                                                 (
-                                                                                                                                                 "ps_suppkey",
-                                                                                                                                                 p[
-                                                                                                                                                     0].l_suppkey)])].n_name),
-                                                                                                                                     (
-                                                                                                                                     "o_year",
-                                                                                                                                     ExtFuncExpr(
-                                                                                                                                         ExtFuncSymbol.ExtractYear,
-                                                                                                                                         ord_indexed[
-                                                                                                                                             p[
-                                                                                                                                                 0].l_orderkey],
-                                                                                                                                         ConstantExpr(
-                                                                                                                                             "Nothing!"),
-                                                                                                                                         ConstantExpr(
-                                                                                                                                             "Nothing!")))]),
-                                                                                                                             RecConsExpr(
-                                                                                                                                 [
-                                                                                                                                     (
-                                                                                                                                     "sum_profit",
-                                                                                                                                     (
-                                                                                                                                                 (
+                                                                                                                                 RecConsExpr(
+                                                                                                                                     [
+                                                                                                                                         (
+                                                                                                                                             "nation",
+                                                                                                                                             partsupp_probe[
+                                                                                                                                                 RecConsExpr(
+                                                                                                                                                     [
+                                                                                                                                                         (
+                                                                                                                                                             "ps_partkey",
+                                                                                                                                                             p[
+                                                                                                                                                                 0].l_partkey),
+                                                                                                                                                         (
+                                                                                                                                                             "ps_suppkey",
+                                                                                                                                                             p[
+                                                                                                                                                                 0].l_suppkey)])].n_name),
+                                                                                                                                         (
+                                                                                                                                             "o_year",
+                                                                                                                                             ExtFuncExpr(
+                                                                                                                                                 ExtFuncSymbol.ExtractYear,
+                                                                                                                                                 ord_indexed[
+                                                                                                                                                     p[
+                                                                                                                                                         0].l_orderkey],
+                                                                                                                                                 ConstantExpr(
+                                                                                                                                                     "Nothing!"),
+                                                                                                                                                 ConstantExpr(
+                                                                                                                                                     "Nothing!")))]),
+                                                                                                                                 RecConsExpr(
+                                                                                                                                     [
+                                                                                                                                         (
+                                                                                                                                             "sum_profit",
+                                                                                                                                             (
+                                                                                                                                                     (
                                                                                                                                                              p[
                                                                                                                                                                  0].l_extendedprice * (
-                                                                                                                                                                         ConstantExpr(
-                                                                                                                                                                             1.0) -
-                                                                                                                                                                         p[
-                                                                                                                                                                             0].l_discount)) - (
+                                                                                                                                                                     ConstantExpr(
+                                                                                                                                                                         1.0) -
+                                                                                                                                                                     p[
+                                                                                                                                                                         0].l_discount)) - (
                                                                                                                                                              partsupp_probe[
                                                                                                                                                                  RecConsExpr(
                                                                                                                                                                      [
                                                                                                                                                                          (
-                                                                                                                                                                         "ps_partkey",
-                                                                                                                                                                         p[
-                                                                                                                                                                             0].l_partkey),
+                                                                                                                                                                             "ps_partkey",
+                                                                                                                                                                             p[
+                                                                                                                                                                                 0].l_partkey),
                                                                                                                                                                          (
-                                                                                                                                                                         "ps_suppkey",
-                                                                                                                                                                         p[
-                                                                                                                                                                             0].l_suppkey)])].ps_supplycost *
+                                                                                                                                                                             "ps_suppkey",
+                                                                                                                                                                             p[
+                                                                                                                                                                                 0].l_suppkey)])].ps_supplycost *
                                                                                                                                                              p[
                                                                                                                                                                  0].l_quantity)))]))]),
                                                                                                                      ConstantExpr(
@@ -1050,13 +1060,13 @@ def q9():
                                                                                                                          p: DicConsExpr(
                                                                                                                          [
                                                                                                                              (
-                                                                                                                             ConcatExpr(
-                                                                                                                                 p[
-                                                                                                                                     0],
-                                                                                                                                 p[
-                                                                                                                                     1]),
-                                                                                                                             ConstantExpr(
-                                                                                                                                 True))]),
+                                                                                                                                 ConcatExpr(
+                                                                                                                                     p[
+                                                                                                                                         0],
+                                                                                                                                     p[
+                                                                                                                                         1]),
+                                                                                                                                 ConstantExpr(
+                                                                                                                                     True))]),
                                                                                                                      li_probed,
                                                                                                                      True),
                                                                                                                  LetExpr(
@@ -1067,6 +1077,7 @@ def q9():
                                                                                                                          True))))))))))
 
     print(q9)
+
 
 def q10():
     r = VarExpr("r")
@@ -1094,121 +1105,123 @@ def q10():
                                                         LetExpr(ord_probed,
                                                                 JoinProbeBuilder(cu_indexed, ord, "o_custkey",
                                                                                  lambda p: (((
-                                                                                             p.o_orderdate >= ConstantExpr(
-                                                                                         19931001))) * ((
-                                                                                             p.o_orderdate < ConstantExpr(
-                                                                                         19940101)))),
+                                                                                         p.o_orderdate >= ConstantExpr(
+                                                                                     19931001))) * ((
+                                                                                         p.o_orderdate < ConstantExpr(
+                                                                                     19940101)))),
                                                                                  lambda indexedDictValue,
                                                                                         probeDictKey: DicConsExpr([(
-                                                                                                                   probeDictKey.o_orderkey,
-                                                                                                                   RecConsExpr(
-                                                                                                                       [
-                                                                                                                           (
-                                                                                                                           "c_custkey",
-                                                                                                                           indexedDictValue.c_custkey),
-                                                                                                                           (
-                                                                                                                           "c_name",
-                                                                                                                           indexedDictValue.c_name),
-                                                                                                                           (
-                                                                                                                           "c_acctbal",
-                                                                                                                           indexedDictValue.c_acctbal),
-                                                                                                                           (
-                                                                                                                           "c_address",
-                                                                                                                           indexedDictValue.c_address),
-                                                                                                                           (
-                                                                                                                           "c_phone",
-                                                                                                                           indexedDictValue.c_phone),
-                                                                                                                           (
-                                                                                                                           "c_comment",
-                                                                                                                           indexedDictValue.c_comment),
-                                                                                                                           (
-                                                                                                                           "n_name",
-                                                                                                                           na_indexed[
-                                                                                                                               indexedDictValue.c_nationkey].n_name)]))]),
+                                                                                     probeDictKey.o_orderkey,
+                                                                                     RecConsExpr(
+                                                                                         [
+                                                                                             (
+                                                                                                 "c_custkey",
+                                                                                                 indexedDictValue.c_custkey),
+                                                                                             (
+                                                                                                 "c_name",
+                                                                                                 indexedDictValue.c_name),
+                                                                                             (
+                                                                                                 "c_acctbal",
+                                                                                                 indexedDictValue.c_acctbal),
+                                                                                             (
+                                                                                                 "c_address",
+                                                                                                 indexedDictValue.c_address),
+                                                                                             (
+                                                                                                 "c_phone",
+                                                                                                 indexedDictValue.c_phone),
+                                                                                             (
+                                                                                                 "c_comment",
+                                                                                                 indexedDictValue.c_comment),
+                                                                                             (
+                                                                                                 "n_name",
+                                                                                                 na_indexed[
+                                                                                                     indexedDictValue.c_nationkey].n_name)]))]),
                                                                                  True), LetExpr(li_probed,
                                                                                                 JoinProbeBuilder(
                                                                                                     ord_probed, li,
                                                                                                     "l_orderkey",
                                                                                                     lambda p: (
-                                                                                                                p.l_returnflag == r),
+                                                                                                            p.l_returnflag == r),
                                                                                                     lambda
                                                                                                         indexedDictValue,
                                                                                                         probeDictKey: DicConsExpr(
                                                                                                         [(RecConsExpr([(
-                                                                                                                       "c_custkey",
-                                                                                                                       indexedDictValue.c_custkey),
-                                                                                                                       (
-                                                                                                                       "c_name",
-                                                                                                                       indexedDictValue.c_name),
-                                                                                                                       (
-                                                                                                                       "c_acctbal",
-                                                                                                                       indexedDictValue.c_acctbal),
-                                                                                                                       (
-                                                                                                                       "n_name",
-                                                                                                                       indexedDictValue.n_name),
-                                                                                                                       (
-                                                                                                                       "c_address",
-                                                                                                                       indexedDictValue.c_address),
-                                                                                                                       (
-                                                                                                                       "c_phone",
-                                                                                                                       indexedDictValue.c_phone),
-                                                                                                                       (
-                                                                                                                       "c_comment",
-                                                                                                                       indexedDictValue.c_comment)]),
+                                                                                                            "c_custkey",
+                                                                                                            indexedDictValue.c_custkey),
+                                                                                                            (
+                                                                                                                "c_name",
+                                                                                                                indexedDictValue.c_name),
+                                                                                                            (
+                                                                                                                "c_acctbal",
+                                                                                                                indexedDictValue.c_acctbal),
+                                                                                                            (
+                                                                                                                "n_name",
+                                                                                                                indexedDictValue.n_name),
+                                                                                                            (
+                                                                                                                "c_address",
+                                                                                                                indexedDictValue.c_address),
+                                                                                                            (
+                                                                                                                "c_phone",
+                                                                                                                indexedDictValue.c_phone),
+                                                                                                            (
+                                                                                                                "c_comment",
+                                                                                                                indexedDictValue.c_comment)]),
                                                                                                           (
-                                                                                                                      probeDictKey.l_extendedprice * (
-                                                                                                                          ConstantExpr(
-                                                                                                                              1.0) - probeDictKey.l_discount)))]),
+                                                                                                                  probeDictKey.l_extendedprice * (
+                                                                                                                  ConstantExpr(
+                                                                                                                      1.0) - probeDictKey.l_discount)))]),
                                                                                                     False),
                                                                                                 LetExpr(results,
                                                                                                         SumBuilder(
                                                                                                             lambda
                                                                                                                 p: DicConsExpr(
                                                                                                                 [(
-                                                                                                                 RecConsExpr(
-                                                                                                                     [(
-                                                                                                                      "c_custkey",
-                                                                                                                      p[
-                                                                                                                          0].c_custkey),
-                                                                                                                      (
-                                                                                                                      "c_name",
-                                                                                                                      p[
-                                                                                                                          0].c_name),
-                                                                                                                      (
-                                                                                                                      "revenue",
-                                                                                                                      p[
-                                                                                                                          1]),
-                                                                                                                      (
-                                                                                                                      "c_acctbal",
-                                                                                                                      p[
-                                                                                                                          0].c_acctbal),
-                                                                                                                      (
-                                                                                                                      "n_name",
-                                                                                                                      p[
-                                                                                                                          0].n_name),
-                                                                                                                      (
-                                                                                                                      "c_address",
-                                                                                                                      p[
-                                                                                                                          0].c_address),
-                                                                                                                      (
-                                                                                                                      "c_phone",
-                                                                                                                      p[
-                                                                                                                          0].c_phone),
-                                                                                                                      (
-                                                                                                                      "c_comment",
-                                                                                                                      p[
-                                                                                                                          0].c_comment)]),
-                                                                                                                 ConstantExpr(
-                                                                                                                     True))]),
+                                                                                                                    RecConsExpr(
+                                                                                                                        [
+                                                                                                                            (
+                                                                                                                                "c_custkey",
+                                                                                                                                p[
+                                                                                                                                    0].c_custkey),
+                                                                                                                            (
+                                                                                                                                "c_name",
+                                                                                                                                p[
+                                                                                                                                    0].c_name),
+                                                                                                                            (
+                                                                                                                                "revenue",
+                                                                                                                                p[
+                                                                                                                                    1]),
+                                                                                                                            (
+                                                                                                                                "c_acctbal",
+                                                                                                                                p[
+                                                                                                                                    0].c_acctbal),
+                                                                                                                            (
+                                                                                                                                "n_name",
+                                                                                                                                p[
+                                                                                                                                    0].n_name),
+                                                                                                                            (
+                                                                                                                                "c_address",
+                                                                                                                                p[
+                                                                                                                                    0].c_address),
+                                                                                                                            (
+                                                                                                                                "c_phone",
+                                                                                                                                p[
+                                                                                                                                    0].c_phone),
+                                                                                                                            (
+                                                                                                                                "c_comment",
+                                                                                                                                p[
+                                                                                                                                    0].c_comment)]),
+                                                                                                                    ConstantExpr(
+                                                                                                                        True))]),
                                                                                                             li_probed,
                                                                                                             True),
                                                                                                         LetExpr(VarExpr(
                                                                                                             "out"),
-                                                                                                                results,
-                                                                                                                ConstantExpr(
-                                                                                                                    True))))))))
+                                                                                                            results,
+                                                                                                            ConstantExpr(
+                                                                                                                True))))))))
 
     print(q10)
+
 
 def q11():
     germany = VarExpr("germany")
@@ -1230,9 +1243,9 @@ def q11():
                                   LetExpr(ps_probed,
                                           JoinProbeBuilder(su_probed, ps, "ps_suppkey", lambda p: ConstantExpr(True),
                                                            lambda indexedDictValue, probeDictKey: RecConsExpr([("A", ((
-                                                                                                                                  probeDictKey.ps_supplycost * probeDictKey.ps_availqty) * ConstantExpr(
+                                                                                                                              probeDictKey.ps_supplycost * probeDictKey.ps_availqty) * ConstantExpr(
                                                                0.0001))), ("B", DicConsExpr([(probeDictKey.ps_partkey, (
-                                                                       probeDictKey.ps_supplycost * probeDictKey.ps_availqty))]))])),
+                                                                   probeDictKey.ps_supplycost * probeDictKey.ps_availqty))]))])),
                                           LetExpr(results, SumBuilder(lambda p: IfExpr((p[1] > ps_probed.A),
                                                                                        DicConsExpr([(RecConsExpr(
                                                                                            [("ps_partkey", p[0]),
@@ -1244,6 +1257,7 @@ def q11():
                                                   LetExpr(VarExpr("out"), results, ConstantExpr(True)))))))
 
     print(q11)
+
 
 def q12():
     mail = VarExpr("mail")
@@ -1264,38 +1278,42 @@ def q12():
                                                                                                                 lambda
                                                                                                                     p: IfExpr(
                                                                                                                     ((((
-                                                                                                                       (
+                                                                                                                           (
                                                                                                                                    p[
                                                                                                                                        0].l_shipmode == mail)) + (
-                                                                                                                       (
+                                                                                                                           (
                                                                                                                                    p[
                                                                                                                                        0].l_shipmode == ship)))) * (
-                                                                                                                     (p[
-                                                                                                                          0].l_receiptdate >= ConstantExpr(
-                                                                                                                         19940101))) * (
-                                                                                                                     (p[
-                                                                                                                          0].l_receiptdate < ConstantExpr(
-                                                                                                                         19950101))) * (
-                                                                                                                     (p[
-                                                                                                                          0].l_shipdate <
-                                                                                                                      p[
-                                                                                                                          0].l_commitdate)) * (
-                                                                                                                     (p[
-                                                                                                                          0].l_commitdate <
-                                                                                                                      p[
-                                                                                                                          0].l_receiptdate))),
+                                                                                                                         (
+                                                                                                                                     p[
+                                                                                                                                         0].l_receiptdate >= ConstantExpr(
+                                                                                                                                 19940101))) * (
+                                                                                                                         (
+                                                                                                                                     p[
+                                                                                                                                         0].l_receiptdate < ConstantExpr(
+                                                                                                                                 19950101))) * (
+                                                                                                                         (
+                                                                                                                                     p[
+                                                                                                                                         0].l_shipdate <
+                                                                                                                                     p[
+                                                                                                                                         0].l_commitdate)) * (
+                                                                                                                         (
+                                                                                                                                     p[
+                                                                                                                                         0].l_commitdate <
+                                                                                                                                     p[
+                                                                                                                                         0].l_receiptdate))),
                                                                                                                     DicConsExpr(
                                                                                                                         [
                                                                                                                             (
-                                                                                                                            p[
-                                                                                                                                0].l_orderkey,
-                                                                                                                            DicConsExpr(
-                                                                                                                                [
-                                                                                                                                    (
-                                                                                                                                    p[
-                                                                                                                                        0].l_shipmode,
-                                                                                                                                    ConstantExpr(
-                                                                                                                                        1))]))]),
+                                                                                                                                p[
+                                                                                                                                    0].l_orderkey,
+                                                                                                                                DicConsExpr(
+                                                                                                                                    [
+                                                                                                                                        (
+                                                                                                                                            p[
+                                                                                                                                                0].l_shipmode,
+                                                                                                                                            ConstantExpr(
+                                                                                                                                                1))]))]),
                                                                                                                     ConstantExpr(
                                                                                                                         None)),
                                                                                                                 li,
@@ -1316,40 +1334,40 @@ def q12():
                                                                                                                             p: DicConsExpr(
                                                                                                                             [
                                                                                                                                 (
-                                                                                                                                RecConsExpr(
-                                                                                                                                    [
-                                                                                                                                        (
-                                                                                                                                        "l_shipmode",
-                                                                                                                                        p[
-                                                                                                                                            0])]),
-                                                                                                                                RecConsExpr(
-                                                                                                                                    [
-                                                                                                                                        (
-                                                                                                                                        "high_line_count",
-                                                                                                                                        IfExpr(
+                                                                                                                                    RecConsExpr(
+                                                                                                                                        [
                                                                                                                                             (
-                                                                                                                                                        (
-                                                                                                                                                        (
-                                                                                                                                                                    probeDictKey.o_orderpriority == urgent)) + (
-                                                                                                                                                        (
-                                                                                                                                                                    probeDictKey.o_orderpriority == high))),
-                                                                                                                                            p[
-                                                                                                                                                1],
-                                                                                                                                            ConstantExpr(
-                                                                                                                                                0))),
-                                                                                                                                        (
-                                                                                                                                        "low_line_count",
-                                                                                                                                        IfExpr(
+                                                                                                                                                "l_shipmode",
+                                                                                                                                                p[
+                                                                                                                                                    0])]),
+                                                                                                                                    RecConsExpr(
+                                                                                                                                        [
                                                                                                                                             (
-                                                                                                                                                        (
-                                                                                                                                                        (
-                                                                                                                                                                    probeDictKey.o_orderpriority != urgent)) * (
-                                                                                                                                                        (
-                                                                                                                                                                    probeDictKey.o_orderpriority != high))),
-                                                                                                                                            p[
-                                                                                                                                                1],
-                                                                                                                                            ConstantExpr(
-                                                                                                                                                0)))]))]),
+                                                                                                                                                "high_line_count",
+                                                                                                                                                IfExpr(
+                                                                                                                                                    (
+                                                                                                                                                            (
+                                                                                                                                                                (
+                                                                                                                                                                        probeDictKey.o_orderpriority == urgent)) + (
+                                                                                                                                                                (
+                                                                                                                                                                        probeDictKey.o_orderpriority == high))),
+                                                                                                                                                    p[
+                                                                                                                                                        1],
+                                                                                                                                                    ConstantExpr(
+                                                                                                                                                        0))),
+                                                                                                                                            (
+                                                                                                                                                "low_line_count",
+                                                                                                                                                IfExpr(
+                                                                                                                                                    (
+                                                                                                                                                            (
+                                                                                                                                                                (
+                                                                                                                                                                        probeDictKey.o_orderpriority != urgent)) * (
+                                                                                                                                                                (
+                                                                                                                                                                        probeDictKey.o_orderpriority != high))),
+                                                                                                                                                    p[
+                                                                                                                                                        1],
+                                                                                                                                                    ConstantExpr(
+                                                                                                                                                        0)))]))]),
                                                                                                                         indexedDictValue, ),
                                                                                                                     False),
                                                                                                                 LetExpr(
@@ -1359,13 +1377,13 @@ def q12():
                                                                                                                             p: DicConsExpr(
                                                                                                                             [
                                                                                                                                 (
-                                                                                                                                ConcatExpr(
-                                                                                                                                    p[
-                                                                                                                                        0],
-                                                                                                                                    p[
-                                                                                                                                        1]),
-                                                                                                                                ConstantExpr(
-                                                                                                                                    True))]),
+                                                                                                                                    ConcatExpr(
+                                                                                                                                        p[
+                                                                                                                                            0],
+                                                                                                                                        p[
+                                                                                                                                            1]),
+                                                                                                                                    ConstantExpr(
+                                                                                                                                        True))]),
                                                                                                                         ord_probed,
                                                                                                                         True),
                                                                                                                     LetExpr(
@@ -1376,6 +1394,7 @@ def q12():
                                                                                                                             True)))))))))
 
     print(q12)
+
 
 def q13():
     special = VarExpr("special")
@@ -1392,17 +1411,17 @@ def q13():
                                                                                                             lambda
                                                                                                                 p: IfExpr(
                                                                                                                 ((((
-                                                                                                                            ExtFuncExpr(
-                                                                                                                                ExtFuncSymbol.FirstIndex,
-                                                                                                                                p[
-                                                                                                                                    0].o_comment,
-                                                                                                                                special,
-                                                                                                                                ConstantExpr(
-                                                                                                                                    "Nothing!")) != ConstantExpr(
-                                                                                                                        -1) * (
-                                                                                                                                ConstantExpr(
-                                                                                                                                    1)))) * (
-                                                                                                                  (
+                                                                                                                        ExtFuncExpr(
+                                                                                                                            ExtFuncSymbol.FirstIndex,
+                                                                                                                            p[
+                                                                                                                                0].o_comment,
+                                                                                                                            special,
+                                                                                                                            ConstantExpr(
+                                                                                                                                "Nothing!")) != ConstantExpr(
+                                                                                                                    -1) * (
+                                                                                                                            ConstantExpr(
+                                                                                                                                1)))) * (
+                                                                                                                      (
                                                                                                                               ExtFuncExpr(
                                                                                                                                   ExtFuncSymbol.FirstIndex,
                                                                                                                                   p[
@@ -1410,14 +1429,14 @@ def q13():
                                                                                                                                   requests,
                                                                                                                                   ConstantExpr(
                                                                                                                                       "Nothing!")) > (
-                                                                                                                                          ExtFuncExpr(
-                                                                                                                                              ExtFuncSymbol.FirstIndex,
-                                                                                                                                              p[
-                                                                                                                                                  0].o_comment,
-                                                                                                                                              special,
-                                                                                                                                              ConstantExpr(
-                                                                                                                                                  "Nothing!")) + ConstantExpr(
-                                                                                                                                      6))))) == ConstantExpr(
+                                                                                                                                      ExtFuncExpr(
+                                                                                                                                          ExtFuncSymbol.FirstIndex,
+                                                                                                                                          p[
+                                                                                                                                              0].o_comment,
+                                                                                                                                          special,
+                                                                                                                                          ConstantExpr(
+                                                                                                                                              "Nothing!")) + ConstantExpr(
+                                                                                                                                  6))))) == ConstantExpr(
                                                                                                                     False)),
                                                                                                                 DicConsExpr(
                                                                                                                     [(p[
@@ -1433,27 +1452,27 @@ def q13():
                                                                                                                 lambda
                                                                                                                     p: DicConsExpr(
                                                                                                                     [(
-                                                                                                                     RecConsExpr(
-                                                                                                                         [
-                                                                                                                             (
-                                                                                                                             "c_count",
-                                                                                                                             IfExpr(
-                                                                                                                                 (
-                                                                                                                                             ord_indexed[
-                                                                                                                                                 p[
-                                                                                                                                                     0].c_custkey] != ConstantExpr(
-                                                                                                                                         None)),
-                                                                                                                                 ord_indexed[
-                                                                                                                                     p[
-                                                                                                                                         0].c_custkey],
-                                                                                                                                 ConstantExpr(
-                                                                                                                                     0)))]),
-                                                                                                                     RecConsExpr(
-                                                                                                                         [
-                                                                                                                             (
-                                                                                                                             "custdist",
-                                                                                                                             ConstantExpr(
-                                                                                                                                 1))]))]),
+                                                                                                                        RecConsExpr(
+                                                                                                                            [
+                                                                                                                                (
+                                                                                                                                    "c_count",
+                                                                                                                                    IfExpr(
+                                                                                                                                        (
+                                                                                                                                                ord_indexed[
+                                                                                                                                                    p[
+                                                                                                                                                        0].c_custkey] != ConstantExpr(
+                                                                                                                                            None)),
+                                                                                                                                        ord_indexed[
+                                                                                                                                            p[
+                                                                                                                                                0].c_custkey],
+                                                                                                                                        ConstantExpr(
+                                                                                                                                            0)))]),
+                                                                                                                        RecConsExpr(
+                                                                                                                            [
+                                                                                                                                (
+                                                                                                                                    "custdist",
+                                                                                                                                    ConstantExpr(
+                                                                                                                                        1))]))]),
                                                                                                                 cu, ),
                                                                                                             LetExpr(
                                                                                                                 results,
@@ -1462,13 +1481,13 @@ def q13():
                                                                                                                         p: DicConsExpr(
                                                                                                                         [
                                                                                                                             (
-                                                                                                                            ConcatExpr(
-                                                                                                                                p[
-                                                                                                                                    0],
-                                                                                                                                p[
-                                                                                                                                    1]),
-                                                                                                                            ConstantExpr(
-                                                                                                                                True))]),
+                                                                                                                                ConcatExpr(
+                                                                                                                                    p[
+                                                                                                                                        0],
+                                                                                                                                    p[
+                                                                                                                                        1]),
+                                                                                                                                ConstantExpr(
+                                                                                                                                    True))]),
                                                                                                                     customer_probed,
                                                                                                                     True),
                                                                                                                 LetExpr(
@@ -1478,8 +1497,8 @@ def q13():
                                                                                                                     ConstantExpr(
                                                                                                                         True)))))))
 
-
     print(q13)
+
 
 def q14():
     promo = VarExpr("promo")
@@ -1490,48 +1509,53 @@ def q14():
     li = VarExpr("db->li_dataset")
     pa = VarExpr("db->pa_dataset")
 
-    q14=LetExpr(promo, ConstantExpr("PROMO"), LetExpr(pa_indexed, JoinPartitionBuilder(pa, "p_partkey",
-                                                                                   lambda p: ExtFuncExpr(
-                                                                                       ExtFuncSymbol.StartsWith,
-                                                                                       p.p_type, promo,
-                                                                                       ConstantExpr("Nothing!")), []),
-                                                  LetExpr(li_probed, SumBuilder(lambda p: IfExpr((((
-                                                              p[0].l_shipdate >= ConstantExpr(19950901))) * ((
-                                                              p[0].l_shipdate < ConstantExpr(19951001)))), RecConsExpr([
-                                                                                                                           (
-                                                                                                                           "A",
-                                                                                                                           IfExpr(
-                                                                                                                               (
-                                                                                                                                           pa_indexed[
-                                                                                                                                               p[
-                                                                                                                                                   0].l_partkey] != ConstantExpr(
-                                                                                                                                       None)),
-                                                                                                                               (
-                                                                                                                                           p[
-                                                                                                                                               0].l_extendedprice * (
-                                                                                                                                                       ConstantExpr(
-                                                                                                                                                           1.0) -
-                                                                                                                                                       p[
-                                                                                                                                                           0].l_discount)),
+    q14 = LetExpr(promo, ConstantExpr("PROMO"), LetExpr(pa_indexed, JoinPartitionBuilder(pa, "p_partkey",
+                                                                                         lambda p: ExtFuncExpr(
+                                                                                             ExtFuncSymbol.StartsWith,
+                                                                                             p.p_type, promo,
+                                                                                             ConstantExpr("Nothing!")),
+                                                                                         []),
+                                                        LetExpr(li_probed, SumBuilder(lambda p: IfExpr((((
+                                                                p[0].l_shipdate >= ConstantExpr(19950901))) * ((
+                                                                p[0].l_shipdate < ConstantExpr(19951001)))),
+                                                                                                       RecConsExpr([
+                                                                                                           (
+                                                                                                               "A",
+                                                                                                               IfExpr(
+                                                                                                                   (
+                                                                                                                           pa_indexed[
+                                                                                                                               p[
+                                                                                                                                   0].l_partkey] != ConstantExpr(
+                                                                                                                       None)),
+                                                                                                                   (
+                                                                                                                           p[
+                                                                                                                               0].l_extendedprice * (
+                                                                                                                                   ConstantExpr(
+                                                                                                                                       1.0) -
+                                                                                                                                   p[
+                                                                                                                                       0].l_discount)),
+                                                                                                                   ConstantExpr(
+                                                                                                                       0.0))),
+                                                                                                           (
+                                                                                                               "B",
+                                                                                                               (
+                                                                                                                       p[
+                                                                                                                           0].l_extendedprice * (
                                                                                                                                ConstantExpr(
-                                                                                                                                   0.0))),
-                                                                                                                           (
-                                                                                                                           "B",
-                                                                                                                           (
-                                                                                                                                       p[
-                                                                                                                                           0].l_extendedprice * (
-                                                                                                                                                   ConstantExpr(
-                                                                                                                                                       1.0) -
-                                                                                                                                                   p[
-                                                                                                                                                       0].l_discount)))]),
-                                                                                                 ConstantExpr(None)),
-                                                                                li, ), LetExpr(results, (
-                                                              (ConstantExpr(100.0) * li_probed.A) / li_probed.B),
-                                                                                               LetExpr(VarExpr("out"),
-                                                                                                       results,
+                                                                                                                                   1.0) -
+                                                                                                                               p[
+                                                                                                                                   0].l_discount)))]),
                                                                                                        ConstantExpr(
-                                                                                                           True))))))
+                                                                                                           None)),
+                                                                                      li, ), LetExpr(results, (
+                                                                (ConstantExpr(100.0) * li_probed.A) / li_probed.B),
+                                                                                                     LetExpr(
+                                                                                                         VarExpr("out"),
+                                                                                                         results,
+                                                                                                         ConstantExpr(
+                                                                                                             True))))))
     print(q14)
+
 
 def q15():
     li_aggr = VarExpr("li_aggr")
@@ -1558,19 +1582,23 @@ def q15():
                                                                          lambda p: IfExpr((p[1] == max_revenue),
                                                                                           DicConsExpr([(RecConsExpr(
                                                                                               [("s_suppkey", p[0]), (
-                                                                                              "s_name",
-                                                                                              su_indexed[p[0]].s_name),
+                                                                                                  "s_name",
+                                                                                                  su_indexed[
+                                                                                                      p[0]].s_name),
                                                                                                ("s_address", su_indexed[
                                                                                                    p[0]].s_address), (
-                                                                                               "s_phone", su_indexed[
-                                                                                                   p[0]].s_phone), (
-                                                                                               "total_revenue", p[1])]),
+                                                                                                   "s_phone",
+                                                                                                   su_indexed[
+                                                                                                       p[0]].s_phone), (
+                                                                                                   "total_revenue",
+                                                                                                   p[1])]),
                                                                                                         ConstantExpr(
                                                                                                             True))]),
                                                                                           ConstantExpr(None)), li_aggr,
                                                                          True), LetExpr(VarExpr("out"), results,
                                                                                         ConstantExpr(True))))))
     print(q15)
+
 
 def q16():
     brand45 = VarExpr("brand45")
@@ -1593,8 +1621,8 @@ def q16():
                                                                                      JoinPartitionBuilder(pa,
                                                                                                           "p_partkey",
                                                                                                           lambda p: (((
-                                                                                                                      p.p_brand != brand45)) * (
-                                                                                                                     (
+                                                                                                                  p.p_brand != brand45)) * (
+                                                                                                                         (
                                                                                                                                  ExtFuncExpr(
                                                                                                                                      ExtFuncSymbol.StartsWith,
                                                                                                                                      p.p_type,
@@ -1602,30 +1630,32 @@ def q16():
                                                                                                                                      ConstantExpr(
                                                                                                                                          "Nothing!")) == ConstantExpr(
                                                                                                                              False))) * (
-                                                                                                                     (((
-                                                                                                                                 p.p_size == ConstantExpr(
-                                                                                                                             49))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              14))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              23))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              45))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              19))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              3))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              36))) + (
-                                                                                                                      (
-                                                                                                                                  p.p_size == ConstantExpr(
-                                                                                                                              9)))))),
+                                                                                                                         (
+                                                                                                                                     (
+                                                                                                                                     (
+                                                                                                                                             p.p_size == ConstantExpr(
+                                                                                                                                         49))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             14))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             23))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             45))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             19))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             3))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             36))) + (
+                                                                                                                                         (
+                                                                                                                                                 p.p_size == ConstantExpr(
+                                                                                                                                             9)))))),
                                                                                                           ["p_brand",
                                                                                                            "p_type",
                                                                                                            "p_size"]),
@@ -1634,31 +1664,31 @@ def q16():
                                                                                                                   "s_suppkey",
                                                                                                                   lambda
                                                                                                                       p: (
+                                                                                                                          (
                                                                                                                               (
+                                                                                                                                      ExtFuncExpr(
+                                                                                                                                          ExtFuncSymbol.FirstIndex,
+                                                                                                                                          p.s_comment,
+                                                                                                                                          Customer,
+                                                                                                                                          ConstantExpr(
+                                                                                                                                              "Nothing!")) != ConstantExpr(
+                                                                                                                                  -1) * (
+                                                                                                                                          ConstantExpr(
+                                                                                                                                              1)))) * (
                                                                                                                               (
-                                                                                                                                          ExtFuncExpr(
-                                                                                                                                              ExtFuncSymbol.FirstIndex,
-                                                                                                                                              p.s_comment,
-                                                                                                                                              Customer,
-                                                                                                                                              ConstantExpr(
-                                                                                                                                                  "Nothing!")) != ConstantExpr(
-                                                                                                                                      -1) * (
-                                                                                                                                              ConstantExpr(
-                                                                                                                                                  1)))) * (
-                                                                                                                              (
-                                                                                                                                          ExtFuncExpr(
-                                                                                                                                              ExtFuncSymbol.FirstIndex,
-                                                                                                                                              p.s_comment,
-                                                                                                                                              complaints,
-                                                                                                                                              ConstantExpr(
-                                                                                                                                                  "Nothing!")) > (
-                                                                                                                                                      ExtFuncExpr(
-                                                                                                                                                          ExtFuncSymbol.FirstIndex,
-                                                                                                                                                          p.s_comment,
-                                                                                                                                                          Customer,
-                                                                                                                                                          ConstantExpr(
-                                                                                                                                                              "Nothing!")) + ConstantExpr(
-                                                                                                                                                  7))))),
+                                                                                                                                      ExtFuncExpr(
+                                                                                                                                          ExtFuncSymbol.FirstIndex,
+                                                                                                                                          p.s_comment,
+                                                                                                                                          complaints,
+                                                                                                                                          ConstantExpr(
+                                                                                                                                              "Nothing!")) > (
+                                                                                                                                              ExtFuncExpr(
+                                                                                                                                                  ExtFuncSymbol.FirstIndex,
+                                                                                                                                                  p.s_comment,
+                                                                                                                                                  Customer,
+                                                                                                                                                  ConstantExpr(
+                                                                                                                                                      "Nothing!")) + ConstantExpr(
+                                                                                                                                          7))))),
                                                                                                                   []),
                                                                                              LetExpr(partsupp_probe,
                                                                                                      JoinProbeBuilder(
@@ -1672,26 +1702,28 @@ def q16():
                                                                                                              indexedDictValue,
                                                                                                              probeDictKey: IfExpr(
                                                                                                              (
-                                                                                                                         su_indexed[
-                                                                                                                             probeDictKey.ps_suppkey] == ConstantExpr(
-                                                                                                                     None)),
+                                                                                                                     su_indexed[
+                                                                                                                         probeDictKey.ps_suppkey] == ConstantExpr(
+                                                                                                                 None)),
                                                                                                              DicConsExpr(
                                                                                                                  [(
-                                                                                                                  RecConsExpr(
-                                                                                                                      [(
-                                                                                                                       "p_brand",
-                                                                                                                       indexedDictValue.p_brand),
-                                                                                                                       (
-                                                                                                                       "p_type",
-                                                                                                                       indexedDictValue.p_type),
-                                                                                                                       (
-                                                                                                                       "p_size",
-                                                                                                                       indexedDictValue.p_size)]),
-                                                                                                                  DicConsExpr(
-                                                                                                                      [(
-                                                                                                                       probeDictKey.ps_suppkey,
-                                                                                                                       ConstantExpr(
-                                                                                                                           True))]))]),
+                                                                                                                     RecConsExpr(
+                                                                                                                         [
+                                                                                                                             (
+                                                                                                                                 "p_brand",
+                                                                                                                                 indexedDictValue.p_brand),
+                                                                                                                             (
+                                                                                                                                 "p_type",
+                                                                                                                                 indexedDictValue.p_type),
+                                                                                                                             (
+                                                                                                                                 "p_size",
+                                                                                                                                 indexedDictValue.p_size)]),
+                                                                                                                     DicConsExpr(
+                                                                                                                         [
+                                                                                                                             (
+                                                                                                                                 probeDictKey.ps_suppkey,
+                                                                                                                                 ConstantExpr(
+                                                                                                                                     True))]))]),
                                                                                                              ConstantExpr(
                                                                                                                  None)),
                                                                                                          False),
@@ -1700,23 +1732,23 @@ def q16():
                                                                                                                  lambda
                                                                                                                      p: DicConsExpr(
                                                                                                                      [(
-                                                                                                                      ConcatExpr(
-                                                                                                                          p[
-                                                                                                                              0],
-                                                                                                                          RecConsExpr(
-                                                                                                                              [
-                                                                                                                                  (
-                                                                                                                                  "supplier_cnt",
-                                                                                                                                  ExtFuncExpr(
-                                                                                                                                      ExtFuncSymbol.DictSize,
-                                                                                                                                      p[
-                                                                                                                                          1],
-                                                                                                                                      ConstantExpr(
-                                                                                                                                          "Nothing!"),
-                                                                                                                                      ConstantExpr(
-                                                                                                                                          "Nothing!")))])),
-                                                                                                                      ConstantExpr(
-                                                                                                                          True))]),
+                                                                                                                         ConcatExpr(
+                                                                                                                             p[
+                                                                                                                                 0],
+                                                                                                                             RecConsExpr(
+                                                                                                                                 [
+                                                                                                                                     (
+                                                                                                                                         "supplier_cnt",
+                                                                                                                                         ExtFuncExpr(
+                                                                                                                                             ExtFuncSymbol.DictSize,
+                                                                                                                                             p[
+                                                                                                                                                 1],
+                                                                                                                                             ConstantExpr(
+                                                                                                                                                 "Nothing!"),
+                                                                                                                                             ConstantExpr(
+                                                                                                                                                 "Nothing!")))])),
+                                                                                                                         ConstantExpr(
+                                                                                                                             True))]),
                                                                                                                  partsupp_probe, ),
                                                                                                              LetExpr(
                                                                                                                  VarExpr(
@@ -1726,6 +1758,7 @@ def q16():
                                                                                                                      True))))))))))
 
     print(q16)
+
 
 def q18():
     li_aggregated = VarExpr("li_aggregated")
@@ -1755,30 +1788,31 @@ def q18():
                                                                                                       cu_indexed, ord,
                                                                                                       "o_custkey",
                                                                                                       lambda p: (
-                                                                                                                  li_filtered[
-                                                                                                                      p.o_orderkey] != ConstantExpr(
-                                                                                                              None)),
+                                                                                                              li_filtered[
+                                                                                                                  p.o_orderkey] != ConstantExpr(
+                                                                                                          None)),
                                                                                                       lambda
                                                                                                           indexedDictValue,
                                                                                                           probeDictKey: DicConsExpr(
                                                                                                           [(
-                                                                                                           probeDictKey.o_orderkey,
-                                                                                                           RecConsExpr([
-                                                                                                                           (
-                                                                                                                           "c_name",
-                                                                                                                           indexedDictValue.c_name),
-                                                                                                                           (
-                                                                                                                           "o_custkey",
-                                                                                                                           probeDictKey.o_custkey),
-                                                                                                                           (
-                                                                                                                           "o_orderkey",
-                                                                                                                           probeDictKey.o_orderkey),
-                                                                                                                           (
-                                                                                                                           "o_orderdate",
-                                                                                                                           probeDictKey.o_orderdate),
-                                                                                                                           (
-                                                                                                                           "o_totalprice",
-                                                                                                                           probeDictKey.o_totalprice)]))]),
+                                                                                                              probeDictKey.o_orderkey,
+                                                                                                              RecConsExpr(
+                                                                                                                  [
+                                                                                                                      (
+                                                                                                                          "c_name",
+                                                                                                                          indexedDictValue.c_name),
+                                                                                                                      (
+                                                                                                                          "o_custkey",
+                                                                                                                          probeDictKey.o_custkey),
+                                                                                                                      (
+                                                                                                                          "o_orderkey",
+                                                                                                                          probeDictKey.o_orderkey),
+                                                                                                                      (
+                                                                                                                          "o_orderdate",
+                                                                                                                          probeDictKey.o_orderdate),
+                                                                                                                      (
+                                                                                                                          "o_totalprice",
+                                                                                                                          probeDictKey.o_totalprice)]))]),
                                                                                                       True),
                                                                                                   LetExpr(li_probed,
                                                                                                           JoinProbeBuilder(
@@ -1792,41 +1826,41 @@ def q18():
                                                                                                                   indexedDictValue,
                                                                                                                   probeDictKey: DicConsExpr(
                                                                                                                   [(
-                                                                                                                   RecConsExpr(
-                                                                                                                       [
-                                                                                                                           (
-                                                                                                                           "c_name",
-                                                                                                                           indexedDictValue.c_name),
-                                                                                                                           (
-                                                                                                                           "o_custkey",
-                                                                                                                           indexedDictValue.o_custkey),
-                                                                                                                           (
-                                                                                                                           "o_orderkey",
-                                                                                                                           indexedDictValue.o_orderkey),
-                                                                                                                           (
-                                                                                                                           "o_orderdate",
-                                                                                                                           indexedDictValue.o_orderdate),
-                                                                                                                           (
-                                                                                                                           "o_totalprice",
-                                                                                                                           indexedDictValue.o_totalprice)]),
-                                                                                                                   RecConsExpr(
-                                                                                                                       [
-                                                                                                                           (
-                                                                                                                           "quantitysum",
-                                                                                                                           probeDictKey.l_quantity)]))])),
+                                                                                                                      RecConsExpr(
+                                                                                                                          [
+                                                                                                                              (
+                                                                                                                                  "c_name",
+                                                                                                                                  indexedDictValue.c_name),
+                                                                                                                              (
+                                                                                                                                  "o_custkey",
+                                                                                                                                  indexedDictValue.o_custkey),
+                                                                                                                              (
+                                                                                                                                  "o_orderkey",
+                                                                                                                                  indexedDictValue.o_orderkey),
+                                                                                                                              (
+                                                                                                                                  "o_orderdate",
+                                                                                                                                  indexedDictValue.o_orderdate),
+                                                                                                                              (
+                                                                                                                                  "o_totalprice",
+                                                                                                                                  indexedDictValue.o_totalprice)]),
+                                                                                                                      RecConsExpr(
+                                                                                                                          [
+                                                                                                                              (
+                                                                                                                                  "quantitysum",
+                                                                                                                                  probeDictKey.l_quantity)]))])),
                                                                                                           LetExpr(
                                                                                                               results,
                                                                                                               SumBuilder(
                                                                                                                   lambda
                                                                                                                       p: DicConsExpr(
                                                                                                                       [(
-                                                                                                                       ConcatExpr(
-                                                                                                                           p[
-                                                                                                                               0],
-                                                                                                                           p[
-                                                                                                                               1]),
-                                                                                                                       ConstantExpr(
-                                                                                                                           True))]),
+                                                                                                                          ConcatExpr(
+                                                                                                                              p[
+                                                                                                                                  0],
+                                                                                                                              p[
+                                                                                                                                  1]),
+                                                                                                                          ConstantExpr(
+                                                                                                                              True))]),
                                                                                                                   li_probed,
                                                                                                                   True),
                                                                                                               LetExpr(
@@ -1836,6 +1870,7 @@ def q18():
                                                                                                                   ConstantExpr(
                                                                                                                       True))))))))
     print(q18)
+
 
 def q19():
     brand12 = VarExpr("brand12")
@@ -2077,6 +2112,204 @@ def q19():
     print(q19)
 
 
+def q21():
+    saudi = VarExpr("saudi")
+    f = VarExpr("f")
+    nation_indexed = VarExpr("nation_indexed")
+    su_probed = VarExpr("su_probed")
+    ord_indexed = VarExpr("ord_indexed")
+    l2_indexed = VarExpr("l2_indexed")
+    l3_indexed = VarExpr("l3_indexed")
+    l1_probed = VarExpr("l1_probed")
+    results = VarExpr("results")
+
+    su = VarExpr("db->su_dataset")
+    li = VarExpr("db->li_dataset")
+    ord = VarExpr("db->ord_dataset")
+    na = VarExpr("db->na_dataset")
+
+    q21 = LetExpr(saudi, ConstantExpr("SAUDI ARABIA"), LetExpr(f, ConstantExpr("F"), LetExpr(nation_indexed,
+                                                                                             JoinPartitionBuilder(na,
+                                                                                                                  "n_nationkey",
+                                                                                                                  lambda
+                                                                                                                      p: (
+                                                                                                                          p.n_name == saudi),
+                                                                                                                  []),
+                                                                                             LetExpr(su_probed,
+                                                                                                     JoinProbeBuilder(
+                                                                                                         nation_indexed,
+                                                                                                         su,
+                                                                                                         "s_nationkey",
+                                                                                                         lambda
+                                                                                                             p: ConstantExpr(
+                                                                                                             True),
+                                                                                                         lambda
+                                                                                                             indexedDictValue,
+                                                                                                             probeDictKey: DicConsExpr(
+                                                                                                             [(
+                                                                                                                 probeDictKey.s_suppkey,
+                                                                                                                 probeDictKey.s_name)]),
+                                                                                                         True), LetExpr(
+                                                                                                     ord_indexed,
+                                                                                                     SumBuilder(lambda
+                                                                                                                    p: IfExpr(
+                                                                                                         (p[
+                                                                                                              0].o_orderstatus == f),
+                                                                                                         DicConsExpr([(
+                                                                                                             p[
+                                                                                                                 0].o_orderkey,
+                                                                                                             ConstantExpr(
+                                                                                                                 True))]),
+                                                                                                         ConstantExpr(
+                                                                                                             None)),
+                                                                                                                ord,
+                                                                                                                True,
+                                                                                                                "dense_array(6000000)"),
+                                                                                                     LetExpr(l2_indexed,
+                                                                                                             SumBuilder(
+                                                                                                                 lambda
+                                                                                                                     p: DicConsExpr(
+                                                                                                                     [(
+                                                                                                                         p[
+                                                                                                                             0].l_orderkey,
+                                                                                                                         VecConsExpr(
+                                                                                                                             [
+                                                                                                                                 p[
+                                                                                                                                     0].l_suppkey]))]),
+                                                                                                                 li,
+                                                                                                                 False,
+                                                                                                                 "dense_array(6000000)"),
+                                                                                                             LetExpr(
+                                                                                                                 l3_indexed,
+                                                                                                                 SumBuilder(
+                                                                                                                     lambda
+                                                                                                                         p: IfExpr(
+                                                                                                                         (
+                                                                                                                                 p[
+                                                                                                                                     0].l_receiptdate >
+                                                                                                                                 p[
+                                                                                                                                     0].l_commitdate),
+                                                                                                                         DicConsExpr(
+                                                                                                                             [
+                                                                                                                                 (
+                                                                                                                                     p[
+                                                                                                                                         0].l_orderkey,
+                                                                                                                                     VecConsExpr(
+                                                                                                                                         [
+                                                                                                                                             p[
+                                                                                                                                                 0].l_suppkey]))]),
+                                                                                                                         ConstantExpr(
+                                                                                                                             None)),
+                                                                                                                     li,
+                                                                                                                     False,
+                                                                                                                     "dense_array(6000000)"),
+                                                                                                                 LetExpr(
+                                                                                                                     l1_probed,
+                                                                                                                     SumBuilder(
+                                                                                                                         lambda
+                                                                                                                             p: IfExpr(
+                                                                                                                             (
+                                                                                                                                     (
+                                                                                                                                         (
+                                                                                                                                                 p[
+                                                                                                                                                     0].l_receiptdate >
+                                                                                                                                                 p[
+                                                                                                                                                     0].l_commitdate)) * (
+                                                                                                                                         (
+                                                                                                                                                 su_probed[
+                                                                                                                                                     p[
+                                                                                                                                                         0].l_suppkey] != ConstantExpr(
+                                                                                                                                             None))) * (
+                                                                                                                                         (
+                                                                                                                                                 ord_indexed[
+                                                                                                                                                     p[
+                                                                                                                                                         0].l_orderkey] != ConstantExpr(
+                                                                                                                                             None))) * (
+                                                                                                                                         (
+                                                                                                                                                 ExtFuncExpr(
+                                                                                                                                                     ExtFuncSymbol.DictSize,
+                                                                                                                                                     l2_indexed[
+                                                                                                                                                         p[
+                                                                                                                                                             0].l_orderkey],
+                                                                                                                                                     ConstantExpr(
+                                                                                                                                                         "Nothing!"),
+                                                                                                                                                     ConstantExpr(
+                                                                                                                                                         "Nothing!")) > ConstantExpr(
+                                                                                                                                             1))) * (
+                                                                                                                                         (
+                                                                                                                                                 (
+                                                                                                                                                         (
+                                                                                                                                                             (
+                                                                                                                                                                     ExtFuncExpr(
+                                                                                                                                                                         ExtFuncSymbol.DictSize,
+                                                                                                                                                                         l3_indexed[
+                                                                                                                                                                             p[
+                                                                                                                                                                                 0].l_orderkey],
+                                                                                                                                                                         ConstantExpr(
+                                                                                                                                                                             "Nothing!"),
+                                                                                                                                                                         ConstantExpr(
+                                                                                                                                                                             "Nothing!")) > ConstantExpr(
+                                                                                                                                                                 0))) * (
+                                                                                                                                                             (
+                                                                                                                                                                     ExtFuncExpr(
+                                                                                                                                                                         ExtFuncSymbol.DictSize,
+                                                                                                                                                                         l3_indexed[
+                                                                                                                                                                             p[
+                                                                                                                                                                                 0].l_orderkey],
+                                                                                                                                                                         ConstantExpr(
+                                                                                                                                                                             "Nothing!"),
+                                                                                                                                                                         ConstantExpr(
+                                                                                                                                                                             "Nothing!")) > ConstantExpr(
+                                                                                                                                                                 1)))) == ConstantExpr(
+                                                                                                                                             False)))),
+                                                                                                                             DicConsExpr(
+                                                                                                                                 [
+                                                                                                                                     (
+                                                                                                                                         RecConsExpr(
+                                                                                                                                             [
+                                                                                                                                                 (
+                                                                                                                                                     "s_name",
+                                                                                                                                                     su_probed[
+                                                                                                                                                         p[
+                                                                                                                                                             0].l_suppkey])]),
+                                                                                                                                         RecConsExpr(
+                                                                                                                                             [
+                                                                                                                                                 (
+                                                                                                                                                     "numwait",
+                                                                                                                                                     ConstantExpr(
+                                                                                                                                                         1))]))]),
+                                                                                                                             ConstantExpr(
+                                                                                                                                 None)),
+                                                                                                                         li,
+                                                                                                                         False),
+                                                                                                                     LetExpr(
+                                                                                                                         results,
+                                                                                                                         SumBuilder(
+                                                                                                                             lambda
+                                                                                                                                 p: DicConsExpr(
+                                                                                                                                 [
+                                                                                                                                     (
+                                                                                                                                         ConcatExpr(
+                                                                                                                                             p[
+                                                                                                                                                 0],
+                                                                                                                                             p[
+                                                                                                                                                 1]),
+                                                                                                                                         ConstantExpr(
+                                                                                                                                             True))]),
+                                                                                                                             l1_probed,
+                                                                                                                             True),
+                                                                                                                         LetExpr(
+                                                                                                                             VarExpr(
+                                                                                                                                 "out"),
+                                                                                                                             results,
+                                                                                                                             ConstantExpr(
+                                                                                                                                 True)))))))))))
+
+    # print(q21)
+
+    return q21
+
+
 if __name__ == '__main__':
     # q1()
     # q2()
@@ -2085,7 +2318,7 @@ if __name__ == '__main__':
     # q5()
     # q6()
     # q7()
-    q8()
+    # q8()
     # q9()
     # q10()
     # q14()
@@ -2093,3 +2326,6 @@ if __name__ == '__main__':
     # q16()
     # q18()
     # q19()
+    q21()
+
+    print(GenerateSDQLPYCode(q21(), {}))
