@@ -2,7 +2,7 @@ tpch_vars = {1: ("1998-09-02",),
              2: (15, 'BRASS', 'EUROPE'),
              3: ("BUILDING", "1995-03-15"),
              4: ("1993-07-01", "1993-10-01"),
-             5: ("ASIA",),
+             5: ("ASIA", "1994-01-01", "1996-12-31"),
              6: ('1994-01-01', '1995-01-01', 0.05, 0.07, 24),
              7: ('FRANCE', 'GERMANY'),
              8: ('BRAZIL', 'AMERICA', 'ECONOMY ANODIZED STEEL'),
@@ -119,6 +119,8 @@ def tpch_q4(orders, lineitem):
 
 def tpch_q5(lineitem, customer, orders, region, nation, supplier):
     var1 = tpch_vars[5][0]
+    var2 = tpch_vars[5][1]
+    var3 = tpch_vars[5][2]
 
     re_filt = region[region['r_name'] == var1]
 
@@ -126,7 +128,7 @@ def tpch_q5(lineitem, customer, orders, region, nation, supplier):
 
     na_cu_join = re_na_join.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
 
-    ord_filt = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] < '1996-12-31')]
+    ord_filt = orders[(orders['o_orderdate'] >= var2) & (orders['o_orderdate'] < var3)]
     cu_ord_join = na_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
 
     ord_li_join = cu_ord_join.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
