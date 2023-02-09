@@ -482,7 +482,7 @@ group by
         p_size
 """
 
-duck_q17 = """
+duck_q17 = f"""
 -- TPC-H Query 17
 select
         sum(l_extendedprice) / 7.0 as avg_yearly
@@ -491,8 +491,8 @@ from
         part
 where
         p_partkey = l_partkey
-        and p_brand = 'Brand#23'
-        and p_container = 'MED BOX'
+        and p_brand = '{tpch_vars[17][0]}'
+        and p_container = '{tpch_vars[17][1]}'
         and l_quantity < (
                 select
                         0.2 * avg(l_quantity)
@@ -503,7 +503,7 @@ where
         )
 """
 
-duck_q18 = """
+duck_q18 = f"""
 -- TPC-H Query 18
 select
         c_name,
@@ -511,7 +511,7 @@ select
         o_orderkey,
         o_orderdate,
         o_totalprice,
-        sum(l_quantity)
+        sum(l_quantity) as sum_quantity
 from
         customer,
         orders,
@@ -524,7 +524,7 @@ where
                         lineitem
                 group by
                         l_orderkey having
-                                sum(l_quantity) > 300
+                                sum(l_quantity) > {tpch_vars[18][0]}
         )
         and c_custkey = o_custkey
         and o_orderkey = l_orderkey
@@ -536,7 +536,7 @@ group by
         o_totalprice
 """
 
-duck_q19 = """
+duck_q19 = f"""
 -- TPC-H Query 19
 select
         sum(l_extendedprice* (1 - l_discount)) as revenue
@@ -546,9 +546,9 @@ from
 where
         (
                 p_partkey = l_partkey
-                and p_brand = 'Brand#12'
+                and p_brand = '{tpch_vars[19][0]}'
                 and p_container in ('SM CASE', 'SM BOX', 'SM PACK', 'SM PKG')
-                and l_quantity >= 1 and l_quantity <= 1 + 10
+                and l_quantity >= {tpch_vars[19][3][0]} and l_quantity <= {tpch_vars[19][3][1]}
                 and p_size between 1 and 5
                 and l_shipmode in ('AIR', 'AIR REG')
                 and l_shipinstruct = 'DELIVER IN PERSON'
@@ -556,9 +556,9 @@ where
         or
         (
                 p_partkey = l_partkey
-                and p_brand = 'Brand#23'
+                and p_brand = '{tpch_vars[19][1]}'
                 and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
-                and l_quantity >= 10 and l_quantity <= 10 + 10
+                and l_quantity >= {tpch_vars[19][4][0]} and l_quantity <= {tpch_vars[19][4][1]}
                 and p_size between 1 and 10
                 and l_shipmode in ('AIR', 'AIR REG')
                 and l_shipinstruct = 'DELIVER IN PERSON'
@@ -566,16 +566,16 @@ where
         or
         (
                 p_partkey = l_partkey
-                and p_brand = 'Brand#34'
+                and p_brand = '{tpch_vars[19][2]}'
                 and p_container in ('LG CASE', 'LG BOX', 'LG PACK', 'LG PKG')
-                and l_quantity >= 20 and l_quantity <= 20 + 10
+                and l_quantity >= {tpch_vars[19][5][0]} and l_quantity <= {tpch_vars[19][5][1]}
                 and p_size between 1 and 15
                 and l_shipmode in ('AIR', 'AIR REG')
                 and l_shipinstruct = 'DELIVER IN PERSON'
         )
 """
 
-duck_q20 = """
+duck_q20 = f"""
 -- TPC-H Query 20
 select
         s_name,
@@ -596,7 +596,7 @@ where
                                 from
                                         part
                                 where
-                                        p_name like 'forest%'
+                                        p_name like '{tpch_vars[20][0]}%'
                         )
                         and ps_availqty > (
                                 select
@@ -606,15 +606,15 @@ where
                                 where
                                         l_partkey = ps_partkey
                                         and l_suppkey = ps_suppkey
-                                        and l_shipdate >= date '1994-01-01'
-                                        and l_shipdate < date '1995-01-01'
+                                        and l_shipdate >= date '{tpch_vars[20][1]}'
+                                        and l_shipdate < date '{tpch_vars[20][2]}'
                         )
         )
         and s_nationkey = n_nationkey
-        and n_name = 'CANADA'
+        and n_name = '{tpch_vars[20][3]}'
 """
 
-duck_q21 = """
+duck_q21 = f"""
 -- TPC-H Query 21
 select
         s_name,
@@ -649,12 +649,12 @@ where
                         and l3.l_receiptdate > l3.l_commitdate
         )
         and s_nationkey = n_nationkey
-        and n_name = 'SAUDI ARABIA'
+        and n_name = '{tpch_vars[21][0]}'
 group by
         s_name
 """
 
-duck_q22 = """
+duck_q22 = f"""
 -- TPC-H Query 22
 select
         cntrycode,
@@ -669,7 +669,7 @@ from
                         customer
                 where
                         substring(c_phone from 1 for 2) in
-                                ('13', '31', '23', '29', '30', '18', '17')
+                                {tpch_vars[22]}
                         and c_acctbal > (
                                 select
                                         avg(c_acctbal)
@@ -678,7 +678,7 @@ from
                                 where
                                         c_acctbal > 0.00
                                         and substring(c_phone from 1 for 2) in
-                                                ('13', '31', '23', '29', '30', '18', '17')
+                                                {tpch_vars[22]}
                         )
                         and not exists (
                                 select

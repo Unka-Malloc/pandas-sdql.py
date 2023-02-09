@@ -13,7 +13,13 @@ tpch_vars = {1: ("1998-09-02",),
              13: ('special', 'requests'),
              14: ("1995-09-01", "1995-10-01"),
              15: ("1996-01-01", "1996-04-01", 797313.3838),
-             16: ("Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9))
+             16: ("Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)),
+             17: ('Brand#11', 'WRAP CASE'),
+             18: (300,),
+             19: ("Brand#12", "Brand#23", "Brand#34", (1, 11), (10, 20), (20, 30)),
+             20: ('forest', '1994-01-01', '1995-01-01', 'CANADA'),
+             21: ("SAUDI ARABIA",),
+             22: ('13', '31', '23', '29', '30', '18', '17')
              }
 
 
@@ -504,8 +510,8 @@ def tpch_q17(lineitem, part):
     # var2 = 'MED BOX'
 
     # 1M
-    var1 = 'Brand#11'
-    var2 = 'WRAP CASE'
+    var1 = tpch_vars[17][0]
+    var2 = tpch_vars[17][1]
 
     l1 = lineitem.copy()
 
@@ -532,7 +538,7 @@ def tpch_q18(lineitem, customer, orders):
     # var1 = 300
 
     # 1M
-    var1 = 200
+    var1 = tpch_vars[18][0]
 
     li_aggr = lineitem \
         .groupby(["l_orderkey"]) \
@@ -557,14 +563,24 @@ def tpch_q18(lineitem, customer, orders):
 
 
 def tpch_q19(lineitem, part):
+    var1 = tpch_vars[19][0]
+    var2 = tpch_vars[19][1]
+    var3 = tpch_vars[19][2]
+    var4 = tpch_vars[19][3][0]
+    var5 = tpch_vars[19][3][1]
+    var6 = tpch_vars[19][4][0]
+    var7 = tpch_vars[19][4][1]
+    var8 = tpch_vars[19][5][0]
+    var9 = tpch_vars[19][5][1]
+
     pa_filt = part[
-        ((part.p_brand == "Brand#12")
+        ((part.p_brand == var1)
          & (part.p_container.isin(["SM CASE", "SM BOX", "SM PACK", "SM PKG"]))
          & (part.p_size >= 1) & (part.p_size <= 5)) |
-        ((part.p_brand == "Brand#23")
+        ((part.p_brand == var2)
          & (part.p_container.isin(["MED BAG", "MED BOX", "MED PKG", "MED PACK"]))
          & (part.p_size >= 1) & (part.p_size <= 10)) |
-        ((part.p_brand == "Brand#34")
+        ((part.p_brand == var3)
          & (part.p_container.isin(["LG CASE", "LG BOX", "LG PACK", "LG PKG"]))
          & (part.p_size >= 1) & (part.p_size <= 15))
         ]
@@ -577,12 +593,12 @@ def tpch_q19(lineitem, part):
     li_pa_join = pa_proj.merge(li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
     li_pa_join_filt = li_pa_join[
         (
-                ((li_pa_join.p_brand == "Brand#12")
-                 & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11)))
-                | ((li_pa_join.p_brand == "Brand#23")
-                   & ((li_pa_join.l_quantity >= 10) & (li_pa_join.l_quantity <= 20)))
-                | ((li_pa_join.p_brand == "Brand#34")
-                   & ((li_pa_join.l_quantity >= 20) & (li_pa_join.l_quantity <= 30)))
+                ((li_pa_join.p_brand == var1)
+                 & ((li_pa_join.l_quantity >= var4) & (li_pa_join.l_quantity <= var5)))
+                | ((li_pa_join.p_brand == var2)
+                   & ((li_pa_join.l_quantity >= var6) & (li_pa_join.l_quantity <= var7)))
+                | ((li_pa_join.p_brand == var3)
+                   & ((li_pa_join.l_quantity >= var8) & (li_pa_join.l_quantity <= var9)))
         )
     ]
 
@@ -595,10 +611,10 @@ def tpch_q19(lineitem, part):
 
 def tpch_q20(supplier, nation, partsupp, part, lineitem):
     # 1G
-    var1 = 'forest'
-    var2 = '1994-01-01'
-    var3 = '1995-01-01'  # var1 + interval '1' year
-    var4 = 'CANADA'
+    var1 = tpch_vars[20][0]
+    var2 = tpch_vars[20][1]
+    var3 = tpch_vars[20][2]  # var1 + interval '1' year
+    var4 = tpch_vars[20][3]
 
     # 1M
     # var1 = 'orange'
@@ -635,7 +651,7 @@ def tpch_q20(supplier, nation, partsupp, part, lineitem):
 
 
 def tpch_q21(suppier, lineitem, orders, nation):
-    var1 = "SAUDI ARABIA"
+    var1 = tpch_vars[21][0]
 
     l2 = lineitem.copy()
     l3 = lineitem.copy()
@@ -670,7 +686,7 @@ def tpch_q21(suppier, lineitem, orders, nation):
 
 
 def tpch_q22(customer, orders):
-    var1 = ('13', '31', '23', '29', '30', '18', '17')
+    var1 = tpch_vars[22]
 
     cu1 = customer.copy()
 
@@ -701,6 +717,6 @@ def tpch_q22(customer, orders):
     custsale['cntrycode'] = customer['c_phone'].str.slice(0, 2)
 
     result = custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'),
-                                                                 totalacctbal=('c_acctbal', 'sum'))
+                                                                 totacctbal=('c_acctbal', 'sum'))
 
     return result
