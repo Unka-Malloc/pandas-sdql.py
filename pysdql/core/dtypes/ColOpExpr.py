@@ -9,11 +9,11 @@ from pysdql.core.dtypes.sdql_ir import (
     AddExpr,
     MulExpr,
     SubExpr,
-    DivExpr,
+    DivExpr, ConstantExpr,
 )
 
 from pysdql.core.dtypes.EnumUtil import (
-    MathSymbol,
+    MathSymbol, AggrType, OpRetType,
 )
 
 from pysdql.core.dtypes.Utils import (
@@ -26,6 +26,15 @@ class ColOpExpr(FlexIR):
         self.unit1 = unit1
         self.operator = operator
         self.unit2 = unit2
+
+    def sum(self):
+        aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
+                             aggr_on=None,
+                             aggr_op={f'sum_{self.oid}': self.sdql_ir},
+                             aggr_else=ConstantExpr(0.0),
+                             origin_dict={f'sum_{self.oid}': (self.sdql_ir, 'sum')})
+
+        return aggr_expr
 
     '''
     Arithmetic Operations

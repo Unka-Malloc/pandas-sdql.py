@@ -1,4 +1,7 @@
-from pysdql.core.dtypes import AggrExpr
+import inspect
+import re
+
+from pysdql.core.dtypes import AggrExpr, ColEl
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -89,3 +92,11 @@ class DataFrameGroupBy:
 
         self.groupby_from.push(op_expr)
         return self.groupby_from
+
+    def __getitem__(self, item):
+        return ColEl(self.groupby_from, item)
+
+    def filter(self, func):
+        cond = func(self)
+
+        print(cond)
