@@ -1,4 +1,5 @@
 from pysdql.core.dtypes.sdql_ir import *
+from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
 
 names = {
     "db->li_dataset": "li",
@@ -194,6 +195,17 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += ")"
         else:
             print("Error: ExtFunc not defined!")
+        return code
+    elif inputType == sr_dict:
+        code += "sr_dict({"
+        for k in AST.getContainer().keys():
+            code += ""
+            code += GenerateSDQLPYCode(k, cache)
+            code += ": "
+            code += GenerateSDQLPYCode(AST.getContainer()[k], cache)
+            code += ", "
+        code = code[:-2]
+        code += "})"
         return code
     else:
         print("Error: Unknown AST: " + str(type(AST)))

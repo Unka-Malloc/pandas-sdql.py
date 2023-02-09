@@ -99,4 +99,11 @@ class DataFrameGroupBy:
     def filter(self, func):
         cond = func(self)
 
-        print(cond)
+        op_expr = OpExpr(op_obj=cond,
+                         op_on=self.groupby_from,
+                         op_iter=True,
+                         iter_on=self.groupby_from)
+
+        self.groupby_from.push(op_expr)
+
+        return self.groupby_from
