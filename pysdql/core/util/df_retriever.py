@@ -21,9 +21,6 @@ from pysdql.core.dtypes import (
 
 from pysdql.core.dtypes.sdql_ir import *
 
-from pysdql.core.dtypes.sdql_ir import Expr as SdqlExpr
-
-
 class Retriever:
     def __init__(self, target: Retrivable):
         """
