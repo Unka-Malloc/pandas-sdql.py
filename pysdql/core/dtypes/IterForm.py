@@ -1,4 +1,4 @@
-from pysdql.core.dtypes import NewColOpExpr, AggrExpr
+from pysdql.core.dtypes import NewColOpExpr, AggrExpr, OldColOpExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import VarExpr, SumExpr, IfExpr, ConstantExpr, DicConsExpr, PairAccessExpr, ConcatExpr, \
@@ -19,7 +19,7 @@ class IterForm:
         self.iter_el_obj = VarExpr(self.iter_el)
         self.iter_key = PairAccessExpr(VarExpr(self.iter_el), 0)
         self.iter_val = PairAccessExpr(VarExpr(self.iter_el), 1)
-        self.iter_cond = [CompareExpr(CompareSymbol.NE, self.iter_key, ConstantExpr(None))]
+        self.iter_cond = []
         self.iter_op = None
 
     @property
@@ -32,6 +32,13 @@ class IterForm:
                 return DicConsExpr([(ConcatExpr(self.iter_key,
                                                 RecConsExpr([(col.col_var,
                                                               col.col_expr.replace(self.iter_key))])),
+                                     PairAccessExpr(VarExpr(self.iter_el), 1))])
+            if isinstance(self.iter_op, OldColOpExpr):
+                col = self.iter_op
+                return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                RecConsExpr([(col.col_expr,
+                                                              RecAccessExpr(self.iter_key,
+                                                                            col.col_var))])),
                                      PairAccessExpr(VarExpr(self.iter_el), 1))])
 
             print(f'Unexpected operation in type {type(self.iter_op)}')
@@ -57,6 +64,10 @@ class IterForm:
             res_op = IfExpr(condExpr=ConstantExpr(True),
                             thenBodyExpr=res_op,
                             elseBodyExpr=ConstantExpr(None))
+
+        res_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE, self.iter_key, ConstantExpr(None)),
+                        thenBodyExpr=res_op,
+                        elseBodyExpr=ConstantExpr(None))
 
         return SumExpr(varExpr=self.iter_el_obj,
                        dictExpr=self.iter_on_obj,
