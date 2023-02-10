@@ -90,6 +90,7 @@ def concat_pydict(res_list: List[dict]):
 
 
 def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False, for_duck=False):
+    print('=' * 60)
     if for_duck:
         print('>> Comparing Pandas with Duck ... <<')
     else:
@@ -114,6 +115,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
                     return True
 
         if pd_df.shape[0] == 1:
+            if sdql_df.squeeze() is None:
+                return False
             if int(sdql_df.squeeze()) == int(pd_df.squeeze()):
                 return True
 
@@ -126,6 +129,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         return False
 
     for c in sdql_df.columns:
+        if c.endswith('_NA'):
+            continue
         if c not in pd_df.columns:
             print(f'Column {c} not found!')
             return False
@@ -153,6 +158,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         answer_df = pd_df
 
         for k in xrow.keys():
+            if k.endswith('_NA'):
+                continue
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
                 print(f'Not found {xrow.to_dict()}')

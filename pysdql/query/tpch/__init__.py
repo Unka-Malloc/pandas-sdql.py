@@ -18,7 +18,7 @@ issue_info = {
 }
 
 
-def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> bool:
+def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimize=True) -> bool:
     done = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
     error_info = {}
@@ -46,7 +46,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(f'>> SDQL <<')
 
             try:
-                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
+                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
 

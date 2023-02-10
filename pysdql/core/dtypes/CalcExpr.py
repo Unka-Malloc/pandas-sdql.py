@@ -97,7 +97,7 @@ class CalcExpr(FlexIR):
 
         return self.on.optimize()
 
-    def opt_to_sdqlir(self):
+    def to_sdqlir(self, optimize=True, indent='    '):
         op_expr = OpExpr(op_obj=self,
                          op_on=self.on,
                          op_iter=True,
@@ -106,7 +106,7 @@ class CalcExpr(FlexIR):
 
         self.on.push(op_expr)
 
-        return self.on.opt_to_sdqlir()
+        return self.on.to_sdqlir(optimize=optimize, indent=indent)
 
     @property
     def op_name_suffix(self):

@@ -1393,7 +1393,7 @@ def q12():
                                                                                                                         ConstantExpr(
                                                                                                                             True)))))))))
 
-    print(q12)
+    return q12
 
 
 def q13():
@@ -2328,4 +2328,6 @@ if __name__ == '__main__':
     # q19()
     q21()
 
-    print(GenerateSDQLPYCode(q21(), {}))
+    # print(GenerateSDQLPYCode(q12(), {}))
+
+    print(q12())

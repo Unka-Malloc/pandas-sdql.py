@@ -7,12 +7,16 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(ord, li):
 
     # Insert
-    lineitem_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: True}) if (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate) else (None))
+    v0 = ord.sum(lambda x: ({li.sum(lambda y: (({x[0]: True}) if (x[0].o_orderkey == y[0].l_orderkey) else (None)) if (y[0] != None) else (None))
+    : True}) if (x[0] != None) else (None))
     
-    orders_aggr = ord.sum(lambda x_orders: (({x_orders[0].o_orderpriority: 1}) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19930701) * (x_orders[0].o_orderdate < 19931001))) else (None))
+    v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (x[0] != None) else (None)) if (((x[0].o_orderdate >= 19930701) * (x[0].o_orderdate < 19931001))) else (None))
     
-    results = orders_aggr.sum(lambda x_orders_aggr: {record({"o_orderpriority": x_orders_aggr[0], "order_count": x_orders_aggr[1]}): True})
+    v2 = v1.sum(lambda x: ({record({"o_orderpriority": x[0].o_orderpriority}): record({"order_count": 1})}) if (x[0] != None) else (None))
     
+    v3 = v2.sum(lambda x: ({x[0].concat(x[1]): True}) if (x[0] != None) else (None))
+    
+    results = v3
     # Complete
 
     return results

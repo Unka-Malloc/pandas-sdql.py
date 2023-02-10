@@ -40,12 +40,13 @@ class LastIterFunc(Enum):
 @unique
 class OptGoal(Enum):
     UnOptimized = 0
-    Aggregation = 1
-    GroupBy = 2
-    GroupByAggregation = 3
-    JoinPartition = 4
-    JoinProbe = 5
-    Joint = 6
+    Infer = 1
+    Aggregation = 2
+    GroupBy = 3
+    GroupByAggregation = 4
+    JoinPartition = 5
+    JoinProbe = 6
+    Joint = 7
 
 
 @unique

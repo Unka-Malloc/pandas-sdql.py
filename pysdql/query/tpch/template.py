@@ -88,6 +88,8 @@ def tpch_q3(lineitem, customer, orders):
 
     cu_ord_join = cu_filt.merge(ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
 
+    # return cu_ord_join
+
     li_filt = lineitem[lineitem['l_shipdate'] > var2]
     li_ord_join = cu_ord_join.merge(li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
     li_ord_join["revenue"] = li_ord_join['l_extendedprice'] * (1.0 - li_ord_join['l_discount'])

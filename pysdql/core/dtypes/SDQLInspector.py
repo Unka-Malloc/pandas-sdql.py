@@ -471,12 +471,13 @@ class SDQLInspector:
         return result
 
     @staticmethod
-    def concat_bindings(bindings: list) -> LetExpr:
+    def concat_bindings(bindings: list, drop_dup=True) -> LetExpr:
         flatten = []
         for b in bindings:
             flatten += SDQLInspector.split_bindings(b)
 
-        flatten = SDQLInspector.remove_dup_bindings(flatten)
+        if drop_dup:
+            flatten = SDQLInspector.remove_dup_bindings(flatten)
 
         result = None
 
