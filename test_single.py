@@ -9,7 +9,7 @@ if __name__ == '__main__':
     #
     # tpch_q6(lineitem).to_sdqlir(False)
 
-    test_some = pysdql.tpch_query(4, verbose=False, optimize=False)
+    test_some = pysdql.tpch_query(2, verbose=False, optimize=False)
 
     # print(pysdql.query.tpch.Qpandas.q21())
 

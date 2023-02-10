@@ -651,16 +651,16 @@ class DataFrame(FlexIR, Retrivable):
         for k in right.context_constant.keys():
             next_context_const[k] = right.context_constant[k]
 
-        self.get_opt(OptGoal.UnOptimized).fill_context_unopt('v0_part')
-        right.get_opt(OptGoal.UnOptimized).fill_context_unopt('v0_probe')
+        tmp_name = f'{self.name}_{right.name}'
 
-        next_context_unopt = self.context_unopt + right.context_unopt
+        right.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_probe')
+        self.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_part')
+
+        next_context_unopt = right.context_unopt + self.context_unopt
 
         next_context_semiopt = self.context_semiopt + right.context_semiopt
 
         next_cols = self.cols_out + right.cols_out
-
-        tmp_name = f'{self.name}_{right.name}'
 
         tmp_df = DataFrame(name=tmp_name,
                            is_joint=True,

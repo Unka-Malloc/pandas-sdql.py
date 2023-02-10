@@ -579,7 +579,7 @@ class Optimizer:
             raise NotImplementedError
 
     def fill_context_unopt(self, last_rename=''):
-        hash_join = False
+        hash_join = True
 
         tmp_vn_on = map_name_to_dataset(self.opt_on.name)
         tmp_el_on = 'x'
@@ -605,39 +605,70 @@ class Optimizer:
             elif isinstance(op_body, IsInExpr):
                 part_name = map_name_to_dataset(op_body.part_on.name)
                 probe_name = map_name_to_dataset(op_body.probe_on.name)
-                tmp_it = IterForm(probe_name, tmp_el_on)
 
-                tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'),
-                                                       VarExpr(part_name),
-                                                       IfExpr(CompareExpr(CompareSymbol.NE,
-                                                                          PairAccessExpr(VarExpr('y'), 0),
-                                                                          ConstantExpr(None)),
-                                                              IfExpr(CompareExpr(CompareSymbol.EQ,
-                                                                                 RecAccessExpr(
-                                                                                     PairAccessExpr(
-                                                                                         VarExpr(tmp_el_on),
-                                                                                         0),
-                                                                                     op_body.col_probe.field),
-                                                                                 RecAccessExpr(
-                                                                                     PairAccessExpr(
-                                                                                         VarExpr('y'), 0),
-                                                                                     op_body.col_part.field)),
-                                                                     DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                                                   ConstantExpr(True))]),
-                                                                     ConstantExpr(None)),
-                                                              ConstantExpr(None))
-                                                       ),
-                                               ConstantExpr(True))])
+                if hash_join:
+                    if self.opt_on.unopt_count == 0:
+                        tmp_it_1 = IterForm(part_name, tmp_el_on)
+                    else:
+                        tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
-                self.opt_on.context_unopt.append(
-                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                            valExpr=tmp_it.sdql_ir,
-                            bodyExpr=ConstantExpr(True))
-                )
+                    tmp_it_1.iter_op = DicConsExpr(
+                        [(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), op_body.col_part.field),
+                          ConstantExpr(True))])
+
+                    self.opt_on.context_unopt.append(
+                        LetExpr(varExpr=VarExpr('isin_build'),
+                                valExpr=tmp_it_1.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
+
+                    tmp_it_2 = IterForm(probe_name, tmp_el_on)
+
+                    tmp_it_2.iter_op = IfExpr(CompareExpr(CompareSymbol.NE,
+                                                          DicLookupExpr(VarExpr('isin_build'),
+                                                                        RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on),
+                                                                                                     0),
+                                                                                      op_body.col_probe.field)
+                                                                        ),
+                                                          ConstantExpr(None)),
+                                              DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                            ConstantExpr(True))]),
+                                              ConstantExpr(None))
+                    self.opt_on.context_unopt.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it_2.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
+                else:
+                    tmp_it = IterForm(probe_name, tmp_el_on)
+                    tmp_it.iter_op = SumExpr(VarExpr('y'),
+                                             VarExpr(part_name),
+                                             IfExpr(CompareExpr(CompareSymbol.NE,
+                                                                PairAccessExpr(VarExpr('y'), 0),
+                                                                ConstantExpr(None)),
+                                                    IfExpr(CompareExpr(CompareSymbol.EQ,
+                                                                       RecAccessExpr(PairAccessExpr(
+                                                                           VarExpr(tmp_el_on),
+                                                                           0),
+                                                                           op_body.col_probe.field),
+                                                                       RecAccessExpr(PairAccessExpr(
+                                                                           VarExpr('y'), 0),
+                                                                           op_body.col_part.field)),
+                                                           DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                         ConstantExpr(True))]),
+                                                           ConstantExpr(None)),
+                                                    ConstantExpr(None))
+                                             )
+
+                    self.opt_on.context_unopt.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
             elif isinstance(op_body, MergeExpr):
                 if self.opt_on.name == op_body.joint.name:
                     if hash_join:
-                        tmp_it = IterForm('v0_part', tmp_el_on)
+                        tmp_it = IterForm(f'{self.opt_on.name}_part', tmp_el_on)
 
                         tmp_it.iter_op = DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
                                                                      str(op_body.left_on)),
@@ -645,21 +676,21 @@ class Optimizer:
                                                                     PairAccessExpr(VarExpr(tmp_el_on), 1)}))])
 
                         self.opt_on.context_unopt.append(
-                            LetExpr(varExpr=VarExpr('v0_part'),
+                            LetExpr(varExpr=VarExpr('build_side'),
                                     valExpr=tmp_it.sdql_ir,
                                     bodyExpr=ConstantExpr(True))
                         )
 
-                        tmp_it = IterForm('v0_probe', tmp_el_on)
+                        tmp_it = IterForm(f'{self.opt_on.name}_probe', tmp_el_on)
 
                         tmp_it.iter_cond.append(CompareExpr(CompareSymbol.NE,
-                                                            DicLookupExpr(VarExpr('v0_part'),
+                                                            DicLookupExpr(VarExpr('build_side'),
                                                                           RecAccessExpr(
                                                                               PairAccessExpr(VarExpr(tmp_el_on), 0),
                                                                               op_body.right_on)),
                                                             ConstantExpr(None)))
 
-                        tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'), DicLookupExpr(VarExpr('v0_part'),
+                        tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'), DicLookupExpr(VarExpr('build_side'),
                                                                                            RecAccessExpr(PairAccessExpr(
                                                                                                VarExpr(tmp_el_on), 0),
                                                                                                op_body.right_on)),
@@ -808,11 +839,18 @@ class Optimizer:
             self.opt_on.unopt_count += 1
 
         if last_rename:
-            self.opt_on.context_unopt.append(
-                LetExpr(varExpr=VarExpr(last_rename),
-                        valExpr=VarExpr(tmp_vn_nx),
-                        bodyExpr=ConstantExpr(True))
-            )
+            if self.opt_on.unopt_count != 0:
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(last_rename),
+                            valExpr=VarExpr(SDQLInspector.get_last_binding_name(self.opt_on.context_unopt)),
+                            bodyExpr=ConstantExpr(True))
+                )
+            else:
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(last_rename),
+                            valExpr=VarExpr(map_name_to_dataset(self.opt_on.name)),
+                            bodyExpr=ConstantExpr(True))
+                )
 
     def get_unopt_sdqlir(self):
         self.fill_context_unopt()

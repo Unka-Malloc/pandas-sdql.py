@@ -556,3 +556,7 @@ class SDQLInspector:
                 raise NotImplementedError(f'Unexpected last binding value {bind_value}')
         else:
             raise ValueError('Last binding is not a LetExpr')
+
+    @staticmethod
+    def get_last_binding_name(bindings):
+        return bindings[-1].varExpr.name
