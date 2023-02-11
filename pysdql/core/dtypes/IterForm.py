@@ -1,4 +1,4 @@
-from pysdql.core.dtypes import NewColOpExpr, AggrExpr, OldColOpExpr
+from pysdql.core.dtypes import NewColOpExpr, AggrExpr, OldColOpExpr, ColExtExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.sdql_ir import VarExpr, SumExpr, IfExpr, ConstantExpr, DicConsExpr, PairAccessExpr, ConcatExpr, \
@@ -29,10 +29,16 @@ class IterForm:
                 return self.iter_op
             if isinstance(self.iter_op, NewColOpExpr):
                 col = self.iter_op
-                return DicConsExpr([(ConcatExpr(self.iter_key,
-                                                RecConsExpr([(col.col_var,
-                                                              col.col_expr.replace(self.iter_key))])),
-                                     PairAccessExpr(VarExpr(self.iter_el), 1))])
+                if isinstance(col.col_expr, ColExtExpr):
+                    return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                    RecConsExpr([(col.col_var,
+                                                                  col.col_expr.replace(self.iter_key).sdql_ir)])),
+                                         PairAccessExpr(VarExpr(self.iter_el), 1))])
+                else:
+                    return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                    RecConsExpr([(col.col_var,
+                                                                  col.col_expr.replace(self.iter_key))])),
+                                         PairAccessExpr(VarExpr(self.iter_el), 1))])
             if isinstance(self.iter_op, OldColOpExpr):
                 col = self.iter_op
                 return DicConsExpr([(ConcatExpr(self.iter_key,
@@ -53,7 +59,10 @@ class IterForm:
             for cond in self.iter_cond:
                 if isinstance(cond, FlexIR):
                     if cond.replaceable:
-                        cond = cond.replace(self.iter_key)
+                        if isinstance(cond, ColExtExpr):
+                            cond = cond.replace(self.iter_key).sdql_ir
+                        else:
+                            cond = cond.replace(self.iter_key)
                     else:
                         cond = cond.sdql_ir
 
