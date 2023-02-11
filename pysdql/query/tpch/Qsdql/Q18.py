@@ -7,18 +7,45 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, cu, ord):
 
     # Insert
-    customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
+    v0 = li.sum(lambda x: (({record({"l_orderkey": x[0].l_orderkey}): record({"sum_quantity": x[0].l_quantity})}) if (True) else (None)) if (x[0] != None) else (None))
     
-    lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+    v1 = v0.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 300) else (None))
+    v2 = v1.sum(lambda x: (({x[0]: x[1]}) if (x[0].sum_quantity > 300) else (None)) if (x[0] != None) else (None))
     
-    customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
+    v3 = v2.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
     
-    lineitem_aggr = li.sum(lambda x_lineitem: ({record({"c_name": customer_orders[x_lineitem[0].l_orderkey].c_name, "c_custkey": customer_orders[x_lineitem[0].l_orderkey].c_custkey, "o_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": customer_orders[x_lineitem[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_lineitem[0].l_orderkey].o_totalprice}): x_lineitem[0].l_quantity}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+    isin_build = v3.sum(lambda x: (({x[0].l_orderkey: True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey, "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
+    v4 = ord.sum(lambda x: ((({x[0]: True}) if (isin_build[x[0].o_orderkey] != None) else (None)) if (True) else (None)) if (x[0] != None) else (None))
     
+    customer_orders_lineitem_probe = v4
+    isin_build = li.sum(lambda x: (({x[0].l_orderkey: True}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    v0 = ord.sum(lambda x: ((({x[0]: True}) if (isin_build[x[0].o_orderkey] != None) else (None)) if (True) else (None)) if (x[0] != None) else (None))
+    
+    customer_orders_probe = v0
+    v0 = cu.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    customer_orders_part = v0
+    build_side = customer_orders_part.sum(lambda x: (({x[0].c_custkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    v0 = customer_orders_probe.sum(lambda x: (({build_side[x[0].o_custkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].o_custkey] != None) else (None)) if (x[0] != None) else (None))
+    
+    v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    customer_orders_lineitem_part = v1
+    build_side = customer_orders_lineitem_part.sum(lambda x: (({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    v0 = customer_orders_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].l_orderkey] != None) else (None)) if (x[0] != None) else (None))
+    
+    v1 = v0.sum(lambda x: (({record({"c_name": x[0].c_name, "c_custkey": x[0].c_custkey, "o_orderkey": x[0].o_orderkey, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice}): record({"sum_quantity": x[0].l_quantity})}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    v2 = v1.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    results = v2
     # Complete
 
     return results
