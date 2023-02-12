@@ -66,13 +66,11 @@ def query(su, li, ord, cu, na):
     
     v5 = v4.sum(lambda x: (({x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v6 = v5.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
+    v6 = v5.sum(lambda x: (({record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v7 = v6.sum(lambda x: (({record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})}) if (True) else (None)) if (x[0] != None) else (None))
+    v7 = v6.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v8 = v7.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    results = v8
+    results = v7
     # Complete
 
     return results

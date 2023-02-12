@@ -7,9 +7,12 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(ord, li):
 
     # Insert
-    isin_build = li.sum(lambda x: (({x[0].l_orderkey: True}) if (True) else (None)) if (x[0] != None) else (None))
+    v0 = li.sum(lambda x: (({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None)) if (x[0] != None) else (None))
     
-    v0 = ord.sum(lambda x: ((({x[0]: True}) if (isin_build[x[0].o_orderkey] != None) else (None)) if (True) else (None)) if (x[0] != None) else (None))
+    orders_lineitem_isin_build = v0
+    orders_lineitem_isin_build = orders_lineitem_isin_build.sum(lambda x: (({x[0].l_orderkey: True}) if (True) else (None)) if (x[0] != None) else (None))
+    
+    v0 = ord.sum(lambda x: ((({x[0]: x[1]}) if (orders_lineitem_isin_build[x[0].o_orderkey] != None) else (None)) if (True) else (None)) if (x[0] != None) else (None))
     
     v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (((x[0].o_orderdate >= 19930701) * (x[0].o_orderdate < 19931001))) else (None)) if (x[0] != None) else (None))
     

@@ -16,9 +16,7 @@ def query(su, li, l2, l3, ord, na):
     
     v1 = v0.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v2 = v1.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    l2_lineitem_part = v2
+    l2_lineitem_part = v1
     build_side = l2_lineitem_part.sum(lambda x: (({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
     
     v0 = l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
@@ -31,9 +29,7 @@ def query(su, li, l2, l3, ord, na):
     
     v2 = v1.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v3 = v2.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    l3_l2_lineitem_part = v3
+    l3_l2_lineitem_part = v2
     build_side = l3_l2_lineitem_part.sum(lambda x: (({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
     
     v0 = l3_l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))

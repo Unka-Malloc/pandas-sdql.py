@@ -13,9 +13,7 @@ def query(cu, ord, li, na):
     v0 = ord.sum(lambda x: (({x[0]: x[1]}) if (((x[0].o_orderdate >= 19931001) * (x[0].o_orderdate < 19940101))) else (None)) if (x[0] != None) else (None))
     
     customer_orders_probe = v0
-    v0 = cu.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    customer_orders_part = v0
+    customer_orders_part = cu
     build_side = customer_orders_part.sum(lambda x: (({x[0].c_custkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
     
     v0 = customer_orders_probe.sum(lambda x: (({build_side[x[0].o_custkey].sum(lambda y: x[0].concat(y[0]))
@@ -28,9 +26,7 @@ def query(cu, ord, li, na):
     v0 = nation_customer_orders_probe.sum(lambda x: (({build_side[x[0].c_nationkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].c_nationkey] != None) else (None)) if (x[0] != None) else (None))
     
-    v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    nation_customer_orders_lineitem_part = v1
+    nation_customer_orders_lineitem_part = v0
     build_side = nation_customer_orders_lineitem_part.sum(lambda x: (({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
     
     v0 = nation_customer_orders_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
