@@ -592,7 +592,9 @@ class Optimizer:
 
             op_body = op_expr.op
 
-            if is_cond(op_body):
+            if isinstance(op_body, ColProjExpr):
+                continue
+            elif is_cond(op_body):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                 tmp_it.iter_cond.append(op_body)
@@ -605,36 +607,47 @@ class Optimizer:
             elif isinstance(op_body, IsInExpr):
                 part_name = map_name_to_dataset(op_body.part_on.name)
                 probe_name = map_name_to_dataset(op_body.probe_on.name)
+                isin_build_name = f'{op_body.probe_on.name}_{op_body.part_on.name}_isin_build'
 
                 if hash_join:
-                    if self.opt_on.unopt_count == 0:
+                    if op_body.part_on.unopt_count == 0:
                         tmp_it_1 = IterForm(part_name, tmp_el_on)
+
+                        tmp_it_1.iter_op = DicConsExpr(
+                            [(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), op_body.col_part.field),
+                              ConstantExpr(True))])
+
+                        self.opt_on.context_unopt.append(
+                            LetExpr(varExpr=VarExpr(isin_build_name),
+                                    valExpr=tmp_it_1.sdql_ir,
+                                    bodyExpr=ConstantExpr(True))
+                        )
                     else:
-                        tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
+                        tmp_it_1 = IterForm(isin_build_name, tmp_el_on)
 
-                    tmp_it_1.iter_op = DicConsExpr(
-                        [(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), op_body.col_part.field),
-                          ConstantExpr(True))])
+                        tmp_it_1.iter_op = DicConsExpr(
+                            [(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), op_body.col_part.field),
+                              ConstantExpr(True))])
 
-                    self.opt_on.context_unopt.append(
-                        LetExpr(varExpr=VarExpr('isin_build'),
-                                valExpr=tmp_it_1.sdql_ir,
-                                bodyExpr=ConstantExpr(True))
-                    )
+                        self.opt_on.context_unopt.append(
+                            LetExpr(varExpr=VarExpr(isin_build_name),
+                                    valExpr=tmp_it_1.sdql_ir,
+                                    bodyExpr=ConstantExpr(True))
+                        )
 
                     tmp_it_2 = IterForm(probe_name, tmp_el_on)
 
                     cond_symbol = CompareSymbol.EQ if op_body.isinvert else CompareSymbol.NE
 
                     tmp_it_2.iter_op = IfExpr(CompareExpr(cond_symbol,
-                                                          DicLookupExpr(VarExpr('isin_build'),
+                                                          DicLookupExpr(VarExpr(isin_build_name),
                                                                         RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on),
                                                                                                      0),
                                                                                       op_body.col_probe.field)
                                                                         ),
                                                           ConstantExpr(None)),
                                               DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                            ConstantExpr(True))]),
+                                                            PairAccessExpr(VarExpr(tmp_el_on), 1))]),
                                               ConstantExpr(None))
                     self.opt_on.context_unopt.append(
                         LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -739,7 +752,6 @@ class Optimizer:
                                                                               PairAccessExpr(VarExpr('y'), 0))
                                                                    ),
                                                            ConstantExpr(True))])
-
 
                         self.opt_on.context_unopt.append(
                             LetExpr(varExpr=VarExpr(tmp_vn_nx),

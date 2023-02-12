@@ -29,9 +29,7 @@ def query(li, pa):
     part_lineitem_probe = v0
     v0 = pa.sum(lambda x: (({x[0]: x[1]}) if (((((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 5))) + (((((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 10))))) + (((((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 15))))) else (None)) if (x[0] != None) else (None))
     
-    v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    part_lineitem_part = v1
+    part_lineitem_part = v0
     build_side = part_lineitem_part.sum(lambda x: (({x[0].p_partkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
     
     v0 = part_lineitem_probe.sum(lambda x: (({build_side[x[0].l_partkey].sum(lambda y: x[0].concat(y[0]))
