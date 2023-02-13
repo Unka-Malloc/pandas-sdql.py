@@ -10,7 +10,7 @@ def SDQL(func):
         result = func(*args)
         if isinstance(result, SdqlDataFrame):
             sdqlpy_init(0, 1)
-            return result.run_in_sdql()
+            return result.run_in_sdql(args)
         return result
 
     return SDQLWapper
