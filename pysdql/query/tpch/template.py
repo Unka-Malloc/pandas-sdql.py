@@ -399,12 +399,18 @@ def tpch_q12(orders, lineitem):
     var2 = tpch_vars[12][2]
     var3 = tpch_vars[12][3]
 
-    li_filt = lineitem[(lineitem['l_shipmode'].isin(var1))
-                       & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
+    li_filt = lineitem[lineitem['l_shipmode'].isin(var1) &
+                       (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
                        & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
                        & (lineitem['l_receiptdate'] >= var2) & (lineitem['l_receiptdate'] < var3)]
 
-    li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+    #
+    # li_agg = lineitem.groupby(['l_orderkey'], as_index=False) \
+    #     .agg({'l_shipmode', 'count'})
+
+    # li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+
+    li_ord_join = orders.merge(li_filt, left_on='o_orderkey', right_on='l_orderkey')
 
     li_ord_join['high_line_priority'] = li_ord_join.apply(
         lambda x: 1 if ((x['o_orderpriority'] == '1-URGENT') | (x['o_orderpriority'] == '2-HIGH')) else 0,
