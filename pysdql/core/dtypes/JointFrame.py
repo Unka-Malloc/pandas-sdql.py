@@ -1208,6 +1208,11 @@ class JointFrame:
 
                             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
+                        if probe_cond:
+                            aggr_body = IfExpr(condExpr=probe_cond.sdql_ir,
+                                               thenBodyExpr=aggr_body,
+                                               elseBodyExpr=ConstantExpr(None))
+
                         # joint condition: outermost layer
                         join_how = self.retriever.find_merge('as_joint').how
                         if joint_cond:
