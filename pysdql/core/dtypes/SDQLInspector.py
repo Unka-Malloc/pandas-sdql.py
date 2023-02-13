@@ -462,22 +462,22 @@ class SDQLInspector:
     @staticmethod
     def remove_dup_bindings(bindings: list):
         result = []
+        unique_names = []
         for b in bindings:
             if isinstance(b, LetExpr):
                 if not any([b.varExpr.name == r.varExpr.name for r in result]):
                     result.append(b)
-                else:
-                    # print(f'Found duplicate {b.varExpr}')
-                    pass
+                    unique_names.append(b.varExpr.name)
         return result
 
     @staticmethod
-    def concat_bindings(bindings: list) -> LetExpr:
+    def concat_bindings(bindings: list, drop_dup=True) -> LetExpr:
         flatten = []
         for b in bindings:
             flatten += SDQLInspector.split_bindings(b)
 
-        flatten = SDQLInspector.remove_dup_bindings(flatten)
+        if drop_dup:
+            flatten = SDQLInspector.remove_dup_bindings(flatten)
 
         result = None
 
@@ -509,3 +509,54 @@ class SDQLInspector:
             raise TypeError(f'Exepcting an sdql expr.')
 
         return False
+
+    @staticmethod
+    def find_last_structure(sdql_obj: LetExpr):
+        all_bindings = SDQLInspector.split_bindings(sdql_obj)
+
+        last_binding = all_bindings[-1]
+
+        if isinstance(last_binding, LetExpr):
+            bind_value = last_binding.valExpr
+
+            if isinstance(bind_value, SumExpr):
+                bind_body = bind_value.bodyExpr
+
+                while isinstance(bind_body, IfExpr):
+                    bind_body = bind_body.thenBodyExpr
+
+                if isinstance(bind_body, DicConsExpr):
+                    this_key = bind_body.initialPairs[0][0]
+                    this_val = bind_body.initialPairs[0][1]
+
+                    if isinstance(this_key, RecAccessExpr):
+                        key_out = this_key.name
+                    elif isinstance(this_key, RecConsExpr):
+                        key_list = []
+                        for rec_key in this_key.initialPairs:
+                            key_list.append(rec_key[0])
+                        key_out = tuple(key_list)
+                    else:
+                        raise NotImplementedError
+
+                    if isinstance(this_val, RecAccessExpr):
+                        val_out = this_val.name
+                    elif isinstance(this_val, RecConsExpr):
+                        val_list = []
+                        for rec_val in this_val.initialPairs:
+                            val_list.append(rec_val[0])
+                        val_out = tuple(val_list)
+                    else:
+                        raise NotImplementedError
+
+                    return {key_out: val_out}
+                else:
+                    raise NotImplementedError
+            else:
+                raise NotImplementedError(f'Unexpected last binding value {bind_value}')
+        else:
+            raise ValueError('Last binding is not a LetExpr')
+
+    @staticmethod
+    def get_last_binding_name(bindings):
+        return bindings[-1].varExpr.name

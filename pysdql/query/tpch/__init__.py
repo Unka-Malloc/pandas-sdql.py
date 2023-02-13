@@ -11,15 +11,15 @@ from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 sep_line = '=' * 60
 
 issue_info = {
-    2: 'Not Implemented: Waiting for minimum promotion...',
-    9: 'Mismatch Answer: Incorrect n_name due to string addition (Example: MOROCCOMOROCCOMOROCCOMOROCCOMOROCCOMOROCCOMOROCCO)',
-    11: 'Crash: Query provided by Hesam FAILED...',
+    2: 'Not Implemented: Minimum promotion',
+    9: 'Mismatch Answer: Incorrect n_name due to string addition (Example: PERUPERUPERUPERU)',
+    12: 'Mismatch Answer: Incorrect l_shipmode due to string addition (Example: SHIPSHIPSHIP)',
     16: 'Weak: If a dict is empty, then dict[key] should be None instead of asserting an Exception'
 }
 
 
-def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> bool:
-    done = [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimize=True) -> bool:
+    done = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
     error_info = {}
 
@@ -46,7 +46,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True) -> boo
                 print(f'>> SDQL <<')
 
             try:
-                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count})')
+                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
 
@@ -187,7 +187,12 @@ art_map = {
  ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝        ╚═╝
     ''',
     2: '''
-    
+ ██████╗ ██╗   ██╗███████╗██████╗ ██╗   ██╗    ██████╗ 
+██╔═══██╗██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ╚════██╗
+██║   ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝      █████╔╝
+██║▄▄ ██║██║   ██║██╔══╝  ██╔══██╗  ╚██╔╝      ██╔═══╝ 
+╚██████╔╝╚██████╔╝███████╗██║  ██║   ██║       ███████╗
+ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝
     ''',
     3: '''
  ██████╗ ██╗   ██╗███████╗██████╗ ██╗   ██╗    ██████╗ 

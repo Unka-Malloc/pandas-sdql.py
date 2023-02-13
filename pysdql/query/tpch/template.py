@@ -1,8 +1,30 @@
-import pandas as pd
+tpch_vars = {1: ("1998-09-02",),
+             2: (15, 'BRASS', 'EUROPE'),
+             3: ("BUILDING", "1995-03-15"),
+             4: ("1993-07-01", "1993-10-01"),
+             5: ("ASIA", "1994-01-01", "1996-12-31"),
+             6: ('1994-01-01', '1995-01-01', 0.05, 0.07, 24),
+             7: ('FRANCE', 'GERMANY'),
+             8: ('BRAZIL', 'AMERICA', 'ECONOMY ANODIZED STEEL'),
+             9: ('green'),
+             10: ("1993-10-01", "1994-01-01"),
+             11: ('GERMANY',),
+             12: ('MAIL', 'SHIP', '1994-01-01', '1995-01-01'),
+             13: ('special', 'requests'),
+             14: ("1995-09-01", "1995-10-01"),
+             15: ("1996-01-01", "1996-04-01", 797313.3838),
+             16: ("Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)),
+             17: ('Brand#11', 'WRAP CASE'),
+             18: (300,),
+             19: ("Brand#12", "Brand#23", "Brand#34", (1, 11), (10, 20), (20, 30)),
+             20: ('forest', '1994-01-01', '1995-01-01', 'CANADA'),
+             21: ("SAUDI ARABIA",),
+             22: ('13', '31', '23', '29', '30', '18', '17')
+             }
 
 
 def tpch_q1(lineitem):
-    li_filt = lineitem[(lineitem['l_shipdate'] <= "1998-09-02")]
+    li_filt = lineitem[(lineitem['l_shipdate'] <= tpch_vars[1][0])]
     li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
     li_filt["charge"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount']) * (1.0 + li_filt['l_tax'])
 
@@ -17,15 +39,56 @@ def tpch_q1(lineitem):
     return result
 
 
+def tpch_q2(part, supplier, partsupp, nation, region):
+    var1 = tpch_vars[2][0]
+    var2 = tpch_vars[2][1]
+    var3 = tpch_vars[2][2]
+
+    ps1 = partsupp.copy()
+
+    re_filt = region[region['r_name'] == var3]
+
+    re_na_join = re_filt.merge(nation, left_on='r_regionkey', right_on='n_regionkey')
+    re_na_join = re_na_join[['n_nationkey', 'n_name']]
+
+    na_su_join = re_na_join.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
+    na_su_join = na_su_join[['s_suppkey', 's_acctbal', 's_name', 'n_name', 's_address', 's_phone', 's_comment']]
+
+    pa_filt = part[(part['p_type'].str.endswith(var2)) & (part['p_size'] == var1)]
+    pa_filt = pa_filt[['p_partkey', 'p_mfgr']]
+
+    # Minimum aggregation
+
+    su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='ps_suppkey')
+
+    min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False) \
+        .agg({'ps_supplycost': 'sum'})
+
+    min_agg.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
+
+    pa_ps_join = pa_filt.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
+
+    pa_ps_min = min_agg.merge(pa_ps_join, left_on='ps_partkey', right_on='ps_partkey')
+
+    all_join = na_su_join.merge(pa_ps_min, left_on='s_suppkey', right_on='ps_suppkey')
+    all_join = all_join[all_join['ps_supplycost'] == all_join['min_supplycost']]
+
+    result = all_join[['s_acctbal', 's_name', 'n_name', 'p_partkey', 'p_mfgr', 's_address', 's_phone', 's_comment']]
+
+    return result
+
+
 def tpch_q3(lineitem, customer, orders):
-    var1 = "BUILDING"
-    var2 = "1995-03-15"
+    var1 = tpch_vars[3][0]
+    var2 = tpch_vars[3][1]
 
     cu_filt = customer[customer['c_mktsegment'] == var1]
 
     ord_filt = orders[orders['o_orderdate'] < var2]
 
     cu_ord_join = cu_filt.merge(ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
+
+    # return cu_ord_join
 
     li_filt = lineitem[lineitem['l_shipdate'] > var2]
     li_ord_join = cu_ord_join.merge(li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
@@ -39,8 +102,8 @@ def tpch_q3(lineitem, customer, orders):
 
 
 def tpch_q4(orders, lineitem):
-    var1 = "1993-07-01"
-    var2 = "1993-10-01"  # var1 + interval '3' month
+    var1 = tpch_vars[4][0]
+    var2 = tpch_vars[4][1]  # var1 + interval '3' month
 
     li_filt = lineitem[lineitem.l_commitdate < lineitem.l_receiptdate]
     li_proj = li_filt[["l_orderkey"]]
@@ -57,8 +120,9 @@ def tpch_q4(orders, lineitem):
 
 
 def tpch_q5(lineitem, customer, orders, region, nation, supplier):
-    # var1 = "ASIA"
-    var1 = "MIDDLE EAST"
+    var1 = tpch_vars[5][0]
+    var2 = tpch_vars[5][1]
+    var3 = tpch_vars[5][2]
 
     re_filt = region[region['r_name'] == var1]
 
@@ -66,7 +130,7 @@ def tpch_q5(lineitem, customer, orders, region, nation, supplier):
 
     na_cu_join = re_na_join.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
 
-    ord_filt = orders[(orders['o_orderdate'] >= '1995-01-01') & (orders['o_orderdate'] < '1996-01-01')]
+    ord_filt = orders[(orders['o_orderdate'] >= var2) & (orders['o_orderdate'] < var3)]
     cu_ord_join = na_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
 
     ord_li_join = cu_ord_join.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
@@ -75,7 +139,7 @@ def tpch_q5(lineitem, customer, orders, region, nation, supplier):
                                     left_on=['s_suppkey', 's_nationkey'],
                                     right_on=['l_suppkey', 'c_nationkey'])
 
-    su_ord_li_join['revenue'] = su_ord_li_join['l_extendedprice'] * (1 - su_ord_li_join['l_discount'])
+    su_ord_li_join['revenue'] = su_ord_li_join['l_extendedprice'] * (1.0 - su_ord_li_join['l_discount'])
 
     result = su_ord_li_join.groupby(['n_name'], as_index=False).agg(revenue=('revenue', 'sum'))
 
@@ -83,16 +147,18 @@ def tpch_q5(lineitem, customer, orders, region, nation, supplier):
 
 
 def tpch_q6(lineitem):
-    var1 = 4
-    var2 = 0.06
-    var3 = 24
+    var1 = tpch_vars[6][0]
+    var2 = tpch_vars[6][1]
+    var3 = tpch_vars[6][2]
+    var4 = tpch_vars[6][3]
+    var5 = tpch_vars[6][4]
 
     li_filt = lineitem[
-        (lineitem.l_shipdate >= f"199{var1}-01-01") &
-        (lineitem.l_shipdate < f"199{var1 + 1}-01-01") &
-        (lineitem.l_discount >= var2 - 0.01) &
-        (lineitem.l_discount <= var2 + 0.01) &
-        (lineitem.l_quantity < var3)
+        (lineitem.l_shipdate >= var1) &
+        (lineitem.l_shipdate < var2) &
+        (lineitem.l_discount >= var3) &
+        (lineitem.l_discount <= var4) &
+        (lineitem.l_quantity < var5)
         ]
 
     li_filt['revenue'] = li_filt.l_extendedprice * li_filt.l_discount
@@ -103,12 +169,9 @@ def tpch_q6(lineitem):
 
 
 def tpch_q7(supplier, lineitem, orders, customer, nation):
-    # var1 = 'FRANCE'
-    # var2 = 'GERMANY'
-
     # 1M
-    var1 = 'PERU'
-    var2 = 'MOROCCO'
+    var1 = tpch_vars[7][0]
+    var2 = tpch_vars[7][1]
 
     na_filt = nation[(nation['n_name'] == var1) | (nation['n_name'] == var2)]
 
@@ -144,7 +207,7 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
     all_join['supp_nation'] = all_join['n1_name']
     all_join['cust_nation'] = all_join['n2_name']
     all_join['l_year'] = all_join['l_shipdate'].dt.year
-    all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
+    all_join['volume'] = all_join['l_extendedprice'] * (1.0 - all_join['l_discount'])
 
     shipping = all_join[['supp_nation', 'cust_nation', 'l_year', 'volume']]
 
@@ -157,8 +220,8 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
 def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
     # 1G
     # var1 = 'BRAZIL'
-    var2 = 'AMERICA'
-    var3 = 'ECONOMY ANODIZED STEEL'
+    var2 = tpch_vars[8][1]
+    var3 = tpch_vars[8][2]
 
     n1 = nation.copy()
 
@@ -240,9 +303,17 @@ def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
 
 
 def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
+    var1 = tpch_vars[9][0]
+
+    '''
+    由于n_name作为record的value会被concatenate, 
+    所以我们直接取nation_part中的n_name,
+    以此绕过SDQL.py的缺陷
+    '''
+
     na_su_join = nation.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
 
-    pa_filt = part[part['p_name'].str.contains('green')]
+    pa_filt = part[part['p_name'].str.contains(var1)]
 
     pa_ps_join = pa_filt.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
 
@@ -250,7 +321,9 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
 
     ord_li_join = orders.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
 
-    all_join = su_ps_join.merge(ord_li_join, left_on='ps_suppkey', right_on='l_suppkey', how='inner')
+    all_join = su_ps_join.merge(ord_li_join,
+                                left_on=['ps_partkey', 'ps_suppkey'],
+                                right_on=['l_partkey', 'l_suppkey'])
 
     all_join['nation'] = all_join['n_name']
     all_join['o_year'] = all_join['o_orderdate'].dt.year
@@ -266,7 +339,10 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
 
 
 def tpch_q10(customer, orders, lineitem, nation):
-    ord_filt = orders[(orders['o_orderdate'] >= "1993-10-01") & (orders['o_orderdate'] < "1994-01-01")]
+    var1 = tpch_vars[10][0]
+    var2 = tpch_vars[10][1]
+
+    ord_filt = orders[(orders['o_orderdate'] >= var1) & (orders['o_orderdate'] < var2)]
 
     cu_proj = customer[["c_custkey", "c_name", "c_acctbal", "c_phone", "c_address", "c_comment", "c_nationkey"]]
 
@@ -292,10 +368,10 @@ def tpch_q10(customer, orders, lineitem, nation):
 
 def tpch_q11(partsupp, supplier, nation):
     # 1G
-    var1 = 'GERMANY'
+    var1 = tpch_vars[11][0]
 
     # 1M
-    var1 = 'PERU'
+    # var1 = 'PERU'
     na_filt = nation[(nation['n_name'] == var1)]
 
     na_su_join = na_filt.merge(supplier, left_on='n_nationkey', right_on='s_nationkey')
@@ -319,21 +395,29 @@ def tpch_q11(partsupp, supplier, nation):
 
 
 def tpch_q12(orders, lineitem):
-    var1 = ('MAIL', 'SHIP')
+    var1 = (tpch_vars[12][0], tpch_vars[12][1])
+    var2 = tpch_vars[12][2]
+    var3 = tpch_vars[12][3]
 
-    li_filt = lineitem[(lineitem['l_shipmode'].isin(var1))
-                       & (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
+    li_filt = lineitem[lineitem['l_shipmode'].isin(var1) &
+                       (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
                        & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
-                       & (lineitem['l_receiptdate'] >= '1995-01-01') & (lineitem['l_receiptdate'] < '1996-01-01')]
+                       & (lineitem['l_receiptdate'] >= var2) & (lineitem['l_receiptdate'] < var3)]
 
-    li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+    #
+    # li_agg = lineitem.groupby(['l_orderkey'], as_index=False) \
+    #     .agg({'l_shipmode', 'count'})
+
+    # li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
+
+    li_ord_join = orders.merge(li_filt, left_on='o_orderkey', right_on='l_orderkey')
 
     li_ord_join['high_line_priority'] = li_ord_join.apply(
         lambda x: 1 if ((x['o_orderpriority'] == '1-URGENT') | (x['o_orderpriority'] == '2-HIGH')) else 0,
         axis=1)
 
     li_ord_join['low_line_priority'] = li_ord_join.apply(
-        lambda x: 1 if ((x['o_orderpriority'] != '1-URGENT') | (x['o_orderpriority'] != '2-HIGH')) else 0,
+        lambda x: 1 if ((x['o_orderpriority'] != '1-URGENT') & (x['o_orderpriority'] != '2-HIGH')) else 0,
         axis=1)
 
     result = li_ord_join.groupby(['l_shipmode'], as_index=False) \
@@ -344,8 +428,11 @@ def tpch_q12(orders, lineitem):
 
 
 def tpch_q13(customer, orders):
-    ord_filt = orders[~((orders['o_comment'].str.find('special') != -1)
-                        & (orders['o_comment'].str.find('requests') > (orders['o_comment'].str.find('special') + 6)))]
+    var1 = tpch_vars[13][0]
+    var2 = tpch_vars[13][1]
+
+    ord_filt = orders[~((orders['o_comment'].str.find(var1) != -1)
+                        & (orders['o_comment'].str.find(var2) > (orders['o_comment'].str.find(var1) + 6)))]
 
     # customer left outer join ord_filt
     # is equivalent to
@@ -363,8 +450,8 @@ def tpch_q13(customer, orders):
 
 
 def tpch_q14(lineitem, part):
-    var1 = "1995-09-01"
-    var2 = "1995-10-01"  # var1 + interval '1' month
+    var1 = tpch_vars[14][0]
+    var2 = tpch_vars[14][1]  # var1 + interval '1' month
 
     li_filt = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)]
 
@@ -375,15 +462,17 @@ def tpch_q14(lineitem, part):
         axis=1)
     li_pa_join["B"] = li_pa_join['l_extendedprice'] * (1.0 - li_pa_join['l_discount'])
 
-    print(type(li_pa_join['A'].sum()))
-
     result = li_pa_join['A'].sum() * 100.0 / li_pa_join['B'].sum()
 
     return result
 
 
 def tpch_q15(lineitem, supplier):
-    li_filt = lineitem[(lineitem['l_shipdate'] >= "1996-01-01") & (lineitem['l_shipdate'] < "1996-04-01")]
+    var1 = tpch_vars[15][0]
+    var2 = tpch_vars[15][1]
+    var3 = tpch_vars[15][2]
+
+    li_filt = lineitem[(lineitem['l_shipdate'] >= var1) & (lineitem['l_shipdate'] < var2)]
     li_filt["revenue"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
 
     li_aggr = li_filt \
@@ -396,7 +485,7 @@ def tpch_q15(lineitem, supplier):
     # 10M -> 1161099.4636
     # 1M -> 797313.3838
 
-    li_aggr = li_aggr[li_aggr['total_revenue'] == 797313.3838]
+    li_aggr = li_aggr[li_aggr['total_revenue'] == var3]
 
     su_proj = supplier[["s_suppkey", "s_name", "s_address", "s_phone"]]
     li_su_join = su_proj.merge(li_aggr, left_on="s_suppkey", right_on="l_suppkey", how="inner")
@@ -407,9 +496,9 @@ def tpch_q15(lineitem, supplier):
 
 
 def tpch_q16(partsupp, part, supplier):
-    var1 = "Brand#45"
-    var2 = "MEDIUM POLISHED"
-    var3 = (49, 14, 23, 45, 19, 3, 36, 9)
+    var1 = tpch_vars[16][0]
+    var2 = tpch_vars[16][1]
+    var3 = tpch_vars[16][2]
 
     pa_filt = part[
         (part.p_brand != var1) &
@@ -439,8 +528,8 @@ def tpch_q17(lineitem, part):
     # var2 = 'MED BOX'
 
     # 1M
-    var1 = 'Brand#11'
-    var2 = 'WRAP CASE'
+    var1 = tpch_vars[17][0]
+    var2 = tpch_vars[17][1]
 
     l1 = lineitem.copy()
 
@@ -467,7 +556,7 @@ def tpch_q18(lineitem, customer, orders):
     # var1 = 300
 
     # 1M
-    var1 = 200
+    var1 = tpch_vars[18][0]
 
     li_aggr = lineitem \
         .groupby(["l_orderkey"]) \
@@ -492,14 +581,24 @@ def tpch_q18(lineitem, customer, orders):
 
 
 def tpch_q19(lineitem, part):
+    var1 = tpch_vars[19][0]
+    var2 = tpch_vars[19][1]
+    var3 = tpch_vars[19][2]
+    var4 = tpch_vars[19][3][0]
+    var5 = tpch_vars[19][3][1]
+    var6 = tpch_vars[19][4][0]
+    var7 = tpch_vars[19][4][1]
+    var8 = tpch_vars[19][5][0]
+    var9 = tpch_vars[19][5][1]
+
     pa_filt = part[
-        ((part.p_brand == "Brand#12")
+        ((part.p_brand == var1)
          & (part.p_container.isin(["SM CASE", "SM BOX", "SM PACK", "SM PKG"]))
          & (part.p_size >= 1) & (part.p_size <= 5)) |
-        ((part.p_brand == "Brand#23")
+        ((part.p_brand == var2)
          & (part.p_container.isin(["MED BAG", "MED BOX", "MED PKG", "MED PACK"]))
          & (part.p_size >= 1) & (part.p_size <= 10)) |
-        ((part.p_brand == "Brand#34")
+        ((part.p_brand == var3)
          & (part.p_container.isin(["LG CASE", "LG BOX", "LG PACK", "LG PKG"]))
          & (part.p_size >= 1) & (part.p_size <= 15))
         ]
@@ -512,12 +611,12 @@ def tpch_q19(lineitem, part):
     li_pa_join = pa_proj.merge(li_filt, left_on="p_partkey", right_on="l_partkey", how="inner")
     li_pa_join_filt = li_pa_join[
         (
-                ((li_pa_join.p_brand == "Brand#12")
-                 & ((li_pa_join.l_quantity >= 1) & (li_pa_join.l_quantity <= 11)))
-                | ((li_pa_join.p_brand == "Brand#23")
-                   & ((li_pa_join.l_quantity >= 10) & (li_pa_join.l_quantity <= 20)))
-                | ((li_pa_join.p_brand == "Brand#34")
-                   & ((li_pa_join.l_quantity >= 20) & (li_pa_join.l_quantity <= 30)))
+                ((li_pa_join.p_brand == var1)
+                 & ((li_pa_join.l_quantity >= var4) & (li_pa_join.l_quantity <= var5)))
+                | ((li_pa_join.p_brand == var2)
+                   & ((li_pa_join.l_quantity >= var6) & (li_pa_join.l_quantity <= var7)))
+                | ((li_pa_join.p_brand == var3)
+                   & ((li_pa_join.l_quantity >= var8) & (li_pa_join.l_quantity <= var9)))
         )
     ]
 
@@ -530,10 +629,10 @@ def tpch_q19(lineitem, part):
 
 def tpch_q20(supplier, nation, partsupp, part, lineitem):
     # 1G
-    var1 = 'forest'
-    var2 = '1994-01-01'
-    var3 = '1995-01-01'  # var1 + interval '1' year
-    var4 = 'CANADA'
+    var1 = tpch_vars[20][0]
+    var2 = tpch_vars[20][1]
+    var3 = tpch_vars[20][2]  # var1 + interval '1' year
+    var4 = tpch_vars[20][3]
 
     # 1M
     # var1 = 'orange'
@@ -565,5 +664,77 @@ def tpch_q20(supplier, nation, partsupp, part, lineitem):
     na_su_join = na_filt.merge(su_filt, left_on='n_nationkey', right_on='s_nationkey')
 
     result = na_su_join[['s_name', 's_address']]
+
+    return result
+
+
+def tpch_q21(suppier, lineitem, orders, nation):
+    var1 = tpch_vars[21][0]
+
+    l2 = lineitem.copy()
+    l3 = lineitem.copy()
+
+    na_filt = nation[nation['n_name'] == var1]
+    na_su_join = na_filt.merge(suppier, left_on='n_nationkey', right_on='s_nationkey')
+
+    ord_filt = orders[orders['o_orderstatus'] == "F"]
+
+    l2_agg = l2.groupby(['l_orderkey'], as_index=False).agg(l2_size=('l_suppkey', 'count'))
+    l2_filt = l2_agg[['l_orderkey', 'l2_size']]
+
+    l3_filt = l3[(l3['l_receiptdate'] > l3['l_commitdate'])]
+    l3_agg = l3_filt.groupby(['l_orderkey'], as_index=False).agg(l3_size=('l_suppkey', 'count'))
+    l3_filt = l3_agg[['l_orderkey', 'l3_size']]
+
+    l1 = lineitem[(lineitem['l_receiptdate'] > lineitem['l_commitdate'])]
+
+    l1_l2_join = l2_filt.merge(l1, left_on='l_orderkey', right_on='l_orderkey')
+
+    l1_l3_join = l3_filt.merge(l1_l2_join, left_on='l_orderkey', right_on='l_orderkey')
+
+    su_li_join = na_su_join.merge(l1_l3_join, left_on='s_suppkey', right_on='l_suppkey')
+
+    ord_li_join = ord_filt.merge(su_li_join, left_on='o_orderkey', right_on='l_orderkey')
+    ord_li_join = ord_li_join[(ord_li_join['l2_size'] > 1) & (ord_li_join['l3_size'] == 1)]
+
+    result = ord_li_join.groupby(['s_name'], as_index=False) \
+        .agg(numwait=('s_name', 'count'))
+
+    return result
+
+
+def tpch_q22(customer, orders):
+    var1 = tpch_vars[22]
+
+    cu1 = customer.copy()
+
+    cu1_filt = cu1[(cu1['c_acctbal'] > 0.00)
+                   & (cu1['c_phone'].str.startswith(var1[0])
+                      | cu1['c_phone'].str.startswith(var1[1])
+                      | cu1['c_phone'].str.startswith(var1[2])
+                      | cu1['c_phone'].str.startswith(var1[3])
+                      | cu1['c_phone'].str.startswith(var1[4])
+                      | cu1['c_phone'].str.startswith(var1[5])
+                      | cu1['c_phone'].str.startswith(var1[6]))]
+
+    cu1_agg = cu1_filt.agg(sum_acctbal=('c_acctbal', 'sum'),
+                           count_acctbal=('c_acctbal', 'count')).squeeze()
+
+    cu1_avg = cu1_agg['sum_acctbal'] / cu1_agg['count_acctbal']
+
+    cu_filt = customer[(customer['c_acctbal'] > cu1_avg)
+                       & (customer['c_phone'].str.startswith(var1[0])
+                          | customer['c_phone'].str.startswith(var1[1])
+                          | customer['c_phone'].str.startswith(var1[2])
+                          | customer['c_phone'].str.startswith(var1[3])
+                          | customer['c_phone'].str.startswith(var1[4])
+                          | customer['c_phone'].str.startswith(var1[5])
+                          | customer['c_phone'].str.startswith(var1[6]))]
+
+    custsale = cu_filt[~cu_filt['c_custkey'].isin(orders['o_custkey'])]
+    custsale['cntrycode'] = customer['c_phone'].str.slice(0, 2)
+
+    result = custsale.groupby(['cntrycode'], as_index=False).agg(numcust=('c_acctbal', 'count'),
+                                                                 totacctbal=('c_acctbal', 'sum'))
 
     return result

@@ -1,4 +1,7 @@
-from pysdql.core.dtypes import AggrExpr
+import inspect
+import re
+
+from pysdql.core.dtypes import AggrExpr, ColEl
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -38,6 +41,8 @@ class DataFrameGroupBy:
                 output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
             if aggr_func == 'count':
                 output_aggr_dict[aggr_key] = ConstantExpr(1)
+            if aggr_func == 'min':
+                output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
 
         groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
                                       groupby_cols=self.groupby_cols,
@@ -68,6 +73,8 @@ class DataFrameGroupBy:
                 agg_dict[agg_key] = agg_calc
             if agg_flag == 'count':
                 agg_dict[agg_key] = ConstantExpr(1)
+            if agg_flag == 'min':
+                agg_dict[agg_key] = agg_calc
             if callable(agg_flag):
                 # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)
@@ -84,4 +91,19 @@ class DataFrameGroupBy:
                          iter_on=self.groupby_from)
 
         self.groupby_from.push(op_expr)
+        return self.groupby_from
+
+    def __getitem__(self, item):
+        return ColEl(self.groupby_from, item)
+
+    def filter(self, func):
+        cond = func(self)
+
+        op_expr = OpExpr(op_obj=cond,
+                         op_on=self.groupby_from,
+                         op_iter=True,
+                         iter_on=self.groupby_from)
+
+        self.groupby_from.push(op_expr)
+
         return self.groupby_from
