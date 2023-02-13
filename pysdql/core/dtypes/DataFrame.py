@@ -1220,14 +1220,16 @@ class DataFrame(FlexIR, Retrivable):
     def dtypes_as_str(self):
         return self.loader.to_dtype_str()
 
-    def run_in_sdql(self, optimize=True, indent='    '):
+    def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
         pysdql_path = Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
 
         tmp_file_path = f'{pysdql_path}/cache/query.py'
 
+        names = ','.join([i.name for i in datasets if isinstance(i, DataFrame)])
+
         query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
                       f'@sdql_compile({{"{self.name}": {self.dtypes_as_str()}}})',
-                      f'def query({self.name}):',
+                      f'def query({names}):',
                       self.to_sdqlir(indent=indent),
                       f'{indent}return results',
                       '']
@@ -1237,4 +1239,6 @@ class DataFrame(FlexIR, Retrivable):
 
         from pysdql.cache.query import query
 
-        return query(self.loader.to_sdql())
+        datas = [i.loader.to_sdql() for i in datasets if isinstance(i, DataFrame)]
+
+        return query(*datas)
