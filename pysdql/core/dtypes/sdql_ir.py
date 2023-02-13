@@ -873,6 +873,9 @@ class VecConsExpr(Expr):
         for e in initialExprs:
             self.exprList.append(e)
 
+    def __repr__(self):
+        return f'VecConsExpr({self.exprList})'
+
 
 class RecAccessExpr(Expr):
     def __init__(self, recExpr: Expr, fieldName: str):

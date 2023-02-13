@@ -7,7 +7,7 @@
 6. Q22
 
 # Q9 Issue
-```
+```python
 { { "nation": "KENYA", "o_year": 1996, "sum_profit": 38768.7582 }: True, 
     { "nation": "MOROCCOMOROCCOMOROCCOMOROCCO", "o_year": 1995, "sum_profit": -185177.82640000002 }: True, 
     { "nation": "PERU", "o_year": 1995, "sum_profit": 33613.0776 }: True, 

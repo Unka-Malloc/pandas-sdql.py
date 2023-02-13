@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.sdql_ir import *
@@ -20,6 +21,7 @@ class GroupbyAggrFrame:
     def sdql_ir(self) -> LetExpr:
         # Q1
         # Q4
+        # Q22
         groupby_aggr_info = self.retriever.find_groupby_aggr()
 
         aggr_dict = groupby_aggr_info.aggr_dict
@@ -32,7 +34,13 @@ class GroupbyAggrFrame:
         if len(groupby_cols) == 0:
             raise ValueError()
         elif len(groupby_cols) == 1:
-            dict_key_ir = self.aggr_on.key_access(groupby_cols[0])
+            only_col = groupby_cols[0]
+            if only_col in col_ins.keys():
+                dict_key_ir = col_ins[only_col]
+                if isinstance(dict_key_ir, FlexIR):
+                    dict_key_ir = dict_key_ir.sdql_ir
+            else:
+                dict_key_ir = self.aggr_on.key_access(only_col)
         else:
             key_tuples = []
 
@@ -99,8 +107,29 @@ class GroupbyAggrFrame:
 
             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
+        prev_agg = []
+
         if cond:
-            aggr_body = IfExpr(condExpr=cond.sdql_ir,
+            need_mapper = False
+            cond_mapper = {}
+
+            prev_df = []
+            for c in self.retriever.findall_cols_in_cond(cond, True):
+                if c.field not in self.aggr_on.columns:
+                    if c.col_of.name not in prev_df:
+                        if c.col_of.retriever.was_aggr:
+                            need_mapper = True
+                            prev_df.append(c.col_of.name)
+                            prev_agg.append(c.col_of.get_aggr(as_part=True))
+
+                    cond_mapper[c.field] = c.col_of.var_aggr
+
+            if need_mapper:
+                aggr_body = IfExpr(condExpr=cond.replace(rec=None, inplace=False, mapper=cond_mapper),
+                                   thenBodyExpr=aggr_body,
+                                   elseBodyExpr=ConstantExpr(None))
+            else:
+                aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                thenBodyExpr=aggr_body,
                                elseBodyExpr=ConstantExpr(None))
 
@@ -180,6 +209,9 @@ class GroupbyAggrFrame:
 
         if isin_expr:
             isin_let_expr = isin_expr.get_as_part()
+
+            if prev_agg:
+                return SDQLInspector.concat_bindings(prev_agg + [isin_let_expr, aggr_let_expr, form_let_expr])
 
             return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
         else:

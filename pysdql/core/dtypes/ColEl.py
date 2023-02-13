@@ -1,6 +1,6 @@
 from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
-from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
+from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType, OptGoal
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
@@ -349,6 +349,12 @@ class ColEl(FlexIR):
             for k in vals.relation.context_constant:
                 self.add_const(k)
 
+            vals.relation.get_opt(OptGoal.UnOptimized).fill_context_unopt(
+                f'{self.relation.name}_{vals.relation.name}_isin_build')
+
+            for o in vals.relation.context_unopt:
+                self.relation.context_unopt.append(o)
+
             self.relation.push(OpExpr(op_obj=isin_expr,
                                       op_on=self.R,
                                       op_iter=True,
@@ -396,7 +402,8 @@ class ColEl(FlexIR):
 
     def endswith(self, pattern: str):
         # %B
-        raise NotImplementedError
+        self.add_const(pattern)
+        return ColExtExpr(self, ExtFuncSymbol.EndsWith, self.get_const_var(pattern))
 
     def contains(self, pattern):
         # %A%
@@ -407,21 +414,13 @@ class ColEl(FlexIR):
         # %A%B%
         raise NotImplementedError
 
-    def not_contains(self, *args):
-        raise NotImplementedError
-
-    def substring(self, start, end):
-        # substring
-        raise NotImplementedError
-
     def slice(self, start, end):
         # substring
-        raise NotImplementedError
+        return ColExtExpr(self, ExtFuncSymbol.SubStr, (start, end))
 
     def find(self, pattern):
         self.add_const(pattern)
         return ColExtExpr(self, ExtFuncSymbol.FirstIndex, self.get_const_var(pattern))
-        # return ExternalExpr(self, 'StrIndexOf', (pattern, start))
 
     def exists(self, bind_on, cond=None):
         return ExistExpr(self, bind_on, conds=cond)

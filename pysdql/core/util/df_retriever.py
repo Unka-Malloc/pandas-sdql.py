@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.EnumUtil import LastIterFunc
 from pysdql.core.dtypes.FlexIR import FlexIR
@@ -20,9 +21,6 @@ from pysdql.core.dtypes import (
 
 from pysdql.core.dtypes.sdql_ir import *
 
-from pysdql.core.dtypes.sdql_ir import Expr as SdqlExpr
-
-
 class Retriever:
     def __init__(self, target: Retrivable):
         """
@@ -40,23 +38,29 @@ class Retriever:
     '''
 
     @staticmethod
-    def find_cols(expr_obj) -> list:
+    def find_cols(expr_obj, as_expr=False) -> list:
         cols = []
         if isinstance(expr_obj, ColEl):
-            cols.append(expr_obj.field)
+            if as_expr:
+                cols.append(expr_obj)
+            else:
+                cols.append(expr_obj.field)
         elif isinstance(expr_obj, ColOpExpr):
-            cols += Retriever.find_cols(expr_obj.unit1)
-            cols += Retriever.find_cols(expr_obj.unit2)
+            cols += Retriever.find_cols(expr_obj.unit1, as_expr)
+            cols += Retriever.find_cols(expr_obj.unit2, as_expr)
         elif isinstance(expr_obj, CondExpr):
-            cols += Retriever.find_cols(expr_obj.unit1)
-            cols += Retriever.find_cols(expr_obj.unit2)
+            cols += Retriever.find_cols(expr_obj.unit1, as_expr)
+            cols += Retriever.find_cols(expr_obj.unit2, as_expr)
         elif isinstance(expr_obj, ColExtExpr):
-            cols += Retriever.find_cols(expr_obj.col)
+            cols += Retriever.find_cols(expr_obj.col, as_expr)
         elif isinstance(expr_obj, GroupbyAggrExpr):
             cols += expr_obj.groupby_cols
             if isinstance(list(expr_obj.origin_dict.values())[0], tuple):
                 for v in expr_obj.origin_dict.values():
-                    cols.append(v[0])
+                    if as_expr:
+                        cols.append(expr_obj.groupby_from.get_col(v[0]))
+                    else:
+                        cols.append(v[0])
             else:
                 raise NotImplementedError
         return cols
@@ -165,7 +169,6 @@ class Retriever:
 
             # OldColOpExpr
             if isinstance(op_body, OldColOpExpr):
-                print(op_body)
                 if by == 'key':
                     if op_body.col_var == col_name:
                         return op_body.col_expr
@@ -532,7 +535,7 @@ class Retriever:
         return on
 
     @staticmethod
-    def find_cond_on(cond: CondExpr, mapper: dict) -> list:
+    def find_cond_on(cond: CondExpr, mapper: dict, as_expr=False) -> list:
         on = []
 
         if isinstance(cond.unit1, ColEl):
@@ -546,7 +549,7 @@ class Retriever:
                     if col_name in mapper[n]:
                         on.append(n)
         elif isinstance(cond.unit1, CondExpr):
-            on += Retriever.find_cond_on(cond.unit1, mapper)
+            on += Retriever.find_cond_on(cond.unit1, mapper, as_expr)
         elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
             pass
         elif isinstance(cond.unit1, (bool, int, float, str)):
@@ -565,7 +568,7 @@ class Retriever:
                     if col_name in mapper[n]:
                         on.append(n)
         elif isinstance(cond.unit2, CondExpr):
-            on += Retriever.find_cond_on(cond.unit2, mapper)
+            on += Retriever.find_cond_on(cond.unit2, mapper, as_expr)
         elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):
             pass
         elif isinstance(cond.unit2, (bool, int, float, str)):
@@ -579,13 +582,18 @@ class Retriever:
         return cleaned_on
 
     @staticmethod
-    def findall_cols_in_cond(cond):
-        cols = []
+    def findall_cols_in_cond(cond, as_expr=False):
+        all_cols = []
 
         if isinstance(cond.unit1, ColEl):
-            cols.append(cond.unit1.field)
+            if as_expr:
+                all_cols.append(cond.unit1)
+            else:
+                all_cols.append(cond.unit1.field)
+        elif isinstance(cond.unit1, (ColOpExpr, ColExtExpr)):
+            all_cols += Retriever.find_cols(cond.unit1, as_expr)
         elif isinstance(cond.unit1, CondExpr):
-            cols += Retriever.findall_cols_in_cond(cond.unit1)
+            all_cols += Retriever.findall_cols_in_cond(cond.unit1, as_expr)
         elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
             pass
         elif isinstance(cond.unit1, (bool, int, float, str)):
@@ -594,9 +602,14 @@ class Retriever:
             raise ValueError(f'Unexpected unit1 type {type(cond.unit1)}')
 
         if isinstance(cond.unit2, ColEl):
-            cols.append(cond.unit2.field)
+            if as_expr:
+                all_cols.append(cond.unit2)
+            else:
+                all_cols.append(cond.unit2.field)
+        elif isinstance(cond.unit2, (ColOpExpr, ColExtExpr)):
+            all_cols += Retriever.find_cols(cond.unit2, as_expr)
         elif isinstance(cond.unit2, CondExpr):
-            cols += Retriever.findall_cols_in_cond(cond.unit2)
+            all_cols += Retriever.findall_cols_in_cond(cond.unit2, as_expr)
         elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):
             pass
         elif isinstance(cond.unit2, (bool, int, float, str)):
@@ -605,7 +618,12 @@ class Retriever:
             raise ValueError(f'Unexpected unit2 type {type(cond.unit2)}')
 
         cleaned_cols = []
-        [cleaned_cols.append(x) for x in cols if x not in cleaned_cols]
+        if as_expr:
+            for x in all_cols:
+                if all([x.oid != i.oid for i in cleaned_cols]):
+                    cleaned_cols.append(x)
+        else:
+            [cleaned_cols.append(x) for x in all_cols if x not in cleaned_cols]
 
         return cleaned_cols
 
@@ -903,6 +921,17 @@ class Retriever:
         else:
             raise ValueError('Cannot find the root probe side.')
 
+    def find_root_part(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+            if isinstance(op_body, MergeExpr):
+                if op_body.joint.name == self.target.name:
+                    if op_body.right.get_retriever().is_joint:
+                        return op_body.right.get_retriever().find_root_part()
+                    else:
+                        return op_body.left
+        else:
+            raise ValueError('Cannot find the root probe side.')
     def find_root_probe(self):
         for op_expr in self.history:
             op_body = op_expr.op
@@ -982,12 +1011,17 @@ class Retriever:
                         parts.append(op_body.left.get_part_frame())
                     if mode == 'as_expr':
                         if op_body.left.get_retriever().is_joint:
-                            parts.append(op_body.left.get_joint_frame().get_joint_expr())
+                            for i in SDQLInspector.split_bindings(op_body.left.get_joint_frame().get_joint_expr()):
+                                parts.append(i)
                         else:
                             parts.append(op_body.left.get_part_frame().get_part_expr())
 
                     if op_body.right.get_retriever().is_joint:
-                        parts += op_body.right.get_retriever().findall_part_for_root_probe(mode)
+                        for i in op_body.right.get_retriever().findall_part_for_root_probe(mode):
+                            parts.append(i)
+
+        if mode == 'as_expr':
+            return SDQLInspector.remove_dup_bindings(parts)
 
         return parts
 
@@ -1012,16 +1046,28 @@ class Retriever:
             lookup_expr = root_probe.key_access(root_probe_key)
 
             # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         if key_to == root_probe_key:
             lookup_expr = root_probe.key_access(root_probe_key)
 
             # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
+        elif key_to in root_probe.columns:
+            lookup_expr = root_probe.key_access(key_to)
+
+            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         elif key_to in root_part.columns:
             lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
                                                               keyExpr=root_probe.key_access(root_probe_key)),
                                         fieldName=key_to)
 
             # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+            return lookup_expr
         else:
             for part in all_parts:
                 if key_to in part.columns:
@@ -1030,6 +1076,8 @@ class Retriever:
                     # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
                     return lookup_expr
+
+        raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
 
     @staticmethod
     def find_bypass_lookup(all_parts, target, root_merge):
@@ -1268,8 +1316,31 @@ class Retriever:
             return None
 
     '''
+    AggrFiltCond
+    '''
+
+    def find_aggr_filt(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrFiltCond):
+                return op_body
+
+        return None
+
+    '''
     
     '''
+
+    @property
+    def was_filter(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrFiltCond):
+                return True
+
+        return False
 
     @property
     def was_probed(self):

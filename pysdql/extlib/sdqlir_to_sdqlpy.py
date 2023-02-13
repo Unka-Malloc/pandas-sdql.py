@@ -1,4 +1,5 @@
 from pysdql.core.dtypes.sdql_ir import *
+from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
 
 names = {
     "db->li_dataset": "li",
@@ -143,6 +144,12 @@ def GenerateSDQLPYCode(AST: Expr, cache):
         code += "})"
         return code
     elif inputType == VecConsExpr:
+        code += "vector({"
+        for k in AST.exprList:
+            code += GenerateSDQLPYCode(k, cache)
+            code += ", "
+        code = code[:-2]
+        code += "})"
         return code
     elif inputType == ConcatExpr:
         code += GenerateSDQLPYCode(AST.rec1, cache)
@@ -157,6 +164,12 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += ", "
             code += GenerateSDQLPYCode(AST.inp2, cache)
             code += ")"
+        elif AST.symbol == ExtFuncSymbol.EndsWith:
+            code += "endsWith("
+            code += GenerateSDQLPYCode(AST.inp1, cache)
+            code += ", "
+            code += GenerateSDQLPYCode(AST.inp2, cache)
+            code += ")"
         elif AST.symbol == ExtFuncSymbol.FirstIndex:
             code += "firstIndex("
             code += GenerateSDQLPYCode(AST.inp1, cache)
@@ -167,8 +180,32 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += "extractYear("
             code += GenerateSDQLPYCode(AST.inp1, cache)
             code += ")"
+        elif AST.symbol == ExtFuncSymbol.SubStr:
+            code += "substr("
+            print(AST.inp1)
+            code += GenerateSDQLPYCode(AST.inp1, cache)
+            code += ", "
+            code += GenerateSDQLPYCode(AST.inp2, cache)
+            code += ", "
+            code += GenerateSDQLPYCode(AST.inp3, cache)
+            code += ")"
+        elif AST.symbol == ExtFuncSymbol.DictSize:
+            code += "dictSize("
+            code += GenerateSDQLPYCode(AST.inp1, cache)
+            code += ")"
         else:
             print("Error: ExtFunc not defined!")
+        return code
+    elif inputType == sr_dict:
+        code += "sr_dict({"
+        for k in AST.getContainer().keys():
+            code += ""
+            code += GenerateSDQLPYCode(k, cache)
+            code += ": "
+            code += GenerateSDQLPYCode(AST.getContainer()[k], cache)
+            code += ", "
+        code = code[:-2]
+        code += "})"
         return code
     else:
         print("Error: Unknown AST: " + str(type(AST)))

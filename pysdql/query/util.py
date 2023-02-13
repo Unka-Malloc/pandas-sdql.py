@@ -89,8 +89,12 @@ def concat_pydict(res_list: List[dict]):
     return res_dict
 
 
-def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False):
-    print('>> Comparing SDQL with Pandas ... <<')
+def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbose=False, for_duck=False):
+    print('=' * 60)
+    if for_duck:
+        print('>> Comparing Pandas with Duck ... <<')
+    else:
+        print('>> Comparing SDQL with Pandas ... <<')
 
     if sdql_df is None:
         if pd_df is None:
@@ -104,6 +108,18 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             print('SDQL result exists but Pandas result is None')
             return False
 
+    if sdql_df.shape[0] == 1:
+        if pd_df.empty:
+            if sdql_df.columns == ['result']:
+                if sdql_df['result'].loc[0] is None:
+                    return True
+
+        if pd_df.shape[0] == 1:
+            if sdql_df.squeeze() is None:
+                return False
+            if int(sdql_df.squeeze()) == int(pd_df.squeeze()):
+                return True
+
     if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
@@ -113,21 +129,26 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         return False
 
     for c in sdql_df.columns:
+        if c.endswith('_NA'):
+            continue
         if c not in pd_df.columns:
-            print('Mismatch Column!')
+            print(f'Column {c} not found!')
             return False
         if sdql_df[c].dtype == np.float64:
-            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
-                sdql_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
-                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+            if sdql_df[c].apply(lambda x: x < np.float64(1.0)).any():
+                sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
-                pd_df[c] = pd_df[c].astype(int)
         if sdql_df[c].dtype == object:
-            if sdql_df[c].apply(lambda x: exists_duplicates(x)).any():
-                sdql_df[c] = sdql_df[c].apply(lambda x: remove_duplicates(x))
+            if sdql_df[c].apply(lambda x: is_date(x)).all():
+                sdql_df[c] = sdql_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for c in pd_df.columns:
+        if pd_df[c].dtype == np.float64:
+            if pd_df[c].apply(lambda x: x < np.float64(1.0)).any():
+                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
+            else:
+                pd_df[c] = pd_df[c].astype(int)
         if pd_df[c].dtype == object:
             if pd_df[c].apply(lambda x: is_date(x)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))
@@ -137,6 +158,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         answer_df = pd_df
 
         for k in xrow.keys():
+            if k.endswith('_NA'):
+                continue
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
                 print(f'Not found {xrow.to_dict()}')

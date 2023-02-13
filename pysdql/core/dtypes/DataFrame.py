@@ -3,6 +3,7 @@ import re
 import string
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
+from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
@@ -27,7 +28,6 @@ from pysdql.core.dtypes.DictEl import DictEl
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.VarBindExpr import VarBindExpr
 from pysdql.core.dtypes.VarBindSeq import VarBindSeq
-from pysdql.core.util.data_matcher import match_int, match_float
 from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
 
 from pysdql.core.dtypes.sdql_ir import *
@@ -113,6 +113,9 @@ class DataFrame(FlexIR, Retrivable):
             self.add_context_variable(vname_part,
                                       self.__var_merge_part)
 
+        vname_aggr = f'{self.get_name()}_aggr'
+        self.__var_aggr = VarExpr(vname_aggr)
+
         self.unopt_count = 0
         self.unopt_vars = {}
         self.unopt_consts = {}
@@ -149,6 +152,8 @@ class DataFrame(FlexIR, Retrivable):
             if const not in self.context_constant.keys():
                 tmp_vname = (''.join(re.split(r'[^A-Za-z]', const))).lower() + ''.join(
                     [i for i in const if i.isdigit()])
+                if tmp_vname.isdigit():
+                    tmp_vname = f'v{tmp_vname}'
                 tmp_var = VarExpr(tmp_vname)
                 self.context_constant[const] = tmp_var
                 self.context_variable[tmp_vname] = tmp_var
@@ -299,7 +304,10 @@ class DataFrame(FlexIR, Retrivable):
         else:
             if tmp_cols:
                 for k in rename_cols.keys():
-                    tmp_cols[tmp_cols.index(k)] = rename_cols[k]
+                    if k in tmp_cols:
+                        tmp_cols[tmp_cols.index(k)] = rename_cols[k]
+                    else:
+                        raise IndexError(f'{k} not found in {self.name} columns {tmp_cols}')
                 return tmp_cols
             else:
                 return self.cols_in
@@ -346,6 +354,13 @@ class DataFrame(FlexIR, Retrivable):
     @property
     def var_part(self):
         return self.__var_merge_part
+
+    def get_var_aggr(self):
+        return self.__var_aggr
+
+    @property
+    def var_aggr(self):
+        return self.__var_aggr
 
     @property
     def tmp_name_list(self):
@@ -430,7 +445,8 @@ class DataFrame(FlexIR, Retrivable):
         return '\n'.join(last_list)
 
     def opt_to_sdqlir(self, indent='    ') -> str:
-        opt = self.get_opt()
+        opt = Optimizer(opt_on=self,
+                        opt_goal=OptGoal.Infer)
         for op_expr in self.operations:
             opt.input(op_expr)
         query_obj = opt.output
@@ -514,15 +530,15 @@ class DataFrame(FlexIR, Retrivable):
                                  unit2=item.op2Expr)]
 
         if type(item) == CondExpr:
-            self.operations.push(OpExpr(op_obj=item,
-                                        op_on=self,
-                                        op_iter=False))
+            self.push(OpExpr(op_obj=item,
+                             op_on=self,
+                             op_iter=False))
             return self
 
         if type(item) == list:
-            self.operations.push(OpExpr(op_obj=ColProjExpr(self, item),
-                                        op_on=self,
-                                        op_iter=False))
+            self.push(OpExpr(op_obj=ColProjExpr(self, item),
+                             op_on=self,
+                             op_iter=False))
 
             return self
 
@@ -535,11 +551,12 @@ class DataFrame(FlexIR, Retrivable):
 
         if isinstance(item, ColExtExpr):
             if item.func in [ExtFuncSymbol.StringContains,
-                             ExtFuncSymbol.StartsWith]:
+                             ExtFuncSymbol.StartsWith,
+                             ExtFuncSymbol.EndsWith]:
 
-                self.operations.push(OpExpr(op_obj=item,
-                                            op_on=self,
-                                            op_iter=False))
+                self.push(OpExpr(op_obj=item,
+                                 op_on=self,
+                                 op_iter=False))
                 return self
             else:
                 raise NotImplementedError(f'Unsupported external function {item.func}')
@@ -587,28 +604,28 @@ class DataFrame(FlexIR, Retrivable):
             else:
                 raise IndexError(f'Cannot find the column {key} in {self.name}')
 
-            self.operations.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
-                                                            col_expr=mapper[key]),
-                                        op_on=self,
-                                        op_iter=False))
+            self.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+                                                 col_expr=mapper[key]),
+                             op_on=self,
+                             op_iter=False))
 
     def rename_col_scalar(self, key, value):
         raise NotImplementedError
 
     def rename_col_expr(self, key, value):
-        self.operations.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
-                                                        col_expr=value),
-                                    op_on=self,
-                                    op_iter=False))
+        self.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+                                             col_expr=value),
+                         op_on=self,
+                         op_iter=False))
 
     def insert_col_scalar(self, key, value):
         raise NotImplementedError
 
     def insert_col_expr(self, key, value):
-        self.operations.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
-                                                        col_expr=value),
-                                    op_on=self,
-                                    op_iter=False))
+        self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+                                             col_expr=value),
+                         op_on=self,
+                         op_iter=False))
 
     def groupby(self, cols, as_index=False):
         return DataFrameGroupBy(groupby_from=self,
@@ -634,13 +651,16 @@ class DataFrame(FlexIR, Retrivable):
         for k in right.context_constant.keys():
             next_context_const[k] = right.context_constant[k]
 
-        next_context_unopt = self.context_unopt + right.context_unopt
+        tmp_name = f'{self.name}_{right.name}'
+
+        right.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_probe')
+        self.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_part')
+
+        next_context_unopt = right.context_unopt + self.context_unopt
 
         next_context_semiopt = self.context_semiopt + right.context_semiopt
 
         next_cols = self.cols_out + right.cols_out
-
-        tmp_name = f'{self.name}_{right.name}'
 
         tmp_df = DataFrame(name=tmp_name,
                            is_joint=True,
@@ -979,75 +999,38 @@ class DataFrame(FlexIR, Retrivable):
                                         var_value=ConstantExpr(const)))
         return result_seq
 
+    def get_aggr(self, next_op=None, as_part=False) -> LetExpr:
+        return AggrFrame(self).get_aggr_expr(next_op, as_part)
+
     def get_groupby_aggr(self, next_op=None) -> LetExpr:
         return GroupbyAggrFrame(self).get_groupby_aggr_expr(next_op)
 
     def reset_index(self):
         return self
 
-    def unoptimize(self):
-        for op_expr in self.operations:
-            tmp_vname = f'v{self.unopt_count}'
-            tmp_var = VarExpr(tmp_vname)
+    def unopt_to_sdqlir(self, indent='    '):
+        optimizer = Optimizer(opt_on=self,
+                              opt_goal=OptGoal.UnOptimized)
 
-            if self.unopt_count == 0:
-                last_var = self.var_expr
-                iter_last_var = self.iter_el.el
-            else:
-                last_vname = f'v{self.unopt_count - 1}'
-                last_var = VarExpr(last_vname)
-                iter_last_var = VarExpr(f'x_{last_vname}')
-            iter_last_key = PairAccessExpr(iter_last_var, 0)
-            iter_last_val = PairAccessExpr(iter_last_var, 1)
-            if op_expr.op_type == CondExpr:
-                sum_expr = SumExpr(iter_last_var,
-                                   last_var,
-                                   IfExpr(op_expr.op,
-                                          DicConsExpr([(iter_last_key, iter_last_val)]),
-                                          EmptyDicConsExpr()))
-                self.context_unopt.append(LetExpr(tmp_var,
-                                                  sum_expr,
-                                                  ConstantExpr(True)))
-            if op_expr.op_type == NewColOpExpr:
-                sum_expr = SumExpr(iter_last_var,
-                                   last_var,
-                                   DicConsExpr([(ConcatExpr(iter_last_key,
-                                                            RecConsExpr([(op_expr.op.col_var,
-                                                                          op_expr.op.replace(iter_last_key))])
-                                                            ),
-                                                 ConstantExpr(True))]))
-                self.context_unopt.append(LetExpr(tmp_var,
-                                                  sum_expr,
-                                                  ConstantExpr(True)))
-            if op_expr.op_type == AggrExpr:
-                dic_cons_list = []
-                for k in op_expr.op.aggr_op.keys():
-                    v = op_expr.op.aggr_op[k]
-                    dic_cons_list.append((k, RecAccessExpr(iter_last_key, v)))
-                sum_expr = SumExpr(iter_last_var,
-                                   last_var,
-                                   DicConsExpr(dic_cons_list))
-                self.context_unopt.append(LetExpr(tmp_var,
-                                                  sum_expr,
-                                                  ConstantExpr(True)))
-            if op_expr.op_type == GroupbyAggrExpr:
-                pass
+        query_obj = optimizer.get_unopt_sdqlir()
 
-            self.unopt_count += 1
+        query_str = GenerateSDQLPYCode(self.define_constants().get_sdql_ir(query_obj), {})
 
-        result = ''
-        for i in range(self.unopt_count):
-            result += f"v{i} = VarExpr('v{i}')\n"
-            result += f"x_v{i} = VarExpr('x_v{i}')\n"
-        result += f"out = VarExpr('out')\n"
+        query_list = query_str.split('\n')
 
-        last_seq = VarBindSeq()
-        for i in self.context_unopt:
-            last_seq.push(VarBindExpr(i.varExpr, i.valExpr))
+        query_list = query_list[:query_list.index('True')]
 
-        result += f'{last_seq.get_sdql_ir(ConstantExpr(True))}'
+        print('>> Optimized Query <<')
 
-        return result
+        print(f'{"=" * 60}')
+
+        print('\n'.join(query_list))
+
+        print(f'{"=" * 60}')
+
+        query_list = [f'{indent}{i}' for i in query_list]
+
+        return '\n'.join(query_list)
 
     def apply(self, func, axis):
         """
@@ -1237,3 +1220,12 @@ class DataFrame(FlexIR, Retrivable):
 
     def drop_duplicates(self):
         return self
+
+    def squeeze(self):
+        return self
+
+    def to_sdqlir(self, optimize=True, indent='    '):
+        if optimize:
+            return self.opt_to_sdqlir(indent=indent)
+        else:
+            return self.unopt_to_sdqlir(indent=indent)

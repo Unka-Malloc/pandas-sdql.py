@@ -1,16 +1,12 @@
 import pysdql
 
-from pysdql.core.dtypes.EnumUtil import AggrType
+from pysdql.core.dtypes.sdql_ir import *
 
 from pysdql.query.tpch.template import *
 
 if __name__ == '__main__':
-    # supplier = pysdql.DataFrame()
-    # nation = pysdql.DataFrame()
-    # partsupp = pysdql.DataFrame()
-    # part = pysdql.DataFrame()
-    # lineitem = pysdql.DataFrame()
-    #
-    # tpch_q20(supplier, nation, partsupp, part, lineitem).opt_to_sdqlir()
+    test_some = pysdql.tpch_query(12, verbose=True, optimize=True)
 
-    test_one = pysdql.tpch_query(20)
+    # print(pysdql.query.tpch.Qpandas.q21())
+
+    # print(pysdql.query.tpch.Qsdql.q21())

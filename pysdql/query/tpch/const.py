@@ -10,7 +10,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
 
 # DATAPATH should contain all 8 tbl files
 
-DATAPATH = r'T:/tpch_dataset/1M'
+DATAPATH = r'V:/Datasets/TPCH/100M'
 
 LINEITEM_COLS = ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
                  'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',

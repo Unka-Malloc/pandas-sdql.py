@@ -112,6 +112,16 @@ class ColExtExpr(FlexIR):
                         operator=LogicSymbol.AND,
                         unit2=other)
 
+    def __or__(self, other):
+        return CondExpr(unit1=self,
+                        operator=LogicSymbol.OR,
+                        unit2=other)
+
+    def __invert__(self):
+        return CondExpr(unit1=self,
+                        operator=LogicSymbol.NOT,
+                        unit2=self)
+
     def __add__(self, other):
         return ColOpExpr(unit1=self,
                          operator=MathSymbol.ADD,
@@ -147,6 +157,13 @@ class ColExtExpr(FlexIR):
                                col_expr,
                                self.args,
                                ConstantExpr("Nothing!"))
+
+        if self.func == ExtFuncSymbol.EndsWith:
+            return ExtFuncExpr(self.func,
+                               col_expr,
+                               self.args,
+                               ConstantExpr("Nothing!"))
+
         if self.func == ExtFuncSymbol.StringContains:
             return CompareExpr(CompareSymbol.NE,
                                ExtFuncExpr(ExtFuncSymbol.FirstIndex,
@@ -154,6 +171,7 @@ class ColExtExpr(FlexIR):
                                            self.args,
                                            ConstantExpr("Nothing!")),
                                MulExpr(ConstantExpr(-1), ConstantExpr(1)))
+
         if self.func == ExtFuncSymbol.FirstIndex:
             return ExtFuncExpr(self.func,
                                 col_expr,
@@ -165,6 +183,12 @@ class ColExtExpr(FlexIR):
                                 col_expr,
                                 ConstantExpr("Nothing!"),
                                 ConstantExpr("Nothing!"))
+
+        if self.func == ExtFuncSymbol.SubStr:
+            return ExtFuncExpr(self.func,
+                                col_expr,
+                                ConstantExpr(int(self.args[0])),
+                                ConstantExpr(int(self.args[1]) - 1))
 
         raise NotImplementedError(f'''
         {self.col},
