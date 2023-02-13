@@ -1,4 +1,7 @@
 import os
+
+import numpy
+
 from pysdql.core.util.type_checker import (
     is_int,
     is_float,
@@ -7,6 +10,37 @@ from pysdql.core.util.type_checker import (
 )
 
 from pysdql.core.util.data_str import remove_suffix
+from pysdql.extlib.sdqlpy.sdql_lib import string as sdql_string
+from pysdql.extlib.sdqlpy.sdql_lib import date as sdql_date
+from pysdql.extlib.sdqlpy.sdql_lib import record as sdql_record
+
+def pandas_dtype_to_sdql(names: list, dtypes: dict, dates: list):
+    if not dtypes:
+        pass
+
+    key_dtypes = {}
+
+    for c in names:
+        if c in dtypes.keys():
+            t = dtypes[c]
+
+            if t == str:
+                key_dtypes[c] = sdql_string(256)
+            else:
+                key_dtypes[c] = t
+        elif c in dates:
+            key_dtypes[c] = sdql_date
+        else:
+            raise IndexError(f'Type of {c} not found.')
+
+    key_dtypes['_NA'] = sdql_string(1)
+
+    all_dtypes = {sdql_record(key_dtypes): bool}
+
+    return all_dtypes
+
+def infer_dtypes():
+    pass
 
 
 def get_dtype(names: list, data: list) -> dict:

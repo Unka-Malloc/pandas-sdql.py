@@ -44,13 +44,11 @@ from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.sdql_ir import ExtFuncExpr, ExtFuncSymbol, RecAccessExpr, PairAccessExpr, ConstantExpr
 
-from pysdql.core.query import *
-
-from pysdql.query import (
-    tpch
-)
+from pysdql.query import tpch
 
 from pysdql.query.tpch import tpch_query
+
+from pysdql.core.SDQLWrapper import SDQL
 
 
 def merge(left, right, how='inner', left_on=None, right_on=None):

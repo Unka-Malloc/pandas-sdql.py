@@ -1,6 +1,8 @@
 import inspect
+import os
 import re
 import string
+from pathlib import Path
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
@@ -76,8 +78,10 @@ class DataFrame(FlexIR, Retrivable):
                  context_variable=None,
                  context_constant=None,
                  context_unopt=None,
-                 context_semiopt=None):
+                 context_semiopt=None,
+                 loader=None):
         super().__init__()
+        self.loader = loader
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -126,6 +130,10 @@ class DataFrame(FlexIR, Retrivable):
         self.context_semiopt = context_semiopt if context_semiopt else []
 
         self.original = is_original
+
+    @property
+    def dtypes(self):
+        return self.__dtype
 
     def copy(self):
         new_name = varname()
@@ -315,27 +323,6 @@ class DataFrame(FlexIR, Retrivable):
     @property
     def cols_used(self):
         return self.retriever.findall_cols_used(as_owner=True)
-
-    @property
-    def dtype(self):
-        if self.__dtype:
-            return self.__dtype
-
-        if self.__data:
-            tmp_dict = {}
-            for k in self.__data.keys():
-                first_item = self.__data[k][0]
-                if is_int(first_item):
-                    tmp_dict[k] = 'int'
-                elif is_float(first_item):
-                    tmp_dict[k] = 'real'
-                elif is_date(first_item):
-                    tmp_dict[k] = 'date'
-                elif is_str(first_item):
-                    tmp_dict[k] = 'string'
-                else:
-                    raise ValueError(f'Cannot identify type {first_item}')
-            return tmp_dict
 
     @property
     def name(self):
@@ -1229,3 +1216,25 @@ class DataFrame(FlexIR, Retrivable):
             return self.opt_to_sdqlir(indent=indent)
         else:
             return self.unopt_to_sdqlir(indent=indent)
+
+    def dtypes_as_str(self):
+        return self.loader.to_dtype_str()
+
+    def run_in_sdql(self, optimize=True, indent='    '):
+        pysdql_path = Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
+
+        tmp_file_path = f'{pysdql_path}/cache/query.py'
+
+        query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
+                      f'@sdql_compile({{"{self.name}": {self.dtypes_as_str()}}})',
+                      f'def query({self.name}):',
+                      self.to_sdqlir(indent=indent),
+                      f'{indent}return results',
+                      '']
+
+        with open(tmp_file_path, 'w') as f:
+            f.write('\n'.join(query_list))
+
+        from pysdql.cache.query import query
+
+        return query(self.loader.to_sdql())
