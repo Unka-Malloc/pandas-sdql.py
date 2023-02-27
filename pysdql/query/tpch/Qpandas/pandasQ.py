@@ -1,5 +1,6 @@
 import gc
 import time
+import warnings
 
 import duckdb
 import pandas as pd
@@ -21,6 +22,12 @@ from pysdql.query.tpch.const import (
 from pysdql.query.tpch.template import *
 
 from pysdql.query.util import compare_dataframe, pandas_to_df
+
+from pysdql.config import (
+    is_verification_enabled,
+    is_pandas_available,
+    is_duckdb_available,
+)
 
 # show all columns
 pd.set_option('display.max_columns', None)
@@ -44,27 +51,31 @@ def check_duck(df1, df2):
 
 
 def q1():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q1(lineitem)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q1).df()
+        duck_result = duck_conn.execute(duck_q1).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem]]
     gc.collect()
@@ -74,31 +85,35 @@ def q1():
 
 
 def q2():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
     region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q2(part, supplier, partsupp, nation, region)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q2).df()
+        duck_result = duck_conn.execute(duck_q2).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[part, supplier, partsupp, nation, region]]
     gc.collect()
@@ -112,29 +127,32 @@ def q2():
 
 
 def q3():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q3(lineitem, customer, orders)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q3).df()
+        duck_result = duck_conn.execute(duck_q3).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
-
-    check_duck(result, duck_result)
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        check_duck(result, duck_result)
 
     del [[lineitem, customer, orders]]
     gc.collect()
@@ -146,28 +164,32 @@ def q3():
 
 
 def q4():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q4(orders, lineitem)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q4).df()
+        duck_result = duck_conn.execute(duck_q4).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, orders]]
     gc.collect()
@@ -178,7 +200,9 @@ def q4():
 
 
 def q5():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
@@ -186,24 +210,26 @@ def q5():
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
     region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q5(lineitem, customer, orders, region, nation, supplier)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q5).df()
+        duck_result = duck_conn.execute(duck_q5).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, customer, orders, region, nation, supplier]]
     gc.collect()
@@ -218,27 +244,31 @@ def q5():
 
 
 def q6():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = pandas_to_df(tpch_q6(lineitem))
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q6).df()
+        duck_result = duck_conn.execute(duck_q6).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem]]
     gc.collect()
@@ -248,7 +278,9 @@ def q6():
 
 
 def q7():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS,
@@ -256,24 +288,26 @@ def q7():
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q7(supplier, lineitem, orders, customer, nation)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q7).df()
+        duck_result = duck_conn.execute(duck_q7).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[supplier, lineitem, orders, customer, nation]]
     gc.collect()
@@ -287,7 +321,9 @@ def q7():
 
 
 def q8():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
@@ -297,24 +333,26 @@ def q8():
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
     region = pd.read_csv(rf'{DATAPATH}/region.tbl', sep='|', index_col=False, header=None, names=REGION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q8(part, supplier, lineitem, orders, customer, nation, region)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q8).df()
+        duck_result = duck_conn.execute(duck_q8).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[part, supplier, lineitem, orders, customer, nation, region]]
     gc.collect()
@@ -330,7 +368,9 @@ def q8():
 
 
 def q9():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS,
@@ -339,24 +379,26 @@ def q9():
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q9(lineitem, orders, nation, supplier, part, partsupp)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q9).df()
+        duck_result = duck_conn.execute(duck_q9).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, orders, nation, supplier, part, partsupp]]
     gc.collect()
@@ -371,30 +413,34 @@ def q9():
 
 
 def q10():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q10(customer, orders, lineitem, nation)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q10).df()
+        duck_result = duck_conn.execute(duck_q10).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[customer, orders, lineitem, nation]]
     gc.collect()
@@ -407,29 +453,33 @@ def q10():
 
 
 def q11():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q11(partsupp, supplier, nation)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q11).df()
+        duck_result = duck_conn.execute(duck_q11).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[partsupp, supplier, nation]]
     gc.collect()
@@ -441,28 +491,32 @@ def q11():
 
 
 def q12():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q12(orders, lineitem)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q12).df()
+        duck_result = duck_conn.execute(duck_q12).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[orders, lineitem]]
     gc.collect()
@@ -473,28 +527,32 @@ def q12():
 
 
 def q13():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q13(customer, orders)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q13).df()
+        duck_result = duck_conn.execute(duck_q13).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[customer, orders]]
     gc.collect()
@@ -505,28 +563,32 @@ def q13():
 
 
 def q14():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = pandas_to_df(tpch_q14(lineitem, part))
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q14).df()
+        duck_result = duck_conn.execute(duck_q14).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, part]]
     gc.collect()
@@ -537,28 +599,32 @@ def q14():
 
 
 def q15():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q15(lineitem, supplier)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q15).df()
+        duck_result = duck_conn.execute(duck_q15).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, supplier]]
     gc.collect()
@@ -569,29 +635,33 @@ def q15():
 
 
 def q16():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q16(partsupp, part, supplier)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q16).df()
+        duck_result = duck_conn.execute(duck_q16).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[partsupp, part, supplier]]
     gc.collect()
@@ -603,28 +673,32 @@ def q16():
 
 
 def q17():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = pandas_to_df(tpch_q17(lineitem, part))
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q17).df()
+        duck_result = duck_conn.execute(duck_q17).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, part]]
     gc.collect()
@@ -635,29 +709,33 @@ def q17():
 
 
 def q18():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q18(lineitem, customer, orders)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q18).df()
+        duck_result = duck_conn.execute(duck_q18).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, customer, orders]]
     gc.collect()
@@ -669,28 +747,32 @@ def q18():
 
 
 def q19():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q19(lineitem, part)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q19).df()
+        duck_result = duck_conn.execute(duck_q19).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[lineitem, part]]
     gc.collect()
@@ -701,31 +783,35 @@ def q19():
 
 
 def q20():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
     partsupp = pd.read_csv(rf'{DATAPATH}/partsupp.tbl', sep='|', index_col=False, header=None, names=PARTSUPP_COLS)
     part = pd.read_csv(rf'{DATAPATH}/part.tbl', sep='|', index_col=False, header=None, names=PART_COLS)
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q20(supplier, nation, partsupp, part, lineitem)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q20).df()
+        duck_result = duck_conn.execute(duck_q20).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[supplier, nation, partsupp, part, lineitem]]
     gc.collect()
@@ -739,30 +825,34 @@ def q20():
 
 
 def q21():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     supplier = pd.read_csv(rf'{DATAPATH}/supplier.tbl', sep='|', index_col=False, header=None, names=SUPPLIER_COLS)
     lineitem = pd.read_csv(rf'{DATAPATH}/lineitem.tbl', sep='|', index_col=False, header=None, names=LINEITEM_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
     nation = pd.read_csv(rf'{DATAPATH}/nation.tbl', sep='|', index_col=False, header=None, names=NATION_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q21(supplier, lineitem, orders, nation)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
+        duck_start_time = time.time()
 
-    duck_result = duck_conn.execute(duck_q21).df()
+        duck_result = duck_conn.execute(duck_q21).df()
 
-    duck_end_time = time.time()
+        duck_end_time = time.time()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
 
-    check_duck(result, duck_result)
+        check_duck(result, duck_result)
 
     del [[supplier, lineitem, orders, nation]]
     gc.collect()
@@ -775,28 +865,33 @@ def q21():
 
 
 def q22():
-    duck_conn = duckdb.connect(database=':memory:')
+    if not is_pandas_available() & is_verification_enabled():
+        warnings.warn("Warning: Pandas is not installed.")
+        return
 
     customer = pd.read_csv(rf'{DATAPATH}/customer.tbl', sep='|', index_col=False, header=None, names=CUSTOMER_COLS)
     orders = pd.read_csv(rf'{DATAPATH}/orders.tbl', sep='|', index_col=False, header=None, names=ORDERS_COLS)
-    
+
     pd_start_time = time.time()
-    
+
     result = tpch_q22(customer, orders)
 
     pd_end_time = time.time()
 
-    print(f'\033[36m Pandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
+    print(f'\033[36mPandas Execution Time: {pd_end_time - pd_start_time} s \033[0m')
 
-    duck_start_time = time.time()
+    if is_duckdb_available() & is_verification_enabled():
+        duck_conn = duckdb.connect(database=':memory:')
 
-    duck_result = duck_conn.execute(duck_q22).df()
+        duck_start_time = time.time()
 
-    duck_end_time = time.time()
+        duck_result = duck_conn.execute(duck_q22).df()
 
-    print(f'\033[36m DuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+        duck_end_time = time.time()
 
-    check_duck(result, duck_result)
+        print(f'\033[36mDuckDB Execution Time: {duck_end_time - duck_start_time} s \033[0m')
+
+        check_duck(result, duck_result)
 
     del [[customer, orders]]
     gc.collect()

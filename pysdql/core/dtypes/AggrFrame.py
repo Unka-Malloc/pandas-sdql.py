@@ -60,8 +60,14 @@ class AggrFrame:
                     aggr_body = IfExpr(condExpr=cond.sdql_ir,
                                        thenBodyExpr=aggr_body,
                                        elseBodyExpr=ConstantExpr(0))
+            elif isinstance(dict_val, (AddExpr,
+                                       SubExpr,
+                                       MulExpr,
+                                       DivExpr,
+                                       )):
+                aggr_body = dict_val
             else:
-                raise NotImplementedError
+                raise NotImplementedError(dict_val)
         else:
             '''
             Aggregation as a single record

@@ -46,7 +46,12 @@ from pysdql.core.util.df_retriever import Retriever
 from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
-    LogicSymbol, OptGoal, SumIterType, AggrType, OpRetType,
+    LogicSymbol,
+    OptGoal,
+    SumIterType,
+    AggrType,
+    OpRetType,
+    PandasRetType,
 )
 
 from pysdql.const import (
@@ -761,8 +766,8 @@ class DataFrame(FlexIR, Retrivable):
 
         return self
 
-    def peak(self):
-        return self.operations.peak()
+    def peek(self):
+        return self.operations.peek()
 
     def show_info(self):
         if self.is_joint:
@@ -1242,3 +1247,17 @@ class DataFrame(FlexIR, Retrivable):
         datas = [i.loader.to_sdql() for i in datasets if isinstance(i, DataFrame)]
 
         return query(*datas)
+
+    def get_ret_as(self):
+        op_expr = self.operations[-1]
+        if op_expr.op_type == AggrExpr:
+            return PandasRetType.SERIES
+        else:
+            return PandasRetType.SCALAR
+
+    def ret_for_agg(self):
+        op_expr = self.operations[-1]
+        if op_expr.op_type == AggrExpr:
+            return True
+
+        return False

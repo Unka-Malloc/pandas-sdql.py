@@ -1,15 +1,6 @@
 # import pandas as pd
 import pysdql as pd
-from pysdql import SDQL
-
-@SDQL
-def query(lineitem):
-    lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
-
-    result = lineitem.agg({'revenue': 'sum'})
-
-    return result
-
+from pysdql import tosdql
 
 if __name__ == '__main__':
     li = pd.read_csv(f"T:/tpch_dataset/100M/lineitem.tbl",
@@ -24,5 +15,15 @@ if __name__ == '__main__':
                             "l_returnflag": str, "l_linestatus": str, "l_shipinstruct": str, "l_shipmode": str,
                             "l_comment": str},
                      parse_dates=['l_shipdate', 'l_commitdate', 'l_receiptdate'])
+
+
+    @tosdql
+    def query(lineitem):
+        lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
+        result = lineitem.agg({'revenue': 'sum'})
+
+        # result = (lineitem.l_extendedprice * lineitem.l_discount).sum()
+
+        return result
 
     print(query(li))
