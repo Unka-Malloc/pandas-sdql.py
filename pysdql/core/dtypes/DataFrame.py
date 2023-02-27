@@ -1,8 +1,8 @@
-import inspect
 import os
 import re
+import inspect
 import string
-from pathlib import Path
+import pathlib
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
@@ -631,7 +631,7 @@ class DataFrame(FlexIR, Retrivable):
                          op_on=self,
                          op_iter=False))
 
-    def groupby(self, cols, as_index=False):
+    def groupby(self, cols, as_index=False, sort=False):
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
 
@@ -1241,7 +1241,7 @@ class DataFrame(FlexIR, Retrivable):
             return ''
 
     def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
-        pysdql_path = Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
+        pysdql_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
 
         tmp_file_path = f'{pysdql_path}/cache/query.py'
 
@@ -1282,3 +1282,6 @@ class DataFrame(FlexIR, Retrivable):
             return True
 
         return False
+
+    def sort_values(self, by=None, ascending=None):
+        return self
