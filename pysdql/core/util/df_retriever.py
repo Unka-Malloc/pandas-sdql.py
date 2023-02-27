@@ -506,7 +506,7 @@ class Retriever:
                     return op_expr
 
     def find_last_op(self, body_only=True):
-        op_expr = self.history.peak()
+        op_expr = self.history.peek()
         if body_only:
             return op_expr.op
         else:

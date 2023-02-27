@@ -7,33 +7,14 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, cu, ord):
     # Insert
     building = "BUILDING"
-    v0 = li.sum(lambda x: (({x[0]: x[1]}) if (x[0].l_shipdate > 19950315) else (None)) if (x[0] != None) else (None))
+    customer_part = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (x_customer[0].c_mktsegment == building) else (None))
     
-    customer_orders_lineitem_probe = v0
-    v0 = ord.sum(lambda x: (({x[0]: x[1]}) if (x[0].o_orderdate < 19950315) else (None)) if (x[0] != None) else (None))
+    customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate, "o_shippriority": x_orders[0].o_shippriority})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (x_orders[0].o_orderdate < 19950315) else (None))
     
-    customer_orders_probe = v0
-    v0 = cu.sum(lambda x: (({x[0]: x[1]}) if (x[0].c_mktsegment == building) else (None)) if (x[0] != None) else (None))
+    lineitem_aggr = li.sum(lambda x_lineitem: (({record({"l_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": customer_orders[x_lineitem[0].l_orderkey].o_orderdate, "o_shippriority": customer_orders[x_lineitem[0].l_orderkey].o_shippriority}): ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_shipdate > 19950315) else (None))
     
-    customer_orders_part = v0
-    build_side = customer_orders_part.sum(lambda x: (({x[0].c_custkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_orderkey": x_lineitem_aggr[0].l_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_shippriority": x_lineitem_aggr[0].o_shippriority, "revenue": x_lineitem_aggr[1]}): True})
     
-    v0 = customer_orders_probe.sum(lambda x: (({build_side[x[0].o_custkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].o_custkey] != None) else (None)) if (x[0] != None) else (None))
-    
-    customer_orders_lineitem_part = v0
-    build_side = customer_orders_lineitem_part.sum(lambda x: (({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    v0 = customer_orders_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].l_orderkey] != None) else (None)) if (x[0] != None) else (None))
-    
-    v1 = v0.sum(lambda x: (({x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    v2 = v1.sum(lambda x: (({record({"l_orderkey": x[0].l_orderkey, "o_orderdate": x[0].o_orderdate, "o_shippriority": x[0].o_shippriority}): record({"revenue": x[0].revenue})}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    v3 = v2.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
-    
-    results = v3
     # Complete
 
     return results

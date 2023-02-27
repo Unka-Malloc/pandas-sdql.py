@@ -1,6 +1,8 @@
-import inspect
+import os
 import re
+import inspect
 import string
+import pathlib
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
@@ -44,7 +46,12 @@ from pysdql.core.util.df_retriever import Retriever
 from varname import varname
 
 from pysdql.core.dtypes.EnumUtil import (
-    LogicSymbol, OptGoal, SumIterType, AggrType, OpRetType,
+    LogicSymbol,
+    OptGoal,
+    SumIterType,
+    AggrType,
+    OpRetType,
+    PandasRetType,
 )
 
 from pysdql.const import (
@@ -76,8 +83,10 @@ class DataFrame(FlexIR, Retrivable):
                  context_variable=None,
                  context_constant=None,
                  context_unopt=None,
-                 context_semiopt=None):
+                 context_semiopt=None,
+                 loader=None):
         super().__init__()
+        self.loader = loader
         self.__default_name = 'R'
         self.__data = data
         self.__index = index
@@ -126,6 +135,10 @@ class DataFrame(FlexIR, Retrivable):
         self.context_semiopt = context_semiopt if context_semiopt else []
 
         self.original = is_original
+
+    @property
+    def dtypes(self):
+        return self.__dtype
 
     def copy(self):
         new_name = varname()
@@ -315,27 +328,6 @@ class DataFrame(FlexIR, Retrivable):
     @property
     def cols_used(self):
         return self.retriever.findall_cols_used(as_owner=True)
-
-    @property
-    def dtype(self):
-        if self.__dtype:
-            return self.__dtype
-
-        if self.__data:
-            tmp_dict = {}
-            for k in self.__data.keys():
-                first_item = self.__data[k][0]
-                if is_int(first_item):
-                    tmp_dict[k] = 'int'
-                elif is_float(first_item):
-                    tmp_dict[k] = 'real'
-                elif is_date(first_item):
-                    tmp_dict[k] = 'date'
-                elif is_str(first_item):
-                    tmp_dict[k] = 'string'
-                else:
-                    raise ValueError(f'Cannot identify type {first_item}')
-            return tmp_dict
 
     @property
     def name(self):
@@ -596,6 +588,18 @@ class DataFrame(FlexIR, Retrivable):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
+            if type(value) in (list, ):
+                if isinstance(key, str) and len(value) == 1:
+                    if isinstance(value[0], AggrExpr):
+                        aggr_obj = value[0]
+                        aggr_obj.update_default(key)
+                        aggr_obj.aggr_type = AggrType.Dict
+                        op_expr = OpExpr(op_obj=aggr_obj,
+                                         op_on=aggr_obj.aggr_on,
+                                         op_iter=True,
+                                         iter_on=aggr_obj.aggr_on,
+                                         ret_type=OpRetType.FLOAT)
+                        self.push(op_expr)
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
@@ -627,7 +631,7 @@ class DataFrame(FlexIR, Retrivable):
                          op_on=self,
                          op_iter=False))
 
-    def groupby(self, cols, as_index=False):
+    def groupby(self, cols, as_index=False, sort=False):
         return DataFrameGroupBy(groupby_from=self,
                                 groupby_cols=cols)
 
@@ -774,8 +778,8 @@ class DataFrame(FlexIR, Retrivable):
 
         return self
 
-    def peak(self):
-        return self.operations.peak()
+    def peek(self):
+        return self.operations.peek()
 
     def show_info(self):
         if self.is_joint:
@@ -1229,3 +1233,55 @@ class DataFrame(FlexIR, Retrivable):
             return self.opt_to_sdqlir(indent=indent)
         else:
             return self.unopt_to_sdqlir(indent=indent)
+
+    def dtypes_as_str(self):
+        if self.loader:
+            return self.loader.to_dtype_str()
+        else:
+            return ''
+
+    def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
+        pysdql_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
+
+        tmp_file_path = f'{pysdql_path}/cache/query.py'
+
+        names = ','.join([i.name for i in datasets if isinstance(i, DataFrame)])
+
+        compile_params = ""
+
+        for i in datasets:
+            if isinstance(i, DataFrame):
+                compile_params += f'"{i}": {i.dtypes_as_str()}'
+
+        query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
+                      f'@sdql_compile({{f{compile_params}}})',
+                      f'def query({names}):',
+                      self.to_sdqlir(indent=indent),
+                      f'{indent}return results',
+                      '']
+
+        with open(tmp_file_path, 'w') as f:
+            f.write('\n'.join(query_list))
+
+        from pysdql.cache.query import query
+
+        datas = [i.loader.to_sdql() for i in datasets if isinstance(i, DataFrame)]
+
+        return query(*datas)
+
+    def get_ret_as(self):
+        op_body = self.retriever.find_last_iter()
+        if isinstance(op_body, AggrExpr) and op_body.aggr_on.name == self.name:
+            return PandasRetType.SERIES
+        else:
+            return PandasRetType.SCALAR
+
+    def ret_for_agg(self):
+        op_body = self.retriever.find_last_iter()
+        if isinstance(op_body, AggrExpr) and op_body.aggr_on.name == self.name:
+            return True
+
+        return False
+
+    def sort_values(self, by=None, ascending=None):
+        return self
