@@ -71,3 +71,10 @@ class OpRetType(Enum):
     STRING = 3
     RECORD = 4
     DICT = 5
+
+@unique
+class PandasRetType(Enum):
+    DATAFRAME = 1
+    SERIES = 2
+    SCALAR = 3
+    DATETIME = 4

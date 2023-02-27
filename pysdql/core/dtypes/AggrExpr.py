@@ -23,6 +23,17 @@ class AggrExpr(FlexIR):
 
         self.update_sum = update_sum
 
+    def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
+        return self.aggr_on.run_in_sdql(
+            datasets=datasets,
+            optimize=optimize,
+            indent=indent,
+        )
+
+    @staticmethod
+    def ret_for_agg():
+        return True
+
     @property
     def operations(self):
         return self.aggr_on.operations

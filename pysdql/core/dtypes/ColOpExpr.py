@@ -27,12 +27,25 @@ class ColOpExpr(FlexIR):
         self.operator = operator
         self.unit2 = unit2
 
+    @property
+    def relation(self):
+        if self.unit1.relation.oid == self.unit2.relation.oid:
+            return self.unit1.relation
+
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
-                             aggr_on=None,
+                             aggr_on=self.relation,
                              aggr_op={f'sum_agg': self.sdql_ir},
                              aggr_else=ConstantExpr(0.0),
                              origin_dict={f'sum_agg': (self.sdql_ir, 'sum')})
+
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self.relation,
+                         op_iter=True,
+                         iter_on=self.relation,
+                         ret_type=OpRetType.FLOAT)
+
+        self.relation.push(op_expr)
 
         return aggr_expr
 
@@ -127,6 +140,7 @@ class ColOpExpr(FlexIR):
     '''
     FlexIR
     '''
+
     @property
     def replaceable(self):
         return True

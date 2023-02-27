@@ -1,7 +1,7 @@
 import pysdql
 
 if __name__ == '__main__':
-    data_path = r'T:\UG4-Proj\datasets\1G'
+    data_path = r'/datasets/1G'
 
     pysdql.tune_tbl(rf'{data_path}\customer.tbl')
     pysdql.tune_tbl(rf'{data_path}\lineitem.tbl')

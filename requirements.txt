@@ -1,0 +1,6 @@
+setuptools
+toml
+varname
+numpy
+pandas
+duckdb
