@@ -23,7 +23,7 @@ class MyTestCase(unittest.TestCase):
 
         df.columns.name = 'S'
         self.assertEqual('S', df.name)
-        self.assertEqual('let S = R', str(df.operations.peak()))
+        self.assertEqual('let S = R', str(df.operations.peek()))
 
     def test_iter_el(self):
         df = pysdql.DataFrame()

@@ -16,7 +16,7 @@ class OpSeq:
         else:
             raise ValueError(f'Only accept OpExpr.')
 
-    def peak(self):
+    def peek(self):
         if len(self.stack) >= 1:
             return self.stack[-1]
         return
@@ -44,5 +44,7 @@ class OpSeq:
     def __reversed__(self):
         return reversed(self.stack)
 
+    def __getitem__(self, item):
+        return self.stack[item]
 
 

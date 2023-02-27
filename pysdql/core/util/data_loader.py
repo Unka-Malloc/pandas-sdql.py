@@ -1,30 +1,17 @@
 import os
 
+from varname import varname
+
 import pysdql
 
 from pysdql.core.dtypes.LoadExpr import LoadExpr
 
-from pysdql.core.util.data_parser import get_dtype
-
 from pysdql.core.util.data_str import (
-    remove_prefix,
     remove_suffix,
-    remove_sides
 )
 
-from pysdql.core.util.type_checker import is_header
 
-def read_table(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, load=True):
-    return read_csv(filepath_or_buffer=filepath_or_buffer,
-                    sep=sep,
-                    header=header,
-                    names=names,
-                    index_col=index_col,
-                    dtype=dtype,
-                    load=load)
-
-
-def read_csv(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, load=True):
+def read_csv(filepath_or_buffer, sep=',', header=None, names=None, index_col=False, dtype=None, parse_dates=None):
     if names is None:
         names = []
     if dtype is None:
@@ -32,31 +19,15 @@ def read_csv(filepath_or_buffer, sep=',', header=None, names=None, index_col=Fal
     if index_col:
         raise ValueError(f'Invalid index_col = {index_col}')
 
-    file_name = str(os.path.basename(filepath_or_buffer))
-    obj_name = file_name[:file_name.index('.')]
+    obj_name = varname()
 
-    with open(filepath_or_buffer, encoding='utf-8') as file:
-        # remove '\n'
-        line = file.readline()
-        line_list = remove_suffix(line, '\n').split(sep)
+    load_expr = LoadExpr(filepath_or_buffer=filepath_or_buffer, sep=sep, names=names, dtype=dtype, parse_dates=parse_dates)
 
-        if header is None:
-            if not names:
-                if is_header(line_list):
-                    names = line_list
-                else:
-                    names = [f'col{i}' for i in range(len(line_list))]
-        elif header == 0:
-            names = line_list
-        else:
-            raise ValueError(f'Invalid header = {header}')
-
-        line = file.readline()
-        line_list = remove_suffix(line, '\n').split(sep)
-
-        dtype = get_dtype(names, line_list)
-
-        return pysdql.DataFrame(data=LoadExpr(dtype, filepath_or_buffer), columns=names, dtype=dtype, name=obj_name)
+    return pysdql.DataFrame(data=load_expr,
+                            columns=names,
+                            dtype=load_expr.to_sdql_dtypes(),
+                            name=obj_name,
+                            loader=load_expr)
 
 
 def tune_tbl(file_path, sep='|', name=None):

@@ -32,7 +32,7 @@ class VarBindSeq(FlexIR):
         del self.__seq[-1]
         return result
 
-    def peak(self):
+    def peek(self):
         return self.__seq[-1]
 
     def get_sdql_ir(self, last_binding):
@@ -49,7 +49,7 @@ class VarBindSeq(FlexIR):
         result = ''
         for expr in self.seq:
             result += f'{expr}\n'
-        result += f'{self.peak().next_expr}'
+        result += f'{self.peek().next_expr}'
         return result
 
     @property
@@ -62,7 +62,7 @@ class VarBindSeq(FlexIR):
 
     @property
     def sdql_ir(self):
-        if not self.peak().iscompleted:
+        if not self.peek().iscompleted:
             result = self.pop()
             last_binding = VarBindExpr(var_expr=VarExpr('out'),
                                        var_value=result.var_expr,
