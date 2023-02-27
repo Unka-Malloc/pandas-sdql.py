@@ -542,6 +542,10 @@ class Optimizer:
     def output(self) -> LetExpr:
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.retriever.find_aggr(body_only=False)
+            if op_expr.op.aggr_on.name != self.opt_on.name:
+                return SDQLInspector.rename_last_binding(AggrFrame(op_expr.op.aggr_on).sdql_ir,
+                                                         self.opt_on.name)
+
             if op_expr.ret_type == OpRetType.DICT:
                 # Q19
                 if self.is_joint:
@@ -574,7 +578,7 @@ class Optimizer:
             if self.is_joint:
                 return self.joint_frame.sdql_ir
         else:
-            last_op = self.retriever.find_last_op()
+            last_op = self.retriever.find_last_iter()
             print(last_op)
             raise NotImplementedError
 

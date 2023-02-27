@@ -448,6 +448,17 @@ class SDQLInspector:
         return result
 
     @staticmethod
+    def rename_last_binding(sdql_obj, new_name):
+        all_bindings = SDQLInspector.split_bindings(sdql_obj)
+        all_bindings[-1] = LetExpr(VarExpr(new_name),
+                                   all_bindings[-1].valExpr,
+                                   all_bindings[-1].bodyExpr)
+        all_bindings.append(LetExpr(VarExpr('results'),
+                                    VarExpr(new_name),
+                                    ConstantExpr(True)))
+        return SDQLInspector.concat_bindings(all_bindings)
+
+    @staticmethod
     def replace_binding(old_obj: LetExpr, new_obj: Expr, mode='body'):
         if mode == 'body':
             if isinstance(old_obj.bodyExpr, LetExpr):

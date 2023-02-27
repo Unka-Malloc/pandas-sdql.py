@@ -588,6 +588,18 @@ class DataFrame(FlexIR, Retrivable):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
+            if type(value) in (list, ):
+                if isinstance(key, str) and len(value) == 1:
+                    if isinstance(value[0], AggrExpr):
+                        aggr_obj = value[0]
+                        aggr_obj.update_default(key)
+                        aggr_obj.aggr_type = AggrType.Dict
+                        op_expr = OpExpr(op_obj=aggr_obj,
+                                         op_on=aggr_obj.aggr_on,
+                                         op_iter=True,
+                                         iter_on=aggr_obj.aggr_on,
+                                         ret_type=OpRetType.FLOAT)
+                        self.push(op_expr)
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
@@ -1223,7 +1235,10 @@ class DataFrame(FlexIR, Retrivable):
             return self.unopt_to_sdqlir(indent=indent)
 
     def dtypes_as_str(self):
-        return self.loader.to_dtype_str()
+        if self.loader:
+            return self.loader.to_dtype_str()
+        else:
+            return ''
 
     def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
         pysdql_path = Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
@@ -1232,8 +1247,14 @@ class DataFrame(FlexIR, Retrivable):
 
         names = ','.join([i.name for i in datasets if isinstance(i, DataFrame)])
 
+        compile_params = ""
+
+        for i in datasets:
+            if isinstance(i, DataFrame):
+                compile_params += f'"{i}": {i.dtypes_as_str()}'
+
         query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
-                      f'@sdql_compile({{"{self.name}": {self.dtypes_as_str()}}})',
+                      f'@sdql_compile({{f{compile_params}}})',
                       f'def query({names}):',
                       self.to_sdqlir(indent=indent),
                       f'{indent}return results',
@@ -1249,15 +1270,15 @@ class DataFrame(FlexIR, Retrivable):
         return query(*datas)
 
     def get_ret_as(self):
-        op_expr = self.operations[-1]
-        if op_expr.op_type == AggrExpr:
+        op_body = self.retriever.find_last_iter()
+        if isinstance(op_body, AggrExpr) and op_body.aggr_on.name == self.name:
             return PandasRetType.SERIES
         else:
             return PandasRetType.SCALAR
 
     def ret_for_agg(self):
-        op_expr = self.operations[-1]
-        if op_expr.op_type == AggrExpr:
+        op_body = self.retriever.find_last_iter()
+        if isinstance(op_body, AggrExpr) and op_body.aggr_on.name == self.name:
             return True
 
         return False

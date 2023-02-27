@@ -1,4 +1,5 @@
 # import pandas as pd
+import pysdql
 import pysdql as pd
 from pysdql import tosdql
 
@@ -19,11 +20,16 @@ if __name__ == '__main__':
 
     @tosdql
     def query(lineitem):
-        lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
-        result = lineitem.agg({'revenue': 'sum'})
+        # lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
+        # result = lineitem.agg({'revenue': 'sum'})
+
+        empty_df = pd.DataFrame()
+        empty_df['revenue'] = [(lineitem.l_extendedprice * lineitem.l_discount).sum()]
+        result = empty_df[['revenue']]
+
+        # result = lineitem.agg({'revenue': 'sum'})
 
         # result = (lineitem.l_extendedprice * lineitem.l_discount).sum()
-
         return result
 
     print(query(li))

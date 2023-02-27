@@ -45,10 +45,9 @@ __You may use `pysdql.get_pysdql_path()` to get the absolute path of pysdql pack
 # Write a Query
 With using the `tosdql` decorator, a query in pandas can be transformed to SDQL. 
 If pandas was installed, the result will be as the same type and value as that in pandas. 
-Otherwise, it will be a python dictionary.
+Otherwise, it will be transformed to python built-in types.
 
-## Example 1.1
-__Load Data__
+## Example 1.1: Load Data
 ```
 import pysdql as pd
 
@@ -66,8 +65,7 @@ li = pd.read_csv(f"path/to/dataset/lineitem.tbl",
                  parse_dates=['l_shipdate', 'l_commitdate', 'l_receiptdate'])
 ```
 
-## Example 1.2
-__use `tosdql` decorator__
+## Example 1.2: `tosdql` decorator
 ```
 @tosdql
 def query(lineitem):
@@ -86,7 +84,7 @@ revenue    1.080857e+09
 dtype: float64
 ```
 
-## Example 2
+## Example 1.3: `.run_in_sdql()`
 When decorators are not applicable, use `result.run_in_sdql()`, 
 which is equivalent to the decorator.
 ```
@@ -102,4 +100,35 @@ __output__
 ```
 
 # TPC-H Test
+pysdql provides all 22 TPC-H benchmark queries to verify the correctness, 
+to run these queries, `pysdql.tpch_query()` is particularly useful.
+
+The templates for TPC-H queries are provided in `pysdql/query/tpch/template.py`
+
+## Example 2.1: TPC-H Benchmark
+```python
+import pysdql
+
+# test single query
+pysdql.tpch_query(1)
+
+# test single query
+pysdql.tpch_query(1)
+
+# test a range of queries
+pysdql.tpch_query(range(1, 11))
+
+# test a list of queries
+pysdql.tpch_query([1, 11, 21])
+
+# set optimize=False to get unoptimized results
+pysdql.tpch_query(1, optimize=False)
+
+# set execution_mode and threads_count
+pysdql.tpch_query(1, execution_mode=0, threads_count=1)
+
+# set verbose=False summary results
+pysdql.tpch_query(1, verbose=True)
+```
+
 
