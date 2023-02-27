@@ -1241,6 +1241,9 @@ class DataFrame(FlexIR, Retrivable):
             return ''
 
     def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
+        if datasets is None:
+            datasets = []
+
         pysdql_path = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent.absolute()
 
         tmp_file_path = f'{pysdql_path}/cache/query.py'
@@ -1253,8 +1256,10 @@ class DataFrame(FlexIR, Retrivable):
             if isinstance(i, DataFrame):
                 compile_params += f'"{i}": {i.dtypes_as_str()}'
 
+        print(compile_params)
+
         query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
-                      f'@sdql_compile({{f{compile_params}}})',
+                      f'@sdql_compile({{{compile_params}}})',
                       f'def query({names}):',
                       self.to_sdqlir(indent=indent),
                       f'{indent}return results',
@@ -1284,4 +1289,7 @@ class DataFrame(FlexIR, Retrivable):
         return False
 
     def sort_values(self, by=None, ascending=None):
+        return self
+
+    def head(self, val):
         return self

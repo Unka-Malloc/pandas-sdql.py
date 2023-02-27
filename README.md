@@ -129,4 +129,8 @@ pysdql.tpch_query(1, execution_mode=0, threads_count=1)
 
 # set verbose=False summary results
 pysdql.tpch_query(1, verbose=True)
+<<<<<<< Updated upstream
 ```
+=======
+```
+>>>>>>> Stashed changes

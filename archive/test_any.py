@@ -27,8 +27,6 @@ if __name__ == '__main__':
         empty_df['revenue'] = [(lineitem.l_extendedprice * lineitem.l_discount).sum()]
         result = empty_df[['revenue']]
 
-        # result = lineitem.agg({'revenue': 'sum'})
-
         # result = (lineitem.l_extendedprice * lineitem.l_discount).sum()
         return result
 
