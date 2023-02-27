@@ -17,6 +17,13 @@ issue_info = {
 
 }
 
+def is_iterable(val):
+    try:
+        iter(val)
+        return True
+    except TypeError:
+        return False
+
 def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimize=True) -> bool:
     done = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
@@ -31,7 +38,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
 
         qindex = [qindex]
 
-    if isinstance(qindex, (tuple, list)):
+    if isinstance(qindex, (tuple, list)) or is_iterable(qindex):
         check_dict = {}
         for q in qindex:
             if q not in done:

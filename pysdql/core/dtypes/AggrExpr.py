@@ -23,6 +23,20 @@ class AggrExpr(FlexIR):
 
         self.update_sum = update_sum
 
+    @staticmethod
+    def rename_aggr_key(aggr_dict, from_name, to_name):
+        if len(aggr_dict.keys()) == 1:
+            key = list(aggr_dict.keys())[0]
+            if key == from_name:
+                val = aggr_dict[key]
+                aggr_dict = {to_name: val}
+
+        return aggr_dict
+
+    def update_default(self, name):
+        self.aggr_op = self.rename_aggr_key(self.aggr_op, 'sum_agg', name)
+        self.origin_dict = self.rename_aggr_key(self.origin_dict, 'sum_agg', name)
+
     def run_in_sdql(self, datasets=None, optimize=True, indent='    '):
         return self.aggr_on.run_in_sdql(
             datasets=datasets,
@@ -82,4 +96,3 @@ class AggrExpr(FlexIR):
 
     def show(self):
         self.aggr_on.show()
-
