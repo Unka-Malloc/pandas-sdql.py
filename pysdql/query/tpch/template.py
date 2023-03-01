@@ -34,6 +34,9 @@ def tpch_q1(lineitem):
              sum_base_price=("l_extendedprice", "sum"),
              sum_disc_price=("disc_price", "sum"),
              sum_charge=("charge", "sum"),
+             avg_qty=("l_quantity", "mean"),
+             avg_price=("l_extendedprice", "mean"),
+             avg_disc=("l_discount", "mean"),
              count_order=("l_quantity", "count"))
 
     return result
@@ -403,12 +406,6 @@ def tpch_q12(orders, lineitem):
                        (lineitem['l_commitdate'] < lineitem['l_receiptdate'])
                        & (lineitem['l_shipdate'] < lineitem['l_commitdate'])
                        & (lineitem['l_receiptdate'] >= var2) & (lineitem['l_receiptdate'] < var3)]
-
-    #
-    # li_agg = lineitem.groupby(['l_orderkey'], as_index=False) \
-    #     .agg({'l_shipmode', 'count'})
-
-    # li_ord_join = li_filt.merge(orders, left_on='l_orderkey', right_on='o_orderkey')
 
     li_ord_join = orders.merge(li_filt, left_on='o_orderkey', right_on='l_orderkey')
 
