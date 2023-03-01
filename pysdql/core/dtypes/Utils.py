@@ -13,29 +13,30 @@ def date_fmt(value) -> int:
     if is_datetime(value):
         date = datetime.strptime(value.replace('"', ''), '%Y-%m-%d %H:%M:%S')
         mo = str(date.month)
-        d = str(date.day)
-        h = str(date.hour)
-        mi = str(date.minute)
-        s = str(date.second)
+        this_day = str(date.day)
+        this_hour = str(date.hour)
+        this_minute = str(date.minute)
+        this_sec = str(date.second)
         if len(mo) == 1:
             mo = f'0{mo}'
-        if len(d) == 1:
-            d = f'0{d}'
-        if len(mi) == 1:
-            mi = f'0{mi}'
-        if len(s) == 1:
-            s = f'0{s}'
-        return int(f'{date.year}{mo}{d}{h}{mi}{s}')
+        if len(this_day) == 1:
+            this_day = f'0{this_day}'
+
+        if len(this_minute) == 1:
+            this_minute = f'0{this_minute}'
+        if len(this_sec) == 1:
+            this_sec = f'0{this_sec}'
+        return int(f'{date.year}{mo}{this_day}')
 
     if is_date(value):
         date = datetime.strptime(value.replace('"', ''), '%Y-%m-%d')
         m = str(date.month)
-        d = str(date.day)
+        this_day = str(date.day)
         if len(m) == 1:
             m = f'0{m}'
-        if len(d) == 1:
-            d = f'0{d}'
-        return int(f'{date.year}{m}{d}')
+        if len(this_day) == 1:
+            this_day = f'0{this_day}'
+        return int(f'{date.year}{m}{this_day}')
 
 
 def is_date(data) -> bool:

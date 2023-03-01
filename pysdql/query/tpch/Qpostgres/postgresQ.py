@@ -56,11 +56,13 @@ def q1(execution_mode=0, threads_count=1, optimize=True):
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
-    import pysdql.query.tpch.Qsdql.Q1 as Q
+    import pysdql.query.tpch.Qpostgres.Q1 as Q
 
     query_start = time.time()
 
     sdql_result = Q.query(lineitem_data)
+
+    print(sdql_result)
 
     query_end = time.time()
 
@@ -86,7 +88,7 @@ def q2(execution_mode=0, threads_count=1, optimize=True):
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
     region_data = read_csv(rf'{DATAPATH}/region.tbl', REGION_TYPE, "re")
 
-    import pysdql.query.tpch.Qsdql.Q2 as Q
+    import pysdql.query.tpch.Qpostgres.Q2 as Q
 
     query_start = time.time()
 
@@ -112,7 +114,7 @@ def q3(execution_mode=0, threads_count=1, optimize=True):
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
 
-    import pysdql.query.tpch.Qsdql.Q3 as Q
+    import pysdql.query.tpch.Qpostgres.Q3 as Q
 
     query_start = time.time()
 
@@ -136,7 +138,7 @@ def q4(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
 
-    import pysdql.query.tpch.Qsdql.Q4 as Q
+    import pysdql.query.tpch.Qpostgres.Q4 as Q
 
     query_start = time.time()
 
@@ -168,7 +170,7 @@ def q5(execution_mode=0, threads_count=1, optimize=True):
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
 
-    import pysdql.query.tpch.Qsdql.Q5 as Q
+    import pysdql.query.tpch.Qpostgres.Q5 as Q
 
     query_start = time.time()
 
@@ -190,7 +192,7 @@ def q6(execution_mode=0, threads_count=1, optimize=True):
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
-    import pysdql.query.tpch.Qsdql.Q6 as Q
+    import pysdql.query.tpch.Qpostgres.Q6 as Q
 
     query_start = time.time()
 
@@ -220,7 +222,7 @@ def q7(execution_mode=0, threads_count=1, optimize=True):
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
 
-    import pysdql.query.tpch.Qsdql.Q7 as Q
+    import pysdql.query.tpch.Qpostgres.Q7 as Q
 
     query_start = time.time()
 
@@ -254,7 +256,7 @@ def q8(execution_mode=0, threads_count=1, optimize=True):
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
     region_data = read_csv(rf'{DATAPATH}/region.tbl', REGION_TYPE, "re")
 
-    import pysdql.query.tpch.Qsdql.Q8 as Q
+    import pysdql.query.tpch.Qpostgres.Q8 as Q
 
     query_start = time.time()
 
@@ -287,7 +289,7 @@ def q9(execution_mode=0, threads_count=1, optimize=True):
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
     partsupp_data = read_csv(rf'{DATAPATH}/partsupp.tbl', PARTSUPP_TYPE, "ps")
 
-    import pysdql.query.tpch.Qsdql.Q9 as Q
+    import pysdql.query.tpch.Qpostgres.Q9 as Q
 
     query_start = time.time()
 
@@ -315,7 +317,7 @@ def q10(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
 
-    import pysdql.query.tpch.Qsdql.Q10 as Q
+    import pysdql.query.tpch.Qpostgres.Q10 as Q
 
     query_start = time.time()
 
@@ -341,7 +343,7 @@ def q11(execution_mode=0, threads_count=1, optimize=True):
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
 
-    import pysdql.query.tpch.Qsdql.Q11 as Q
+    import pysdql.query.tpch.Qpostgres.Q11 as Q
 
     query_start = time.time()
 
@@ -365,7 +367,7 @@ def q12(execution_mode=0, threads_count=1, optimize=True):
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
-    import pysdql.query.tpch.Qsdql.Q12 as Q
+    import pysdql.query.tpch.Qpostgres.Q12 as Q
 
     query_start = time.time()
 
@@ -389,7 +391,7 @@ def q13(execution_mode=0, threads_count=1, optimize=True):
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
 
-    import pysdql.query.tpch.Qsdql.Q13 as Q
+    import pysdql.query.tpch.Qpostgres.Q13 as Q
 
     query_start = time.time()
 
@@ -413,7 +415,7 @@ def q14(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
 
-    import pysdql.query.tpch.Qsdql.Q14 as Q
+    import pysdql.query.tpch.Qpostgres.Q14 as Q
 
     query_start = time.time()
 
@@ -437,7 +439,7 @@ def q15(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
 
-    import pysdql.query.tpch.Qsdql.Q15 as Q
+    import pysdql.query.tpch.Qpostgres.Q15 as Q
 
     query_start = time.time()
 
@@ -463,7 +465,7 @@ def q16(execution_mode=0, threads_count=1, optimize=True):
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")
 
-    import pysdql.query.tpch.Qsdql.Q16 as Q
+    import pysdql.query.tpch.Qpostgres.Q16 as Q
 
     query_start = time.time()
 
@@ -487,7 +489,7 @@ def q17(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
 
-    import pysdql.query.tpch.Qsdql.Q17 as Q
+    import pysdql.query.tpch.Qpostgres.Q17 as Q
 
     query_start = time.time()
 
@@ -513,7 +515,7 @@ def q18(execution_mode=0, threads_count=1, optimize=True):
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
 
-    import pysdql.query.tpch.Qsdql.Q18 as Q
+    import pysdql.query.tpch.Qpostgres.Q18 as Q
 
     query_start = time.time()
 
@@ -537,7 +539,7 @@ def q19(execution_mode=0, threads_count=1, optimize=True):
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
 
-    import pysdql.query.tpch.Qsdql.Q19 as Q
+    import pysdql.query.tpch.Qpostgres.Q19 as Q
 
     query_start = time.time()
 
@@ -567,7 +569,7 @@ def q20(execution_mode=0, threads_count=1, optimize=True):
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
 
-    import pysdql.query.tpch.Qsdql.Q20 as Q
+    import pysdql.query.tpch.Qpostgres.Q20 as Q
 
     query_start = time.time()
 
@@ -595,7 +597,7 @@ def q21(execution_mode=0, threads_count=1, optimize=True):
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
     nation_data = read_csv(rf'{DATAPATH}/nation.tbl', NATION_TYPE, "na")
 
-    import pysdql.query.tpch.Qsdql.Q21 as Q
+    import pysdql.query.tpch.Qpostgres.Q21 as Q
 
     query_start = time.time()
 
@@ -619,7 +621,7 @@ def q22(execution_mode=0, threads_count=1, optimize=True):
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")
 
-    import pysdql.query.tpch.Qsdql.Q22 as Q
+    import pysdql.query.tpch.Qpostgres.Q22 as Q
 
     query_start = time.time()
 

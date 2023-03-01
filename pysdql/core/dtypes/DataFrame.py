@@ -613,6 +613,8 @@ class DataFrame(FlexIR, Retrivable):
                              op_on=self,
                              op_iter=False))
 
+        return self
+
     def rename_col_scalar(self, key, value):
         raise NotImplementedError
 
@@ -642,7 +644,13 @@ class DataFrame(FlexIR, Retrivable):
             output += op_expr.get_op_name_suffix()
         return output
 
-    def merge(self, right, how='inner', left_on=None, right_on=None):
+    def merge(self, right, how='inner', left_on=None, right_on=None, sort=False):
+        if isinstance(left_on, list) and len(left_on) == 1:
+            left_on = left_on[0]
+
+        if isinstance(right_on, list) and len(right_on) == 1:
+            right_on = right_on[0]
+
         next_context_var = {}
         for k in self.context_variable.keys():
             next_context_var[k] = self.context_variable[k]
@@ -1009,7 +1017,7 @@ class DataFrame(FlexIR, Retrivable):
     def get_groupby_aggr(self, next_op=None) -> LetExpr:
         return GroupbyAggrFrame(self).get_groupby_aggr_expr(next_op)
 
-    def reset_index(self):
+    def reset_index(self, level=0):
         return self
 
     def unopt_to_sdqlir(self, indent='    '):
