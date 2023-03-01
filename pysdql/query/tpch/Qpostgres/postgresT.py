@@ -26,19 +26,27 @@ tpch_vars = {1: ("1998-09-02",),
 
 
 def tpch_q1(lineitem):
-    li_filt = lineitem[(lineitem['l_shipdate'] <= tpch_vars[1][0])]
-    li_filt["disc_price"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount'])
-    li_filt["charge"] = li_filt['l_extendedprice'] * (1.0 - li_filt['l_discount']) * (1.0 + li_filt['l_tax'])
-
-    result = li_filt \
-        .groupby(["l_returnflag", "l_linestatus"], as_index=False) \
-        .agg(sum_qty=("l_quantity", "sum"),
-             sum_base_price=("l_extendedprice", "sum"),
-             sum_disc_price=("disc_price", "sum"),
-             sum_charge=("charge", "sum"),
-             count_order=("l_quantity", "count"))
-
-    return result
+    df_filter_1 = lineitem[(lineitem.l_shipdate <= '1998-09-02 00:00:00')]
+    df_filter_1 = df_filter_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
+    df_sort_1 = df_filter_1.sort_values(by=['l_returnflag', 'l_linestatus'], ascending=[True, True])
+    df_sort_1 = df_sort_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
+    df_sort_1['before_1'] = ((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount)))
+    df_sort_1['before_2'] = (((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount))) * (1 + (df_sort_1.l_tax)))
+    df_group_1 = df_sort_1 \
+        .groupby(['l_returnflag', 'l_linestatus'], sort=False) \
+        .agg(
+            sum_qty=("l_quantity", "sum"),
+            sum_base_price=("l_extendedprice", "sum"),
+            sum_disc_price=("before_1", "sum"),
+            sum_charge=("before_2", "sum"),
+            avg_qty=("l_quantity", "mean"),
+            avg_price=("l_extendedprice", "mean"),
+            avg_disc=("l_discount", "mean"),
+            count_order=("l_returnflag", "count"),
+        )
+    df_group_1 = df_group_1[['sum_qty', 'sum_base_price', 'sum_disc_price', 'sum_charge', 'avg_qty', 'avg_price', 'avg_disc', 'count_order']]
+    df_limit_1 = df_group_1.head(1)
+    return df_limit_1
 
 
 def tpch_q2(part, supplier, partsupp, nation, region):
@@ -81,71 +89,86 @@ def tpch_q2(part, supplier, partsupp, nation, region):
 
 
 def tpch_q3(lineitem, customer, orders):
-    var1 = tpch_vars[3][0]
-    var2 = tpch_vars[3][1]
-
-    cu_filt = customer[customer['c_mktsegment'] == var1]
-
-    ord_filt = orders[orders['o_orderdate'] < var2]
-
-    cu_ord_join = cu_filt.merge(ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
-
-    # return cu_ord_join
-
-    li_filt = lineitem[lineitem['l_shipdate'] > var2]
-    li_ord_join = cu_ord_join.merge(li_filt, left_on="o_orderkey", right_on="l_orderkey", how="inner")
-    li_ord_join["revenue"] = li_ord_join['l_extendedprice'] * (1.0 - li_ord_join['l_discount'])
-
-    result = li_ord_join \
-        .groupby(["l_orderkey", "o_orderdate", "o_shippriority"], as_index=False) \
-        .agg({'revenue': 'sum'})
-
-    return result
+    df_filter_1 = lineitem[(lineitem.l_shipdate > '1995-03-15 00:00:00')]
+    df_filter_1 = df_filter_1[['l_orderkey', 'l_extendedprice', 'l_discount']]
+    df_filter_2 = orders[(orders.o_orderdate < '1995-03-15 00:00:00')]
+    df_filter_2 = df_filter_2[['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment']]
+    df_filter_3 = customer[(customer.c_mktsegment == 'BUILDING')]
+    df_filter_3 = df_filter_3[['c_custkey']]
+    df_merge_1 = df_filter_2.merge(df_filter_3, left_on=['o_custkey'], right_on=['c_custkey'], how="inner", sort=False)
+    df_merge_1 = df_merge_1[['o_orderdate', 'o_shippriority', 'o_orderkey']]
+    df_merge_2 = df_filter_1.merge(df_merge_1, left_on=['l_orderkey'], right_on=['o_orderkey'], how="inner", sort=False)
+    df_merge_2 = df_merge_2[['l_orderkey', 'o_orderdate', 'o_shippriority', 'l_extendedprice', 'l_discount']]
+    df_sort_1 = df_merge_2.sort_values(by=['l_orderkey', 'o_orderdate', 'o_shippriority'], ascending=[True, True, True])
+    df_sort_1 = df_sort_1[['l_orderkey', 'o_orderdate', 'o_shippriority', 'l_extendedprice', 'l_discount']]
+    df_sort_1['before_1'] = ((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount)))
+    df_group_1 = df_sort_1 \
+        .groupby(['l_orderkey', 'o_orderdate', 'o_shippriority'], sort=False) \
+        .agg(
+            revenue=("before_1", "sum"),
+        )
+    # df_group_1 = df_group_1[['revenue']]
+    # df_sort_2 = df_group_1.sort_values(by=['revenue', 'o_orderdate'], ascending=[False, True])
+    # df_sort_2 = df_sort_2[['revenue']]
+    # df_limit_1 = df_sort_2.head(10)
+    return df_group_1
 
 
 def tpch_q4(orders, lineitem):
-    var1 = tpch_vars[4][0]
-    var2 = tpch_vars[4][1]  # var1 + interval '3' month
-
-    li_filt = lineitem[lineitem.l_commitdate < lineitem.l_receiptdate]
-    li_proj = li_filt[["l_orderkey"]]
-
-    ord_filt = orders[(orders.o_orderdate >= var1)
-                      & (orders.o_orderdate < var2)
-                      & orders.o_orderkey.isin(li_proj["l_orderkey"])]
-
-    results = ord_filt \
-        .groupby(["o_orderpriority"], as_index=False) \
-        .agg(order_count=("o_orderdate", "count"))
-
-    return results
+    df_filter_1 = orders[(orders.o_orderdate >= '1993-07-01 00:00:00') & (orders.o_orderdate < '1993-10-01 00:00:00')]
+    df_filter_1 = df_filter_1[['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk', 'o_shippriority', 'o_comment']]
+    df_filter_2 = lineitem[(lineitem.l_commitdate < lineitem.l_receiptdate)]
+    df_filter_2 = df_filter_2[['l_orderkey']]
+    df_group_1 = df_filter_2 \
+        .groupby(['l_orderkey'], sort=False) \
+        .last()
+    df_group_1 = df_group_1.reset_index(level=0)
+    df_merge_1 = df_filter_1.merge(df_group_1, left_on=['o_orderkey'], right_on=['l_orderkey'], how="inner", sort=False)
+    df_merge_1 = df_merge_1[['o_orderpriority']]
+    df_sort_1 = df_merge_1.sort_values(by=['o_orderpriority'], ascending=[True])
+    df_sort_1 = df_sort_1[['o_orderpriority']]
+    df_group_2 = df_sort_1 \
+        .groupby(['o_orderpriority'], sort=False) \
+        .agg(
+            order_count=("o_orderpriority", "count"),
+        )
+    df_group_2 = df_group_2[['order_count']]
+    df_limit_1 = df_group_2.head(1)
+    return df_limit_1
 
 
 def tpch_q5(lineitem, customer, orders, region, nation, supplier):
-    var1 = tpch_vars[5][0]
-    var2 = tpch_vars[5][1]
-    var3 = tpch_vars[5][2]
-
-    re_filt = region[region['r_name'] == var1]
-
-    re_na_join = re_filt.merge(right=nation, left_on='r_regionkey', right_on='n_regionkey')
-
-    na_cu_join = re_na_join.merge(right=customer, left_on='n_nationkey', right_on='c_nationkey')
-
-    ord_filt = orders[(orders['o_orderdate'] >= var2) & (orders['o_orderdate'] < var3)]
-    cu_ord_join = na_cu_join.merge(right=ord_filt, left_on='c_custkey', right_on='o_custkey')
-
-    ord_li_join = cu_ord_join.merge(right=lineitem, left_on='o_orderkey', right_on='l_orderkey')
-
-    su_ord_li_join = supplier.merge(right=ord_li_join,
-                                    left_on=['s_suppkey', 's_nationkey'],
-                                    right_on=['l_suppkey', 'c_nationkey'])
-
-    su_ord_li_join['revenue'] = su_ord_li_join['l_extendedprice'] * (1.0 - su_ord_li_join['l_discount'])
-
-    result = su_ord_li_join.groupby(['n_name'], as_index=False).agg(revenue=('revenue', 'sum'))
-
-    return result
+    df_filter_1 = lineitem[['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode', 'l_comment']]
+    df_filter_2 = supplier[['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']]
+    df_filter_3 = nation[['n_nationkey', 'n_name', 'n_regionkey', 'n_comment']]
+    df_filter_4 = region[(region.r_name == 'ASIA')]
+    df_filter_4 = df_filter_4[['r_regionkey']]
+    df_merge_1 = df_filter_3.merge(df_filter_4, left_on=['n_regionkey'], right_on=['r_regionkey'], how="inner", sort=False)
+    df_merge_1 = df_merge_1[['n_name', 'n_nationkey']]
+    df_merge_2 = df_filter_2.merge(df_merge_1, left_on=['s_nationkey'], right_on=['n_nationkey'], how="inner", sort=False)
+    df_merge_2 = df_merge_2[['s_suppkey', 's_nationkey', 'n_name', 'n_nationkey']]
+    df_merge_3 = df_filter_1.merge(df_merge_2, left_on=['l_suppkey'], right_on=['s_suppkey'], how="inner", sort=False)
+    df_merge_3 = df_merge_3[['l_extendedprice', 'l_discount', 'l_orderkey', 's_nationkey', 'n_name', 'n_nationkey']]
+    df_filter_5 = orders[(orders.o_orderdate >= '1994-01-01 00:00:00') & (orders.o_orderdate < '1995-01-01 00:00:00')]
+    df_filter_5 = df_filter_5[['o_custkey', 'o_orderkey']]
+    df_merge_4 = df_merge_3.merge(df_filter_5, left_on=['l_orderkey'], right_on=['o_orderkey'], how="inner", sort=False)
+    df_merge_4 = df_merge_4[['o_custkey', 'l_extendedprice', 'l_discount', 's_nationkey', 'n_name', 'n_nationkey']]
+    df_filter_6 = customer[['c_custkey', 'c_nationkey']]
+    df_merge_5 = df_merge_4.merge(df_filter_6, left_on=['o_custkey', 's_nationkey'], right_on=['c_custkey', 'c_nationkey'], how="inner", sort=False)
+    df_merge_5 = df_merge_5[['n_name', 'l_extendedprice', 'l_discount']]
+    df_sort_1 = df_merge_5.sort_values(by=['n_name'], ascending=[True])
+    df_sort_1 = df_sort_1[['n_name', 'l_extendedprice', 'l_discount']]
+    df_sort_1['before_1'] = ((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount)))
+    df_group_1 = df_sort_1 \
+        .groupby(['n_name'], sort=False) \
+        .agg(
+            revenue=("before_1", "sum"),
+        )
+    df_group_1 = df_group_1[['revenue']]
+    df_sort_2 = df_group_1.sort_values(by=['revenue'], ascending=[False])
+    df_sort_2 = df_sort_2[['revenue']]
+    df_limit_1 = df_sort_2.head(1)
+    return df_limit_1
 
 
 def tpch_q6(lineitem):

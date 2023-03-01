@@ -25,11 +25,46 @@ class GroupbyAggrFrame:
         groupby_aggr_info = self.retriever.find_groupby_aggr()
 
         aggr_dict = groupby_aggr_info.aggr_dict
+        origin_dict = groupby_aggr_info.origin_dict
         groupby_cols = groupby_aggr_info.groupby_cols
 
         cond = self.retriever.find_cond_before(GroupbyAggrExpr)
         col_ins = self.retriever.find_col_ins_before(GroupbyAggrExpr)
         isin_expr = self.retriever.find_isin_before(GroupbyAggrExpr)
+
+        global_count_name = 'global_count'
+
+        raw_cols_count = []
+
+        cols_sum = []
+        cols_mean = []
+        key_mean = []
+        mean_mapper = {}
+
+        for k in origin_dict.keys():
+            if origin_dict[k][1] == 'sum':
+                cols_sum.append(origin_dict[k][0])
+            if origin_dict[k][1] == 'mean':
+                mean_mapper[f'{k}_sum_for_mean'] = k
+                mean_mapper[f'{k}_count_for_mean'] = k
+                cols_mean.append(origin_dict[k][0])
+                key_mean.append(k)
+            if origin_dict[k][1] == 'count':
+                raw_cols_count.append(origin_dict[k][0])
+
+        cols_to_go = list(set(i for i in cols_mean if i in cols_sum))
+
+        index_mapper = {}
+        for k in origin_dict.keys():
+            if origin_dict[k][0] in cols_to_go:
+                if origin_dict[k][0] not in index_mapper.keys():
+                    index_mapper[origin_dict[k][0]] = [k]
+                else:
+                    index_mapper[origin_dict[k][0]].append(k)
+
+        mean_to_go = [tuple(index_mapper[i]) for i in index_mapper.keys()]
+
+        has_count_for_mean = False
 
         if len(groupby_cols) == 0:
             raise ValueError()
@@ -56,7 +91,7 @@ class GroupbyAggrFrame:
             Aggregation as a single value
             Then format to a singleton dictionary
             '''
-
+            dict_key = list(aggr_dict.items())[0][0]
             dict_val = list(aggr_dict.items())[0][1]
 
             if isinstance(dict_val, RecAccessExpr):
@@ -91,6 +126,10 @@ class GroupbyAggrFrame:
                     # (, 'sum')
                     v_name = v.name
 
+                    if 'sum_for_mean' in k:
+                        if v_name in cols_to_go:
+                            continue
+
                     if v_name in self.aggr_on.columns:
                         val_tuples.append((k, self.aggr_on.key_access(v_name)))
                     else:
@@ -101,7 +140,12 @@ class GroupbyAggrFrame:
                             raise IndexError(f'Cannot find column {v_name} in {self.aggr_on.columns}')
                 elif isinstance(v, ConstantExpr):
                     # (, 'count')
-                    val_tuples.append((k, v))
+                    if 'count_for_mean' in k:
+                        continue
+                    else:
+                        val_tuples.append((k, v))
+                        global_count_name = k
+                        has_count_for_mean = True
                 else:
                     raise NotImplementedError
 
@@ -130,8 +174,8 @@ class GroupbyAggrFrame:
                                    elseBodyExpr=ConstantExpr(None))
             else:
                 aggr_body = IfExpr(condExpr=cond.sdql_ir,
-                               thenBodyExpr=aggr_body,
-                               elseBodyExpr=ConstantExpr(None))
+                                   thenBodyExpr=aggr_body,
+                                   elseBodyExpr=ConstantExpr(None))
 
         if isin_expr:
             aggr_body = SDQLInspector.add_cond(aggr_body,
@@ -180,18 +224,56 @@ class GroupbyAggrFrame:
                                       PairAccessExpr(self.var_x_aggr, 0))]
 
                 for k in aggr_dict.keys():
-                    format_key_tuples.append((k,
-                                              RecAccessExpr(PairAccessExpr(self.var_x_aggr,
-                                                                           1),
-                                                            k)))
+                    if k in cols_mean:
+                        raise NotImplementedError
+                    else:
+                        format_key_tuples.append((k,
+                                                  RecAccessExpr(PairAccessExpr(self.var_x_aggr,
+                                                                               1),
+                                                                k)))
 
                 format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
                                           ConstantExpr(True))])
             else:
                 # aggr = {record : record}
-                format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(self.var_x_aggr, 0),
-                                                     PairAccessExpr(self.var_x_aggr, 1)),
-                                          ConstantExpr(True))])
+                format_key_tuples = [(i, RecAccessExpr(PairAccessExpr(self.var_x_aggr, 0), i)) for i in groupby_cols]
+
+                if cols_mean:
+                    mean_buffer = {}
+                    for k in aggr_dict.keys():
+                        if 'for_mean' in k:
+                            if 'sum_for_mean' in k:
+                                striped_key = k.replace('_sum_for_mean', '')
+                                for i in mean_to_go:
+                                    if striped_key in i:
+                                        mean_buffer[k] = RecAccessExpr(PairAccessExpr(self.var_x_aggr, 1),
+                                                                       [j for j in i if j != striped_key][0])
+                                        break
+                                else:
+                                    mean_buffer[k] = RecAccessExpr(
+                                        PairAccessExpr(self.var_x_aggr,
+                                                       1), k)
+                            else:
+                                count_expr = RecAccessExpr(PairAccessExpr(self.var_x_aggr,
+                                                                          1),
+                                                           global_count_name)
+
+                                format_key_tuples.append((mean_mapper[k],
+                                                          DivExpr(mean_buffer[k.replace('count_for_mean', 'sum_for_mean')],
+                                                                  count_expr)
+                                                          ))
+                        else:
+                            format_key_tuples.append((k,
+                                                      RecAccessExpr(PairAccessExpr(self.var_x_aggr,
+                                                                                   1),
+                                                                    k)))
+
+                    format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
+                                              ConstantExpr(True))])
+                else:
+                    format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(self.var_x_aggr, 0),
+                                                         PairAccessExpr(self.var_x_aggr, 1)),
+                                              ConstantExpr(True))])
 
         format_sum = SumExpr(varExpr=self.var_x_aggr,
                              dictExpr=self.var_aggr,

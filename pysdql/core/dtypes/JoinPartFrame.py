@@ -41,6 +41,9 @@ class JoinPartFrame:
     @property
     def group_key(self):
         renamed_cols = self.retriever.findall_col_rename(reverse=True)
+        if isinstance(self.__group_key, list) and len(self.__group_key) == 1:
+            self.__group_key = self.__group_key[0]
+
         if isinstance(self.__group_key, str):
             if self.__group_key in renamed_cols.keys():
                 return renamed_cols[self.__group_key]
@@ -49,6 +52,9 @@ class JoinPartFrame:
 
     @property
     def part_key(self):
+        if isinstance(self.__group_key, list) and len(self.__group_key) == 1:
+            self.__group_key = self.__group_key[0]
+
         renamed_cols = self.retriever.findall_col_rename(reverse=True)
         if isinstance(self.__group_key, str):
             if self.__group_key in renamed_cols.keys():

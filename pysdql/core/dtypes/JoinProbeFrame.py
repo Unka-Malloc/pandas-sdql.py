@@ -63,9 +63,13 @@ class JoinProbeFrame:
 
     @property
     def probe_key(self):
+        if isinstance(self.__probe_key, list) and len(self.__probe_key) == 1:
+            return self.__probe_key[0]
         return self.__probe_key
 
     def get_probe_key(self):
+        if isinstance(self.__probe_key, list) and len(self.__probe_key) == 1:
+            return self.__probe_key[0]
         return self.__probe_key
 
     @property
@@ -119,7 +123,7 @@ class JoinProbeFrame:
         return str(
             {
                 'probe': 'frame',
-                'probe_key': self.__probe_key,
+                'probe_key': self.probe_key,
                 'cond': self.__iter_cond,
                 'cols': self.__col_proj
             }
