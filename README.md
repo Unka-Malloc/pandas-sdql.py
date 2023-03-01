@@ -130,3 +130,49 @@ pysdql.tpch_query(1, execution_mode=0, threads_count=1)
 # set verbose=False summary results
 pysdql.tpch_query(1, verbose=True)
 ```
+
+# Query Plans
+## Q1
+![QueryPlan](docs/QueryPlan/Q01.png)
+## Q2
+![QueryPlan](docs/QueryPlan/Q02.png)
+## Q3
+![QueryPlan](docs/QueryPlan/Q03.png)
+## Q4
+![QueryPlan](docs/QueryPlan/Q04.png)
+## Q5
+![QueryPlan](docs/QueryPlan/Q05.png)
+## Q6
+![QueryPlan](docs/QueryPlan/Q06.png)
+## Q7
+![QueryPlan](docs/QueryPlan/Q07.png)
+## Q8
+![QueryPlan](docs/QueryPlan/Q08.png)
+## Q9
+![QueryPlan](docs/QueryPlan/Q09.png)
+## Q10
+![QueryPlan](docs/QueryPlan/Q10.png)
+## Q11
+![QueryPlan](docs/QueryPlan/Q11.png)
+## Q12
+![QueryPlan](docs/QueryPlan/Q12.png)
+## Q13
+![QueryPlan](docs/QueryPlan/Q13.png)
+## Q14
+![QueryPlan](docs/QueryPlan/Q14.png)
+## Q15
+![QueryPlan](docs/QueryPlan/Q15.png)
+## Q16
+![QueryPlan](docs/QueryPlan/Q16.png)
+## Q17
+![QueryPlan](docs/QueryPlan/Q17.png)
+## Q18
+![QueryPlan](docs/QueryPlan/Q18.png)
+## Q19
+![QueryPlan](docs/QueryPlan/Q19.png)
+## Q20
+![QueryPlan](docs/QueryPlan/Q20.png)
+## Q21
+![QueryPlan](docs/QueryPlan/Q21.png)
+## Q22
+![QueryPlan](docs/QueryPlan/Q22.png)

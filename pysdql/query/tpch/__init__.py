@@ -9,6 +9,8 @@ import pysdql.query.tpch.Qsdql
 
 import pysdql.query.tpch.Qpandas
 
+import pysdql.query.tpch.Qpostgres
+
 from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
 sep_line = '=' * 60
@@ -24,7 +26,7 @@ def is_iterable(val):
     except TypeError:
         return False
 
-def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimize=True) -> bool:
+def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimize=True, mode='') -> bool:
     done = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
 
     enable_pandas_verification = is_pandas_available() & is_verification_enabled()
@@ -54,7 +56,10 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                 print(f'>> SDQL <<')
 
             try:
-                sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
+                if mode == 'postgres':
+                    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+                else:
+                    sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
 
@@ -95,6 +100,8 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                     continue
 
                 pandas_df = pandas_to_df(pandas_result)
+
+                pandas_df = pandas_df.reset_index(drop=True)
 
                 if verbose:
                     print(pandas_result)

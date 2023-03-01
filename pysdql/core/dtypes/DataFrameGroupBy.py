@@ -78,6 +78,9 @@ class DataFrameGroupBy:
             if callable(agg_flag):
                 # received lambda function
                 agg_dict[agg_key] = ConstantExpr(1)
+            if agg_flag == 'mean':
+                agg_dict[f'{agg_key}_sum_for_mean'] = agg_calc
+                agg_dict[f'{agg_key}_count_for_mean'] = ConstantExpr(1)
 
         groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
                                       groupby_cols=self.groupby_cols,
@@ -106,4 +109,7 @@ class DataFrameGroupBy:
 
         self.groupby_from.push(op_expr)
 
+        return self.groupby_from
+
+    def last(self):
         return self.groupby_from

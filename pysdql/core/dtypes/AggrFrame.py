@@ -66,6 +66,11 @@ class AggrFrame:
                                        DivExpr,
                                        )):
                 aggr_body = dict_val
+
+                if cond:
+                    aggr_body = IfExpr(condExpr=cond.sdql_ir,
+                                       thenBodyExpr=aggr_body,
+                                       elseBodyExpr=ConstantExpr(0))
             else:
                 raise NotImplementedError(dict_val)
         else:

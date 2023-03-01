@@ -366,6 +366,9 @@ class SDQLInspector:
             all_list += func(arg2, *args)
             all_list += func(arg3, *args)
 
+        elif type(sdql_obj) == tuple:
+            for i in sdql_obj:
+                all_list += func(i, *args)
         else:
             print(sdql_obj)
             raise NotImplementedError(f'Unsupport type {type(sdql_obj)}')
@@ -493,6 +496,7 @@ class SDQLInspector:
         result = None
 
         if not len(flatten) >= 2:
+            print(flatten)
             raise ValueError()
         else:
             first_let = flatten[0]
@@ -571,3 +575,14 @@ class SDQLInspector:
     @staticmethod
     def get_last_binding_name(bindings):
         return bindings[-1].varExpr.name
+
+    @staticmethod
+    def findall_non_null(sdql_obj):
+        all_non_null = []
+
+        if isinstance(sdql_obj, DicLookupExpr):
+            all_non_null.append(sdql_obj)
+        else:
+            SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
+
+        return all_non_null

@@ -1048,7 +1048,7 @@ class Retriever:
             # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
             return lookup_expr
-        if key_to == root_probe_key:
+        elif key_to == root_probe_key:
             lookup_expr = root_probe.key_access(root_probe_key)
 
             # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
@@ -1449,3 +1449,6 @@ class Retriever:
             return False
 
         return expr1.oid == expr2.oid
+
+
+

@@ -1,6 +1,5 @@
-# import pandas as pd
-import pysdql
-import pysdql as pd
+import pandas as pd
+# import pysdql as pd
 from pysdql import tosdql
 
 if __name__ == '__main__':
@@ -17,19 +16,19 @@ if __name__ == '__main__':
                             "l_comment": str},
                      parse_dates=['l_shipdate', 'l_commitdate', 'l_receiptdate'])
 
+    print(li.groupby('l_orderkey').agg({'l_orderkey': 'count'}))
 
-    @tosdql
-    def query(lineitem):
-        # lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
-        # result = lineitem.agg({'revenue': 'sum'})
 
-        empty_df = pd.DataFrame()
-        empty_df['revenue'] = [(lineitem.l_extendedprice * lineitem.l_discount).sum()]
-        result = empty_df[['revenue']]
-
-        # result = lineitem.agg({'revenue': 'sum'})
-
-        # result = (lineitem.l_extendedprice * lineitem.l_discount).sum()
-        return result
-
-    print(query(li))
+    # @tosdql
+    # def query(lineitem):
+    #     # lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
+    #     # result = lineitem.agg({'revenue': 'sum'})
+    #
+    #     empty_df = pd.DataFrame()
+    #     empty_df['revenue'] = [(lineitem.l_extendedprice * lineitem.l_discount).sum()]
+    #     result = empty_df[['revenue']]
+    #
+    #     # result = (lineitem.l_extendedprice * lineitem.l_discount).sum()
+    #     return result
+    #
+    # print(query(li))
