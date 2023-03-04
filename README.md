@@ -84,21 +84,6 @@ revenue    1.080857e+09
 dtype: float64
 ```
 
-## Example 1.3: `.run_in_sdql()`
-When decorators are not applicable, use `result.run_in_sdql()`, 
-which is equivalent to the decorator.
-```
-result = (li.l_extendedprice * li.l_discount).sum()
-
-result = result.run_in_sdql()
-
-print(result)
-```
-__output__
-```
-1080857048.824976
-```
-
 # TPC-H Test
 pysdql provides all 22 TPC-H benchmark queries to verify the correctness, 
 to run these queries, `pysdql.tpch_query()` is particularly useful.
