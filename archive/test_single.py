@@ -1,7 +1,10 @@
 import pysdql
 
 if __name__ == '__main__':
-    test_some = pysdql.tpch_query(3, verbose=True, optimize=True, mode='postgres')
+    natural_pass = [1, 6, 12]
+    regex_pass = []
+
+    test_some = pysdql.tpch_query(natural_pass + regex_pass, verbose=True, optimize=True, mode='postgres')
 
     # print(pysdql.query.tpch.Qpostgres.q6())
 
