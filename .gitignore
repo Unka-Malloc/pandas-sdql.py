@@ -1,6 +1,6 @@
 /.idea/
-/.ipynd_checkpoints/
-/doc/.ipynd_checkpoints/
+*/.ipynd_checkpoints/
+*/__pycache__/
 
 /datasets/
 
