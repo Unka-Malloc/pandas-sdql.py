@@ -7,7 +7,8 @@ from pysdql.core.dtypes.sdql_ir import (
     CompareSymbol,
     CompareExpr,
     MulExpr,
-    AddExpr, ConstantExpr,
+    AddExpr,
+    ConstantExpr,
 )
 
 from pysdql.core.dtypes.EnumUtil import (
@@ -20,6 +21,11 @@ class CondExpr(FlexIR):
         self.unit1 = unit1
         self.op = operator
         self.unit2 = unit2
+
+    def __eq__(self, other):
+        return CondExpr(unit1=self,
+                        operator=CompareSymbol.EQ,
+                        unit2=other)
 
     '''
     AND, OR, NOT

@@ -548,6 +548,11 @@ class Retriever:
                 for n in mapper.keys():
                     if col_name in mapper[n]:
                         on.append(n)
+        elif isinstance(cond.unit1, ColExtExpr):
+            col_name = cond.unit1.col.field
+            for n in mapper.keys():
+                if col_name in mapper[n]:
+                    on.append(n)
         elif isinstance(cond.unit1, CondExpr):
             on += Retriever.find_cond_on(cond.unit1, mapper, as_expr)
         elif isinstance(cond.unit1, (ConstantExpr, VarExpr)):
@@ -567,6 +572,11 @@ class Retriever:
                 for n in mapper.keys():
                     if col_name in mapper[n]:
                         on.append(n)
+        elif isinstance(cond.unit2, ColExtExpr):
+            col_name = cond.unit2.col.field
+            for n in mapper.keys():
+                if col_name in mapper[n]:
+                    on.append(n)
         elif isinstance(cond.unit2, CondExpr):
             on += Retriever.find_cond_on(cond.unit2, mapper, as_expr)
         elif isinstance(cond.unit2, (ConstantExpr, VarExpr)):

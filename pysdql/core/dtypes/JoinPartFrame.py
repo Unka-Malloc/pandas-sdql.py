@@ -231,6 +231,13 @@ class JoinPartFrame:
                     self.part_on.key_access(self.part_key),
                     self.col_proj_ir)])
 
+            isin_expr = self.retriever.find_isin('as_probe')
+
+            if isin_expr:
+                part_left_op = IfExpr(condExpr=isin_expr.get_as_cond(),
+                                      thenBodyExpr=part_left_op,
+                                      elseBodyExpr=ConstantExpr(None))
+
             if self.part_cond:
                 part_left_op = IfExpr(condExpr=self.part_cond,
                                       thenBodyExpr=part_left_op,
@@ -245,7 +252,10 @@ class JoinPartFrame:
                                     valExpr=part_left_sum,
                                     bodyExpr=next_probe_op)
 
-            return part_left_let
+            if isin_expr:
+                return isin_expr.get_as_part(part_left_let)
+            else:
+                return part_left_let
         elif isinstance(self.part_key, list):
             all_isin_expr = self.retriever.findall_isin()
             all_isin_cond = []
