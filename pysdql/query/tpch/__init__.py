@@ -1,7 +1,5 @@
 import traceback
 
-import pysdql
-
 from pysdql.config import (
     is_verification_enabled,
     is_pandas_available,
@@ -58,8 +56,10 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
 
             try:
                 if mode == 'postgres':
+                    import pysdql.query.tpch.Qpostgres
                     sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
                 else:
+                    import pysdql.query.tpch.Qsdql
                     sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
             except:
                 check_dict[q] = '\033[31m Error \033[0m'
@@ -85,6 +85,7 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                     print(f'>> Pandas <<')
 
                 try:
+                    import pysdql.query.tpch.Qpandas
                     pandas_result = eval(f'pysdql.query.tpch.Qpandas.q{q}()')
                 except:
                     check_dict[q] = '\033[31m Error \033[0m'
