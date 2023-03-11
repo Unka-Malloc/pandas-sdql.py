@@ -75,12 +75,12 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
 
                 continue
 
-            sdql_df = sdql_to_df(sdql_result)
-
             if verbose:
                 print(sdql_result)
 
             if enable_pandas_verification:
+                sdql_df = sdql_to_df(sdql_result)
+
                 if verbose:
                     print(f'>> Pandas <<')
 
