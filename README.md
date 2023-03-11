@@ -8,10 +8,15 @@ It parses the pandas code and transforms it to SDQL IR, which is then computed b
 git clone https://github.com/cxunka/pd2sd.git
 ```
 
+## Dev(Optional)
+```shell
+git clone --branch PostgresPlan https://github.com/cxunka/pd2sd.git
+```
+
 ## Dependency
 __Linux / Unix / Windows__
 ```
-pip3 install requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ### Essential

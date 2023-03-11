@@ -30,39 +30,6 @@ def pandas_to_df(result):
     else:
         raise NotImplementedError(result)
 
-def sdql_to_py(sdql_obj):
-    if isinstance(sdql_obj, dict):
-        if len(sdql_obj.keys()) == 0:
-            raise NotImplementedError
-        elif len(sdql_obj.keys()) == 1:
-            sdql_rec = list(sdql_obj.keys())[0]
-
-            if isinstance(sdql_rec, record):
-                return {sdql_record_to_pydict(sdql_rec): sdql_obj[sdql_rec]}
-            else:
-                raise NotImplementedError
-        else:
-            raise NotImplementedError
-    elif isinstance(sdql_obj, sr_dict):
-        container = sdql_obj.getContainer()
-
-        if len(container.keys()) == 0:
-            raise NotImplementedError
-        else:
-            res_list = []
-            for k in container.keys():
-                if isinstance(k, record):
-                    res_list.append(sdql_record_to_pydict(k))
-            else:
-                return pandas.DataFrame(concat_pydict(res_list))
-    elif isinstance(sdql_obj, (int, float)):
-        return pandas.DataFrame({'result': [sdql_obj]})
-    elif sdql_obj is None:
-        return pandas.DataFrame({'result': [sdql_obj]})
-    else:
-        print(type(sdql_obj))
-        raise NotImplementedError
-
 def sdql_to_df(sdql_obj, is_agg=False):
     if isinstance(sdql_obj, dict):
         if len(sdql_obj.keys()) == 0:

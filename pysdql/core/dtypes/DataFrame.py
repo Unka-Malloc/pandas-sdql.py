@@ -553,6 +553,8 @@ class DataFrame(FlexIR, Retrivable):
             else:
                 raise NotImplementedError(f'Unsupported external function {item.func}')
 
+        print(f'Unsupported item {item}')
+
     def __getattr__(self, item):
         if type(item) == str:
             return self.get_col(col_name=item)

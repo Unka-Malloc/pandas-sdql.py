@@ -1,6 +1,3 @@
-setuptools
+numpy
 toml
 varname
-numpy
-pandas
-duckdb
