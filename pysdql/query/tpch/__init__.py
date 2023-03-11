@@ -1,5 +1,7 @@
 import traceback
 
+import pysdql
+
 from pysdql.config import (
     is_verification_enabled,
     is_pandas_available,
