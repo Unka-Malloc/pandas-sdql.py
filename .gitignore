@@ -1,11 +1,4 @@
-/output
-/datasets/1M
-/datasets/10M
-/datasets/100M
-/datasets/1G
-/tpch-pysdql-only
-Testing.py
-testing.py
-get_type.py
-tpch-load.ipynb
-Note_Chinese.md
+/.idea/
+/.ipynd_checkpoints/
+/doc/.ipynd_checkpoints/
+/datasets/
