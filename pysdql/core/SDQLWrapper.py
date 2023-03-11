@@ -2,6 +2,9 @@ from functools import wraps
 from pysdql.config import is_pandas_available
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.DataFrame import DataFrame as SdqlDataFrame
+
+from pysdql.core.wrap_util import sdql_to_py
+
 from pysdql.extlib.sdqlpy.sdql_lib import sdqlpy_init
 
 
