@@ -1,2 +1,3 @@
 [configuration]
 enable_verification = true
+data_path = "/home/cxunka/tpch_dataset/100M"

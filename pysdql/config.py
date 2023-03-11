@@ -31,6 +31,10 @@ def set_verify(val: bool):
 def is_verification_enabled():
     with open(get_config_path(), 'r') as file:
         return toml.load(file)['configuration']['enable_verification']
+    
+def get_datapath():
+    with open(get_config_path(), 'r') as file:
+        return toml.load(file)['configuration']['data_path']
 
 def get_config_path():
     return f'{get_pysdql_path()}/config.toml'
