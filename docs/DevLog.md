@@ -4,6 +4,18 @@
 - Q1
 - Q6
 - Q12
+- Q13
+
+## Unexpected Error
+- Q16: possibly primary key issue (ps_partkey, ps_suppkey for partsupp)
+
+## Waiting For Outer Join
+- Q21
+- Q22
+
+## Waiting For Renaming Columns
+- Q7
+- Q21
 
 ## Waiting For Aggregation Insert as List
 - Q6
@@ -15,11 +27,11 @@
 - Q22
 
 ## Waiting For Regex
-- Q2
-- Q9
-- Q13
-- Q16
-- Q20
+-[x] Q2
+-[x] Q9
+-[x] Q13
+-[ ] Q16
+-[ ] Q20
 
 ## Queries That Require `Unique` Function
 - Q3
