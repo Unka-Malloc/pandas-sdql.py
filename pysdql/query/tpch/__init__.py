@@ -5,12 +5,6 @@ from pysdql.config import (
     is_pandas_available,
 )
 
-import pysdql.query.tpch.Qsdql
-
-import pysdql.query.tpch.Qpandas
-
-import pysdql.query.tpch.Qpostgres
-
 from pysdql.query.util import sdql_to_df, pandas_to_df, compare_dataframe
 
 sep_line = '=' * 60
