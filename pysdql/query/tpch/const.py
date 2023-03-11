@@ -4,13 +4,16 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
     date
 )
 
+from pysdql.config import get_datapath()
+
 # There should not be a '/' at the end.
 # Path/should/be/like/this
 # Not/like/this/
 
 # DATAPATH should contain all 8 tbl files
 
-DATAPATH = r'T:/tpch_dataset/100M'
+# DATAPATH = r'T:/tpch_dataset/100M'
+DATAPATH = get_datapath()
 
 LINEITEM_COLS = ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount',
                  'l_tax', 'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct',
