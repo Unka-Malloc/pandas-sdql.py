@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='pysdql',  # 在pip中显示的项目名称
+    name='pd2sd',  # 在pip中显示的项目名称
     version='0.1',
     author='Yizhuo Yang',
     author_email='cxunka@outlook.com',
