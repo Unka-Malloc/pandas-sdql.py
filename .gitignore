@@ -1,4 +1,9 @@
 /.idea/
 /.ipynd_checkpoints/
 /doc/.ipynd_checkpoints/
+
 /datasets/
+
+/pd2sd.egg-info/
+/build/
+/dist/
