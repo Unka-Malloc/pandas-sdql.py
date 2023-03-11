@@ -1,3 +1,5 @@
+import re
+
 from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType, OptGoal
@@ -405,14 +407,13 @@ class ColEl(FlexIR):
         self.add_const(pattern)
         return ColExtExpr(self, ExtFuncSymbol.EndsWith, self.get_const_var(pattern))
 
-    def contains(self, pattern):
+    def contains(self, pattern, regex=False):
         # %A%
-        self.add_const(pattern)
-        return ColExtExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
-
-    def contains_in_order(self, *args):
-        # %A%B%
-        raise NotImplementedError
+        if regex:
+            return self.match_regex(pattern)
+        else:
+            self.add_const(pattern)
+            return ColExtExpr(self, ExtFuncSymbol.StringContains, self.get_const_var(pattern))
 
     def slice(self, start, end):
         # substring
@@ -506,3 +507,32 @@ class ColEl(FlexIR):
     @property
     def sdql_ir(self):
         return self.relation.key_access(self.field)
+
+    def match_regex(self, pattern: str):
+        num_of_substr = pattern.count('.*?')
+        if num_of_substr == 0:
+            raise NotImplementedError
+        elif num_of_substr == 1:
+            if pattern.endswith('.*?$'):
+                print(f'{pattern} is startswith')
+                return self.startswith(pattern.replace('^', '').replace('.*?$', ''))
+            if pattern.startswith('^.*?'):
+                print(f'{pattern} is endswith')
+                return self.endswith(pattern.replace('^.*?', '').replace('$', ''))
+        elif num_of_substr == 2:
+            if pattern.startswith('^.*?') and pattern.endswith('.*?$'):
+                print(f'{pattern} is contains')
+                return self.contains(pattern.replace('^.*?', '').replace('.*?$', ''))
+        else:
+            print(f'{pattern} is contains in order')
+            tmp_pattern = pattern.replace('^', '').replace('$', '')
+            tmp_list = [i for i in re.split('\.\*\?', tmp_pattern) if i]
+            tmp_cond = self.find(tmp_list[0]) != ConstantExpr(-1) * ConstantExpr(1)
+            for i in range(len(tmp_list)):
+                if i > 0:
+                    tmp_cond &= self.find(tmp_list[i]) > (self.find(tmp_list[i - 1]) + (len(tmp_list[i - 1]) - 1))
+
+            return tmp_cond
+        # if re.match('^.*?[^\.\*\?].*?$', pattern):
+        #     print(re.match('^.*?[^\.\*\?].*?$', pattern).group())
+

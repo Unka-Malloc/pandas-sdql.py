@@ -29,8 +29,13 @@ class ColOpExpr(FlexIR):
 
     @property
     def relation(self):
-        if self.unit1.relation.oid == self.unit2.relation.oid:
+        if isinstance(self.unit1, (bool, int, float)):
+            return self.unit2.relation
+        elif isinstance(self.unit2, (bool, int, float)):
             return self.unit1.relation
+        else:
+            if self.unit1.relation.oid == self.unit2.relation.oid:
+                return self.unit1.relation
 
     def sum(self):
         aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
