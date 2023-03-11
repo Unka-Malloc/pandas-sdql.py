@@ -4,7 +4,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import (
     date
 )
 
-from pysdql.config import get_datapath()
+from pysdql.config import get_datapath
 
 # There should not be a '/' at the end.
 # Path/should/be/like/this
