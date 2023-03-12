@@ -573,6 +573,8 @@ class DataFrame(FlexIR, Retrivable):
             if col_name in self.retriever.find_cols_used(mode='aggregation'):
                 return ColEl(self, col_name)
         else:
+            # print(self.operations)
+            # return ColEl(self, col_name)
             raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
 
     def __setitem__(self, key, value):
@@ -590,7 +592,7 @@ class DataFrame(FlexIR, Retrivable):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
-            if type(value) in (list, ):
+            if type(value) in (list,):
                 if isinstance(key, str) and len(value) == 1:
                     if isinstance(value[0], AggrExpr):
                         aggr_obj = value[0]
@@ -602,6 +604,22 @@ class DataFrame(FlexIR, Retrivable):
                                          iter_on=aggr_obj.aggr_on,
                                          ret_type=OpRetType.FLOAT)
                         self.push(op_expr)
+                    elif isinstance(value[0], CalcExpr):
+                        aggr_obj = value[0]
+                        aggr_obj.update_default(key)
+                        aggr_obj.aggr_type = AggrType.Dict
+                        op_expr = OpExpr(op_obj=aggr_obj,
+                                         op_on=aggr_obj.aggr_on,
+                                         op_iter=True,
+                                         iter_on=aggr_obj.aggr_on,
+                                         ret_type=OpRetType.FLOAT)
+                        self.push(op_expr)
+                    else:
+                        raise NotImplementedError
+                else:
+                    raise NotImplementedError
+
+                return self
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
@@ -1105,8 +1123,17 @@ class DataFrame(FlexIR, Retrivable):
                                   thenBodyExpr=op.sdql_ir,
                                   elseBodyExpr=ConstantExpr(lamb_else))
                 elif col_name in self.probe_side.columns:
+                    self.probe_side.push(OpExpr(op_obj=cond,
+                                                op_on=self,
+                                                op_iter=False))
 
-                    raise NotImplementedError
+                    if_expr = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                          DicLookupExpr(self.joint_frame.part_frame.part_on_var,
+                                                                        self.joint_frame.probe_frame.probe_key_sdql_ir),
+                                                          ConstantExpr(None)),
+                                     thenBodyExpr=op.sdql_ir,
+                                     elseBodyExpr=ConstantExpr(lamb_else))
+                    return if_expr
                 elif col_name in self.columns:
 
                     raise NotImplementedError

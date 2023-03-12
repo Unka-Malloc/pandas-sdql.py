@@ -82,6 +82,9 @@ class AggrExpr(FlexIR):
     def __mul__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.aggr_on)
 
+    def __rmul__(self, other):
+        return CalcExpr(input_fmt(other), input_fmt(self), MathSymbol.MUL, self.aggr_on)
+
     def __truediv__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.aggr_on)
 

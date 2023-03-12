@@ -893,6 +893,7 @@ class JointFrame:
                     # Q16
                     # Q18
                     if self.part_frame.retriever.was_probed:
+
                         groupby_aggr_info = self.retriever.find_groupby_aggr()
 
                         aggr_dict = groupby_aggr_info.aggr_dict
@@ -944,9 +945,21 @@ class JointFrame:
                                                               probe_on.key_access(dict_val_name))])
                                 else:
                                     if dict_val_name in joint_col_ins.keys():
-                                        aggr_body = DicConsExpr([(dict_key_ir,
-                                                                  joint_col_ins[dict_val_name].replace(
-                                                                      probe_on.iter_el.key))])
+                                        if any([i not in probe_on.columns for i in self.retriever.find_cols(joint_col_ins[dict_val_name])]):
+                                            col_mapper = {}
+                                            for j in self.retriever.find_cols(joint_col_ins[dict_val_name]):
+                                                col_mapper[j] = self.retriever.find_lookup_path(self, j)
+
+                                            aggr_body = DicConsExpr([(dict_key_ir,
+                                                                      joint_col_ins[dict_val_name].replace(
+                                                                          rec=None,
+                                                                          inplace=True,
+                                                                          mapper=col_mapper
+                                                                      ))])
+                                        else:
+                                            aggr_body = DicConsExpr([(dict_key_ir,
+                                                                      joint_col_ins[dict_val_name].replace(
+                                                                          probe_on.iter_el.key))])
                                     else:
                                         raise IndexError(
                                             f'Cannot find column {dict_val_name} in {probe_on.columns}')
@@ -984,6 +997,11 @@ class JointFrame:
                                     raise NotImplementedError
 
                             aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
+
+                        # print({
+                        #     'name': self.joint.name,
+                        #     'expr': aggr_body,
+                        # })
 
                         # probe condition: first outermost layer
                         if probe_cond:
@@ -1405,7 +1423,8 @@ class JointFrame:
 
                                             aggr_body = DicConsExpr([(aggr_key_ir, ConstantExpr(True))])
 
-                                            cond_after_aggr = self.probe_frame.retriever.find_cond_after(GroupbyAggrExpr)
+                                            cond_after_aggr = self.probe_frame.retriever.find_cond_after(
+                                                GroupbyAggrExpr)
 
                                             if cond_after_aggr:
                                                 cond_after_aggr = cond_after_aggr.replace(
@@ -1420,8 +1439,9 @@ class JointFrame:
                                             aggr_body = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                                                     DicLookupExpr(
                                                                                         dicExpr=self.part_frame.part_var,
-                                                                                        keyExpr=PairAccessExpr(var_x_aggr,
-                                                                                                               0)),
+                                                                                        keyExpr=PairAccessExpr(
+                                                                                            var_x_aggr,
+                                                                                            0)),
                                                                                     ConstantExpr(None)),
                                                                thenBodyExpr=aggr_body,
                                                                elseBodyExpr=ConstantExpr(None))
@@ -1801,17 +1821,23 @@ class JointFrame:
                         dict_key_ir = RecConsExpr([(c, root_probe_side.key_access(c))
                                                    for c in key_col])
                     else:
-                        dict_key_ir = root_probe_side.key_access(key_col)
+                        if key_col in root_probe_side.columns:
+                            dict_key_ir = root_probe_side.key_access(key_col)
+                        else:
+                            dict_key_ir = self.retriever.find_bypass_lookup(all_part_sides, key_col, root_merge)
 
                     # dict vals
-                    val_cols = [x for x in self.retriever.findall_cols_used()
-                                if (x != last_merge_expr.left_on
-                                    and x != last_merge_expr.right_on
-                                    and x != key_col
-                                    and x not in self.retriever.find_renamed_cols())
-                                or (x in self.retriever.find_cols_used('merge')
-                                    and x != key_col
-                                    and x not in self.retriever.find_renamed_cols())]
+                    if self.col_proj:
+                        val_cols = [i[0] for i in self.col_proj]
+                    else:
+                        val_cols = [x for x in self.retriever.findall_cols_used()
+                                    if (x != last_merge_expr.left_on
+                                        and x != last_merge_expr.right_on
+                                        and x != key_col
+                                        and x not in self.retriever.find_renamed_cols())
+                                    or (x in self.retriever.find_cols_used('merge')
+                                        and x != key_col
+                                        and x not in self.retriever.find_renamed_cols())]
 
                     dict_val_list = []
 
@@ -2305,12 +2331,12 @@ class JointFrame:
         # Q10
         # Q18
         if self.part_frame.is_joint and not self.probe_frame.is_joint:
-            # print(f'{self.joint.name}: part joint')
+            print(f'{self.joint.name}: part joint')
 
             return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
         # Q10
         if not self.part_frame.is_joint and self.probe_frame.is_joint:
-            # print(f'{self.joint.name}: probe joint')
+            print(f'{self.joint.name}: probe joint')
 
             if self.part_frame.retriever.as_bypass_for_next_join:
                 return self.probe_frame.probe_on.retriever.find_merge(
@@ -2329,7 +2355,7 @@ class JointFrame:
 
             return SDQLInspector.concat_bindings(all_bindings)
         if self.part_frame.is_joint and self.probe_frame.is_joint:
-            # print(f'{self.joint.name}: both joint')
+            print(f'{self.joint.name}: both joint')
 
             # if self.retriever.find_illegal_dup_col():
             #     raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')

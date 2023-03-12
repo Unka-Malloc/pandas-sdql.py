@@ -579,7 +579,9 @@ class Optimizer:
                 return self.joint_frame.sdql_ir
         else:
             last_op = self.retriever.find_last_iter()
-            print(last_op)
+            print('Unknown Last Operation:', type(last_op), last_op)
+            if last_op is None:
+                print(self.opt_on.operations)
             raise NotImplementedError
 
     def fill_context_unopt(self, last_rename=''):
