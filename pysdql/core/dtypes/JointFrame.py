@@ -232,6 +232,21 @@ class JointFrame:
                             aggr_body = IfExpr(condExpr=joint_cond,
                                                thenBodyExpr=aggr_body,
                                                elseBodyExpr=ConstantExpr(0))
+                    elif isinstance(dict_val, (IfExpr, AddExpr, SubExpr, MulExpr, DivExpr)):
+
+                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(dict_val)]):
+                            mapper = {}
+                            for c in SDQLInspector.find_cols(dict_val):
+                                if c not in probe_on.columns:
+                                    mapper[c] = self.retriever.find_lookup_path(self, c)
+                            aggr_body = SDQLInspector.replace_field(dict_val, inplace=True, mapper=mapper)
+                        else:
+                            aggr_body = dict_val
+
+                        if joint_cond:
+                            aggr_body = IfExpr(condExpr=joint_cond,
+                                               thenBodyExpr=aggr_body,
+                                               elseBodyExpr=ConstantExpr(0))
                     else:
                         raise NotImplementedError
                 else:
@@ -720,9 +735,7 @@ class JointFrame:
                                     if isinstance(new_col, IfExpr):
                                         dict_val_list.append((k, new_col))
                                     else:
-                                        col_mapper = {}
-
-                                        col_mapper[tuple(root_probe_side.columns)] = root_probe_side.iter_el.key
+                                        col_mapper = {tuple(root_probe_side.columns): root_probe_side.iter_el.key}
 
                                         for this_part_side in all_part_sides:
                                             this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
@@ -897,6 +910,8 @@ class JointFrame:
                     # Q16
                     # Q18
                     if self.part_frame.retriever.was_probed:
+                        # print(self.joint.name)
+                        # print(self.part_frame.part_key, self.probe_frame.probe_key)
 
                         groupby_aggr_info = self.retriever.find_groupby_aggr()
 
@@ -907,214 +922,422 @@ class JointFrame:
                         joint_col_ins = self.retriever.find_col_ins_before(GroupbyAggrExpr)
                         probe_isin_expr = self.probe_frame.retriever.find_isin_before(MergeExpr)
 
-                        if len(groupby_cols) == 0:
-                            raise ValueError()
-                        elif len(groupby_cols) == 1:
-                            dict_key_ir = probe_on.key_access(groupby_cols[0])
-                        else:
-                            key_tuples = []
-
-                            for c in groupby_cols:
-                                if c == probe_key:
-                                    key_tuples.append((c, probe_key_ir))
-                                elif c == part_key:
-                                    key_tuples.append((c, probe_key_ir))
-                                elif c in probe_on.columns:
-                                    key_tuples.append((c, self.probe_access(c)))
-                                elif c in part_on.columns:
-                                    key_tuples.append((c, self.part_lookup(c)))
-                                else:
-                                    raise IndexError(f'Cannot find such a column {c} '
-                                                     f'in part side {part_on.name} '
-                                                     f'and probe side {probe_on.name}')
-
-                            dict_key_ir = RecConsExpr(key_tuples)
-
-                        if len(aggr_dict.keys()) == 0:
-                            raise ValueError()
-                        elif len(aggr_dict.keys()) == 1:
-                            '''
-                            Aggregation as a single value
-                            Then format to a singleton dictionary
-                            '''
-
-                            dict_val = list(aggr_dict.items())[0][1]
-
-                            if isinstance(dict_val, RecAccessExpr):
-                                # (, 'sum')
-                                dict_val_name = dict_val.name
-
-                                if dict_val_name in probe_on.columns:
-                                    aggr_body = DicConsExpr([(dict_key_ir,
-                                                              probe_on.key_access(dict_val_name))])
-                                else:
-                                    if dict_val_name in joint_col_ins.keys():
-                                        if any([i not in probe_on.columns for i in self.retriever.find_cols(joint_col_ins[dict_val_name])]):
-                                            col_mapper = {}
-                                            for j in self.retriever.find_cols(joint_col_ins[dict_val_name]):
-                                                col_mapper[j] = self.retriever.find_lookup_path(self, j)
-
-                                            aggr_body = DicConsExpr([(dict_key_ir,
-                                                                      joint_col_ins[dict_val_name].replace(
-                                                                          rec=None,
-                                                                          inplace=True,
-                                                                          mapper=col_mapper
-                                                                      ))])
-                                        else:
-                                            aggr_body = DicConsExpr([(dict_key_ir,
-                                                                      joint_col_ins[dict_val_name].replace(
-                                                                          probe_on.iter_el.key))])
-                                    else:
-                                        raise IndexError(
-                                            f'Cannot find column {dict_val_name} in {probe_on.columns}')
-                            elif isinstance(dict_val, ConstantExpr):
-                                # (, 'count')
-                                aggr_body = DicConsExpr([(dict_key_ir,
-                                                          dict_val)])
+                        if isinstance(part_key, str) and isinstance(probe_key, str):
+                            if len(groupby_cols) == 0:
+                                raise ValueError()
+                            elif len(groupby_cols) == 1:
+                                dict_key_ir = probe_on.key_access(groupby_cols[0])
                             else:
-                                raise NotImplementedError
-                        else:
-                            '''
-                            Aggregation as a single record
-                            Then format to a singleton dictionary
-                            '''
-                            val_tuples = []
-                            for k in aggr_dict.keys():
-                                v = aggr_dict[k]
+                                key_tuples = []
 
-                                if isinstance(v, RecAccessExpr):
-                                    # (, 'sum')
-                                    v_name = v.name
-
-                                    if v_name in probe_on.columns:
-                                        val_tuples.append((k, probe_on.key_access(v_name)))
+                                for c in groupby_cols:
+                                    if c == probe_key:
+                                        key_tuples.append((c, probe_key_ir))
+                                    elif c == part_key:
+                                        key_tuples.append((c, probe_key_ir))
+                                    elif c in probe_on.columns:
+                                        key_tuples.append((c, self.probe_access(c)))
+                                    elif c in part_on.columns:
+                                        key_tuples.append((c, self.part_lookup(c)))
                                     else:
-                                        if v_name in joint_col_ins.keys():
-                                            val_tuples.append((k,
-                                                               joint_col_ins[v_name].replace(probe_on.iter_el.key)))
+                                        raise IndexError(f'Cannot find such a column {c} '
+                                                         f'in part side {part_on.name} '
+                                                         f'and probe side {probe_on.name}')
+
+                                dict_key_ir = RecConsExpr(key_tuples)
+
+                            if len(aggr_dict.keys()) == 0:
+                                raise ValueError()
+                            elif len(aggr_dict.keys()) == 1:
+                                '''
+                                Aggregation as a single value
+                                Then format to a singleton dictionary
+                                '''
+
+                                dict_val = list(aggr_dict.items())[0][1]
+
+                                if isinstance(dict_val, RecAccessExpr):
+                                    # (, 'sum')
+                                    dict_val_name = dict_val.name
+
+                                    if dict_val_name in probe_on.columns:
+                                        aggr_body = DicConsExpr([(dict_key_ir,
+                                                                  probe_on.key_access(dict_val_name))])
+                                    else:
+                                        if dict_val_name in joint_col_ins.keys():
+                                            if any([i not in probe_on.columns for i in self.retriever.find_cols(joint_col_ins[dict_val_name])]):
+                                                col_mapper = {}
+                                                for j in self.retriever.find_cols(joint_col_ins[dict_val_name]):
+                                                    col_mapper[j] = self.retriever.find_lookup_path(self, j)
+
+                                                aggr_body = DicConsExpr([(dict_key_ir,
+                                                                          joint_col_ins[dict_val_name].replace(
+                                                                              rec=None,
+                                                                              inplace=True,
+                                                                              mapper=col_mapper
+                                                                          ))])
+                                            else:
+                                                aggr_body = DicConsExpr([(dict_key_ir,
+                                                                          joint_col_ins[dict_val_name].replace(
+                                                                              probe_on.iter_el.key))])
                                         else:
-                                            raise IndexError(f'Cannot find column {v_name} in {probe_on.columns}')
-                                elif isinstance(v, ConstantExpr):
+                                            raise IndexError(
+                                                f'Cannot find column {dict_val_name} in {probe_on.columns}')
+                                elif isinstance(dict_val, ConstantExpr):
                                     # (, 'count')
-                                    val_tuples.append((k, v))
+                                    aggr_body = DicConsExpr([(dict_key_ir,
+                                                              dict_val)])
                                 else:
                                     raise NotImplementedError
-
-                            aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
-
-                        # print({
-                        #     'name': self.joint.name,
-                        #     'expr': aggr_body,
-                        # })
-
-                        # probe condition: first outermost layer
-                        if probe_cond:
-                            cond_cols = self.retriever.find_cond_on(probe_cond, {True: tuple(aggr_dict.keys())})
-                            if cond_cols:
-                                if all(cond_cols):
-                                    # This is to drop the condition that is ONLY for the previous aggregation
-                                    pass
                             else:
-                                aggr_body = IfExpr(condExpr=probe_cond.sdql_ir,
+                                '''
+                                Aggregation as a single record
+                                Then format to a singleton dictionary
+                                '''
+                                val_tuples = []
+                                for k in aggr_dict.keys():
+                                    v = aggr_dict[k]
+
+                                    if isinstance(v, RecAccessExpr):
+                                        # (, 'sum')
+                                        v_name = v.name
+
+                                        if v_name in probe_on.columns:
+                                            val_tuples.append((k, probe_on.key_access(v_name)))
+                                        else:
+                                            if v_name in joint_col_ins.keys():
+                                                val_tuples.append((k,
+                                                                   joint_col_ins[v_name].replace(probe_on.iter_el.key)))
+                                            else:
+                                                raise IndexError(f'Cannot find column {v_name} in {probe_on.columns}')
+                                    elif isinstance(v, ConstantExpr):
+                                        # (, 'count')
+                                        val_tuples.append((k, v))
+                                    else:
+                                        raise NotImplementedError
+
+                                aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
+
+                            # print({
+                            #     'name': self.joint.name,
+                            #     'expr': aggr_body,
+                            # })
+
+                            # probe condition: first outermost layer
+                            if probe_cond:
+                                cond_cols = self.retriever.find_cond_on(probe_cond, {True: tuple(aggr_dict.keys())})
+                                if cond_cols:
+                                    if all(cond_cols):
+                                        # This is to drop the condition that is ONLY for the previous aggregation
+                                        pass
+                                else:
+                                    aggr_body = IfExpr(condExpr=probe_cond.sdql_ir,
+                                                       thenBodyExpr=aggr_body,
+                                                       elseBodyExpr=ConstantExpr(None))
+
+                            # joint condition: second outermost layer
+                            if joint_cond:
+                                aggr_body = IfExpr(condExpr=joint_cond,
                                                    thenBodyExpr=aggr_body,
                                                    elseBodyExpr=ConstantExpr(None))
 
-                        # joint condition: second outermost layer
-                        if joint_cond:
-                            aggr_body = IfExpr(condExpr=joint_cond,
-                                               thenBodyExpr=aggr_body,
-                                               elseBodyExpr=ConstantExpr(None))
-
-                        # part non null condition: add to the inner layer
-                        aggr_body = SDQLInspector.add_cond(aggr_body,
-                                                           self.part_nonull(),
-                                                           'inner')
-
-                        # isin non null condition: add to the inner layer
-                        if probe_isin_expr:
+                            # part non null condition: add to the inner layer
                             aggr_body = SDQLInspector.add_cond(aggr_body,
-                                                               probe_isin_expr.get_as_cond(),
+                                                               self.part_nonull(),
                                                                'inner')
 
-                        aggr_sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
-                                                dictExpr=probe_on.var_expr,
-                                                bodyExpr=aggr_body,
-                                                isAssignmentSum=False)
+                            # isin non null condition: add to the inner layer
+                            if probe_isin_expr:
+                                aggr_body = SDQLInspector.add_cond(aggr_body,
+                                                                   probe_isin_expr.get_as_cond(),
+                                                                   'inner')
 
-                        vname_aggr = f'{probe_on.name}_aggr'
-                        var_aggr = VarExpr(vname_aggr)
-                        probe_on.add_context_variable(vname_aggr,
-                                                      var_aggr)
+                            aggr_sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                                    dictExpr=probe_on.var_expr,
+                                                    bodyExpr=aggr_body,
+                                                    isAssignmentSum=False)
 
-                        aggr_let_expr = LetExpr(varExpr=var_aggr,
-                                                valExpr=aggr_sum_expr,
-                                                bodyExpr=ConstantExpr(True))
+                            vname_aggr = f'{probe_on.name}_aggr'
+                            var_aggr = VarExpr(vname_aggr)
+                            probe_on.add_context_variable(vname_aggr,
+                                                          var_aggr)
 
-                        vname_x_aggr = f'x_{vname_aggr}'
-                        var_x_aggr = VarExpr(vname_x_aggr)
-                        probe_on.add_context_variable(vname_x_aggr,
-                                                      var_x_aggr)
+                            aggr_let_expr = LetExpr(varExpr=var_aggr,
+                                                    valExpr=aggr_sum_expr,
+                                                    bodyExpr=ConstantExpr(True))
 
-                        # aggr = {? : scalar}
-                        if len(aggr_dict.keys()) == 1:
-                            dict_key = list(aggr_dict.items())[0][0]
+                            vname_x_aggr = f'x_{vname_aggr}'
+                            var_x_aggr = VarExpr(vname_x_aggr)
+                            probe_on.add_context_variable(vname_x_aggr,
+                                                          var_x_aggr)
 
-                            format_key_tuples = []
+                            # aggr = {? : scalar}
+                            if len(aggr_dict.keys()) == 1:
+                                dict_key = list(aggr_dict.items())[0][0]
 
-                            # aggr = {scalar : scalar}
-                            if len(groupby_cols) == 1:
-                                format_key_tuples.append((groupby_cols[0],
-                                                          PairAccessExpr(var_x_aggr, 0)))
-                            # aggr = {record : scalar}
-                            else:
-                                for c in groupby_cols:
-                                    format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)))
+                                format_key_tuples = []
 
-                            format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
+                                # aggr = {scalar : scalar}
+                                if len(groupby_cols) == 1:
+                                    format_key_tuples.append((groupby_cols[0],
+                                                              PairAccessExpr(var_x_aggr, 0)))
+                                # aggr = {record : scalar}
+                                else:
+                                    for c in groupby_cols:
+                                        format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)))
 
-                            format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
-                                                      ConstantExpr(True))])
-                        # aggr = {? : record}
-                        else:
-                            # aggr = {scalar: record}
-                            if len(groupby_cols) == 1:
-                                format_key_tuples = [(groupby_cols[0],
-                                                      PairAccessExpr(var_x_aggr, 0))]
-
-                                for k in aggr_dict.keys():
-                                    format_key_tuples.append((k,
-                                                              RecAccessExpr(PairAccessExpr(var_x_aggr,
-                                                                                           1),
-                                                                            k)))
+                                format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
 
                                 format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
                                                           ConstantExpr(True))])
+                            # aggr = {? : record}
                             else:
-                                # aggr = {record : record}
-                                format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(var_x_aggr, 0),
-                                                                     PairAccessExpr(var_x_aggr, 1)),
+                                # aggr = {scalar: record}
+                                if len(groupby_cols) == 1:
+                                    format_key_tuples = [(groupby_cols[0],
+                                                          PairAccessExpr(var_x_aggr, 0))]
+
+                                    for k in aggr_dict.keys():
+                                        format_key_tuples.append((k,
+                                                                  RecAccessExpr(PairAccessExpr(var_x_aggr,
+                                                                                               1),
+                                                                                k)))
+
+                                    format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
+                                                              ConstantExpr(True))])
+                                else:
+                                    # aggr = {record : record}
+                                    format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(var_x_aggr, 0),
+                                                                         PairAccessExpr(var_x_aggr, 1)),
+                                                              ConstantExpr(True))])
+
+                            format_sum = SumExpr(varExpr=var_x_aggr,
+                                                 dictExpr=var_aggr,
+                                                 bodyExpr=format_op,
+                                                 isAssignmentSum=True)
+
+                            vname_res = f'results'
+                            var_res = VarExpr(vname_res)
+                            probe_on.add_context_variable(vname_res,
+                                                          var_res)
+
+                            form_let_expr = LetExpr(varExpr=var_res,
+                                                    valExpr=format_sum,
+                                                    bodyExpr=ConstantExpr(True))
+
+                            if probe_isin_expr:
+                                isin_let_expr = probe_isin_expr.get_as_part()
+                                return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
+                            else:
+                                return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
+                        elif isinstance(part_key, list) and isinstance(probe_key, list):
+                            if len(groupby_cols) == 0:
+                                raise ValueError()
+                            elif len(groupby_cols) == 1:
+                                dict_key_ir = probe_on.key_access(groupby_cols[0])
+                            else:
+                                key_tuples = []
+
+                                for c in groupby_cols:
+                                    if c == probe_key:
+                                        key_tuples.append((c, RecConsExpr([self.probe_access(i) for i in probe_key])))
+                                    elif c == part_key:
+                                        key_tuples.append((c, RecConsExpr([self.probe_access(i) for i in probe_key])))
+                                    elif c in probe_on.columns:
+                                        key_tuples.append((c, self.probe_access(c)))
+                                    elif c in part_on.columns:
+                                        key_tuples.append((c, self.part_lookup(c)))
+                                    else:
+                                        raise IndexError(f'Cannot find such a column {c} '
+                                                         f'in part side {part_on.name} '
+                                                         f'and probe side {probe_on.name}')
+
+                                dict_key_ir = RecConsExpr(key_tuples)
+
+                            if len(aggr_dict.keys()) == 0:
+                                raise ValueError()
+                            elif len(aggr_dict.keys()) == 1:
+                                '''
+                                Aggregation as a single value
+                                Then format to a singleton dictionary
+                                '''
+
+                                dict_val = list(aggr_dict.items())[0][1]
+
+                                if isinstance(dict_val, RecAccessExpr):
+                                    # (, 'sum')
+                                    dict_val_name = dict_val.name
+
+                                    if dict_val_name in probe_on.columns:
+                                        aggr_body = DicConsExpr([(dict_key_ir,
+                                                                  probe_on.key_access(dict_val_name))])
+                                    else:
+                                        if dict_val_name in joint_col_ins.keys():
+                                            if any([i not in probe_on.columns for i in self.retriever.find_cols(joint_col_ins[dict_val_name])]):
+                                                col_mapper = {}
+                                                for j in self.retriever.find_cols(joint_col_ins[dict_val_name]):
+                                                    col_mapper[j] = self.retriever.find_lookup_path(self, j)
+
+                                                aggr_body = DicConsExpr([(dict_key_ir,
+                                                                          joint_col_ins[dict_val_name].replace(
+                                                                              rec=None,
+                                                                              inplace=True,
+                                                                              mapper=col_mapper
+                                                                          ))])
+                                            else:
+                                                aggr_body = DicConsExpr([(dict_key_ir,
+                                                                          joint_col_ins[dict_val_name].replace(
+                                                                              probe_on.iter_el.key))])
+                                        else:
+                                            raise IndexError(
+                                                f'Cannot find column {dict_val_name} in {probe_on.columns}')
+                                elif isinstance(dict_val, ConstantExpr):
+                                    # (, 'count')
+                                    aggr_body = DicConsExpr([(dict_key_ir,
+                                                              dict_val)])
+                                else:
+                                    raise NotImplementedError
+                            else:
+                                '''
+                                Aggregation as a single record
+                                Then format to a singleton dictionary
+                                '''
+                                val_tuples = []
+                                for k in aggr_dict.keys():
+                                    v = aggr_dict[k]
+
+                                    if isinstance(v, RecAccessExpr):
+                                        # (, 'sum')
+                                        v_name = v.name
+
+                                        if v_name in probe_on.columns:
+                                            val_tuples.append((k, probe_on.key_access(v_name)))
+                                        else:
+                                            if v_name in joint_col_ins.keys():
+                                                val_tuples.append((k,
+                                                                   joint_col_ins[v_name].replace(probe_on.iter_el.key)))
+                                            else:
+                                                raise IndexError(f'Cannot find column {v_name} in {probe_on.columns}')
+                                    elif isinstance(v, ConstantExpr):
+                                        # (, 'count')
+                                        val_tuples.append((k, v))
+                                    else:
+                                        raise NotImplementedError
+
+                                aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
+
+                            # print('name', self.joint.name)
+                            # print('expr', aggr_body)
+
+                            # probe condition: first outermost layer
+                            if probe_cond:
+                                cond_cols = self.retriever.find_cond_on(probe_cond, {True: tuple(aggr_dict.keys())})
+                                if cond_cols:
+                                    if all(cond_cols):
+                                        # This is to drop the condition that is ONLY for the previous aggregation
+                                        pass
+                                else:
+                                    aggr_body = IfExpr(condExpr=probe_cond.sdql_ir,
+                                                       thenBodyExpr=aggr_body,
+                                                       elseBodyExpr=ConstantExpr(None))
+
+                            # joint condition: second outermost layer
+                            if joint_cond:
+                                aggr_body = IfExpr(condExpr=joint_cond,
+                                                   thenBodyExpr=aggr_body,
+                                                   elseBodyExpr=ConstantExpr(None))
+
+                            # part non null condition: add to the inner layer
+                            aggr_body = SDQLInspector.add_cond(aggr_body,
+                                                               self.part_nonull(),
+                                                               'inner')
+
+                            # isin non null condition: add to the inner layer
+                            if probe_isin_expr:
+                                aggr_body = SDQLInspector.add_cond(aggr_body,
+                                                                   probe_isin_expr.get_as_cond(),
+                                                                   'inner')
+
+                            aggr_sum_expr = SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                                    dictExpr=probe_on.var_expr,
+                                                    bodyExpr=aggr_body,
+                                                    isAssignmentSum=False)
+
+                            vname_aggr = f'{probe_on.name}_aggr'
+                            var_aggr = VarExpr(vname_aggr)
+                            probe_on.add_context_variable(vname_aggr,
+                                                          var_aggr)
+
+                            aggr_let_expr = LetExpr(varExpr=var_aggr,
+                                                    valExpr=aggr_sum_expr,
+                                                    bodyExpr=ConstantExpr(True))
+
+                            vname_x_aggr = f'x_{vname_aggr}'
+                            var_x_aggr = VarExpr(vname_x_aggr)
+                            probe_on.add_context_variable(vname_x_aggr,
+                                                          var_x_aggr)
+
+                            # aggr = {? : scalar}
+                            if len(aggr_dict.keys()) == 1:
+                                dict_key = list(aggr_dict.items())[0][0]
+
+                                format_key_tuples = []
+
+                                # aggr = {scalar : scalar}
+                                if len(groupby_cols) == 1:
+                                    format_key_tuples.append((groupby_cols[0],
+                                                              PairAccessExpr(var_x_aggr, 0)))
+                                # aggr = {record : scalar}
+                                else:
+                                    for c in groupby_cols:
+                                        format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)))
+
+                                format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
+
+                                format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
                                                           ConstantExpr(True))])
+                            # aggr = {? : record}
+                            else:
+                                # aggr = {scalar: record}
+                                if len(groupby_cols) == 1:
+                                    format_key_tuples = [(groupby_cols[0],
+                                                          PairAccessExpr(var_x_aggr, 0))]
 
-                        format_sum = SumExpr(varExpr=var_x_aggr,
-                                             dictExpr=var_aggr,
-                                             bodyExpr=format_op,
-                                             isAssignmentSum=True)
+                                    for k in aggr_dict.keys():
+                                        format_key_tuples.append((k,
+                                                                  RecAccessExpr(PairAccessExpr(var_x_aggr,
+                                                                                               1),
+                                                                                k)))
 
-                        vname_res = f'results'
-                        var_res = VarExpr(vname_res)
-                        probe_on.add_context_variable(vname_res,
-                                                      var_res)
+                                    format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
+                                                              ConstantExpr(True))])
+                                else:
+                                    # aggr = {record : record}
+                                    format_op = DicConsExpr([(ConcatExpr(PairAccessExpr(var_x_aggr, 0),
+                                                                         PairAccessExpr(var_x_aggr, 1)),
+                                                              ConstantExpr(True))])
 
-                        form_let_expr = LetExpr(varExpr=var_res,
-                                                valExpr=format_sum,
-                                                bodyExpr=ConstantExpr(True))
+                            format_sum = SumExpr(varExpr=var_x_aggr,
+                                                 dictExpr=var_aggr,
+                                                 bodyExpr=format_op,
+                                                 isAssignmentSum=True)
 
-                        if probe_isin_expr:
-                            isin_let_expr = probe_isin_expr.get_as_part()
-                            return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
+                            vname_res = f'results'
+                            var_res = VarExpr(vname_res)
+                            probe_on.add_context_variable(vname_res,
+                                                          var_res)
+
+                            form_let_expr = LetExpr(varExpr=var_res,
+                                                    valExpr=format_sum,
+                                                    bodyExpr=ConstantExpr(True))
+
+                            if probe_isin_expr:
+                                isin_let_expr = probe_isin_expr.get_as_part()
+                                return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
+                            else:
+                                return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
                         else:
-                            return SDQLInspector.concat_bindings([aggr_let_expr, form_let_expr])
-
+                            raise NotImplementedError
                     else:
                         # part side is NOT joint
                         # probe side is NOT joint
@@ -1850,6 +2073,8 @@ class JointFrame:
             # Q21
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
+                    print('current')
+
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
 
@@ -1864,6 +2089,10 @@ class JointFrame:
                     # dict key (single)
 
                     key_col = next_merge_expr.left_on
+
+                    print(key_col)
+                    print(root_part_side.columns)
+                    print(root_probe_side.columns)
 
                     if isinstance(key_col, list):
                         dict_key_ir = RecConsExpr([(c, root_probe_side.key_access(c))
@@ -1923,14 +2152,22 @@ class JointFrame:
 
                     dict_val_ir = RecConsExpr(dict_val_list)
 
-                    # print({
-                    #     'part': [i.name for i in all_part_sides],
-                    #     'probe': root_probe_side.name,
-                    #     'key': dict_key_ir,
-                    #     'val': dict_val_ir
-                    # })
+                    print({
+                        'part': [i.name for i in all_part_sides],
+                        'probe': root_probe_side.name,
+                        'key': dict_key_ir,
+                        'val': dict_val_ir
+                    })
 
                     joint_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
+
+                    for lookup_expr in SDQLInspector.findall_non_null(joint_op):
+                        joint_op = IfExpr(
+                            condExpr=CompareExpr(CompareSymbol.NE,
+                                                 lookup_expr,
+                                                 ConstantExpr(None)),
+                            thenBodyExpr=joint_op,
+                            elseBodyExpr=ConstantExpr(None))
 
                     if joint_cond:
                         cols_not_in_root_probe = [x for x in self.retriever.find_cols(joint_cond)
@@ -1942,9 +2179,12 @@ class JointFrame:
                                 for this_part_side in all_part_sides:
                                     if c in this_part_side.columns:
                                         this_probe_key = this_part_side.get_retriever().find_probe_key_as_part_side()
-                                        cond_replace_mapper[c] = DicLookupExpr(
+
+                                        lookup_expr = DicLookupExpr(
                                             dicExpr=this_part_side.get_var_part(),
                                             keyExpr=root_probe_side.key_access(this_probe_key))
+
+                                        cond_replace_mapper[c] = lookup_expr
 
                             joint_op = IfExpr(condExpr=self.retriever.replace_cond(cond=joint_cond,
                                                                                    mapper=cond_replace_mapper).sdql_ir,

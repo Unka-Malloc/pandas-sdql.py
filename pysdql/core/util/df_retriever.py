@@ -1053,42 +1053,82 @@ class Retriever:
 
         all_parts = start_from.retriever.findall_part_for_root_probe('as_body')
 
-        if key_to == root_part_key:
-            lookup_expr = root_probe.key_access(root_probe_key)
+        if isinstance(root_part_key, list) and isinstance(root_probe_key, list):
+            if key_to in root_part_key:
+                lookup_expr = root_probe.key_access(root_probe_key[root_part_key.index(key_to)])
 
-            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to == root_probe_key:
-            lookup_expr = root_probe.key_access(root_probe_key)
+                return lookup_expr
+            elif key_to in root_probe_key:
+                lookup_expr = root_probe.key_access(key_to)
 
-            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to in root_probe.columns:
-            lookup_expr = root_probe.key_access(key_to)
+                return lookup_expr
+            elif key_to in root_probe.columns:
+                lookup_expr = root_probe.key_access(key_to)
 
-            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to in root_part.columns:
-            lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
-                                                              keyExpr=root_probe.key_access(root_probe_key)),
-                                        fieldName=key_to)
+                return lookup_expr
+            elif key_to in root_part.columns:
+                lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
+                                                                  keyExpr=RecConsExpr([(root_part_key[root_probe_key.index(i)],
+                                                                                        root_probe.key_access(i))
+                                                                                       for i in root_probe_key])),
+                                            fieldName=key_to)
 
-            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
+                return lookup_expr
+            else:
+                for part in all_parts:
+                    if key_to in part.columns:
+                        lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+
+                        # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                        return lookup_expr
+
+            raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
         else:
-            for part in all_parts:
-                if key_to in part.columns:
-                    lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+            if key_to == root_part_key:
+                lookup_expr = root_probe.key_access(root_probe_key)
 
-                    # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-                    return lookup_expr
+                return lookup_expr
+            elif key_to == root_probe_key:
+                lookup_expr = root_probe.key_access(root_probe_key)
 
-        raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            elif key_to in root_probe.columns:
+                lookup_expr = root_probe.key_access(key_to)
+
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            elif key_to in root_part.columns:
+                lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
+                                                                  keyExpr=root_probe.key_access(root_probe_key)),
+                                            fieldName=key_to)
+
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            else:
+                for part in all_parts:
+                    if key_to in part.columns:
+                        lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+
+                        # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                        return lookup_expr
+
+            raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
 
     @staticmethod
     def find_bypass_lookup(all_parts, target, root_merge):

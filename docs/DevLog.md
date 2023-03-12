@@ -11,14 +11,16 @@
 - [x] 12
 - [x] 13
 - [x] 14
-- [ ] 15
-- [ ] 16
-- [ ] 17
-- [ ] 18
-- [ ] 19
-- [ ] 20
+- [ ] 15 (`max` required)
+- [ ] 16 (`unique` required)
+- [ ] 19 (`unique` required)
 
 ## Second Round
+- [ ] 17
+- [ ] 18
+- [ ] 20
+
+## Third Round
 - [ ] 7
 - [ ] 8
 - [ ] 9
@@ -43,29 +45,20 @@
 - [ ] Q21
 
 ## Aggregation Insert (`R["A"] = [(R.B).sum()]`)
-- [ ] Q6
+- [x] Q6
 - [ ] Q11
-- [ ] Q14
+- [x] Q14
 - [ ] Q15
 - [ ] Q17
-- [ ] Q19
+- [x] Q19
 - [ ] Q22
 
 ## Regex
 - [x] Q2
 - [x] Q9
 - [x] Q13
-- [ ] Q16
-- [ ] Q20
-
-## Queries That Require `Unique` Function
-- Q3
-- Q4
-- Q6
-- Q7
-- Q8
-- Q9
-- Q10
+- [x] Q16
+- [x] Q20
 
 ## Q1
 ### Hesam's Issue To Be Fixed

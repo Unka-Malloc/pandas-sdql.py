@@ -582,10 +582,22 @@ class SDQLInspector:
 
         if isinstance(sdql_obj, DicLookupExpr):
             all_non_null.append(sdql_obj)
-        else:
-            SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
 
-        return all_non_null
+            if isinstance(sdql_obj.keyExpr, RecAccessExpr):
+                if isinstance(sdql_obj.keyExpr.recExpr, DicLookupExpr):
+                    all_non_null += SDQLInspector.gather_all(sdql_obj.keyExpr.recExpr, SDQLInspector.findall_non_null)
+        else:
+            all_non_null += SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
+
+        cleaned_non_null = []
+        dup_non_null_strs = []
+
+        for i in all_non_null:
+            if str(i) not in dup_non_null_strs:
+                dup_non_null_strs.append(str(i))
+                cleaned_non_null.append(i)
+
+        return cleaned_non_null
 
     @staticmethod
     def replace_field(sdql_obj, inplace=True, mapper=None):

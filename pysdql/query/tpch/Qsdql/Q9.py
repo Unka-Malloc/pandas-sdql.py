@@ -16,7 +16,7 @@ def query(li, ord, na, su, pa, ps):
     
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, g) != ((-1) * (1))) else (None))
     
-    nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: ({record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+    nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
     
     orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})})
     
