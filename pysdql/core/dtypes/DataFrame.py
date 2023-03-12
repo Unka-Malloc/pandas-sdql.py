@@ -6,6 +6,7 @@ import pathlib
 
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
@@ -605,14 +606,19 @@ class DataFrame(FlexIR, Retrivable):
                                          ret_type=OpRetType.FLOAT)
                         self.push(op_expr)
                     elif isinstance(value[0], CalcExpr):
-                        aggr_obj = value[0]
-                        aggr_obj.update_default(key)
-                        aggr_obj.aggr_type = AggrType.Dict
-                        op_expr = OpExpr(op_obj=aggr_obj,
-                                         op_on=aggr_obj.aggr_on,
+                        calc_obj = value[0]
+
+                        target = calc_obj.on.retriever.insert_aggr(calc_obj.on)
+
+                        calc_obj.match_aggr(target, calc_obj.on)
+
+                        op_expr = OpExpr(op_obj=calc_obj,
+                                         op_on=calc_obj.on,
                                          op_iter=True,
-                                         iter_on=aggr_obj.aggr_on,
+                                         iter_on=calc_obj.on,
                                          ret_type=OpRetType.FLOAT)
+
+                        calc_obj.on.push(op_expr)
                         self.push(op_expr)
                     else:
                         raise NotImplementedError
@@ -1123,16 +1129,17 @@ class DataFrame(FlexIR, Retrivable):
                                   thenBodyExpr=op.sdql_ir,
                                   elseBodyExpr=ConstantExpr(lamb_else))
                 elif col_name in self.probe_side.columns:
-                    self.probe_side.push(OpExpr(op_obj=cond,
-                                                op_on=self,
-                                                op_iter=False))
-
                     if_expr = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
                                                           DicLookupExpr(self.joint_frame.part_frame.part_on_var,
                                                                         self.joint_frame.probe_frame.probe_key_sdql_ir),
                                                           ConstantExpr(None)),
                                      thenBodyExpr=op.sdql_ir,
                                      elseBodyExpr=ConstantExpr(lamb_else))
+
+                    if_expr = IfExpr(condExpr=cond.sdql_ir,
+                                     thenBodyExpr=if_expr,
+                                     elseBodyExpr=ConstantExpr(lamb_else))
+
                     return if_expr
                 elif col_name in self.columns:
 

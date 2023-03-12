@@ -188,12 +188,13 @@ class JointFrame:
 
                 aggr_dict = aggr_info.aggr_op
 
-                cond_mapper = {tuple(part_on.columns): DicLookupExpr(part_var, probe_key_ir),
-                               tuple(probe_on.columns): probe_on.iter_el.key}
+                if joint_cond:
+                    cond_mapper = {tuple(part_on.columns): DicLookupExpr(part_var, probe_key_ir),
+                                   tuple(probe_on.columns): probe_on.iter_el.key}
 
-                joint_cond = joint_cond.replace(rec=None,
-                                                inplace=False,
-                                                mapper=cond_mapper)
+                    joint_cond = joint_cond.replace(rec=None,
+                                                    inplace=False,
+                                                    mapper=cond_mapper)
 
                 col_ins = self.retriever.find_col_ins_before(AggrExpr)
 
@@ -212,7 +213,10 @@ class JointFrame:
                             aggr_body = probe_on.key_access(dict_val_name)
                         else:
                             if dict_val_name in col_ins.keys():
-                                aggr_body = col_ins[dict_val_name].replace(probe_on.iter_el.key)
+                                if isinstance(col_ins[dict_val_name], IfExpr):
+                                    aggr_body = col_ins[dict_val_name]
+                                else:
+                                    aggr_body = col_ins[dict_val_name].replace(probe_on.iter_el.key)
                             else:
                                 raise IndexError(f'Cannot find column {dict_val_name} in {probe_on.columns}')
 
@@ -1752,7 +1756,29 @@ class JointFrame:
 
                 for i in self.retriever.findall_col_insert().keys():
                     if isinstance(col_inserted[i], IfExpr):
-                        rec_list.append((i, col_inserted[i]))
+                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_inserted[i])]):
+                            mapper = {}
+                            for c in SDQLInspector.find_cols(col_inserted[i]):
+                                if c not in probe_on.columns:
+                                    mapper[c] = self.retriever.find_lookup_path(self, c)
+                            new_op = SDQLInspector.replace_field(col_inserted[i], inplace=True, mapper=mapper)
+                            rec_list.append((i, new_op))
+                        else:
+                            rec_list.append((i, col_inserted[i]))
+                    elif isinstance(col_inserted[i], (AddExpr, SubExpr, MulExpr, DivExpr)):
+                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_inserted[i])]):
+                            mapper = {}
+                            for c in SDQLInspector.find_cols(col_inserted[i]):
+                                if c not in probe_on.columns:
+                                    mapper[c] = self.retriever.find_lookup_path(self, c)
+                            new_op = SDQLInspector.replace_field(col_inserted[i], inplace=True, mapper=mapper)
+                            rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
+                                                       thenBodyExpr=new_op,
+                                                       elseBodyExpr=ConstantExpr(0))))
+                        else:
+                            rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
+                                                       thenBodyExpr=col_inserted[i],
+                                                       elseBodyExpr=ConstantExpr(0))))
                     elif isinstance(col_inserted[i], FlexIR):
                         rec_list.append((i, col_inserted[i].sdql_ir))
                     else:
@@ -1762,7 +1788,29 @@ class JointFrame:
 
                 for j in self.retriever.findall_col_rename().keys():
                     if isinstance(col_renamed[j], IfExpr):
-                        rec_list.append((j, col_renamed[j]))
+                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_renamed[j])]):
+                            mapper = {}
+                            for c in SDQLInspector.find_cols(col_renamed[j]):
+                                if c not in probe_on.columns:
+                                    mapper[c] = self.retriever.find_lookup_path(self, c)
+                            new_op = SDQLInspector.replace_field(col_renamed[j], inplace=True, mapper=mapper)
+                            rec_list.append((j, new_op))
+                        else:
+                            rec_list.append((j, col_renamed[j]))
+                    elif isinstance(col_renamed[j], (AddExpr, SubExpr, MulExpr, DivExpr)):
+                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_renamed[j])]):
+                            mapper = {}
+                            for c in SDQLInspector.find_cols(col_renamed[j]):
+                                if c not in probe_on.columns:
+                                    mapper[c] = self.retriever.find_lookup_path(self, c)
+                            new_op = SDQLInspector.replace_field(col_renamed[j], inplace=True, mapper=mapper)
+                            rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
+                                                       thenBodyExpr=new_op,
+                                                       elseBodyExpr=ConstantExpr(0))))
+                        else:
+                            rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
+                                                       thenBodyExpr=col_renamed[j],
+                                                       elseBodyExpr=ConstantExpr(0))))
                     elif isinstance(col_renamed[j], FlexIR):
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:

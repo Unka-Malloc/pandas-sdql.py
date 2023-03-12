@@ -1,6 +1,7 @@
+from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
-from pysdql.core.dtypes.EnumUtil import LastIterFunc
+from pysdql.core.dtypes.EnumUtil import LastIterFunc, OpRetType
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
@@ -1460,5 +1461,35 @@ class Retriever:
 
         return expr1.oid == expr2.oid
 
+    def insert_aggr(self, to_which):
+        aggr_list = []
+        col_ins_list = []
 
+        target_out = {}
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrExpr):
+                aggr_list.append(op_body)
+
+            if isinstance(op_body, NewColOpExpr):
+                col_ins_list.append(op_body.col_var)
+
+        for aggr_expr in aggr_list:
+            aggr_name = list(aggr_expr.aggr_op.keys())[0]
+
+            if aggr_name not in col_ins_list:
+                new_col_obj = NewColOpExpr(aggr_name, aggr_expr.aggr_op[aggr_name])
+
+                target_out[aggr_name] = aggr_expr.aggr_op[aggr_name]
+
+                op_expr = OpExpr(op_obj=new_col_obj,
+                                 op_on=to_which,
+                                 op_iter=True,
+                                 iter_on=to_which,
+                                 ret_type=OpRetType.FLOAT)
+                to_which.push(op_expr)
+
+        return target_out
 
