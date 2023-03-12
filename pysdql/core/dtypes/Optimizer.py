@@ -575,13 +575,19 @@ class Optimizer:
             return self.joint_frame.sdql_ir
         elif self.last_func == LastIterFunc.Calc:
             # Q14
+            op_expr = self.retriever.find_last_iter(body_only=False)
+
+            if op_expr.op.on.name != self.opt_on.name:
+                for k in op_expr.op.on.context_constant.keys():
+                    self.opt_on.context_constant[k] = op_expr.op.on.context_constant[k]
+
+                return op_expr.op.on.joint_frame.sdql_ir
+
             if self.is_joint:
                 return self.joint_frame.sdql_ir
         else:
             last_op = self.retriever.find_last_iter()
             print('Unknown Last Operation:', type(last_op), last_op)
-            if last_op is None:
-                print(self.opt_on.operations)
             raise NotImplementedError
 
     def fill_context_unopt(self, last_rename=''):

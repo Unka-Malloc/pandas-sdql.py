@@ -586,3 +586,68 @@ class SDQLInspector:
             SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
 
         return all_non_null
+
+    @staticmethod
+    def replace_field(sdql_obj, inplace=True, mapper=None):
+        if isinstance(sdql_obj, ConstantExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            field = sdql_obj.name
+
+            if mapper:
+                if field in mapper.keys():
+                    if inplace:
+                        return mapper[field]
+                    else:
+                        return RecAccessExpr(mapper[field], field)
+                else:
+                    return sdql_obj
+
+                    # raise IndexError(f'{field} is not in mapper keys {mapper.keys()}')
+            else:
+                raise IndexError(f'mapper is None')
+
+        if isinstance(sdql_obj, AddExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return AddExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, SubExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return SubExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, MulExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return MulExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, DivExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return DivExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, IfExpr):
+            el_cond = SDQLInspector.replace_field(sdql_obj.condExpr, inplace, mapper)
+            el_then = SDQLInspector.replace_field(sdql_obj.thenBodyExpr, inplace, mapper)
+            el_else = SDQLInspector.replace_field(sdql_obj.elseBodyExpr, inplace, mapper)
+
+            return IfExpr(el_cond, el_then, el_else)
+
+        if isinstance(sdql_obj, ExtFuncExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, CompareExpr):
+            return sdql_obj
+
+    @staticmethod
+    def check_equal_expr(op1, op2):
+        if str(op1) == str(op2):
+            return True
+        else:
+            return False
