@@ -645,12 +645,6 @@ class Retriever:
         return cleaned_cols
 
     @staticmethod
-    def purify_cond(cond: CondExpr) -> dict:
-        cond_mapper = {}
-
-        return cond_mapper
-
-    @staticmethod
     def replace_cond(cond: CondExpr, mapper: dict) -> CondExpr:
         new_unit1 = cond.unit1
         new_unit2 = cond.unit2
@@ -1550,12 +1544,35 @@ class Retriever:
 
         return used_cols
 
-    def find_unopt_apply(self, target_column):
-        for op_expr in self.history:
-            op_body = op_expr.op
+    def purify_cond(self, target, accepted):
+        if isinstance(target, CondExpr):
+            u1_pure = all([i in accepted for i in self.find_cols(target.unit1)])
+            u2_pure = all([i in accepted for i in self.find_cols(target.unit2)])
 
-            if isinstance(op_body, ApplyOpExprUnopt):
-                if op_body.apply_to == target_column:
-                    return op_body.sdql_ir
+            if u1_pure:
+                if u2_pure:
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
+            else:
+                if u2_pure:
+                    return target.unit2
+                else:
+                    raise NotImplementedError
 
-        return None
+
+    def residue_cond(self, target, accepted):
+        if isinstance(target, CondExpr):
+            u1_pure = all([i in accepted for i in self.find_cols(target.unit1)])
+            u2_pure = all([i in accepted for i in self.find_cols(target.unit2)])
+
+            if u1_pure:
+                if u2_pure:
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
+            else:
+                if u2_pure:
+                    return target.unit1
+                else:
+                    raise NotImplementedError
