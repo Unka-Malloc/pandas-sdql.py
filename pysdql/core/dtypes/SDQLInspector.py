@@ -451,14 +451,22 @@ class SDQLInspector:
         return result
 
     @staticmethod
-    def rename_last_binding(sdql_obj, new_name):
+    def rename_last_binding(sdql_obj, new_name, with_res=True, keep_the=None):
         all_bindings = SDQLInspector.split_bindings(sdql_obj)
         all_bindings[-1] = LetExpr(VarExpr(new_name),
                                    all_bindings[-1].valExpr,
                                    all_bindings[-1].bodyExpr)
-        all_bindings.append(LetExpr(VarExpr('results'),
+
+        if keep_the:
+            all_bindings[-1] = LetExpr(VarExpr(new_name),
+                                       all_bindings[keep_the].varExpr,
+                                       ConstantExpr(True))
+
+        if with_res:
+            all_bindings.append(LetExpr(VarExpr('results'),
                                     VarExpr(new_name),
                                     ConstantExpr(True)))
+
         return SDQLInspector.concat_bindings(all_bindings)
 
     @staticmethod
@@ -582,7 +590,147 @@ class SDQLInspector:
 
         if isinstance(sdql_obj, DicLookupExpr):
             all_non_null.append(sdql_obj)
-        else:
-            SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
 
-        return all_non_null
+            if isinstance(sdql_obj.keyExpr, RecAccessExpr):
+                if isinstance(sdql_obj.keyExpr.recExpr, DicLookupExpr):
+                    all_non_null += SDQLInspector.gather_all(sdql_obj.keyExpr.recExpr, SDQLInspector.findall_non_null)
+        else:
+            all_non_null += SDQLInspector.gather_all(sdql_obj, SDQLInspector.findall_non_null)
+
+        cleaned_non_null = []
+        dup_non_null_strs = []
+
+        for i in all_non_null:
+            if str(i) not in dup_non_null_strs:
+                dup_non_null_strs.append(str(i))
+                cleaned_non_null.append(i)
+
+        return cleaned_non_null
+
+    @staticmethod
+    def replace_access(sdql_obj, to_rec):
+        if isinstance(sdql_obj, ConstantExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, VarExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            field = sdql_obj.name
+
+            return RecAccessExpr(to_rec, field)
+
+        if isinstance(sdql_obj, AddExpr):
+            el_1 = SDQLInspector.replace_access(sdql_obj.op1Expr, to_rec)
+            el_2 = SDQLInspector.replace_access(sdql_obj.op2Expr, to_rec)
+
+            return AddExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, SubExpr):
+            el_1 = SDQLInspector.replace_access(sdql_obj.op1Expr, to_rec)
+            el_2 = SDQLInspector.replace_access(sdql_obj.op2Expr, to_rec)
+
+            return SubExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, MulExpr):
+            el_1 = SDQLInspector.replace_access(sdql_obj.op1Expr, to_rec)
+            el_2 = SDQLInspector.replace_access(sdql_obj.op2Expr, to_rec)
+
+            return MulExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, DivExpr):
+            el_1 = SDQLInspector.replace_access(sdql_obj.op1Expr, to_rec)
+            el_2 = SDQLInspector.replace_access(sdql_obj.op2Expr, to_rec)
+
+            return DivExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, IfExpr):
+            el_cond = SDQLInspector.replace_access(sdql_obj.condExpr, to_rec)
+            el_then = SDQLInspector.replace_access(sdql_obj.thenBodyExpr, to_rec)
+            el_else = SDQLInspector.replace_access(sdql_obj.elseBodyExpr, to_rec)
+
+            return IfExpr(el_cond, el_then, el_else)
+
+        if isinstance(sdql_obj, ExtFuncExpr):
+            el1 = SDQLInspector.replace_access(sdql_obj.inp1, to_rec)
+            el2 = SDQLInspector.replace_access(sdql_obj.inp2, to_rec)
+            el3 = SDQLInspector.replace_access(sdql_obj.inp3, to_rec)
+
+            return ExtFuncExpr(sdql_obj.symbol, el1, el2, el3)
+
+        if isinstance(sdql_obj, CompareExpr):
+            if sdql_obj.compareType == CompareSymbol.NE and isinstance(sdql_obj.leftExpr, DicLookupExpr) and isinstance(sdql_obj.rightExpr, ConstantExpr):
+                if sdql_obj.rightExpr.value is None:
+                    return ConstantExpr(True)
+            else:
+                left = SDQLInspector.replace_access(sdql_obj.leftExpr, to_rec)
+                right = SDQLInspector.replace_access(sdql_obj.rightExpr, to_rec)
+
+                return CompareExpr(sdql_obj.compareType, left, right)
+
+        return sdql_obj
+
+    @staticmethod
+    def replace_field(sdql_obj, inplace=True, mapper=None):
+        if isinstance(sdql_obj, ConstantExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            field = sdql_obj.name
+
+            if mapper:
+                if field in mapper.keys():
+                    if inplace:
+                        return mapper[field]
+                    else:
+                        return RecAccessExpr(mapper[field], field)
+                else:
+                    return sdql_obj
+
+                    # raise IndexError(f'{field} is not in mapper keys {mapper.keys()}')
+            else:
+                raise IndexError(f'mapper is None')
+
+        if isinstance(sdql_obj, AddExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return AddExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, SubExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return SubExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, MulExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return MulExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, DivExpr):
+            el_1 = SDQLInspector.replace_field(sdql_obj.op1Expr, inplace, mapper)
+            el_2 = SDQLInspector.replace_field(sdql_obj.op2Expr, inplace, mapper)
+
+            return DivExpr(el_1, el_2)
+
+        if isinstance(sdql_obj, IfExpr):
+            el_cond = SDQLInspector.replace_field(sdql_obj.condExpr, inplace, mapper)
+            el_then = SDQLInspector.replace_field(sdql_obj.thenBodyExpr, inplace, mapper)
+            el_else = SDQLInspector.replace_field(sdql_obj.elseBodyExpr, inplace, mapper)
+
+            return IfExpr(el_cond, el_then, el_else)
+
+        if isinstance(sdql_obj, ExtFuncExpr):
+            return sdql_obj
+
+        if isinstance(sdql_obj, CompareExpr):
+            return sdql_obj
+
+    @staticmethod
+    def check_equal_expr(op1, op2):
+        if str(op1) == str(op2):
+            return True
+        else:
+            return False

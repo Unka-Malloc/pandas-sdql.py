@@ -1,6 +1,9 @@
+from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
+from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
-from pysdql.core.dtypes.EnumUtil import LastIterFunc
+from pysdql.core.dtypes.EnumUtil import LastIterFunc, OpRetType
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
@@ -288,6 +291,8 @@ class Retriever:
                     cols_used += self.find_cols(op_body.col_expr)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, ColApplyExpr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr.sdql_ir)
                 else:
                     raise NotImplementedError(f'Unsupport Type: {type(op_body.col_expr)}')
 
@@ -306,6 +311,8 @@ class Retriever:
                     cols_used.append(op_body.col_expr)
                 elif isinstance(op_body.col_expr, (ColEl, ColOpExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, ColApplyExpr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr.sdql_ir)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
                 else:
@@ -636,12 +643,6 @@ class Retriever:
             [cleaned_cols.append(x) for x in all_cols if x not in cleaned_cols]
 
         return cleaned_cols
-
-    @staticmethod
-    def purify_cond(cond: CondExpr) -> dict:
-        cond_mapper = {}
-
-        return cond_mapper
 
     @staticmethod
     def replace_cond(cond: CondExpr, mapper: dict) -> CondExpr:
@@ -1052,42 +1053,82 @@ class Retriever:
 
         all_parts = start_from.retriever.findall_part_for_root_probe('as_body')
 
-        if key_to == root_part_key:
-            lookup_expr = root_probe.key_access(root_probe_key)
+        if isinstance(root_part_key, list) and isinstance(root_probe_key, list):
+            if key_to in root_part_key:
+                lookup_expr = root_probe.key_access(root_probe_key[root_part_key.index(key_to)])
 
-            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to == root_probe_key:
-            lookup_expr = root_probe.key_access(root_probe_key)
+                return lookup_expr
+            elif key_to in root_probe_key:
+                lookup_expr = root_probe.key_access(key_to)
 
-            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to in root_probe.columns:
-            lookup_expr = root_probe.key_access(key_to)
+                return lookup_expr
+            elif key_to in root_probe.columns:
+                lookup_expr = root_probe.key_access(key_to)
 
-            # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
-        elif key_to in root_part.columns:
-            lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
-                                                              keyExpr=root_probe.key_access(root_probe_key)),
-                                        fieldName=key_to)
+                return lookup_expr
+            elif key_to in root_part.columns:
+                lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
+                                                                  keyExpr=RecConsExpr([(root_part_key[root_probe_key.index(i)],
+                                                                                        root_probe.key_access(i))
+                                                                                       for i in root_probe_key])),
+                                            fieldName=key_to)
 
-            # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-            return lookup_expr
+                return lookup_expr
+            else:
+                for part in all_parts:
+                    if key_to in part.columns:
+                        lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+
+                        # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                        return lookup_expr
+
+            raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
         else:
-            for part in all_parts:
-                if key_to in part.columns:
-                    lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+            if key_to == root_part_key:
+                lookup_expr = root_probe.key_access(root_probe_key)
 
-                    # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
 
-                    return lookup_expr
+                return lookup_expr
+            elif key_to == root_probe_key:
+                lookup_expr = root_probe.key_access(root_probe_key)
 
-        raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            elif key_to in root_probe.columns:
+                lookup_expr = root_probe.key_access(key_to)
+
+                # print(f'column {key_to} is in {root_probe}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            elif key_to in root_part.columns:
+                lookup_expr = RecAccessExpr(recExpr=DicLookupExpr(dicExpr=root_part.var_part,
+                                                                  keyExpr=root_probe.key_access(root_probe_key)),
+                                            fieldName=key_to)
+
+                # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                return lookup_expr
+            else:
+                for part in all_parts:
+                    if key_to in part.columns:
+                        lookup_expr = Retriever.find_bypass_lookup(all_parts, key_to, root_merge)
+
+                        # print(f'column {key_to} is in {root_part}, can be accessed by {lookup_expr}')
+
+                        return lookup_expr
+
+            raise NotImplementedError(f'Unable to find {key_to} for {root_probe}')
 
     @staticmethod
     def find_bypass_lookup(all_parts, target, root_merge):
@@ -1460,5 +1501,78 @@ class Retriever:
 
         return expr1.oid == expr2.oid
 
+    def insert_aggr(self, to_which):
+        aggr_list = []
+        col_ins_list = []
+
+        target_out = {}
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrExpr):
+                aggr_list.append(op_body)
+
+            if isinstance(op_body, NewColOpExpr):
+                col_ins_list.append(op_body.col_var)
+
+        for aggr_expr in aggr_list:
+            aggr_name = list(aggr_expr.aggr_op.keys())[0]
+
+            if aggr_name not in col_ins_list:
+                new_col_obj = NewColOpExpr(aggr_name, aggr_expr.aggr_op[aggr_name])
+
+                target_out[aggr_name] = aggr_expr.aggr_op[aggr_name]
+
+                op_expr = OpExpr(op_obj=new_col_obj,
+                                 op_on=to_which,
+                                 op_iter=True,
+                                 iter_on=to_which,
+                                 ret_type=OpRetType.FLOAT)
+                to_which.push(op_expr)
+
+        return target_out
+
+    def findall_cols_for_calc(self):
+        used_cols = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CalcExpr):
+                used_cols = SDQLInspector.find_cols(op_body.sdql_ir)
+
+        return used_cols
+
+    def purify_cond(self, target, accepted):
+        if isinstance(target, CondExpr):
+            u1_pure = all([i in accepted for i in self.find_cols(target.unit1)])
+            u2_pure = all([i in accepted for i in self.find_cols(target.unit2)])
+
+            if u1_pure:
+                if u2_pure:
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
+            else:
+                if u2_pure:
+                    return target.unit2
+                else:
+                    raise NotImplementedError
 
 
+    def residue_cond(self, target, accepted):
+        if isinstance(target, CondExpr):
+            u1_pure = all([i in accepted for i in self.find_cols(target.unit1)])
+            u2_pure = all([i in accepted for i in self.find_cols(target.unit2)])
+
+            if u1_pure:
+                if u2_pure:
+                    raise NotImplementedError
+                else:
+                    raise NotImplementedError
+            else:
+                if u2_pure:
+                    return target.unit1
+                else:
+                    raise NotImplementedError

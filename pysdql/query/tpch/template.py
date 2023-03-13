@@ -555,6 +555,8 @@ def tpch_q18(lineitem, customer, orders):
     # 1M
     var1 = tpch_vars[18][0]
 
+    l1 = lineitem.copy()
+
     li_aggr = lineitem \
         .groupby(["l_orderkey"]) \
         .agg(sum_quantity=("l_quantity", "sum"))
@@ -568,7 +570,7 @@ def tpch_q18(lineitem, customer, orders):
     cu_ord_join = cu_proj.merge(ord_filt, left_on="c_custkey", right_on="o_custkey", how="inner")
     cu_ord_join = cu_ord_join[["c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice"]]
 
-    li_ord_join = cu_ord_join.merge(lineitem, left_on="o_orderkey", right_on="l_orderkey", how="inner")
+    li_ord_join = cu_ord_join.merge(l1, left_on="o_orderkey", right_on="l_orderkey", how="inner")
 
     result = li_ord_join \
         .groupby(["c_name", "c_custkey", "o_orderkey", "o_orderdate", "o_totalprice"], as_index=False) \

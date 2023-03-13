@@ -202,7 +202,7 @@ def tpch_q5(lineitem, customer, orders, region, nation, supplier):
 def tpch_q6(lineitem):
     df_filter_1 = lineitem[
         (lineitem.l_shipdate >= '1994-01-01 00:00:00') & (lineitem.l_shipdate < '1995-01-01 00:00:00') & (
-                    lineitem.l_discount >= 0.05) & (
+                lineitem.l_discount >= 0.05) & (
                 lineitem.l_discount <= 0.07) & (lineitem.l_quantity < 24)]
     df_filter_1 = df_filter_1[
         ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
@@ -246,7 +246,7 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
     df_merge_5 = df_merge_2.merge(df_merge_4, left_on=['l_orderkey'], right_on=['o_orderkey'], how="inner", sort=False)
     df_merge_5['l_year'] = df_merge_5.l_shipdate.dt.year
     df_merge_5 = df_merge_5[((df_merge_5.n_name_x == 'FRANCE') & (df_merge_5.n_name_y == 'GERMANY')) | (
-                (df_merge_5.n_name_x == 'GERMANY') & (df_merge_5.n_name_y == 'FRANCE'))]
+            (df_merge_5.n_name_x == 'GERMANY') & (df_merge_5.n_name_y == 'FRANCE'))]
     df_merge_5 = df_merge_5[['n_name_x', 'n_name_y', 'l_year', 'l_extendedprice', 'l_discount']]
     df_merge_5['supp_nation'] = df_merge_5.n_name_x
     df_merge_5['cust_nation'] = df_merge_5.n_name_y
@@ -264,24 +264,24 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
 
 
 def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
-    df_filter_1 = ord[(ord.o_orderdate >= '1995-01-01 00:00:00') & (ord.o_orderdate <= '1996-12-31 00:00:00')]
+    df_filter_1 = orders[(orders.o_orderdate >= '1995-01-01 00:00:00') & (orders.o_orderdate <= '1996-12-31 00:00:00')]
     df_filter_1 = df_filter_1[
         ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk',
          'o_shippriority', 'o_comment']]
-    df_filter_2 = li[
+    df_filter_2 = lineitem[
         ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
          'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
          'l_comment']]
-    df_filter_3 = pa[(pa.p_type) == 'ECONOMY ANODIZED STEEL']
+    df_filter_3 = part[(part.p_type) == 'ECONOMY ANODIZED STEEL']
     df_filter_3 = df_filter_3[['p_partkey']]
     df_merge_1 = df_filter_2.merge(df_filter_3, left_on=['l_partkey'], right_on=['p_partkey'], how="inner", sort=False)
     df_merge_1 = df_merge_1[['l_extendedprice', 'l_discount', 'l_suppkey', 'l_orderkey']]
     df_merge_2 = df_filter_1.merge(df_merge_1, left_on=['o_orderkey'], right_on=['l_orderkey'], how="inner", sort=False)
     df_merge_2 = df_merge_2[['l_extendedprice', 'l_discount', 'l_suppkey', 'o_orderdate', 'o_custkey']]
-    df_filter_4 = cu[
+    df_filter_4 = customer[
         ['c_custkey', 'c_name', 'c_address', 'c_nationkey', 'c_phone', 'c_acctbal', 'c_mktsegment', 'c_comment']]
-    df_filter_5 = na[['n_nationkey', 'n_name', 'n_regionkey', 'n_comment']]
-    df_filter_6 = re[(re.r_name == 'AMERICA')]
+    df_filter_5 = nation[['n_nationkey', 'n_name', 'n_regionkey', 'n_comment']]
+    df_filter_6 = region[(region.r_name == 'AMERICA')]
     df_filter_6 = df_filter_6[['r_regionkey']]
     df_merge_3 = df_filter_5.merge(df_filter_6, left_on=['n_regionkey'], right_on=['r_regionkey'], how="inner",
                                    sort=False)
@@ -291,10 +291,10 @@ def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
     df_merge_4 = df_merge_4[['c_custkey']]
     df_merge_5 = df_merge_2.merge(df_merge_4, left_on=['o_custkey'], right_on=['c_custkey'], how="inner", sort=False)
     df_merge_5 = df_merge_5[['l_extendedprice', 'l_discount', 'l_suppkey', 'o_orderdate']]
-    df_filter_7 = su[['s_suppkey', 's_nationkey']]
+    df_filter_7 = supplier[['s_suppkey', 's_nationkey']]
     df_merge_6 = df_merge_5.merge(df_filter_7, left_on=['l_suppkey'], right_on=['s_suppkey'], how="inner", sort=False)
     df_merge_6 = df_merge_6[['l_extendedprice', 'l_discount', 's_nationkey', 'o_orderdate']]
-    df_filter_8 = na[['n_name', 'n_nationkey']]
+    df_filter_8 = nation[['n_name', 'n_nationkey']]
     df_merge_7 = df_merge_6.merge(df_filter_8, left_on=['s_nationkey'], right_on=['n_nationkey'], how="inner",
                                   sort=False)
     df_merge_7['o_year'] = df_merge_7.o_orderdate.dt.year
@@ -349,7 +349,7 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
     df_sort_1 = df_merge_5.sort_values(by=['nation', 'o_year'], ascending=[True, False])
     df_sort_1 = df_sort_1[['nation', 'o_year', 'l_extendedprice', 'l_discount', 'ps_supplycost', 'l_quantity']]
     df_sort_1['amount'] = (((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount))) - (
-                (df_sort_1.ps_supplycost) * (df_sort_1.l_quantity)))
+            (df_sort_1.ps_supplycost) * (df_sort_1.l_quantity)))
     df_group_1 = df_sort_1 \
         .groupby(['nation', 'o_year'], sort=False) \
         .agg(
@@ -454,8 +454,8 @@ def tpch_q12(orders, lineitem):
          'o_shippriority', 'o_comment']]
     df_filter_2 = lineitem[
         (lineitem.l_shipmode.isin(["MAIL", "SHIP"])) & (lineitem.l_commitdate < lineitem.l_receiptdate) & (
-                    lineitem.l_shipdate < lineitem.l_commitdate) & (lineitem.l_receiptdate >= '1994-01-01 00:00:00') & (
-                    lineitem.l_receiptdate < '1995-01-01 00:00:00')]
+                lineitem.l_shipdate < lineitem.l_commitdate) & (lineitem.l_receiptdate >= '1994-01-01 00:00:00') & (
+                lineitem.l_receiptdate < '1995-01-01 00:00:00')]
     df_filter_2 = df_filter_2[['l_shipmode', 'l_orderkey']]
     df_sort_1 = df_filter_2.sort_values(by=['l_orderkey'], ascending=[True])
     df_sort_1 = df_sort_1[['l_shipmode', 'l_orderkey']]
@@ -676,33 +676,33 @@ def tpch_q18(lineitem, customer, orders):
 def tpch_q19(lineitem, part):
     df_filter_1 = lineitem[
         (lineitem.l_shipmode.isin(["AIR", "AIR REG"])) & (lineitem.l_shipinstruct == 'DELIVER IN PERSON') & (
-                    ((lineitem.l_quantity >= 1) & (lineitem.l_quantity <= 11)) | (
-                        (lineitem.l_quantity >= 10) & (lineitem.l_quantity <= 20)) | (
-                                (lineitem.l_quantity >= 20) & (lineitem.l_quantity <= 30)))]
+                ((lineitem.l_quantity >= 1) & (lineitem.l_quantity <= 11)) | (
+                (lineitem.l_quantity >= 10) & (lineitem.l_quantity <= 20)) | (
+                        (lineitem.l_quantity >= 20) & (lineitem.l_quantity <= 30)))]
     df_filter_1 = df_filter_1[
         ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
          'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
          'l_comment']]
     df_filter_2 = part[(part.p_size >= 1) & (((part.p_brand == 'Brand#12') & (
         part.p_container.isin(["SM CASE", "SM BOX", "SM PACK", "SM PKG"])) & (part.p_size <= 5)) | (
-                                                         (part.p_brand == 'Brand#23') & (part.p_container.isin(
-                                                     ["MED BAG", "MED BOX", "MED PKG", "MED PACK"])) & (
-                                                                     part.p_size <= 10)) | (
-                                                         (part.p_brand == 'Brand#34') & (part.p_container.isin(
-                                                     ["LG CASE", "LG BOX", "LG PACK", "LG PKG"])) & (
-                                                                     part.p_size <= 15)))]
+                                                     (part.p_brand == 'Brand#23') & (part.p_container.isin(
+                                                 ["MED BAG", "MED BOX", "MED PKG", "MED PACK"])) & (
+                                                             part.p_size <= 10)) | (
+                                                     (part.p_brand == 'Brand#34') & (part.p_container.isin(
+                                                 ["LG CASE", "LG BOX", "LG PACK", "LG PKG"])) & (
+                                                             part.p_size <= 15)))]
     df_filter_2 = df_filter_2[['p_partkey', 'p_brand', 'p_container', 'p_size']]
     df_merge_1 = df_filter_1.merge(df_filter_2, left_on=['l_partkey'], right_on=['p_partkey'], how="inner", sort=False)
     df_merge_1 = df_merge_1[((df_merge_1.p_brand == 'Brand#12') & (
         df_merge_1.p_container.isin(["SM CASE", "SM BOX", "SM PACK", "SM PKG"])) & (df_merge_1.l_quantity >= 1) & (
-                                         df_merge_1.l_quantity <= 11) & (df_merge_1.p_size <= 5)) | (
-                                        (df_merge_1.p_brand == 'Brand#23') & (
-                                    df_merge_1.p_container.isin(["MED BAG", "MED BOX", "MED PKG", "MED PACK"])) & (
-                                                    df_merge_1.l_quantity >= 10) & (df_merge_1.l_quantity <= 20) & (
-                                                    df_merge_1.p_size <= 10)) | ((df_merge_1.p_brand == 'Brand#34') & (
+                                     df_merge_1.l_quantity <= 11) & (df_merge_1.p_size <= 5)) | (
+                                    (df_merge_1.p_brand == 'Brand#23') & (
+                                df_merge_1.p_container.isin(["MED BAG", "MED BOX", "MED PKG", "MED PACK"])) & (
+                                            df_merge_1.l_quantity >= 10) & (df_merge_1.l_quantity <= 20) & (
+                                            df_merge_1.p_size <= 10)) | ((df_merge_1.p_brand == 'Brand#34') & (
         df_merge_1.p_container.isin(["LG CASE", "LG BOX", "LG PACK", "LG PKG"])) & (df_merge_1.l_quantity >= 20) & (
-                                                                                             df_merge_1.l_quantity <= 30) & (
-                                                                                             df_merge_1.p_size <= 15))]
+                                                                                 df_merge_1.l_quantity <= 30) & (
+                                                                                 df_merge_1.p_size <= 15))]
     df_merge_1 = df_merge_1[['l_extendedprice', 'l_discount']]
     df_aggr_1 = pd.DataFrame()
     df_aggr_1['revenue'] = [((df_merge_1.l_extendedprice) * (1 - (df_merge_1.l_discount))).sum()]

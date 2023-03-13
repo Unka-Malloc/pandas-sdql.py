@@ -10,7 +10,7 @@ from pysdql.core.dtypes.sdql_ir import CompareSymbol
 
 class AggrExpr(FlexIR):
     def __init__(self, aggr_type, aggr_on, aggr_op: dict, aggr_if=None, aggr_else=None, update_sum=False,
-                 origin_dict=None):
+                 origin_dict=None, for_calc=False):
         if origin_dict is None:
             origin_dict = {}
         self.origin_dict = origin_dict
@@ -22,6 +22,8 @@ class AggrExpr(FlexIR):
         self.aggr_else = aggr_else
 
         self.update_sum = update_sum
+
+        self.for_calc = for_calc
 
     @staticmethod
     def rename_aggr_key(aggr_dict, from_name, to_name):
@@ -81,6 +83,9 @@ class AggrExpr(FlexIR):
 
     def __mul__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.aggr_on)
+
+    def __rmul__(self, other):
+        return CalcExpr(input_fmt(other), input_fmt(self), MathSymbol.MUL, self.aggr_on)
 
     def __truediv__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.aggr_on)

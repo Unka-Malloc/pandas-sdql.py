@@ -4,6 +4,7 @@ from pysdql.core.dtypes.EnumUtil import (
     OpRetType
 )
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.Utils import input_fmt
 from pysdql.core.dtypes.sdql_ir import ConstantExpr, DivExpr, MulExpr, RecAccessExpr
 
@@ -34,8 +35,14 @@ class CalcExpr(FlexIR):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.on)
 
     def __truediv__(self, other):
-        print(input_fmt(self))
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
+
+    def match_aggr(self, target, to_which):
+        for k in target.keys():
+            if SDQLInspector.check_equal_expr(self.unit1, target[k]):
+                self.unit1 = RecAccessExpr(to_which.var_expr, k)
+            if SDQLInspector.check_equal_expr(self.unit2, target[k]):
+                self.unit2 = RecAccessExpr(to_which.var_expr, k)
 
     @staticmethod
     def unit_fmt(value):

@@ -4,10 +4,14 @@ import inspect
 import string
 import pathlib
 
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
+from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
+from pysdql.core.dtypes.ApplyOpExpr import ApplyOpExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
@@ -21,6 +25,7 @@ from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -573,24 +578,26 @@ class DataFrame(FlexIR, Retrivable):
             if col_name in self.retriever.find_cols_used(mode='aggregation'):
                 return ColEl(self, col_name)
         else:
+            # print(self.operations)
+            # return ColEl(self, col_name)
             raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
 
     def __setitem__(self, key, value):
         if key in self.columns:
             if type(value) in (bool, int, float, str):
                 return self.rename_col_scalar(key, value)
-            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr):
+            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr, ColApplyExpr):
                 return self.rename_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.rename_col_expr(key, value)
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
-            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr):
+            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr, ColApplyExpr):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
-            if type(value) in (list, ):
+            if type(value) in (list,):
                 if isinstance(key, str) and len(value) == 1:
                     if isinstance(value[0], AggrExpr):
                         aggr_obj = value[0]
@@ -602,6 +609,27 @@ class DataFrame(FlexIR, Retrivable):
                                          iter_on=aggr_obj.aggr_on,
                                          ret_type=OpRetType.FLOAT)
                         self.push(op_expr)
+                    elif isinstance(value[0], CalcExpr):
+                        calc_obj = value[0]
+
+                        target = calc_obj.on.retriever.insert_aggr(calc_obj.on)
+
+                        calc_obj.match_aggr(target, calc_obj.on)
+
+                        op_expr = OpExpr(op_obj=calc_obj,
+                                         op_on=calc_obj.on,
+                                         op_iter=True,
+                                         iter_on=calc_obj.on,
+                                         ret_type=OpRetType.FLOAT)
+
+                        calc_obj.on.push(op_expr)
+                        self.push(op_expr)
+                    else:
+                        raise NotImplementedError
+                else:
+                    raise NotImplementedError
+
+                return self
 
     def rename(self, mapper: dict, axis=1, inplace=True):
         for key in mapper.keys():
@@ -1090,6 +1118,8 @@ class DataFrame(FlexIR, Retrivable):
 
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
+        unopt_cond = cond if isinstance(cond, Expr) else cond.sdql_ir
+
         if self.is_joint:
             if isinstance(cond, ColExtExpr):
                 col_name = cond.col.field
@@ -1098,15 +1128,38 @@ class DataFrame(FlexIR, Retrivable):
                                                     op_on=self,
                                                     op_iter=False))
 
-                    return IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                    apply_cond = CompareExpr(CompareSymbol.NE,
                                                        DicLookupExpr(self.joint_frame.part_frame.part_on_var,
                                                                      self.joint_frame.probe_frame.probe_key_sdql_ir),
-                                                       ConstantExpr(None)),
-                                  thenBodyExpr=op.sdql_ir,
-                                  elseBodyExpr=ConstantExpr(lamb_else))
+                                                       ConstantExpr(None))
+
+                    apply_op = op.sdql_ir
+
+                    return ColApplyExpr(
+                        apply_op=apply_op,
+                        apply_cond=apply_cond,
+                        apply_else=ConstantExpr(lamb_else),
+                        unopt_cond=unopt_cond,
+                    )
+
+                    # return IfExpr(condExpr=apply_cond,
+                    #               thenBodyExpr=apply_op,
+                    #               elseBodyExpr=ConstantExpr(lamb_else))
                 elif col_name in self.probe_side.columns:
+                    if_expr = IfExpr(condExpr=CompareExpr(CompareSymbol.NE,
+                                                          DicLookupExpr(self.joint_frame.part_frame.part_on_var,
+                                                                        self.joint_frame.probe_frame.probe_key_sdql_ir),
+                                                          ConstantExpr(None)),
+                                     thenBodyExpr=op.sdql_ir,
+                                     elseBodyExpr=ConstantExpr(lamb_else))
+
+                    if_expr = IfExpr(condExpr=cond.sdql_ir,
+                                     thenBodyExpr=if_expr,
+                                     elseBodyExpr=ConstantExpr(lamb_else))
 
                     raise NotImplementedError
+
+                    return if_expr
                 elif col_name in self.columns:
 
                     raise NotImplementedError
@@ -1134,9 +1187,16 @@ class DataFrame(FlexIR, Retrivable):
                         else:
                             apply_op = op
 
-                        return IfExpr(condExpr=apply_cond,
-                                      thenBodyExpr=apply_op,
-                                      elseBodyExpr=ConstantExpr(lamb_else))
+                        return ColApplyExpr(
+                            apply_op=apply_op,
+                            apply_cond=apply_cond,
+                            apply_else=ConstantExpr(lamb_else),
+                            unopt_cond=unopt_cond,
+                        )
+
+                        # return IfExpr(condExpr=apply_cond,
+                        #               thenBodyExpr=apply_op,
+                        #               elseBodyExpr=ConstantExpr(lamb_else))
                     elif only_for == self.probe_side.name:
                         apply_cond = cond.replace(rec=self.probe_side.iter_el.key,
                                                   inplace=False)
@@ -1145,6 +1205,8 @@ class DataFrame(FlexIR, Retrivable):
                             apply_op = op.sdql_ir
                         else:
                             apply_op = op
+
+                        raise NotImplementedError
 
                         return IfExpr(condExpr=apply_cond,
                                       thenBodyExpr=apply_op,
@@ -1188,9 +1250,16 @@ class DataFrame(FlexIR, Retrivable):
                             else:
                                 raise NotImplementedError
 
-                            return IfExpr(condExpr=apply_cond,
-                                          thenBodyExpr=apply_op,
-                                          elseBodyExpr=ConstantExpr(lamb_else))
+                            return ColApplyExpr(
+                                apply_op=apply_op,
+                                apply_cond=apply_cond,
+                                apply_else=ConstantExpr(lamb_else),
+                                unopt_cond=unopt_cond,
+                            )
+
+                            # return IfExpr(condExpr=apply_cond,
+                            #               thenBodyExpr=apply_op,
+                            #               elseBodyExpr=ConstantExpr(lamb_else))
                     else:
                         raise NotImplementedError
                 else:
@@ -1205,11 +1274,19 @@ class DataFrame(FlexIR, Retrivable):
                     else:
                         apply_op = op
 
-                    return IfExpr(condExpr=self.joint_frame.part_nonull(),
-                                  thenBodyExpr=IfExpr(condExpr=apply_cond,
-                                                      thenBodyExpr=apply_op,
-                                                      elseBodyExpr=ConstantExpr(lamb_else)),
-                                  elseBodyExpr=ConstantExpr(lamb_else))
+                    return ColApplyExpr(
+                        apply_op=apply_op,
+                        apply_cond=apply_cond,
+                        apply_else=ConstantExpr(lamb_else),
+                        more_cond=[self.joint_frame.part_nonull()],
+                        unopt_cond=unopt_cond,
+                    )
+
+                    # return IfExpr(condExpr=self.joint_frame.part_nonull(),
+                    #               thenBodyExpr=IfExpr(condExpr=apply_cond,
+                    #                                   thenBodyExpr=apply_op,
+                    #                                   elseBodyExpr=ConstantExpr(lamb_else)),
+                    #               elseBodyExpr=ConstantExpr(lamb_else))
             else:
                 raise NotImplementedError
         else:
