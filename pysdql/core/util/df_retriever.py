@@ -1,3 +1,5 @@
+from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
@@ -289,6 +291,8 @@ class Retriever:
                     cols_used += self.find_cols(op_body.col_expr)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, ColApplyExpr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr.sdql_ir)
                 else:
                     raise NotImplementedError(f'Unsupport Type: {type(op_body.col_expr)}')
 
@@ -307,6 +311,8 @@ class Retriever:
                     cols_used.append(op_body.col_expr)
                 elif isinstance(op_body.col_expr, (ColEl, ColOpExpr)):
                     cols_used += self.find_cols(op_body.col_expr)
+                elif isinstance(op_body.col_expr, ColApplyExpr):
+                    cols_used += SDQLInspector.find_cols(op_body.col_expr.sdql_ir)
                 elif isinstance(op_body.col_expr, Expr):
                     cols_used += SDQLInspector.find_cols(op_body.col_expr)
                 else:
@@ -1533,3 +1539,23 @@ class Retriever:
 
         return target_out
 
+    def findall_cols_for_calc(self):
+        used_cols = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CalcExpr):
+                used_cols = SDQLInspector.find_cols(op_body.sdql_ir)
+
+        return used_cols
+
+    def find_unopt_apply(self, target_column):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, ApplyOpExprUnopt):
+                if op_body.apply_to == target_column:
+                    return op_body.sdql_ir
+
+        return None

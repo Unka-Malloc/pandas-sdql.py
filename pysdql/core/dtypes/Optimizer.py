@@ -1,5 +1,6 @@
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
@@ -625,6 +626,20 @@ class Optimizer:
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
+            elif isinstance(op_body, NewColOpExpr):
+                tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                if self.retriever.find_unopt_apply(op_body.col_var):
+                    tmp_it.iter_op = NewColOpExpr(op_body.col_var,
+                                                  self.retriever.find_unopt_apply(op_body.col_var))
+                else:
+                    tmp_it.iter_op = op_body
+
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=tmp_it.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
             elif isinstance(op_body, IsInExpr):
                 part_name = map_name_to_dataset(op_body.part_on.name)
                 probe_name = map_name_to_dataset(op_body.probe_on.name)
@@ -811,6 +826,10 @@ class Optimizer:
                                     bodyExpr=ConstantExpr(True))
                         )
             elif isinstance(op_body, AggrExpr):
+                if len(list(op_body.aggr_op.keys())) == 1:
+                    if list(op_body.aggr_op.keys())[0] in self.retriever.findall_cols_for_calc():
+                        continue
+
                 aggr_dict = op_body.aggr_op
 
                 tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
@@ -852,6 +871,8 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, GroupbyAggrExpr):
+                has_mean = False
+
                 groupby_cols = op_body.groupby_cols
                 aggr_dict = op_body.aggr_dict
 
@@ -864,6 +885,8 @@ class Optimizer:
 
                 val_rec_list = []
                 for k in aggr_dict.keys():
+                    if k.endswith('_sum_for_mean') or k.endswith('_count_for_mean'):
+                        has_mean = True
                     v = aggr_dict[k]
                     if isinstance(v, FlexIR):
                         if v.replaceable:
@@ -891,13 +914,55 @@ class Optimizer:
 
                 tmp_it_2 = IterForm(tmp_vn_on_2, tmp_el_on)
 
-                tmp_it_2.iter_op = DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                if has_mean:
+                    rec_list_2 = []
+
+                    for i in groupby_cols:
+                        rec_list_2.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+
+                    origin_dict = op_body.origin_dict
+                    for j in origin_dict.keys():
+                        if origin_dict[j][1] == 'mean':
+                            rec_list_2.append((j, DivExpr(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 1),
+                                                                        f'{j}_sum_for_mean'),
+                                                          RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 1),
+                                                                        f'{j}_count_for_mean'))))
+                        else:
+                            rec_list_2.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 1), j)))
+
+                    tmp_it_2.iter_op = DicConsExpr([(RecConsExpr(rec_list_2),
+                                                     ConstantExpr(True))])
+                else:
+                    tmp_it_2.iter_op = DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
                                                             PairAccessExpr(VarExpr(tmp_el_on), 1)),
                                                  ConstantExpr(True))])
 
                 self.opt_on.context_unopt.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
                             valExpr=tmp_it_2.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
+            elif isinstance(op_body, CalcExpr):
+                tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                tmp_it.iter_op = RecConsExpr([(i,
+                              RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
+                             for i in SDQLInspector.find_cols(op_body.sdql_ir)])
+
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=tmp_it.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
+
+                self.opt_on.unopt_count += 1
+
+                tmp_vn_on_2 = f'v{self.opt_on.unopt_count - 1}'
+                tmp_vn_nx = f'v{self.opt_on.unopt_count}'
+
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=SDQLInspector.replace_access(op_body.sdql_ir, VarExpr(tmp_vn_on_2)),
                             bodyExpr=ConstantExpr(True))
                 )
             else:

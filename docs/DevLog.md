@@ -1,3 +1,27 @@
+# Unoptimized Plan!
+- [x] 1
+- [ ] 2
+- [x] 3
+- [x] 4
+- [x] 5
+- [x] 6
+- [x] 7
+- [ ] 8
+- [x] 9
+- [x] 10
+- [ ] 11
+- [x] 12
+- [ ] 13
+- [x] 14
+- [ ] 15
+- [x] 16
+- [ ] 17
+- [ ] 18
+- [x] 19
+- [ ] 20
+- [x] 21
+- [ ] 22
+
 # PostgreSQL Plan!
 
 ## First Round
@@ -108,3 +132,11 @@ The result should return 4 columns but got 1.
 
 ## Q9
 ### Ignore
+
+# Refactor Plan!
+
+## Apply
+- [x] 8
+- [x] 12
+- [x] 14
+- [x] 19
