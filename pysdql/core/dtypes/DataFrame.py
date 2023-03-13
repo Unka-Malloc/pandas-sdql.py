@@ -596,17 +596,6 @@ class DataFrame(FlexIR, Retrivable):
             if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr, ColApplyExpr):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
-                for e in self.operations:
-                    if isinstance(e.op, ApplyOpExpr):
-                        if SDQLInspector.check_equal_expr(value.thenBodyExpr,
-                                                         e.op.apply_op):
-                            self.push(OpExpr(op_obj=ApplyOpExprUnopt(e.op.apply_op,
-                                                                     key,
-                                                                     e.op.apply_cond,
-                                                                     e.op.apply_else),
-                                             op_on=self,
-                                             op_iter=False))
-
                 return self.insert_col_expr(key, value)
             if type(value) in (list,):
                 if isinstance(key, str) and len(value) == 1:
@@ -1129,17 +1118,7 @@ class DataFrame(FlexIR, Retrivable):
 
         cond = eval(lamb_cond.replace(f'{lamb_arg}[', 'self['))
 
-        unopt_op = op if isinstance(op, Expr) else op.sdql_ir
         unopt_cond = cond if isinstance(cond, Expr) else cond.sdql_ir
-
-        if cond:
-            self.push(OpExpr(op_obj=ApplyOpExpr(unopt_op, unopt_cond, ConstantExpr(lamb_else)),
-                             op_on=self,
-                             op_iter=False))
-        else:
-            self.push(OpExpr(op_obj=ApplyOpExpr(unopt_op),
-                             op_on=self,
-                             op_iter=False))
 
         if self.is_joint:
             if isinstance(cond, ColExtExpr):
@@ -1160,6 +1139,7 @@ class DataFrame(FlexIR, Retrivable):
                         apply_op=apply_op,
                         apply_cond=apply_cond,
                         apply_else=ConstantExpr(lamb_else),
+                        unopt_cond=unopt_cond,
                     )
 
                     # return IfExpr(condExpr=apply_cond,
@@ -1211,6 +1191,7 @@ class DataFrame(FlexIR, Retrivable):
                             apply_op=apply_op,
                             apply_cond=apply_cond,
                             apply_else=ConstantExpr(lamb_else),
+                            unopt_cond=unopt_cond,
                         )
 
                         # return IfExpr(condExpr=apply_cond,
@@ -1273,6 +1254,7 @@ class DataFrame(FlexIR, Retrivable):
                                 apply_op=apply_op,
                                 apply_cond=apply_cond,
                                 apply_else=ConstantExpr(lamb_else),
+                                unopt_cond=unopt_cond,
                             )
 
                             # return IfExpr(condExpr=apply_cond,
@@ -1297,6 +1279,7 @@ class DataFrame(FlexIR, Retrivable):
                         apply_cond=apply_cond,
                         apply_else=ConstantExpr(lamb_else),
                         more_cond=[self.joint_frame.part_nonull()],
+                        unopt_cond=unopt_cond,
                     )
 
                     # return IfExpr(condExpr=self.joint_frame.part_nonull(),
