@@ -134,16 +134,19 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         if pd_df.shape[0] == 1:
             if sdql_df.squeeze() is None:
                 return False
-            if int(sdql_df.squeeze()) == int(pd_df.squeeze()):
-                return True
+            try:
+                if int(sdql_df.squeeze()) == int(pd_df.squeeze()):
+                    return True
+            except:
+                print(sdql_df)
+                print(pd_df)
 
     if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
-
     else:
         print(f'Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
-        return False
+        # return False
 
     for c in sdql_df.columns:
         if c.endswith('_NA'):

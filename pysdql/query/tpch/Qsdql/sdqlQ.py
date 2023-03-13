@@ -517,7 +517,7 @@ def q18(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(lineitem_data, customer_data, orders_data)
+    sdql_result = Q.query(lineitem_data, lineitem_data, customer_data, orders_data)
 
     query_end = time.time()
 

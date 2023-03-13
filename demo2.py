@@ -1,4 +1,6 @@
 import pysdql
 
 if __name__ == '__main__':
-    unoptimized = pysdql.tpch_query([8, 12, 14, 17], verbose=False, optimize=False)
+    pysdql.tpch_query(20, verbose=True, optimize=False)
+
+    # unoptimized = pysdql.tpch_query([15, 18, 22], verbose=False, optimize=False)
