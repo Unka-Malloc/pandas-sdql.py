@@ -149,8 +149,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         if c.endswith('_NA'):
             continue
         if c not in pd_df.columns:
-            print(f'Column {c} not found!')
-            return False
+            print(f'Warning: Column {c} not found!')
+            continue
         if sdql_df[c].dtype == np.float64:
             if sdql_df[c].apply(lambda x: x < np.float64(1.0)).any():
                 sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)

@@ -1,5 +1,6 @@
 from pysdql.core.dtypes import ColOpExpr, ColEl, ColExtExpr, GroupbyAggrExpr, AggrExpr, NewColOpExpr, OldColOpExpr
 from pysdql.core.dtypes.CalcExpr import CalcExpr
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.EnumUtil import OpRetType, AggrType
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
@@ -1460,7 +1461,8 @@ class JointFrame:
                                         if v_name in joint_col_ins.keys():
                                             new_col = joint_col_ins[v_name]
                                             if isinstance(new_col,
-                                                          (ColEl, ColOpExpr, ColExtExpr, NewColOpExpr, OldColOpExpr)):
+                                                          (ColEl, ColOpExpr, ColExtExpr, ColApplyExpr,
+                                                           NewColOpExpr, OldColOpExpr)):
                                                 val_tuples.append((k,
                                                                    new_col.replace(probe_on.iter_el.key)))
                                             elif isinstance(new_col, IfExpr):
@@ -1978,30 +1980,32 @@ class JointFrame:
                 col_inserted = self.retriever.findall_col_insert()
 
                 for i in self.retriever.findall_col_insert().keys():
-                    if isinstance(col_inserted[i], IfExpr):
-                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_inserted[i])]):
-                            mapper = {}
-                            for c in SDQLInspector.find_cols(col_inserted[i]):
-                                if c not in probe_on.columns:
-                                    mapper[c] = self.retriever.find_lookup_path(self, c)
-                            new_op = SDQLInspector.replace_field(col_inserted[i], inplace=True, mapper=mapper)
-                            rec_list.append((i, new_op))
-                        else:
-                            rec_list.append((i, col_inserted[i]))
-                    elif isinstance(col_inserted[i], (AddExpr, SubExpr, MulExpr, DivExpr)):
-                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_inserted[i])]):
-                            mapper = {}
-                            for c in SDQLInspector.find_cols(col_inserted[i]):
-                                if c not in probe_on.columns:
-                                    mapper[c] = self.retriever.find_lookup_path(self, c)
-                            new_op = SDQLInspector.replace_field(col_inserted[i], inplace=True, mapper=mapper)
-                            rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
-                                                       thenBodyExpr=new_op,
-                                                       elseBodyExpr=ConstantExpr(0))))
-                        else:
-                            rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
-                                                       thenBodyExpr=col_inserted[i],
-                                                       elseBodyExpr=ConstantExpr(0))))
+                    if isinstance(col_inserted[i], ColApplyExpr):
+                        target = col_inserted[i].sdql_ir
+                        if isinstance(target, IfExpr):
+                            if any([k not in probe_on.columns for k in SDQLInspector.find_cols(target)]):
+                                mapper = {}
+                                for c in SDQLInspector.find_cols(target):
+                                    if c not in probe_on.columns:
+                                        mapper[c] = self.retriever.find_lookup_path(self, c)
+                                new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+                                rec_list.append((i, new_op))
+                            else:
+                                rec_list.append((i, target))
+                        elif isinstance(target, (AddExpr, SubExpr, MulExpr, DivExpr)):
+                            if any([k not in probe_on.columns for k in SDQLInspector.find_cols(target)]):
+                                mapper = {}
+                                for c in SDQLInspector.find_cols(target):
+                                    if c not in probe_on.columns:
+                                        mapper[c] = self.retriever.find_lookup_path(self, c)
+                                new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+                                rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
+                                                           thenBodyExpr=new_op,
+                                                           elseBodyExpr=ConstantExpr(0))))
+                            else:
+                                rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
+                                                           thenBodyExpr=target,
+                                                           elseBodyExpr=ConstantExpr(0))))
                     elif isinstance(col_inserted[i], FlexIR):
                         rec_list.append((i, col_inserted[i].sdql_ir))
                     else:
@@ -2010,30 +2014,32 @@ class JointFrame:
                 col_renamed = self.retriever.findall_col_rename()
 
                 for j in self.retriever.findall_col_rename().keys():
-                    if isinstance(col_renamed[j], IfExpr):
-                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_renamed[j])]):
-                            mapper = {}
-                            for c in SDQLInspector.find_cols(col_renamed[j]):
-                                if c not in probe_on.columns:
-                                    mapper[c] = self.retriever.find_lookup_path(self, c)
-                            new_op = SDQLInspector.replace_field(col_renamed[j], inplace=True, mapper=mapper)
-                            rec_list.append((j, new_op))
-                        else:
-                            rec_list.append((j, col_renamed[j]))
-                    elif isinstance(col_renamed[j], (AddExpr, SubExpr, MulExpr, DivExpr)):
-                        if any([k not in probe_on.columns for k in SDQLInspector.find_cols(col_renamed[j])]):
-                            mapper = {}
-                            for c in SDQLInspector.find_cols(col_renamed[j]):
-                                if c not in probe_on.columns:
-                                    mapper[c] = self.retriever.find_lookup_path(self, c)
-                            new_op = SDQLInspector.replace_field(col_renamed[j], inplace=True, mapper=mapper)
-                            rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
-                                                       thenBodyExpr=new_op,
-                                                       elseBodyExpr=ConstantExpr(0))))
-                        else:
-                            rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
-                                                       thenBodyExpr=col_renamed[j],
-                                                       elseBodyExpr=ConstantExpr(0))))
+                    if isinstance(col_renamed[j], ColApplyExpr):
+                        target = col_renamed[j].sdql_ir
+                        if isinstance(target, IfExpr):
+                            if any([k not in probe_on.columns for k in SDQLInspector.find_cols(target)]):
+                                mapper = {}
+                                for c in SDQLInspector.find_cols(target):
+                                    if c not in probe_on.columns:
+                                        mapper[c] = self.retriever.find_lookup_path(self, c)
+                                new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+                                rec_list.append((j, new_op))
+                            else:
+                                rec_list.append((j, target))
+                        elif isinstance(target, (AddExpr, SubExpr, MulExpr, DivExpr)):
+                            if any([k not in probe_on.columns for k in SDQLInspector.find_cols(target)]):
+                                mapper = {}
+                                for c in SDQLInspector.find_cols(target):
+                                    if c not in probe_on.columns:
+                                        mapper[c] = self.retriever.find_lookup_path(self, c)
+                                new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+                                rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
+                                                           thenBodyExpr=new_op,
+                                                           elseBodyExpr=ConstantExpr(0))))
+                            else:
+                                rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
+                                                           thenBodyExpr=target,
+                                                           elseBodyExpr=ConstantExpr(0))))
                     elif isinstance(col_renamed[j], FlexIR):
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:
