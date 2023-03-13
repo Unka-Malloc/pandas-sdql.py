@@ -134,7 +134,7 @@ def GenerateSDQLPYCode(AST: Expr, cache):
         return code
     elif inputType == RecConsExpr:
         code += "record({"
-        for k,v in AST.initialPairs:
+        for k, v in AST.initialPairs:
             code += "\""
             code += k
             code += "\": "

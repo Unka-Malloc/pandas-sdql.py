@@ -108,7 +108,9 @@ def q3(execution_mode=0, threads_count=1, optimize=True):
     customer = pysdql.DataFrame()
     orders = pysdql.DataFrame()
 
-    write_query(3, tpch_q3(lineitem, customer, orders).to_sdqlir(optimize))
+    tpch_q3(lineitem, customer, orders).to_sdqlir(optimize)
+
+    # write_query(3, tpch_q3(lineitem, customer, orders).to_sdqlir(optimize))
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
