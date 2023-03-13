@@ -1,4 +1,5 @@
 from pysdql.core.dtypes import NewColOpExpr, AggrExpr, OldColOpExpr, ColExtExpr
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
@@ -35,6 +36,13 @@ class IterForm:
                                                     RecConsExpr([(col.col_var,
                                                                   col.col_expr.replace(self.iter_key).sdql_ir)])),
                                          PairAccessExpr(VarExpr(self.iter_el), 1))])
+                elif isinstance(col.col_expr, ColApplyExpr):
+                    return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                    RecConsExpr([(col.col_var,
+                                                                  SDQLInspector.replace_access(col.col_expr.unopt_sdql_ir,
+                                                                                               PairAccessExpr(VarExpr(self.iter_el),
+                                                                                                              0)))])),
+                                         PairAccessExpr(VarExpr(self.iter_el), 1))])
                 elif isinstance(col.col_expr, (IfExpr, MulExpr, AddExpr, DivExpr, SubExpr)):
                     return DicConsExpr([(ConcatExpr(self.iter_key,
                                                     RecConsExpr([(col.col_var,
@@ -49,11 +57,19 @@ class IterForm:
                                          PairAccessExpr(VarExpr(self.iter_el), 1))])
             if isinstance(self.iter_op, OldColOpExpr):
                 col = self.iter_op
-                return DicConsExpr([(ConcatExpr(self.iter_key,
-                                                RecConsExpr([(col.col_expr,
-                                                              RecAccessExpr(self.iter_key,
-                                                                            col.col_var))])),
-                                     PairAccessExpr(VarExpr(self.iter_el), 1))])
+                if isinstance(col.col_expr, ColApplyExpr):
+                    return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                    RecConsExpr([(col.col_var,
+                                                                  SDQLInspector.replace_access(col.col_expr.unopt_sdql_ir,
+                                                                                               PairAccessExpr(VarExpr(self.iter_el),
+                                                                                                              0)))])),
+                                         PairAccessExpr(VarExpr(self.iter_el), 1))])
+                else:
+                    return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                    RecConsExpr([(col.col_expr,
+                                                                  RecAccessExpr(self.iter_key,
+                                                                                col.col_var))])),
+                                         PairAccessExpr(VarExpr(self.iter_el), 1))])
 
             print(f'Unexpected operation in type {type(self.iter_op)}')
 

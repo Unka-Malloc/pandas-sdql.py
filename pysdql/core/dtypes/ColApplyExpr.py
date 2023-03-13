@@ -3,12 +3,13 @@ from pysdql.core.dtypes.sdql_ir import IfExpr
 
 
 class ColApplyExpr:
-    def __init__(self, apply_op, apply_cond=None, apply_else=None, more_cond=None):
+    def __init__(self, apply_op, apply_cond=None, apply_else=None, unopt_cond=None, more_cond=None):
         self.apply_op = apply_op
 
         self.apply_cond = apply_cond
         self.apply_else = apply_else
 
+        self.unopt_cond = unopt_cond
         self.more_cond = more_cond if more_cond else []
 
     def replace(self, rec, inplace=False, mapper=None):
@@ -38,7 +39,16 @@ class ColApplyExpr:
 
         return self.sdql_ir
 
+    @property
+    def unopt_sdql_ir(self):
+        if self.apply_cond:
+            result = IfExpr(self.unopt_cond,
+                          self.apply_op,
+                          self.apply_else)
+        else:
+            result = self.apply_op
 
+        return result
 
     @property
     def sdql_ir(self):

@@ -1,6 +1,8 @@
+from pysdql.core.dtypes import OldColOpExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.CalcExpr import CalcExpr
+from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
@@ -626,14 +628,10 @@ class Optimizer:
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
-            elif isinstance(op_body, NewColOpExpr):
+            elif isinstance(op_body, (OldColOpExpr, NewColOpExpr)):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
-                if self.retriever.find_unopt_apply(op_body.col_var):
-                    tmp_it.iter_op = NewColOpExpr(op_body.col_var,
-                                                  self.retriever.find_unopt_apply(op_body.col_var))
-                else:
-                    tmp_it.iter_op = op_body
+                tmp_it.iter_op = op_body
 
                 self.opt_on.context_unopt.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),

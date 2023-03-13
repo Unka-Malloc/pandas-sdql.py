@@ -1,9 +1,9 @@
 import pysdql
 
 if __name__ == '__main__':
-    results = pysdql.tpch_query(range(1, 23), verbose=False, optimize=True)
+    # results = pysdql.tpch_query(range(1, 23), verbose=False, optimize=True)
 
-    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
+    unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
 
     # unopt_errors = pysdql.tpch_query([11, 14, 15, 17, 18, 22], verbose=False, optimize=False)
 

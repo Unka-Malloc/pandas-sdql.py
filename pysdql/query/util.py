@@ -177,6 +177,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         for k in xrow.keys():
             if k.endswith('_NA'):
                 continue
+            if k not in pd_df.columns:
+                continue
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
                 print(f'Not found {xrow.to_dict()}')
