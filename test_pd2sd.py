@@ -16,7 +16,7 @@ dataset_path = os.getenv('TPCH_DATASET')
 
 ## Shows the number of returned results, average and stdev of run time, and the results (if the next parameter is also set to True)
 verbose = True
-show_results = True
+show_results = False
 
 ## Number of iterations for benchmarking each query (must be >=2)
 iterations = 10
@@ -68,16 +68,13 @@ def q1(li):
             {"sum_qty": x_lineitem[0].l_quantity, "sum_base_price": x_lineitem[0].l_extendedprice,
              "sum_disc_price": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount)))),
              "sum_charge": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) * (
-             ((1.0) + (x_lineitem[0].l_tax)))), "avg_disc_sum_for_mean": x_lineitem[0].l_discount,
+             ((1.0) + (x_lineitem[0].l_tax)))),
              "count_order": 1})}) if (x_lineitem[0].l_shipdate <= 19980902) else (None))
 
     results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record(
         {"l_returnflag": x_lineitem_aggr[0].l_returnflag, "l_linestatus": x_lineitem_aggr[0].l_linestatus,
          "sum_qty": x_lineitem_aggr[1].sum_qty, "sum_base_price": x_lineitem_aggr[1].sum_base_price,
          "sum_disc_price": x_lineitem_aggr[1].sum_disc_price, "sum_charge": x_lineitem_aggr[1].sum_charge,
-         "avg_qty": ((x_lineitem_aggr[1].sum_qty) / (x_lineitem_aggr[1].count_order)),
-         "avg_price": ((x_lineitem_aggr[1].sum_base_price) / (x_lineitem_aggr[1].count_order)),
-         "avg_disc": ((x_lineitem_aggr[1].avg_disc_sum_for_mean) / (x_lineitem_aggr[1].count_order)),
          "count_order": x_lineitem_aggr[1].count_order}): True})
 
     return results
@@ -85,8 +82,8 @@ def q1(li):
 
 ######
 
-@sdql_compile({"pa": part_type, "su": supplier_type, "ps": partsupp_type, "ps1": partsupp_type, "na": nation_type, "re": region_type})
-def q2(pa, su, ps, ps1, na, re):
+@sdql_compile({"pa": part_type, "su": supplier_type, "ps": partsupp_type, "na": nation_type, "re": region_type})
+def q2(pa, su, ps, na, re):
     europe = "EUROPE"
     brass = "BRASS"
     region_part = re.sum(
@@ -102,7 +99,7 @@ def q2(pa, su, ps, ps1, na, re):
          "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (
                 region_nation[x_supplier[0].s_nationkey] != None) else (None))
 
-    region_nation_supplier_ps1 = ps1.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record(
+    region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record(
         {"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey,
          "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
 
@@ -275,14 +272,14 @@ def q7(su, li, ord, cu, na):
 ######
 
 @sdql_compile({"pa": part_type, "su": supplier_type, "li": lineitem_type, "ord": order_type, "cu": customer_type,
-               "na": nation_type, "n1": nation_type, "n1": nation_type, "re": region_type})
-def q8(pa, su, li, ord, cu, na, n1, n2, re):
+               "na": nation_type, "re": region_type})
+def q8(pa, su, li, ord, cu, na, re):
     economyanodizedsteel = "ECONOMY ANODIZED STEEL"
     america = "AMERICA"
     brazil = "BRAZIL"
-    n2_part = n2.sum(lambda x_n2: {x_n2[0].n_nationkey: record(
-        {"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey,
-         "n2_regionkey": x_n2[0].n_regionkey})})
+    n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record(
+        {"n_comment": x_n2[0].n_comment, "n_name": x_n2[0].n_name, "n_nationkey": x_n2[0].n_nationkey,
+         "n_regionkey": x_n2[0].n_regionkey})})
 
     supplier_part = su.sum(
         lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
@@ -293,7 +290,7 @@ def q8(pa, su, li, ord, cu, na, n1, n2, re):
     region_part = re.sum(
         lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
 
-    region_n1 = n1.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n1_nationkey})}) if (
+    region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n_nationkey": x_n1[0].n_nationkey})}) if (
                 region_part[x_n1[0].n_regionkey] != None) else (None))
 
     region_n1_customer = cu.sum(
@@ -616,14 +613,14 @@ def q16(ps, pa, su):
 
 #######
 
-@sdql_compile({"li": lineitem_type, "l1": lineitem_type, "pa": part_type})
-def q17(li, l1, pa):
+@sdql_compile({"li": lineitem_type, "pa": part_type})
+def q17(li, pa):
     brand11 = "Brand#11"
     wrapcase = "WRAP CASE"
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (
     ((x_part[0].p_brand == brand11) * (x_part[0].p_container == wrapcase))) else (None))
 
-    part_l1 = l1.sum(
+    part_l1 = li.sum(
         lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1, "sum_quant": x_l1[0].l_quantity})}) if (
                     part_part[x_l1[0].l_partkey] != None) else (None))
 
@@ -639,8 +636,8 @@ def q17(li, l1, pa):
 
 #######
 
-@sdql_compile({"li": lineitem_type, "l1": lineitem_type, "cu": customer_type, "ord": order_type})
-def q18(li, l1, cu, ord):
+@sdql_compile({"li": lineitem_type, "cu": customer_type, "ord": order_type})
+def q18(li, cu, ord):
     customer_part = cu.sum(lambda x_customer: {
         x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
 
@@ -655,7 +652,7 @@ def q18(li, l1, cu, ord):
          "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (
         None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
 
-    l1_aggr = l1.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name,
+    l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name,
                                             "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey,
                                             "o_orderkey": x_l1[0].l_orderkey,
                                             "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate,
@@ -786,8 +783,8 @@ def q20(su, na, ps, pa, li):
 
 #######
 
-@sdql_compile({"su": supplier_type, "li": lineitem_type, "l2": lineitem_type, "l3": lineitem_type, "ord": order_type, "na": nation_type})
-def q21(su, li, l2, l3, ord, na):
+@sdql_compile({"su": supplier_type, "li": lineitem_type, "ord": order_type, "na": nation_type})
+def q21(su, li, ord, na):
     f = "F"
     saudiarabia = "SAUDI ARABIA"
     orders_part = ord.sum(
@@ -800,10 +797,10 @@ def q21(su, li, l2, l3, ord, na):
         lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_name": x_supplier[0].s_name})}) if (
                     nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
-    l3_part = l3.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (
+    l3_part = li.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (
                 x_l3[0].l_receiptdate > x_l3[0].l_commitdate) else (None))
 
-    l2_part = l2.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
+    l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
 
     orders_nation_supplier_l3_l2_lineitem = li.sum(lambda x_lineitem: (((((({
         nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1})}) if (
@@ -842,10 +839,12 @@ def q22(cu, cu1, ord):
 
     orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
 
+    avg_acctbal = (cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal)
+
     customer_aggr = cu.sum(lambda x_customer: (
         ({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1, "totacctbal": x_customer[0].c_acctbal})}) if (
                     orders_part[x_customer[0].c_custkey] == None) else (None)) if ((
-                (x_customer[0].c_acctbal > ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))) * ((((((((((
+                (x_customer[0].c_acctbal > avg_acctbal) * ((((((((((
                     (((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (
                 startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(
             x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(
@@ -861,13 +860,13 @@ def q22(cu, cu1, ord):
 ######### Function Calls
 
 benchmark("Q1", iterations, q1, [lineitem], show_results, verbose)
-benchmark("Q2", iterations, q2, [part, supplier, partsupp, partsupp, nation, region], show_results, verbose)
+benchmark("Q2", iterations, q2, [part, supplier, partsupp, nation, region], show_results, verbose)
 benchmark("Q3", iterations, q3, [lineitem, customer, order], show_results, verbose)
 benchmark("Q4", iterations, q4, [order, lineitem], show_results, verbose)
 benchmark("Q5", iterations, q5, [lineitem, customer, order, region, nation, supplier], show_results, verbose)
 benchmark("Q6", iterations, q6, [lineitem], show_results, verbose)
 benchmark("Q7", iterations, q7, [supplier, lineitem, order, customer, nation], show_results, verbose)
-benchmark("Q8", iterations, q8, [part, supplier, lineitem, order, customer, nation, nation, nation, region], show_results, verbose)
+benchmark("Q8", iterations, q8, [part, supplier, lineitem, order, customer, nation, region], show_results, verbose)
 benchmark("Q9", iterations, q9, [lineitem, order, nation, supplier, part, partsupp], show_results, verbose)
 benchmark("Q10", iterations, q10, [customer, order, lineitem, nation], show_results, verbose)
 benchmark("Q11", iterations, q11, [partsupp, supplier, nation], show_results, verbose)
@@ -876,9 +875,9 @@ benchmark("Q13", iterations, q13, [customer, order], show_results, verbose)
 benchmark("Q14", iterations, q14, [lineitem, part], show_results, verbose)
 benchmark("Q15", iterations, q15, [lineitem, supplier], show_results, verbose)
 benchmark("Q16", iterations, q16, [partsupp, part, supplier], show_results, verbose)
-benchmark("Q17", iterations, q17, [lineitem, lineitem, part], show_results, verbose)
-benchmark("Q18", iterations, q18, [lineitem, lineitem, customer, order], show_results, verbose)
+benchmark("Q17", iterations, q17, [lineitem, part], show_results, verbose)
+benchmark("Q18", iterations, q18, [lineitem, customer, order], show_results, verbose)
 benchmark("Q19", iterations, q19, [lineitem, part], show_results, verbose)
 benchmark("Q20", iterations, q20, [supplier, nation, partsupp, part, lineitem], show_results, verbose)
-benchmark("Q21", iterations, q21, [supplier, lineitem, lineitem, lineitem, order, nation], show_results, verbose)
+benchmark("Q21", iterations, q21, [supplier, lineitem, order, nation], show_results, verbose)
 benchmark("Q22", iterations, q22, [customer, customer, order], show_results, verbose)
