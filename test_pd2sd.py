@@ -820,8 +820,8 @@ def q21(su, li, ord, na):
 
 #####
 
-@sdql_compile({"cu": customer_type, "cu1": customer_type, "ord": order_type})
-def q22(cu, cu1, ord):
+@sdql_compile({"cu": customer_type, "ord": order_type})
+def q22(cu, ord):
     v13 = "13"
     v31 = "31"
     v23 = "23"
@@ -829,7 +829,7 @@ def q22(cu, cu1, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu1.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1})) if ((
+    cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1})) if ((
                 (x_cu1[0].c_acctbal > 0.0) * ((((((((((
                     (((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (
                 startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (
@@ -837,9 +837,9 @@ def q22(cu, cu1, ord):
                                                      startsWith(x_cu1[0].c_phone, v18)))) + (
                                                    startsWith(x_cu1[0].c_phone, v17)))))) else (None))
 
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
-
     avg_acctbal = (cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal)
+
+    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
 
     customer_aggr = cu.sum(lambda x_customer: (
         ({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1, "totacctbal": x_customer[0].c_acctbal})}) if (
@@ -880,4 +880,4 @@ benchmark("Q18", iterations, q18, [lineitem, customer, order], show_results, ver
 benchmark("Q19", iterations, q19, [lineitem, part], show_results, verbose)
 benchmark("Q20", iterations, q20, [supplier, nation, partsupp, part, lineitem], show_results, verbose)
 benchmark("Q21", iterations, q21, [supplier, lineitem, order, nation], show_results, verbose)
-benchmark("Q22", iterations, q22, [customer, customer, order], show_results, verbose)
+benchmark("Q22", iterations, q22, [customer, order], show_results, verbose)
