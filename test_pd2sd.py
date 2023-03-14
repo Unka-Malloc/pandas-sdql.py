@@ -304,9 +304,9 @@ def q8(pa, su, li, ord, cu, na, re):
 
     n2_supplier_part_region_n1_customer_orders_lineitem = li.sum(lambda x_lineitem: (((((((((((({
         extractYear(region_n1_customer_orders[x_lineitem[0].l_orderkey].o_orderdate): record({"A": (
-        ((x_lineitem[0].l_extendedprice) * (((1) - (x_lineitem[0].l_discount))))) if (
+        ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (
                     n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey].n_name == brazil) else (0.0), "B": (
-                    (x_lineitem[0].l_extendedprice) * (((1) - (x_lineitem[0].l_discount))))})}) if (
+                    (x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (
     n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey]) else (None)) if (
     supplier_part[x_lineitem[0].l_suppkey]) else (None)) if (part_part[x_lineitem[0].l_partkey]) else (None)) if (
     region_n1_customer_orders[x_lineitem[0].l_orderkey]) else (None)) if (

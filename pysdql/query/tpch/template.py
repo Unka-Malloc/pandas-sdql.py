@@ -287,7 +287,7 @@ def tpch_q8(part, supplier, lineitem, orders, customer, nation, region):
     all_join = n2.merge(right=su_li_join, left_on='n2_nationkey', right_on='s_nationkey')
 
     all_join['o_year'] = all_join['o_orderdate'].dt.year
-    all_join['volume'] = all_join['l_extendedprice'] * (1 - all_join['l_discount'])
+    all_join['volume'] = all_join['l_extendedprice'] * (1.0 - all_join['l_discount'])
     all_join['nation'] = all_join['n2_name']
 
     all_nations = all_join[['o_year', 'volume', 'nation']]
