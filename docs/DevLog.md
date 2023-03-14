@@ -1,3 +1,11 @@
+# Compiler Mode
+
+## 
+- [ ] 1 (`Error: div type cannot be deduced!`)
+- [ ] 8 (`Error: unkown value type!`)
+- [ ] 17 
+- [ ] 22
+
 # Unoptimized Plan!
 
 - [x] 1
