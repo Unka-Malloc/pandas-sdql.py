@@ -2079,7 +2079,7 @@ class JointFrame:
             # Q21
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
-                    print('current')
+                    # print('current')
 
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
@@ -2096,9 +2096,9 @@ class JointFrame:
 
                     key_col = next_merge_expr.left_on
 
-                    print(key_col)
-                    print(root_part_side.columns)
-                    print(root_probe_side.columns)
+                    # print(key_col)
+                    # print(root_part_side.columns)
+                    # print(root_probe_side.columns)
 
                     if isinstance(key_col, list):
                         dict_key_ir = RecConsExpr([(c, root_probe_side.key_access(c))
@@ -2158,12 +2158,12 @@ class JointFrame:
 
                     dict_val_ir = RecConsExpr(dict_val_list)
 
-                    print({
-                        'part': [i.name for i in all_part_sides],
-                        'probe': root_probe_side.name,
-                        'key': dict_key_ir,
-                        'val': dict_val_ir
-                    })
+                    # print({
+                    #     'part': [i.name for i in all_part_sides],
+                    #     'probe': root_probe_side.name,
+                    #     'key': dict_key_ir,
+                    #     'val': dict_val_ir
+                    # })
 
                     joint_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
 
@@ -2625,12 +2625,12 @@ class JointFrame:
         # Q10
         # Q18
         if self.part_frame.is_joint and not self.probe_frame.is_joint:
-            print(f'{self.joint.name}: part joint')
+            # print(f'{self.joint.name}: part joint')
 
             return self.part_frame.part_on.get_joint_frame().get_joint_expr(self.get_probe_expr(next_op))
         # Q10
         if not self.part_frame.is_joint and self.probe_frame.is_joint:
-            print(f'{self.joint.name}: probe joint')
+            # print(f'{self.joint.name}: probe joint')
 
             if self.part_frame.retriever.as_bypass_for_next_join:
                 return self.probe_frame.probe_on.retriever.find_merge(
@@ -2649,7 +2649,7 @@ class JointFrame:
 
             return SDQLInspector.concat_bindings(all_bindings)
         if self.part_frame.is_joint and self.probe_frame.is_joint:
-            print(f'{self.joint.name}: both joint')
+            # print(f'{self.joint.name}: both joint')
 
             # if self.retriever.find_illegal_dup_col():
             #     raise ValueError(f'Detected duplicated columns in merge: {self.retriever.find_illegal_dup_col()}')

@@ -13,6 +13,7 @@ from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ApplyOpExpr import ApplyOpExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
+from pysdql.core.dtypes.FlexChain import OpChain
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.IterEl import IterEl
@@ -308,8 +309,10 @@ class DataFrame(FlexIR, Retrivable):
             elif isinstance(op_body, OldColOpExpr):
                 if isinstance(op_body.col_expr, str):
                     rename_cols[op_body.col_var] = op_body.col_expr
+                elif isinstance(op_body.col_expr, ColApplyExpr):
+                    pass
                 else:
-                    raise NotImplementedError
+                    raise NotImplementedError(f'Unexpected type: {type(op_body.col_expr)}')
             elif isinstance(op_body, ColProjExpr):
                 tmp_cols = op_body.proj_cols
             elif isinstance(op_body, AggrExpr):
@@ -389,6 +392,10 @@ class DataFrame(FlexIR, Retrivable):
 
     @property
     def operations(self):
+        return self.__operations
+
+    @property
+    def op_stack(self):
         return self.__operations
 
     @property
@@ -732,6 +739,9 @@ class DataFrame(FlexIR, Retrivable):
                            op_iter=True))
 
         return tmp_df
+
+    def get_op_chain(self):
+        return OpChain(self)
 
     def get_opt(self, opt_goal=OptGoal.UnOptimized):
         opt = Optimizer(opt_on=self,
