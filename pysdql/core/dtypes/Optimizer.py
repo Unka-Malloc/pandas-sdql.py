@@ -7,6 +7,7 @@ from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
+from pysdql.core.dtypes.FlexChain import OpChain
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
@@ -157,6 +158,8 @@ class Optimizer:
         self.vname_having = f'{self.opt_on.name}_having'
         self.var_having = VarExpr(self.vname_having)
         self.opt_on.add_context_variable(self.vname_having, self.var_having)
+
+        self.op_chain = OpChain(self.opt_on)
 
     @property
     def has_cond(self):
@@ -544,6 +547,8 @@ class Optimizer:
 
     @property
     def output(self) -> LetExpr:
+        self.op_chain.infer(entrance=True)
+
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.retriever.find_aggr(body_only=False)
             if op_expr.op.aggr_on.name != self.opt_on.name:
