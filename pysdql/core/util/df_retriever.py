@@ -1,5 +1,6 @@
 from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
+from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.CalcExpr import CalcExpr
@@ -453,6 +454,17 @@ class Retriever:
 
             if isinstance(op_body, NewColOpExpr):
                 col_ins[op_body.col_var] = op_body.col_expr
+
+        return col_ins
+
+    def findall_col_insert_as_list(self):
+        col_ins = {}
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, NewColListExpr):
+                col_ins[op_body.col_var] = op_body.col_list
 
         return col_ins
 

@@ -6,11 +6,11 @@ from pysdql.core.dtypes.EnumUtil import (
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.Utils import input_fmt
-from pysdql.core.dtypes.sdql_ir import ConstantExpr, DivExpr, MulExpr, RecAccessExpr
+from pysdql.core.dtypes.sdql_ir import ConstantExpr, DivExpr, MulExpr, RecAccessExpr, SubExpr, AddExpr
 
 
 class CalcExpr(FlexIR):
-    def __init__(self, unit1, unit2, op, on):
+    def __init__(self, unit1, unit2, op, on, unique_columns=None):
         """
         It should be only generated in AggrExpr.
         :param unit1:
@@ -23,6 +23,8 @@ class CalcExpr(FlexIR):
         self.op = op
         self.on = on
 
+        self.unique_cols = unique_columns if unique_columns else []
+
         self.init_rec()
 
     def init_rec(self):
@@ -31,11 +33,17 @@ class CalcExpr(FlexIR):
         if type(self.unit2) == RecAccessExpr:
             self.unit2 = RecAccessExpr(self.on.var_expr, self.unit2.name)
 
+        # if isinstance(self.unit2, (AddExpr, MulExpr, SubExpr, DivExpr)):
+        #     print(self.unit2)
+
     def __mul__(self, other):
         return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.on)
 
     def __truediv__(self, other):
-        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
+        if hasattr(other, 'unique_columns'):
+            return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on, unique_columns=other.unique_columns)
+        else:
+            return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
 
     def match_aggr(self, target, to_which):
         for k in target.keys():

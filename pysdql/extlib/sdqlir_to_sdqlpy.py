@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.SDQL_IR_EXTERNAL import UniqueExpr
 from pysdql.core.dtypes.sdql_ir import *
 from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
 
@@ -206,6 +207,11 @@ def GenerateSDQLPYCode(AST: Expr, cache):
             code += ", "
         code = code[:-2]
         code += "})"
+        return code
+    elif inputType == UniqueExpr:
+        code += "unique("
+        code += GenerateSDQLPYCode(AST.col_expr, cache)
+        code += ")"
         return code
     else:
         print("Error: Unknown AST: " + str(type(AST)))
