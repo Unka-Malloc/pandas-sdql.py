@@ -1,15 +1,13 @@
 import pysdql
 
 if __name__ == '__main__':
-    # results = pysdql.tpch_query(range(1, 23), verbose=False, optimize=True)
+    # optimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=True)
 
-    # unoptimized = pysdql.tpch_query(3, verbose=False, optimize=True, mode='postgres')
+    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
 
-    # unopt_errors = pysdql.tpch_query([11, 14, 15, 17, 18, 22], verbose=False, optimize=False)
+    unopt_single = pysdql.tpch_query(13, verbose=True, optimize=False)
 
-    pysdql.tpch_query(17, verbose=False, optimize=True)
-
-    # unopt_single = pysdql.tpch_query(14, verbose=True, optimize=False)
+    # pysdql.tpch_query(10, verbose=False, optimize=True)
 
     # verified = pysdql.tpch_query([1, 6, 12, 13, 14], verbose=True, optimize=True, mode='postgres')
 

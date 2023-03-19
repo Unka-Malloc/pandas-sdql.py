@@ -1,4 +1,4 @@
-from pysdql.core.dtypes import MergeExpr, NewColOpExpr
+from pysdql.core.dtypes import MergeExpr, NewColOpExpr, OldColOpExpr, ColProjExpr, AggrExpr, GroupbyAggrExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 
 
@@ -42,8 +42,8 @@ class OpChain:
 
         self.indices = []
 
-        self.avalattr = self.node.cols_out
-        self.depdpool = self.retriever.findall_cols_used(as_owner=True, only_next=True)
+        self.attrout = self.infer_attrout()
+        self.dpdcpool = self.retriever.findall_cols_used(as_owner=True, only_next=True)
 
         self.fill()
         self.fill_terminal()
@@ -199,16 +199,59 @@ class OpChain:
                 peer_chain = self.peer.get_op_chain()
                 self.terminal = peer_chain.terminal
 
-    def fill_connect(self):
-        if self.terminal:
-            if self.equals(self.node, self.terminal):
-                if 'build' in self.connect.keys():
-                    for build_node in self.connect['build']:
-                        if build_node.is_joint:
-                            print(self.node, build_node)
-                # if 'joint' in self.connect.keys():
-                #     for next_node in self.connect['joint']:
-                #
+    def infer_attrout(self):
+        output_attr = []
+
+        rename_attr = {}
+
+        for op_expr in self.node.op_stack:
+            op_body = op_expr.op
+
+            if isinstance(op_body, NewColOpExpr):
+                output_attr.append(op_body.col_var)
+            elif isinstance(op_body, OldColOpExpr):
+                if isinstance(op_body.col_expr, str):
+                    rename_attr[op_body.col_var] = op_body.col_expr
+            elif isinstance(op_body, ColProjExpr):
+                output_attr = op_body.proj_cols
+            elif isinstance(op_body, AggrExpr):
+                output_attr = list(op_body.aggr_op.keys())
+            elif isinstance(op_body, GroupbyAggrExpr):
+                output_attr = op_body.groupby_cols + list(op_body.origin_dict.keys())
+
+        res = output_attr if output_attr else self.node.cols_in
+
+        for a in res:
+            if a in rename_attr.keys():
+                res[res.index(a)] = rename_attr[a]
+
+        return res if res else self.node.cols_in
+
+    def find_path(self):
+        pass
+
+    def find_dpdc(self, dependency, pure=True):
+        if self.transit:
+            for sub_node in self.backward:
+                sub_chain = sub_node.get_op_chain()
+
+                if self.equals(sub_node, self.terminal):
+                    if dependency in sub_chain.attrout:
+                        return (dependency, [(sub_node, sub_chain.peer_link[0])])
+                else:
+                    if sub_chain.transit:
+                        return sub_chain.find_dpdc(dependency=dependency, pure=pure)
+                    else:
+                        if dependency in sub_chain.attrout:
+                            if self.equals(sub_chain.peer, self.terminal):
+                                return (dependency, [(sub_chain.peer, sub_chain.peer_link[1]), (sub_node, sub_chain.peer_link[0])])
+                            else:
+                                return sub_chain.peer.get_op_chain().find_dpdc(dependency=dependency, pure=pure)
+        else:
+            if dependency in self.attrout:
+                return (dependency, [(self.node, self.peer_link[0])])
+
+        return (dependency, [])
 
 
     def infer(self, entrance=False):
@@ -239,11 +282,14 @@ class OpChain:
 
         print(self)
 
+        return self
+
     def __repr__(self):
         res = [
             f'node: {self.node} {{',
-            f'  dependency_pool -> {self.depdpool}',
-            f'  available_attributes -> {self.avalattr}',
+            f'  entrance -> {self.entrance}',
+            f'  dependency_pool -> {self.dpdcpool}',
+            f'  attr out -> {self.attrout}',
             f'  indices -> {self.indices}',
             f'  terminal -> {self.terminal}',
             f'  peer -> {self.peer} | {self.peer_link}',
