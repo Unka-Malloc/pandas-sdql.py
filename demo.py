@@ -5,17 +5,13 @@ if __name__ == '__main__':
 
     # unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
 
-    unopt_single = pysdql.tpch_query(13, verbose=True, optimize=False)
+    # unopt_single = pysdql.tpch_query(6, verbose=True, optimize=False)
 
-    # pysdql.tpch_query(10, verbose=False, optimize=True)
+    # psql_verified = pysdql.tpch_query([1, 6, 12, 13], verbose=True, optimize=True, mode='postgres')
 
-    # verified = pysdql.tpch_query([1, 6, 12, 13, 14], verbose=True, optimize=True, mode='postgres')
+    psql = pysdql.tpch_query(2, verbose=True, optimize=True, mode='postgres')
 
     # waiting_for_unique = pysdql.tpch_query([3, 4, 5, 10, 16, 19], verbose=True, optimize=True, mode='postgres')
-
-    # result = pysdql.tpch_query(2, verbose=True, optimize=True, mode='postgres')
-
-    # pysdql.tpch_query(14, verbose=True, optimize=True)
 
     '''
     j_df_1 = lineitem.merge(orders, left_on='l_orderkey', right_on='o_orderkey')

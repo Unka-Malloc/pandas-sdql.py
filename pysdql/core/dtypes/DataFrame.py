@@ -23,6 +23,7 @@ from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.MergeExpr import MergeExpr
+from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.FlexIR import FlexIR
@@ -605,36 +606,40 @@ class DataFrame(FlexIR, Retrivable):
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
             if type(value) in (list,):
-                if isinstance(key, str) and len(value) == 1:
-                    if isinstance(value[0], AggrExpr):
-                        aggr_obj = value[0]
-                        aggr_obj.update_default(key)
-                        aggr_obj.aggr_type = AggrType.Dict
-                        op_expr = OpExpr(op_obj=aggr_obj,
-                                         op_on=aggr_obj.aggr_on,
-                                         op_iter=True,
-                                         iter_on=aggr_obj.aggr_on,
-                                         ret_type=OpRetType.FLOAT)
-                        self.push(op_expr)
-                    elif isinstance(value[0], CalcExpr):
-                        calc_obj = value[0]
-
-                        target = calc_obj.on.retriever.insert_aggr(calc_obj.on)
-
-                        calc_obj.match_aggr(target, calc_obj.on)
-
-                        op_expr = OpExpr(op_obj=calc_obj,
-                                         op_on=calc_obj.on,
-                                         op_iter=True,
-                                         iter_on=calc_obj.on,
-                                         ret_type=OpRetType.FLOAT)
-
-                        calc_obj.on.push(op_expr)
-                        self.push(op_expr)
-                    else:
-                        raise NotImplementedError
-                else:
-                    raise NotImplementedError
+                self.push(OpExpr(op_obj=NewColListExpr(col_var=key,
+                                                       col_list=value),
+                                 op_on=self,
+                                 op_iter=True))
+                # if isinstance(key, str) and len(value) == 1:
+                #     if isinstance(value[0], AggrExpr):
+                #         aggr_obj = value[0]
+                #         aggr_obj.update_default(key)
+                #         aggr_obj.aggr_type = AggrType.Dict
+                #         op_expr = OpExpr(op_obj=aggr_obj,
+                #                          op_on=aggr_obj.aggr_on,
+                #                          op_iter=True,
+                #                          iter_on=aggr_obj.aggr_on,
+                #                          ret_type=OpRetType.FLOAT)
+                #         self.push(op_expr)
+                #     elif isinstance(value[0], CalcExpr):
+                #         calc_obj = value[0]
+                #
+                #         target = calc_obj.on.retriever.insert_aggr(calc_obj.on)
+                #
+                #         calc_obj.match_aggr(target, calc_obj.on)
+                #
+                #         op_expr = OpExpr(op_obj=calc_obj,
+                #                          op_on=calc_obj.on,
+                #                          op_iter=True,
+                #                          iter_on=calc_obj.on,
+                #                          ret_type=OpRetType.FLOAT)
+                #
+                #         calc_obj.on.push(op_expr)
+                #         self.push(op_expr)
+                #     else:
+                #         raise NotImplementedError
+                # else:
+                #     raise NotImplementedError
 
                 return self
 
@@ -1163,13 +1168,18 @@ class DataFrame(FlexIR, Retrivable):
                                      thenBodyExpr=op.sdql_ir,
                                      elseBodyExpr=ConstantExpr(lamb_else))
 
-                    if_expr = IfExpr(condExpr=cond.sdql_ir,
-                                     thenBodyExpr=if_expr,
-                                     elseBodyExpr=ConstantExpr(lamb_else))
+                    return ColApplyExpr(
+                        apply_op=if_expr,
+                        apply_cond=cond.sdql_ir,
+                        apply_else=ConstantExpr(lamb_else),
+                        unopt_cond=unopt_cond,
+                    )
 
-                    raise NotImplementedError
+                    # if_expr = IfExpr(condExpr=cond.sdql_ir,
+                    #                  thenBodyExpr=if_expr,
+                    #                  elseBodyExpr=ConstantExpr(lamb_else))
 
-                    return if_expr
+                    # return if_expr
                 elif col_name in self.columns:
 
                     raise NotImplementedError
@@ -1389,4 +1399,20 @@ class DataFrame(FlexIR, Retrivable):
         return self
 
     def head(self, val):
+        if val == 1:
+            last_op = self.retriever.find_last_op()
+            col_ins_as_list = self.retriever.findall_col_insert_as_list()
+
+            if isinstance(last_op, ColProjExpr):
+                if len(last_op.proj_cols) == 1:
+                    target_col = last_op.proj_cols[0]
+
+                    if target_col in col_ins_as_list.keys():
+                        target_list = col_ins_as_list[target_col]
+
+                        if len(target_list) == 1:
+                            target_expr = target_list[0]
+
+                            return target_expr
+
         return self

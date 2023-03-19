@@ -8,6 +8,12 @@ from pysdql.core.dtypes.MergeExpr import MergeExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 
+from pysdql.core.dtypes.SDQL_IR_EXTERNAL import (
+    UniqueExpr,
+    UniqueBuild,
+    UniqueProbe,
+)
+
 from pysdql.core.dtypes.sdql_ir import *
 from pysdql.core.util.df_retriever import Retriever
 from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
@@ -2044,6 +2050,20 @@ class JointFrame:
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:
                         raise TypeError(f'Unsupported Type {type(col_renamed[j])}')
+                    
+                for k in self.retriever.findall_cols_for_calc():
+                    if k in col_inserted:
+                        continue
+
+                    if k in col_renamed:
+                        continue
+
+                    if k in part_on.columns:
+                        col_op = IfExpr(self.part_nonull(), 
+                                        self.part_lookup(k),
+                                        ConstantExpr(0.0))
+
+                        rec_list.append((k, UniqueExpr(col_op)))
 
                 rec = RecConsExpr(rec_list)
 
@@ -2057,7 +2077,20 @@ class JointFrame:
                                    bodyExpr=rec,
                                    isAssignmentSum=False)
 
-                calc_expr = self.retriever.find_calc().sdql_ir
+                calc_expr = self.retriever.find_calc()
+
+                calc_expr = SDQLInspector.replace_access(calc_expr.sdql_ir, self.joint.var_expr)
+
+                # if calc_expr.unique_cols:
+                #     mapper = {}
+                #
+                #     for c in calc_expr.unique_cols:
+                #         mapper[c] = UniqueProbe(RecAccessExpr(self.joint.var_expr, c)).sdql_ir
+                #
+                #     calc_expr = SDQLInspector.replace_field(calc_expr.sdql_ir,
+                #                                             inplace=True,
+                #                                             mapper=mapper)
+
 
                 var_res = VarExpr('results')
                 self.joint.add_context_variable('results', var_res)

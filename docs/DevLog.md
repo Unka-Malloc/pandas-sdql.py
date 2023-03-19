@@ -27,9 +27,9 @@
 - [x] 17
 - [x] 18
 - [x] 19
-- [ ] 20
+- [x] 20
 - [x] 21
-- [ ] 22
+- [x] 22
 
 # PostgreSQL Plan!
 
@@ -43,7 +43,7 @@
 - [ ] 10 (`unique` required)
 - [x] 12
 - [x] 13
-- [x] 14
+- [ ] 14 (`unique` required)
 - [ ] 15 (`max` required)
 - [ ] 16 (`unique` required)
 - [ ] 19 (`unique` required)
