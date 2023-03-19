@@ -697,6 +697,9 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, IsInExpr):
+                if op_expr.op_on.name != self.opt_on.name:
+                    continue
+
                 part_name = map_name_to_dataset(op_body.part_on.name)
                 probe_name = map_name_to_dataset(op_body.probe_on.name)
                 isin_build_name = f'{op_body.probe_on.name}_{op_body.part_on.name}_isin_build'
@@ -727,7 +730,10 @@ class Optimizer:
                                     bodyExpr=ConstantExpr(True))
                         )
 
-                    tmp_it_2 = IterForm(probe_name, tmp_el_on)
+                    if self.opt_on.unopt_count == 0:
+                        tmp_it_2 = IterForm(probe_name, tmp_el_on)
+                    else:
+                        tmp_it_2 = IterForm(tmp_vn_on, tmp_el_on)
 
                     cond_symbol = CompareSymbol.EQ if op_body.isinvert else CompareSymbol.NE
 
@@ -741,6 +747,7 @@ class Optimizer:
                                               DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
                                                             PairAccessExpr(VarExpr(tmp_el_on), 1))]),
                                               ConstantExpr(None))
+
                     self.opt_on.context_unopt.append(
                         LetExpr(varExpr=VarExpr(tmp_vn_nx),
                                 valExpr=tmp_it_2.sdql_ir,
