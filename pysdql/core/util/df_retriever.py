@@ -1168,8 +1168,10 @@ class Retriever:
                             dicExpr=this_part.var_part,
                             keyExpr=root_probe.key_access(this_probe_key)),
                         fieldName=target)
+                    # print(f'found {target} in {root_probe}')
                     return lookup_expr
                 else:
+                    # print(f'failed to locate {this_probe_key}, go to next session')
                     lookup_expr = RecAccessExpr(
                         recExpr=DicLookupExpr(
                             dicExpr=this_part.var_part,

@@ -2112,7 +2112,7 @@ class JointFrame:
             # Q21
             if self.retriever.as_part_for_next_join:
                 if self.probe_frame.retriever.is_joint:
-                    # print('current')
+                    # print('Q2 psql current working process')
 
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
@@ -2128,10 +2128,6 @@ class JointFrame:
                     # dict key (single)
 
                     key_col = next_merge_expr.left_on
-
-                    # print(key_col)
-                    # print(root_part_side.columns)
-                    # print(root_probe_side.columns)
 
                     if isinstance(key_col, list):
                         dict_key_ir = RecConsExpr([(c, root_probe_side.key_access(c))
