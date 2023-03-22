@@ -15,7 +15,7 @@ def query(li, su):
     
     v3 = v2.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
     
-    v4 = v3.sum(lambda x: (({x[0]: x[1]}) if (x[0].total_revenue == 797313.3838) else (None)) if (x[0] != None) else (None))
+    v4 = v3.sum(lambda x: (({x[0]: x[1]}) if (x[0].total_revenue == 1614410.2928) else (None)) if (x[0] != None) else (None))
     
     supplier_lineitem_probe = v4
     supplier_lineitem_part = su
