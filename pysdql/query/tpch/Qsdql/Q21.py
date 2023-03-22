@@ -9,62 +9,62 @@ def query(su, li, l2, l3, ord, na):
     # Insert
     f = "F"
     saudiarabia = "SAUDI ARABIA"
-    v0 = li.sum(lambda x: (({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None)) if (x[0] != None) else (None))
+    v0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     
     l2_lineitem_probe = v0
-    v0 = l2.sum(lambda x: (({record({"l_orderkey": x[0].l_orderkey}): record({"l2_size": 1})}) if (True) else (None)) if (x[0] != None) else (None))
+    v0 = l2.sum(lambda x: ({record({"l_orderkey": x[0].l_orderkey}): record({"l2_size": 1})}) if (True) else (None))
     
-    v1 = v0.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
+    v1 = v0.sum(lambda x: ({x[0].concat(x[1]): True}) if (True) else (None))
     
     l2_lineitem_part = v1
-    build_side = l2_lineitem_part.sum(lambda x: (({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    build_side = l2_lineitem_part.sum(lambda x: ({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
     
-    v0 = l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].l_orderkey] != None) else (None)) if (x[0] != None) else (None))
+    v0 = l2_lineitem_probe.sum(lambda x: ({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].l_orderkey] != None) else (None))
     
     l3_l2_lineitem_probe = v0
-    v0 = l3.sum(lambda x: (({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None)) if (x[0] != None) else (None))
+    v0 = l3.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     
-    v1 = v0.sum(lambda x: (({record({"l_orderkey": x[0].l_orderkey}): record({"l3_size": 1})}) if (True) else (None)) if (x[0] != None) else (None))
+    v1 = v0.sum(lambda x: ({record({"l_orderkey": x[0].l_orderkey}): record({"l3_size": 1})}) if (True) else (None))
     
-    v2 = v1.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
+    v2 = v1.sum(lambda x: ({x[0].concat(x[1]): True}) if (True) else (None))
     
     l3_l2_lineitem_part = v2
-    build_side = l3_l2_lineitem_part.sum(lambda x: (({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    build_side = l3_l2_lineitem_part.sum(lambda x: ({x[0].l_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
     
-    v0 = l3_l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].l_orderkey] != None) else (None)) if (x[0] != None) else (None))
+    v0 = l3_l2_lineitem_probe.sum(lambda x: ({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].l_orderkey] != None) else (None))
     
     nation_supplier_l3_l2_lineitem_probe = v0
     nation_supplier_probe = su
-    v0 = na.sum(lambda x: (({x[0]: x[1]}) if (x[0].n_name == saudiarabia) else (None)) if (x[0] != None) else (None))
+    v0 = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == saudiarabia) else (None))
     
     nation_supplier_part = v0
-    build_side = nation_supplier_part.sum(lambda x: (({x[0].n_nationkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    build_side = nation_supplier_part.sum(lambda x: ({x[0].n_nationkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
     
-    v0 = nation_supplier_probe.sum(lambda x: (({build_side[x[0].s_nationkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].s_nationkey] != None) else (None)) if (x[0] != None) else (None))
+    v0 = nation_supplier_probe.sum(lambda x: ({build_side[x[0].s_nationkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].s_nationkey] != None) else (None))
     
     nation_supplier_l3_l2_lineitem_part = v0
-    build_side = nation_supplier_l3_l2_lineitem_part.sum(lambda x: (({x[0].s_suppkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    build_side = nation_supplier_l3_l2_lineitem_part.sum(lambda x: ({x[0].s_suppkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
     
-    v0 = nation_supplier_l3_l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_suppkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].l_suppkey] != None) else (None)) if (x[0] != None) else (None))
+    v0 = nation_supplier_l3_l2_lineitem_probe.sum(lambda x: ({build_side[x[0].l_suppkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].l_suppkey] != None) else (None))
     
     orders_nation_supplier_l3_l2_lineitem_probe = v0
-    v0 = ord.sum(lambda x: (({x[0]: x[1]}) if (x[0].o_orderstatus == f) else (None)) if (x[0] != None) else (None))
+    v0 = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderstatus == f) else (None))
     
     orders_nation_supplier_l3_l2_lineitem_part = v0
-    build_side = orders_nation_supplier_l3_l2_lineitem_part.sum(lambda x: (({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None)) if (x[0] != None) else (None))
+    build_side = orders_nation_supplier_l3_l2_lineitem_part.sum(lambda x: ({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
     
-    v0 = orders_nation_supplier_l3_l2_lineitem_probe.sum(lambda x: (({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
-    : True}) if (build_side[x[0].l_orderkey] != None) else (None)) if (x[0] != None) else (None))
+    v0 = orders_nation_supplier_l3_l2_lineitem_probe.sum(lambda x: ({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
+    : True}) if (build_side[x[0].l_orderkey] != None) else (None))
     
-    v1 = v0.sum(lambda x: (({x[0]: x[1]}) if (((x[0].l2_size > 1) * (x[0].l3_size == 1))) else (None)) if (x[0] != None) else (None))
+    v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l2_size > 1) * (x[0].l3_size == 1))) else (None))
     
-    v2 = v1.sum(lambda x: (({record({"s_name": x[0].s_name}): record({"numwait": 1})}) if (True) else (None)) if (x[0] != None) else (None))
+    v2 = v1.sum(lambda x: ({record({"s_name": x[0].s_name}): record({"numwait": 1})}) if (True) else (None))
     
-    v3 = v2.sum(lambda x: (({x[0].concat(x[1]): True}) if (True) else (None)) if (x[0] != None) else (None))
+    v3 = v2.sum(lambda x: ({x[0].concat(x[1]): True}) if (True) else (None))
     
     results = v3
     # Complete

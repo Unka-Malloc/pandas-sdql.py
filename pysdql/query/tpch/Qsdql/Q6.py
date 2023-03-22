@@ -6,13 +6,13 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li):
 
     # Insert
-    v0 = li.sum(lambda x: (({x[0]: x[1]}) if (((((((((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) * (x[0].l_discount >= 0.05))) * (x[0].l_discount <= 0.07))) * (x[0].l_quantity < 24))) else (None)) if (x[0] != None) else (None))
+    v0 = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) * (x[0].l_discount >= 0.05))) * (x[0].l_discount <= 0.07))) * (x[0].l_quantity < 24))) else (None))
     
-    v1 = v0.sum(lambda x: (({x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]}) if (True) else (None)) if (x[0] != None) else (None))
+    v1 = v0.sum(lambda x: ({x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]}) if (True) else (None))
     
-    v2 = v1.sum(lambda x: ((record({"revenue": x[0].revenue})) if (True) else (None)) if (x[0] != None) else (None))
+    v2 = v1.sum(lambda x: (record({"revenue": x[0].revenue})) if (True) else (None))
     
-    v3 = v2.sum(lambda x: (({v2: True}) if (True) else (None)) if (x[0] != None) else (None))
+    v3 = v2.sum(lambda x: ({v2: True}) if (True) else (None))
     
     results = v3
     # Complete
