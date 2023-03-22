@@ -20,7 +20,7 @@
 - [x] 10
 - [x] 11
 - [x] 12
-- [ ] 13
+- [x] 13
 - [x] 14
 - [ ] 15 (`float` precision probelem) (`max` required)
 - [x] 16
@@ -35,31 +35,31 @@
 
 ## First Round
 - [x] 1
-- [ ] 2
-- [ ] 3 (`unique` required)
-- [ ] 4 (`unique` required)
-- [ ] 5 (`unique` required)
+- [ ] 2 (3. undefined)
+- [ ] 3 (`unique` required) (1. bad postgres plan: )
+- [ ] 4 (`unique` required) (2. `last` aggregation) (possible solution: equivalent syntax replacement)
+- [ ] 5 (`unique` required) (1. bad postgres plan: `region ! nation ! supplier ! lineitem` then another chain to `orders`)
 - [x] 6
-- [ ] 10 (`unique` required)
+- [ ] 10 (`unique` required) (2. `last` aggregation) (no alternative) (*mysterious postgres plan*)
 - [x] 12
 - [x] 13
-- [ ] 14 (`unique` required)
-- [ ] 15 (`max` required)
-- [ ] 16 (`unique` required)
-- [ ] 19 (`unique` required)
+- [ ] 14 (nothing)
+- [ ] 15 (`max` required) (nothing but float precision please) (need some `close to float` or integer promotion)
+- [ ] 16 (`unique` required) (the real `nunique` since non primary key)
+- [ ] 19 (`unique` required) (unoptimized: if projection is needed, then unique is needed)
 
 ## Second Round
-- [ ] 17
-- [ ] 18
-- [ ] 20
+- [ ] 17 (7. mean()) (__very bad postgres plan__) (__hidden conflicting attibutes__)
+- [ ] 18 (2. `last` aggregation) (__very bad postgres plan__)
+- [ ] 20 (__very bad postgres plan__) (__hidden conflicting attibutes__)
 
 ## Third Round
-- [ ] 7
-- [ ] 8
-- [ ] 9
-- [ ] 11
-- [ ] 21
-- [ ] 22
+- [ ] 7 (1. bad postgres plan)
+- [ ] 8 (nothing)
+- [ ] 9 (1. bad postgres plan `lineitem <- part` `orders <- lineitem` )
+- [ ] 11 (nothing)
+- [ ] 21 (1. bad postgres plan & 4. anti-join & 5. unknown optimization plan & 6. unexpected pandas series nested usage)
+- [ ] 22 (4. anti-join & 7. mean())
 
 ## Unexpected Error
 - Q5 possibly primary key issue (l_orderkey, l_lineitem for lineitem)
