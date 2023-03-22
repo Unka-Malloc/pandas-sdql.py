@@ -1,3 +1,23 @@
+# Hyper - Opt - Python
+- waiting for results (for next meeting)
+
+# Hyper - Opt - Compiler
+- fixed: remove redundant conditions (`?[x[0].probe_key]`)
+
+# Hyper - Unopt - Python
+- waiting for results (for next meeting)
+
+# Hyper - Unopt - Compiler
+- fixed: remove needs for `x[0] != None`
+
+# Duck - Opt - Python
+
+# Duck - Unopt - Python
+
+# Psql - Opt - Python
+
+# Psql - Unopt - Python
+
 # Compiler Mode
 
 ## 

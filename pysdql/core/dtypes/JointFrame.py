@@ -779,10 +779,17 @@ class JointFrame:
 
                         joint_op = DicConsExpr([(dict_key_ir, dict_val_ir)])
 
-                        for non_null_cond in additional_non_null:
-                            joint_op = IfExpr(condExpr=non_null_cond,
-                                              thenBodyExpr=joint_op,
-                                              elseBodyExpr=ConstantExpr(None))
+                        # for non_null_cond in additional_non_null:
+                        #     cond_item = CompareExpr(CompareSymbol.NE, non_null_cond, ConstantExpr(None))
+
+                        #     if str(self.part_nonull()) == str(cond_item):
+                        #         continue
+                        #     else:
+                        #         print(cond_item)
+
+                        #     joint_op = IfExpr(condExpr=cond_item,
+                        #                       thenBodyExpr=joint_op,
+                        #                       elseBodyExpr=ConstantExpr(None))
 
                         if joint_cond:
                             cols_not_in_root_probe = [x for x in self.retriever.find_cols(joint_cond)
@@ -840,11 +847,13 @@ class JointFrame:
                                     )
                                 else:
                                     lookup_key = self.retriever.find_lookup_path(self, this_probe_key)
-                                    joint_op = IfExpr(
-                                        condExpr=CompareExpr(CompareSymbol.NE,
+                                    non_null_cond = CompareExpr(CompareSymbol.NE,
                                                              DicLookupExpr(dicExpr=this_part_side.get_var_part(),
                                                                            keyExpr=lookup_key),
-                                                             ConstantExpr(None)),
+                                                             ConstantExpr(None))
+
+                                    joint_op = IfExpr(
+                                        condExpr=non_null_cond,
                                         thenBodyExpr=joint_op,
                                         elseBodyExpr=ConstantExpr(None)
                                     )

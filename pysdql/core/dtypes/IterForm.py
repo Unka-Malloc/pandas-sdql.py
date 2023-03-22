@@ -98,9 +98,11 @@ class IterForm:
                             thenBodyExpr=res_op,
                             elseBodyExpr=ConstantExpr(None))
 
-        res_op = IfExpr(condExpr=CompareExpr(CompareSymbol.NE, self.iter_key, ConstantExpr(None)),
-                        thenBodyExpr=res_op,
-                        elseBodyExpr=ConstantExpr(None))
+        # extra_cond = CompareExpr(CompareSymbol.NE, self.iter_key, ConstantExpr(None))
+
+        # res_op = IfExpr(condExpr=extra_cond,
+        #                 thenBodyExpr=res_op,
+        #                 elseBodyExpr=ConstantExpr(None))
 
         return SumExpr(varExpr=self.iter_el_obj,
                        dictExpr=self.iter_on_obj,

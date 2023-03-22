@@ -547,7 +547,7 @@ class Optimizer:
 
     @property
     def output(self) -> LetExpr:
-        self.op_chain.infer(entrance=True)
+        # self.op_chain.infer(entrance=True)
 
         if self.last_func == LastIterFunc.Agg:
             op_expr = self.retriever.find_aggr(body_only=False)
