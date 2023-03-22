@@ -412,7 +412,7 @@ def q14(execution_mode=0, threads_count=1, optimize=True):
     lineitem = pysdql.DataFrame()
     part = pysdql.DataFrame()
 
-    write_query(14, tpch_q14(lineitem, part).to_sdqlir(optimize))
+    # write_query(14, tpch_q14(lineitem, part).to_sdqlir(optimize))
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     part_data = read_csv(rf'{DATAPATH}/part.tbl', PART_TYPE, "pa")

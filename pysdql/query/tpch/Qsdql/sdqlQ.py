@@ -432,7 +432,7 @@ def q15(execution_mode=0, threads_count=1, optimize=True):
     lineitem = pysdql.DataFrame()
     supplier = pysdql.DataFrame()
 
-    write_query(15, tpch_q15(lineitem, supplier).to_sdqlir(optimize))
+    # write_query(15, tpch_q15(lineitem, supplier).to_sdqlir(optimize))
 
     lineitem_data = read_csv(rf'{DATAPATH}/lineitem.tbl', LINEITEM_TYPE, "li")
     supplier_data = read_csv(rf'{DATAPATH}/supplier.tbl', SUPPLIER_TYPE, "su")

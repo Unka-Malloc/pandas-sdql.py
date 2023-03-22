@@ -1025,10 +1025,10 @@ class JointFrame:
 
                                 aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
-                            # print({
-                            #     'name': self.joint.name,
-                            #     'expr': aggr_body,
-                            # })
+                            print({
+                                'name': self.joint.name,
+                                'expr': aggr_body,
+                            })
 
                             # probe condition: first outermost layer
                             if probe_cond:

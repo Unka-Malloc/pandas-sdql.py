@@ -1,8 +1,8 @@
-import pysdql as pd
+import pandas as pd
 from pysdql import tosdql
 
 if __name__ == '__main__':
-    li = pd.read_csv(f"T:/tpch_dataset/100M/lineitem.tbl",
+    li = pd.read_csv(f"/home/cxunka/Dataset/tpch_dataset/100M/lineitem.tbl",
                      sep='|',
                      header=None,
                      names=['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity',
@@ -16,22 +16,11 @@ if __name__ == '__main__':
                      parse_dates=['l_shipdate', 'l_commitdate', 'l_receiptdate'])
 
 
-    @tosdql
-    def q_a(lineitem):
-        lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
-        result = lineitem.groupby(['l_orderkey']).agg({'l_suppkey': 'last', 'l_quantity': 'sum'})
-        return result
+#     @tosdql
+#     def q_a(lineitem):
+#         result = lineitem[['l_orderkey', 'l_suppkey']]
+#         return result
 
-    df1 = q_a(li)
+#     df1 = q_a(li)
 
-    print(df1)
-
-    @tosdql
-    def q_b(lineitem):
-        lineitem['revenue'] = lineitem.l_extendedprice * lineitem.l_discount
-        result = lineitem.groupby(['l_orderkey', 'l_suppkey']).agg({'l_quantity': 'sum'})
-        return result
-
-    df2 = q_b(li)
-
-    print(df2)
+    print(li)
