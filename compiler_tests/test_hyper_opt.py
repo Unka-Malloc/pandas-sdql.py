@@ -16,7 +16,7 @@ dataset_path = os.getenv('TPCH_DATASET')
 
 ## Shows the number of returned results, average and stdev of run time, and the results (if the next parameter is also set to True)
 verbose = True
-show_results = False
+show_results = True
 
 ## Number of iterations for benchmarking each query (must be >=2)
 iterations = 10
@@ -292,7 +292,7 @@ def q8(pa, su, li, ord, cu, na, re):
     region_part = re.sum(
         lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
 
-    region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n1_nationkey})}) if (
+    region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (
                 region_part[x_n1[0].n_regionkey] != None) else (None))
 
     region_n1_customer = cu.sum(
@@ -503,11 +503,11 @@ def q13(cu, ord):
                 (firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
 
     customer_aggr = cu.sum(lambda x_customer: {
-        (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (
-            0.0): 1.0})
+        record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (
+            0.0)}): 1.0})
 
     results = customer_aggr.sum(
-        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0], "custdist": x_customer_aggr[1]}): True})
+        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
 
     return results
 
@@ -842,10 +842,12 @@ def q22(cu, ord):
 
     orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
 
+    avg_acctbal = ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))
+
     customer_aggr = cu.sum(lambda x_customer: (
         ({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (
                     orders_part[x_customer[0].c_custkey] == None) else (None)) if ((
-                (x_customer[0].c_acctbal > ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))) * ((((((((((
+                (x_customer[0].c_acctbal > avg_acctbal) * ((((((((((
                     (((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (
                 startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(
             x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(
