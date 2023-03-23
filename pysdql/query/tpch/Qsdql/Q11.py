@@ -12,26 +12,26 @@ def query(ps, su, na):
     v0 = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == germany) else (None))
     
     nation_supplier_part = v0
-    build_side = nation_supplier_part.sum(lambda x: ({x[0].n_nationkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_supplier_part.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_supplier_probe.sum(lambda x: ({build_side[x[0].s_nationkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].s_nationkey] != None) else (None))
     
     nation_supplier_partsupp_part = v0
-    build_side = nation_supplier_partsupp_part.sum(lambda x: ({x[0].s_suppkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_supplier_partsupp_part.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_supplier_partsupp_probe.sum(lambda x: ({build_side[x[0].ps_suppkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].ps_suppkey] != None) else (None))
     
-    tmp_calc_value = v0.sum(lambda x: (((((x[0].ps_supplycost) * (x[0].ps_availqty))) * (0.0001))) if (True) else (None))
+    tmp_calc_value = v0.sum(lambda x: ((((x[0].ps_supplycost) * (x[0].ps_availqty))) * (0.0001)))
     
     v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (tmp_calc_value < ((x[0].ps_supplycost) * (x[0].ps_availqty))) else (None))
     
-    v2 = v1.sum(lambda x: ({x[0].concat(record({"value": ((x[0].ps_supplycost) * (x[0].ps_availqty))})): x[1]}) if (True) else (None))
+    v2 = v1.sum(lambda x: {x[0].concat(record({"value": ((x[0].ps_supplycost) * (x[0].ps_availqty))})): x[1]})
     
-    v3 = v2.sum(lambda x: ({record({"ps_partkey": x[0].ps_partkey}): record({"value": x[0].value})}) if (True) else (None))
+    v3 = v2.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"value": x[0].value})})
     
-    v4 = v3.sum(lambda x: ({x[0].concat(x[1]): True}) if (True) else (None))
+    v4 = v3.sum(lambda x: {x[0].concat(x[1]): True})
     
     results = v4
     # Complete

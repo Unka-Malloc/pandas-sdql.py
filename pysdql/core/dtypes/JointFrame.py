@@ -236,9 +236,10 @@ class JointFrame:
                         aggr_body = dict_val
 
                         if joint_cond:
+                            # i: int to float
                             aggr_body = IfExpr(condExpr=joint_cond,
                                                thenBodyExpr=aggr_body,
-                                               elseBodyExpr=ConstantExpr(0))
+                                               elseBodyExpr=ConstantExpr(0.0))
                     elif isinstance(dict_val, (IfExpr, AddExpr, SubExpr, MulExpr, DivExpr)):
 
                         if any([k not in probe_on.columns for k in SDQLInspector.find_cols(dict_val)]):
@@ -251,9 +252,10 @@ class JointFrame:
                             aggr_body = dict_val
 
                         if joint_cond:
+                            # i: int to float
                             aggr_body = IfExpr(condExpr=joint_cond,
                                                thenBodyExpr=aggr_body,
-                                               elseBodyExpr=ConstantExpr(0))
+                                               elseBodyExpr=ConstantExpr(0.0))
                     else:
                         raise NotImplementedError
                 else:
@@ -1034,10 +1036,10 @@ class JointFrame:
 
                                 aggr_body = DicConsExpr([(dict_key_ir, RecConsExpr(val_tuples))])
 
-                            print({
-                                'name': self.joint.name,
-                                'expr': aggr_body,
-                            })
+                            # print({
+                            #     'name': self.joint.name,
+                            #     'expr': aggr_body,
+                            # })
 
                             # probe condition: first outermost layer
                             if probe_cond:
@@ -1390,14 +1392,16 @@ class JointFrame:
                                         if aggr_val_expr == 'sum':
                                             else_value = ConstantExpr(0.0)
                                         elif aggr_val_expr == 'count':
-                                            else_value = ConstantExpr(0)
+                                            # i: int to float
+                                            else_value = ConstantExpr(0.0)
                                         else:
                                             raise ValueError(f'Aggregation function {aggr_val_expr} is not supported.')
                                     else:
                                         if aggr_val_expr[1] == 'sum':
                                             else_value = ConstantExpr(0.0)
                                         elif aggr_val_expr[1] == 'count':
-                                            else_value = ConstantExpr(0)
+                                            # i: int to float
+                                            else_value = ConstantExpr(0.0)
                                         else:
                                             raise ValueError(
                                                 f'Aggregation function {aggr_val_expr[1]} is not supported.')
@@ -2014,13 +2018,17 @@ class JointFrame:
                                     if c not in probe_on.columns:
                                         mapper[c] = self.retriever.find_lookup_path(self, c)
                                 new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+
+                                # i: int to float
                                 rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
                                                            thenBodyExpr=new_op,
-                                                           elseBodyExpr=ConstantExpr(0))))
+                                                           elseBodyExpr=ConstantExpr(0.0))))
                             else:
+
+                                # i: int to float
                                 rec_list.append((i, IfExpr(condExpr=self.part_nonull(),
                                                            thenBodyExpr=target,
-                                                           elseBodyExpr=ConstantExpr(0))))
+                                                           elseBodyExpr=ConstantExpr(0.0))))
                     elif isinstance(col_inserted[i], FlexIR):
                         rec_list.append((i, col_inserted[i].sdql_ir))
                     else:
@@ -2048,13 +2056,16 @@ class JointFrame:
                                     if c not in probe_on.columns:
                                         mapper[c] = self.retriever.find_lookup_path(self, c)
                                 new_op = SDQLInspector.replace_field(target, inplace=True, mapper=mapper)
+
+                                # i: int to float
                                 rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
                                                            thenBodyExpr=new_op,
-                                                           elseBodyExpr=ConstantExpr(0))))
+                                                           elseBodyExpr=ConstantExpr(0.0))))
                             else:
+                                # i: int to float
                                 rec_list.append((j, IfExpr(condExpr=self.part_nonull(),
                                                            thenBodyExpr=target,
-                                                           elseBodyExpr=ConstantExpr(0))))
+                                                           elseBodyExpr=ConstantExpr(0.0))))
                     elif isinstance(col_renamed[j], FlexIR):
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:
@@ -2377,8 +2388,9 @@ class JointFrame:
                                                 dict_val_list.append((i,
                                                                       self.probe_access(aggr_dict[i][0])))
                                             elif aggr_dict[i][1] == 'count':
+                                                # i: int to float
                                                 dict_val_list.append((i,
-                                                                      ConstantExpr(1)))
+                                                                      ConstantExpr(1.0)))
                                             else:
                                                 raise NotImplementedError
                                         elif isinstance(aggr_dict[i], str):
@@ -2386,8 +2398,9 @@ class JointFrame:
                                                 dict_val_list.append((i,
                                                                       self.probe_access(i)))
                                             elif aggr_dict[i] == 'count':
+                                                # i: int to float
                                                 dict_val_list.append((i,
-                                                                      ConstantExpr(1)))
+                                                                      ConstantExpr(1.0)))
                                             else:
                                                 raise NotImplementedError
                                         else:
@@ -2539,8 +2552,9 @@ class JointFrame:
                                         dict_val_list.append((i,
                                                               self.probe_access(aggr_dict[i][0])))
                                     elif aggr_dict[i][1] == 'count':
+                                        # i: int to float
                                         dict_val_list.append((i,
-                                                              ConstantExpr(1)))
+                                                              ConstantExpr(1.0)))
                                     else:
                                         raise NotImplementedError
                                 elif isinstance(aggr_dict[i], str):
@@ -2548,8 +2562,9 @@ class JointFrame:
                                         dict_val_list.append((i,
                                                               self.probe_access(i)))
                                     elif aggr_dict[i] == 'count':
+                                        # i: int to float
                                         dict_val_list.append((i,
-                                                              ConstantExpr(1)))
+                                                              ConstantExpr(1.0)))
                                     else:
                                         raise NotImplementedError
                                 else:

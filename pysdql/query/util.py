@@ -155,7 +155,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             print(f'Warning: Column {c} not found!')
             continue
         if sdql_df[c].dtype == np.float64:
-            if sdql_df[c].apply(lambda x: x < np.float64(1.0)).any():
+            if sdql_df[c].apply(lambda x: x < np.float64(1.0)).all():
                 sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)
             else:
                 sdql_df[c] = sdql_df[c].astype(int)
@@ -165,7 +165,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
 
     for c in pd_df.columns:
         if pd_df[c].dtype == np.float64:
-            if pd_df[c].apply(lambda x: x < np.float64(1.0)).any():
+            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
             else:
                 pd_df[c] = pd_df[c].astype(int)
