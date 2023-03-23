@@ -19,21 +19,21 @@ def query(su, li, ord, cu, na):
     v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
     nation_customer_part = v1
-    build_side = nation_customer_part.sum(lambda x: ({x[0].n_nationkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_customer_part.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_customer_probe.sum(lambda x: ({build_side[x[0].c_nationkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].c_nationkey] != None) else (None))
     
     nation_customer_orders_part = v0
-    build_side = nation_customer_orders_part.sum(lambda x: ({x[0].c_custkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_customer_orders_part.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_customer_orders_probe.sum(lambda x: ({build_side[x[0].o_custkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].o_custkey] != None) else (None))
     
-    v1 = v0.sum(lambda x: ({x[0].concat(record({"n2_name": x[0].n_name})): x[1]}) if (True) else (None))
+    v1 = v0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
     
     nation_customer_orders_lineitem_part = v1
-    build_side = nation_customer_orders_lineitem_part.sum(lambda x: ({x[0].o_orderkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_customer_orders_lineitem_part.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_customer_orders_lineitem_probe.sum(lambda x: ({build_side[x[0].l_orderkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].l_orderkey] != None) else (None))
@@ -43,32 +43,32 @@ def query(su, li, ord, cu, na):
     v0 = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
     nation_supplier_part = v0
-    build_side = nation_supplier_part.sum(lambda x: ({x[0].n_nationkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_supplier_part.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_supplier_probe.sum(lambda x: ({build_side[x[0].s_nationkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].s_nationkey] != None) else (None))
     
-    v1 = v0.sum(lambda x: ({x[0].concat(record({"n1_name": x[0].n_name})): x[1]}) if (True) else (None))
+    v1 = v0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
     
     nation_supplier_nation_customer_orders_lineitem_part = v1
-    build_side = nation_supplier_nation_customer_orders_lineitem_part.sum(lambda x: ({x[0].s_suppkey: sr_dict({x[0]: x[1]})}) if (True) else (None))
+    build_side = nation_supplier_nation_customer_orders_lineitem_part.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
     
     v0 = nation_supplier_nation_customer_orders_lineitem_probe.sum(lambda x: ({build_side[x[0].l_suppkey].sum(lambda y: x[0].concat(y[0]))
     : True}) if (build_side[x[0].l_suppkey] != None) else (None))
     
     v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].n1_name == france) * (x[0].n2_name == germany))) + (((x[0].n1_name == germany) * (x[0].n2_name == france))))) else (None))
     
-    v2 = v1.sum(lambda x: ({x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]}) if (True) else (None))
+    v2 = v1.sum(lambda x: {x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]})
     
-    v3 = v2.sum(lambda x: ({x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]}) if (True) else (None))
+    v3 = v2.sum(lambda x: {x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]})
     
-    v4 = v3.sum(lambda x: ({x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]}) if (True) else (None))
+    v4 = v3.sum(lambda x: {x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]})
     
-    v5 = v4.sum(lambda x: ({x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]}) if (True) else (None))
+    v5 = v4.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
     
-    v6 = v5.sum(lambda x: ({record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})}) if (True) else (None))
+    v6 = v5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
     
-    v7 = v6.sum(lambda x: ({x[0].concat(x[1]): True}) if (True) else (None))
+    v7 = v6.sum(lambda x: {x[0].concat(x[1]): True})
     
     results = v7
     # Complete

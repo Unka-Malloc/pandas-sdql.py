@@ -23,6 +23,7 @@ class IterForm:
         self.iter_val = PairAccessExpr(VarExpr(self.iter_el), 1)
         self.iter_cond = []
         self.iter_op = None
+        self.iter_else = None
 
     @property
     def iter_body(self):
@@ -90,16 +91,18 @@ class IterForm:
                     else:
                         cond = cond.sdql_ir
 
+                cond_else = self.iter_else if self.iter_else else ConstantExpr(None)
+
                 res_op = IfExpr(condExpr=cond,
                                 thenBodyExpr=res_op,
-                                elseBodyExpr=ConstantExpr(None))
-        else:
-            res_op = IfExpr(condExpr=ConstantExpr(True),
-                            thenBodyExpr=res_op,
-                            elseBodyExpr=ConstantExpr(None))
+                                elseBodyExpr=cond_else)
+        # else:
+        #     res_op = IfExpr(condExpr=ConstantExpr(True),
+        #                     thenBodyExpr=res_op,
+        #                     elseBodyExpr=ConstantExpr(None))
 
         # extra_cond = CompareExpr(CompareSymbol.NE, self.iter_key, ConstantExpr(None))
-
+        #
         # res_op = IfExpr(condExpr=extra_cond,
         #                 thenBodyExpr=res_op,
         #                 elseBodyExpr=ConstantExpr(None))

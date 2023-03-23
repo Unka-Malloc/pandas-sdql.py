@@ -779,7 +779,8 @@ class DataFrame(FlexIR, Retrivable):
             if aggr_func == 'sum':
                 output_aggr_dict[aggr_key] = self.key_access(aggr_key)
             if aggr_func == 'count':
-                output_aggr_dict[aggr_key] = ConstantExpr(1)
+                # i: int to float
+                output_aggr_dict[aggr_key] = ConstantExpr(1.0)
 
         aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
                              aggr_on=self,
@@ -810,10 +811,12 @@ class DataFrame(FlexIR, Retrivable):
             if agg_flag == 'sum':
                 agg_dict[agg_key] = self.key_access(agg_val[0])
             if agg_flag == 'count':
-                agg_dict[agg_key] = ConstantExpr(1)
+                # i: int to float
+                agg_dict[agg_key] = ConstantExpr(1.0)
             if callable(agg_flag):
                 # received lambda function
-                agg_dict[agg_key] = ConstantExpr(1)
+                # i: int to float
+                agg_dict[agg_key] = ConstantExpr(1.0)
 
         aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
                              aggr_on=self,

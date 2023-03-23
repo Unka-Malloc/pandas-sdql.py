@@ -40,7 +40,8 @@ class DataFrameGroupBy:
             if aggr_func == 'sum':
                 output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
             if aggr_func == 'count':
-                output_aggr_dict[aggr_key] = ConstantExpr(1)
+                # i: int to float
+                output_aggr_dict[aggr_key] = ConstantExpr(1.0)
             if aggr_func == 'min':
                 output_aggr_dict[aggr_key] = self.groupby_from.key_access(aggr_key)
 
@@ -72,15 +73,18 @@ class DataFrameGroupBy:
             if agg_flag == 'sum':
                 agg_dict[agg_key] = agg_calc
             if agg_flag == 'count':
-                agg_dict[agg_key] = ConstantExpr(1)
+                # i: int to float
+                agg_dict[agg_key] = ConstantExpr(1.0)
             if agg_flag == 'min':
                 agg_dict[agg_key] = agg_calc
             if callable(agg_flag):
                 # received lambda function
-                agg_dict[agg_key] = ConstantExpr(1)
+                # i: int to float
+                agg_dict[agg_key] = ConstantExpr(1.0)
             if agg_flag == 'mean':
                 agg_dict[f'{agg_key}_sum_for_mean'] = agg_calc
-                agg_dict[f'{agg_key}_count_for_mean'] = ConstantExpr(1)
+                # i: int to float
+                agg_dict[f'{agg_key}_count_for_mean'] = ConstantExpr(1.0)
 
         groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
                                       groupby_cols=self.groupby_cols,

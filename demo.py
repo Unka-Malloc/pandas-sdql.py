@@ -3,9 +3,9 @@ import pysdql
 if __name__ == '__main__':
     # optimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=True)
 
-    unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
+    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
 
-    # unopt_single = pysdql.tpch_query(7, verbose=True, optimize=True)
+    unopt_single = pysdql.tpch_query(13, verbose=True, optimize=False)
 
     # psql_verified = pysdql.tpch_query([1, 6, 12, 13], verbose=True, optimize=True, mode='postgres')
 
