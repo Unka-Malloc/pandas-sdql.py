@@ -30,7 +30,9 @@ from pysdql.config import (
 )
 
 # show all columns
-# pd.set_option('display.max_columns', None)
+pd.set_option('display.max_columns', None)
+# show all rows
+pd.set_option('display.max_rows', None)
 # suppress SettingWithCopyWarning
 pd.set_option('mode.chained_assignment', None)
 

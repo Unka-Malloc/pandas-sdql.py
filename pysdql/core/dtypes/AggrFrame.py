@@ -9,7 +9,7 @@ class AggrFrame:
     def __init__(self, aggr_on):
         self.aggr_on = aggr_on
 
-        self.vname_aggr = f'{aggr_on.name}_aggr'
+        self.vname_aggr = f'{aggr_on.current_name}_aggr'
         self.var_aggr = VarExpr(self.vname_aggr)
         self.vname_x_aggr = f'x_{self.vname_aggr}'
         self.var_x_aggr = VarExpr(self.vname_x_aggr)

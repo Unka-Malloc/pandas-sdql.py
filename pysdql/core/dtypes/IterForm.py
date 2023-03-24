@@ -38,6 +38,16 @@ class IterForm:
                                                                   col.col_expr.replace(self.iter_key).sdql_ir)])),
                                          PairAccessExpr(VarExpr(self.iter_el), 1))])
                 elif isinstance(col.col_expr, ColApplyExpr):
+                    if col.col_expr.original_column:
+                        return DicConsExpr([(ConcatExpr(self.iter_key,
+                                                        RecConsExpr([(col.col_var,
+                                                                      SDQLInspector.replace_access(
+                                                                          col.col_expr.original_unopt_sdql_ir,
+                                                                          PairAccessExpr(VarExpr(self.iter_el), 0))
+                                                                      )])
+                                                        ),
+                                             PairAccessExpr(VarExpr(self.iter_el), 1))])
+
                     return DicConsExpr([(ConcatExpr(self.iter_key,
                                                     RecConsExpr([(col.col_var,
                                                                   SDQLInspector.replace_access(col.col_expr.unopt_sdql_ir,
