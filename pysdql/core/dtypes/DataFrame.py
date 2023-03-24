@@ -91,7 +91,8 @@ class DataFrame(FlexIR, Retrivable):
                  context_constant=None,
                  context_unopt=None,
                  context_semiopt=None,
-                 loader=None):
+                 loader=None,
+                 previous_name=None):
         super().__init__()
         self.loader = loader
         self.__default_name = 'R'
@@ -103,6 +104,7 @@ class DataFrame(FlexIR, Retrivable):
         self.__columns_in = columns if columns else self.preset_cols()
         self.__operations = operations if operations else OpSeq()
         self.__retriever = Retriever(self)
+        self.__previous_name = previous_name if previous_name else ""
 
         self.__structure = DataFrameStruct('1DT')
 
@@ -118,18 +120,20 @@ class DataFrame(FlexIR, Retrivable):
 
         self.init_context_variable()
 
+        tmp_useful_name = self.__name if self.__name else self.__previous_name
+
         if is_joint:
             vname_part = f'{self.get_name()}'
             self.__var_merge_part = VarExpr(vname_part)
             self.add_context_variable(vname_part,
                                       self.__var_merge_part)
         else:
-            vname_part = f'{self.get_name()}_part'
+            vname_part = f'{tmp_useful_name}_part'
             self.__var_merge_part = VarExpr(vname_part)
             self.add_context_variable(vname_part,
                                       self.__var_merge_part)
 
-        vname_aggr = f'{self.get_name()}_aggr'
+        vname_aggr = f'{tmp_useful_name}_aggr'
         self.__var_aggr = VarExpr(vname_aggr)
 
         self.unopt_count = 0
@@ -157,7 +161,8 @@ class DataFrame(FlexIR, Retrivable):
                          context_variable=self.context_variable,
                          context_constant=self.context_constant,
                          context_unopt=self.context_unopt,
-                         context_semiopt=self.context_semiopt)
+                         context_semiopt=self.context_semiopt,
+                         previous_name=self.name)
 
     @property
     def is_joint(self):
@@ -339,12 +344,24 @@ class DataFrame(FlexIR, Retrivable):
         return self.retriever.findall_cols_used(as_owner=True)
 
     @property
+    def previous_name(self):
+        return self.__previous_name
+
+    @property
+    def current_name(self):
+        return self.__name
+
+    @property
     def name(self):
+        if self.__previous_name:
+            return self.__previous_name
         if self.__name:
             return self.__name
         return self.__default_name
 
     def get_name(self):
+        if self.__previous_name:
+            return self.__previous_name
         if self.__name:
             return self.__name
         return self.__default_name
@@ -1278,6 +1295,7 @@ class DataFrame(FlexIR, Retrivable):
                                 apply_cond=apply_cond,
                                 apply_else=ConstantExpr(lamb_else),
                                 unopt_cond=unopt_cond,
+                                original_column=op,
                             )
 
                             # return IfExpr(condExpr=apply_cond,

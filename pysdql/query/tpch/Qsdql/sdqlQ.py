@@ -90,7 +90,7 @@ def q2(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(part_data, supplier_data, partsupp_data, partsupp_data, nation_data, region_data)
+    sdql_result = Q.query(part_data, supplier_data, partsupp_data, nation_data, region_data)
 
     query_end = time.time()
 
@@ -258,8 +258,7 @@ def q8(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(part_data, supplier_data, lineitem_data, orders_data, customer_data, nation_data, nation_data,
-                          nation_data, region_data)
+    sdql_result = Q.query(part_data, supplier_data, lineitem_data, orders_data, customer_data, nation_data, region_data)
 
     query_end = time.time()
 
@@ -491,7 +490,7 @@ def q17(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(lineitem_data, lineitem_data, part_data)
+    sdql_result = Q.query(lineitem_data, part_data)
 
     query_end = time.time()
 
@@ -517,7 +516,7 @@ def q18(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(lineitem_data, lineitem_data, customer_data, orders_data)
+    sdql_result = Q.query(lineitem_data, customer_data, orders_data)
 
     query_end = time.time()
 
@@ -599,7 +598,7 @@ def q21(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(supplier_data, lineitem_data, lineitem_data, lineitem_data, orders_data, nation_data)
+    sdql_result = Q.query(supplier_data, lineitem_data, orders_data, nation_data)
 
     query_end = time.time()
 
@@ -623,7 +622,7 @@ def q22(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(customer_data, customer_data, orders_data)
+    sdql_result = Q.query(customer_data, orders_data)
 
     query_end = time.time()
 

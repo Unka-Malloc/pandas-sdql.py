@@ -623,7 +623,17 @@ class Optimizer:
             op_body = op_expr.op
 
             if isinstance(op_body, ColProjExpr):
-                continue
+                tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in op_body.proj_cols]
+
+                tmp_it.iter_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                self.opt_on.context_unopt.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=tmp_it.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
             elif is_cond(op_body):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
@@ -815,17 +825,18 @@ class Optimizer:
                                                                                       op_body.right_on)),
                                                                     ConstantExpr(None)))
 
-                                tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'), DicLookupExpr(VarExpr('build_side'),
-                                                                                                   RecAccessExpr(
-                                                                                                       PairAccessExpr(
-                                                                                                           VarExpr(
-                                                                                                               tmp_el_on),
-                                                                                                           0),
-                                                                                                       op_body.right_on)),
-                                                                       ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                                                  PairAccessExpr(VarExpr('y'), 0))
-                                                                       ),
-                                                               ConstantExpr(True))])
+                                inner_sum = SumExpr(VarExpr('y'),
+                                                    DicLookupExpr(VarExpr('build_side'),
+                                                                  RecAccessExpr(
+                                                                      PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                      op_body.right_on)
+                                                                  ),
+                                                    DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                             PairAccessExpr(VarExpr('y'), 0)),
+                                                                  ConstantExpr(True))])
+                                                    )
+
+                                tmp_it.iter_op = inner_sum
                             elif isinstance(op_body.right_on, list):
                                 tmp_it.iter_cond.append(CompareExpr(CompareSymbol.NE,
                                                                     DicLookupExpr(VarExpr('build_side'),
@@ -838,20 +849,20 @@ class Optimizer:
                                                                                                for c in op_body.right_on])),
                                                                     ConstantExpr(None)))
 
-                                tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'), DicLookupExpr(VarExpr('build_side'),
-                                                                                                   RecConsExpr([(c,
-                                                                                                                 RecAccessExpr(
-                                                                                                                     PairAccessExpr(
-                                                                                                                         VarExpr(
-                                                                                                                             tmp_el_on),
-                                                                                                                         0),
-                                                                                                                     c))
-                                                                                                                for c in
-                                                                                                                op_body.right_on])),
-                                                                       ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                                                  PairAccessExpr(VarExpr('y'), 0))
-                                                                       ),
-                                                               ConstantExpr(True))])
+                                inner_sum = SumExpr(VarExpr('y'),
+                                                    DicLookupExpr(VarExpr('build_side'),
+                                                                  RecConsExpr([(c,
+                                                                                RecAccessExpr(
+                                                                                    PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                                    c)
+                                                                                )
+                                                                               for c in op_body.right_on])),
+                                                    DicConsExpr([(ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                             PairAccessExpr(VarExpr('y'), 0)),
+                                                                  ConstantExpr(True))])
+                                                    )
+
+                                tmp_it.iter_op = inner_sum
 
                             self.opt_on.context_unopt.append(
                                 LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -861,28 +872,24 @@ class Optimizer:
                         else:
                             tmp_it = IterForm('v0_probe', tmp_el_on)
 
-                            tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'),
-                                                                   VarExpr('v0_part'),
-                                                                   IfExpr(CompareExpr(CompareSymbol.NE,
-                                                                                      PairAccessExpr(VarExpr('y'), 0),
-                                                                                      ConstantExpr(None)),
-                                                                          IfExpr(CompareExpr(CompareSymbol.EQ,
-                                                                                             RecAccessExpr(
-                                                                                                 PairAccessExpr(
-                                                                                                     VarExpr(tmp_el_on),
-                                                                                                     0),
-                                                                                                 op_body.right_on),
-                                                                                             RecAccessExpr(
-                                                                                                 PairAccessExpr(
-                                                                                                     VarExpr('y'), 0),
-                                                                                                 op_body.left_on)),
-                                                                                 ConcatExpr(
-                                                                                     PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                                                     PairAccessExpr(VarExpr('y'), 0)),
-                                                                                 ConstantExpr(None)),
-                                                                          ConstantExpr(None))
-                                                                   ),
-                                                           ConstantExpr(True))])
+                            inner_sum = SumExpr(VarExpr('y'),
+                                                VarExpr('v0_part'),
+                                                IfExpr(CompareExpr(CompareSymbol.NE,
+                                                                   PairAccessExpr(VarExpr('y'), 0),
+                                                                   ConstantExpr(None)),
+                                                       IfExpr(CompareExpr(CompareSymbol.EQ,
+                                                                          RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                                        op_body.right_on),
+                                                                          RecAccessExpr(PairAccessExpr(VarExpr('y'), 0),
+                                                                                        op_body.left_on)),
+                                                              DicConsExpr([(ConcatExpr(
+                                                                  PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                  PairAccessExpr(VarExpr('y'), 0)), ConstantExpr(True))]),
+                                                              ConstantExpr(None)),
+                                                       ConstantExpr(None))
+                                                )
+
+                            tmp_it.iter_op = inner_sum
 
                             self.opt_on.context_unopt.append(
                                 LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -1022,13 +1029,9 @@ class Optimizer:
                 tmp_vn_on_2 = f'v{self.opt_on.unopt_count - 1}'
                 tmp_vn_nx = f'v{self.opt_on.unopt_count}'
 
-                tmp_it_2 = IterForm(tmp_vn_on_2, tmp_el_on)
-
-                tmp_it_2.iter_op = DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))])
-
                 self.opt_on.context_unopt.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                            valExpr=tmp_it_2.sdql_ir,
+                            valExpr=DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))]),
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, GroupbyAggrExpr):

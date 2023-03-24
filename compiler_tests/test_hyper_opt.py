@@ -102,9 +102,10 @@ def q2(pa, su, ps, na, re):
          "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (
                 region_nation[x_supplier[0].s_nationkey] != None) else (None))
 
-    region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record(
-        {"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey,
-         "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
+    region_nation_supplier_partsupp = ps.sum(lambda x_partsupp: ({x_partsupp[0].ps_partkey: record(
+        {"min_supplycost": x_partsupp[0].ps_supplycost, "ps_partkey": x_partsupp[0].ps_partkey,
+         "ps_suppkey": x_partsupp[0].ps_suppkey, "s_suppkey": x_partsupp[0].ps_suppkey})}) if (
+                region_nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None))
 
     part_part = pa.sum(lambda x_part: (
     {x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_mfgr": x_part[0].p_mfgr})}) if (
@@ -119,10 +120,10 @@ def q2(pa, su, ps, na, re):
          "s_address": region_nation_supplier[x_partsupp[0].ps_suppkey].s_address,
          "s_phone": region_nation_supplier[x_partsupp[0].ps_suppkey].s_phone,
          "s_comment": region_nation_supplier[x_partsupp[0].ps_suppkey].s_comment}): True}) if (
-                x_partsupp[0].ps_supplycost == region_nation_supplier_ps1[
+                x_partsupp[0].ps_supplycost == region_nation_supplier_partsupp[
             x_partsupp[0].ps_partkey].min_supplycost) else (None)) if (
                 region_nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (
-                region_nation_supplier_ps1[x_partsupp[0].ps_partkey] != None) else (None)) if (
+                region_nation_supplier_partsupp[x_partsupp[0].ps_partkey] != None) else (None)) if (
                 part_part[x_partsupp[0].ps_partkey] != None) else (None))
 
     return results
@@ -191,7 +192,7 @@ def q5(li, cu, ord, re, na, su):
         {"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey,
          "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (
                 region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (
-    ((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19961231))) else (None))
+    ((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19950101))) else (None))
 
     supplier_part = su.sum(lambda x_supplier: {
         record({"s_suppkey": x_supplier[0].s_suppkey, "s_nationkey": x_supplier[0].s_nationkey}): True})
@@ -279,9 +280,9 @@ def q8(pa, su, li, ord, cu, na, re):
     economyanodizedsteel = "ECONOMY ANODIZED STEEL"
     america = "AMERICA"
     brazil = "BRAZIL"
-    n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record(
-        {"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey,
-         "n2_regionkey": x_n2[0].n_regionkey})})
+    n2_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record(
+        {"n2_comment": x_nation[0].n_comment, "n2_name": x_nation[0].n_name, "n2_nationkey": x_nation[0].n_nationkey,
+         "n2_regionkey": x_nation[0].n_regionkey})})
 
     supplier_part = su.sum(
         lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
@@ -292,33 +293,33 @@ def q8(pa, su, li, ord, cu, na, re):
     region_part = re.sum(
         lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
 
-    region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (
-                region_part[x_n1[0].n_regionkey] != None) else (None))
+    region_nation = na.sum(
+        lambda x_nation: ({x_nation[0].n_nationkey: record({"n1_nationkey": x_nation[0].n1_nationkey})}) if (
+                    region_part[x_nation[0].n_regionkey] != None) else (None))
 
-    region_n1_customer = cu.sum(
-        lambda x_customer: ({x_customer[0].c_custkey: True}) if (region_n1[x_customer[0].c_nationkey] != None) else (
-            None))
+    region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (
+                region_nation[x_customer[0].c_nationkey] != None) else (None))
 
-    region_n1_customer_orders = ord.sum(lambda x_orders: (
+    region_nation_customer_orders = ord.sum(lambda x_orders: (
         ({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})}) if (
-                    region_n1_customer[x_orders[0].o_custkey] != None) else (None)) if (
+                    region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (
     ((x_orders[0].o_orderdate >= 19950101) * (x_orders[0].o_orderdate <= 19961231))) else (None))
 
-    n2_supplier_part_region_n1_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({
-        extractYear(region_n1_customer_orders[x_lineitem[0].l_orderkey].o_orderdate): record({"A": (
+    nation_supplier_part_region_nation_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({
+        extractYear(region_nation_customer_orders[x_lineitem[0].l_orderkey].o_orderdate): record({"A": (
         ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (
                     n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey].n2_name == brazil) else (0.0), "B": (
                     (x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (
                 n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey] != None) else (None)) if (
                 supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (
                 part_part[x_lineitem[0].l_partkey] != None) else (None)) if (
-                region_n1_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+                region_nation_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
 
-    results = n2_supplier_part_region_n1_customer_orders_lineitem.sum(
-        lambda x_n2_supplier_part_region_n1_customer_orders_lineitem: {record(
-            {"o_year": x_n2_supplier_part_region_n1_customer_orders_lineitem[0], "mkt_share": (
-                        (x_n2_supplier_part_region_n1_customer_orders_lineitem[1].A) / (
-                    x_n2_supplier_part_region_n1_customer_orders_lineitem[1].B))}): True})
+    results = nation_supplier_part_region_nation_customer_orders_lineitem.sum(
+        lambda x_nation_supplier_part_region_nation_customer_orders_lineitem: {record(
+            {"o_year": x_nation_supplier_part_region_nation_customer_orders_lineitem[0], "mkt_share": (
+                        (x_nation_supplier_part_region_nation_customer_orders_lineitem[1].A) / (
+                    x_nation_supplier_part_region_nation_customer_orders_lineitem[1].B))}): True})
 
     return results
 
@@ -503,11 +504,11 @@ def q13(cu, ord):
                 (firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
 
     customer_aggr = cu.sum(lambda x_customer: {
-        record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (
-            0.0)}): 1.0})
+        (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (
+            0.0): 1.0})
 
     results = customer_aggr.sum(
-        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
+        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0], "custdist": x_customer_aggr[1]}): True})
 
     return results
 
@@ -546,7 +547,7 @@ def q15(li, su):
     results = lineitem_aggr.sum(lambda x_lineitem_aggr: (({record(
         {"s_suppkey": x_lineitem_aggr[0], "s_name": supplier_part[x_lineitem_aggr[0]].s_name,
          "s_address": supplier_part[x_lineitem_aggr[0]].s_address, "s_phone": supplier_part[x_lineitem_aggr[0]].s_phone,
-         "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 797313.3838) else (None)) if (
+         "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 1772627.2087) else (None)) if (
                 supplier_part[x_lineitem_aggr[0]] != None) else (None))
 
     return results
@@ -610,21 +611,21 @@ def q16(ps, pa, su):
 
 @sdql_compile({"li": lineitem_type, "pa": part_type})
 def q17(li, pa):
-    brand11 = "Brand#11"
-    wrapcase = "WRAP CASE"
+    brand23 = "Brand#23"
+    medbox = "MED BOX"
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (
-    ((x_part[0].p_brand == brand11) * (x_part[0].p_container == wrapcase))) else (None))
+    ((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
 
-    part_l1 = li.sum(
-        lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (
-                    part_part[x_l1[0].l_partkey] != None) else (None))
+    part_lineitem = li.sum(lambda x_lineitem: (
+    {x_lineitem[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_lineitem[0].l_quantity})}) if (
+                part_part[x_lineitem[0].l_partkey] != None) else (None))
 
-    part_l1_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (
-                x_lineitem[0].l_quantity < ((0.2) * (
-        ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
-        0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
+    part_lineitem_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (
+                x_lineitem[0].l_quantity < ((0.2) * (((part_lineitem[x_lineitem[0].l_partkey].sum_quant) / (
+            part_lineitem[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (
+                part_lineitem[x_lineitem[0].l_partkey] != None) else (0.0)}))
 
-    results = ((part_l1_lineitem.l_extendedprice) / (7.0))
+    results = ((part_lineitem_lineitem.l_extendedprice) / (7.0))
 
     return results
 
@@ -647,17 +648,20 @@ def q18(li, cu, ord):
          "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (
         None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
 
-    l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name,
-                                            "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey,
-                                            "o_orderkey": x_l1[0].l_orderkey,
-                                            "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate,
-                                            "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[
-        0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
+    lineitem_aggr = li.sum(lambda x_lineitem: ({record({"c_name": customer_orders[x_lineitem[0].l_orderkey].c_name,
+                                                        "c_custkey": customer_orders[
+                                                            x_lineitem[0].l_orderkey].c_custkey,
+                                                        "o_orderkey": x_lineitem[0].l_orderkey,
+                                                        "o_orderdate": customer_orders[
+                                                            x_lineitem[0].l_orderkey].o_orderdate,
+                                                        "o_totalprice": customer_orders[
+                                                            x_lineitem[0].l_orderkey].o_totalprice}): x_lineitem[
+        0].l_quantity}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
 
-    results = l1_aggr.sum(lambda x_l1_aggr: {record(
-        {"c_name": x_l1_aggr[0].c_name, "c_custkey": x_l1_aggr[0].c_custkey, "o_orderkey": x_l1_aggr[0].o_orderkey,
-         "o_orderdate": x_l1_aggr[0].o_orderdate, "o_totalprice": x_l1_aggr[0].o_totalprice,
-         "sum_quantity": x_l1_aggr[1]}): True})
+    results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record(
+        {"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey,
+         "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate,
+         "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
 
     return results
 
@@ -800,12 +804,12 @@ def q21(su, li, ord, na):
         lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_name": x_supplier[0].s_name})}) if (
                     nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
-    l3_part = li.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (
-                x_l3[0].l_receiptdate > x_l3[0].l_commitdate) else (None))
+    l3_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: record({"l3_size": 1})}) if (
+                x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
 
-    l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
+    l2_part = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: record({"l2_size": 1})})
 
-    orders_nation_supplier_l3_l2_lineitem = li.sum(lambda x_lineitem: (((((({
+    orders_nation_supplier_lineitem_lineitem_lineitem = li.sum(lambda x_lineitem: (((((({
         nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (
     ((l2_part[x_lineitem[0].l_orderkey].l2_size > 1) * (l3_part[x_lineitem[0].l_orderkey].l3_size == 1))) else (
         None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (
@@ -814,9 +818,10 @@ def q21(su, li, ord, na):
                 l2_part[x_lineitem[0].l_orderkey] != None) else (None)) if (
                 x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
 
-    results = orders_nation_supplier_l3_l2_lineitem.sum(lambda x_orders_nation_supplier_l3_l2_lineitem: {record(
-        {"s_name": x_orders_nation_supplier_l3_l2_lineitem[0],
-         "numwait": x_orders_nation_supplier_l3_l2_lineitem[1].numwait}): True})
+    results = orders_nation_supplier_lineitem_lineitem_lineitem.sum(
+        lambda x_orders_nation_supplier_lineitem_lineitem_lineitem: {record(
+            {"s_name": x_orders_nation_supplier_lineitem_lineitem_lineitem[0],
+             "numwait": x_orders_nation_supplier_lineitem_lineitem_lineitem[1].numwait}): True})
 
     return results
 
@@ -832,22 +837,20 @@ def q22(cu, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if ((
-                (x_cu1[0].c_acctbal > 0.0) * ((((((((((
-                    (((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (
-                startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (
-                                                       startsWith(x_cu1[0].c_phone, v30)))) + (
-                                                     startsWith(x_cu1[0].c_phone, v18)))) + (
-                                                   startsWith(x_cu1[0].c_phone, v17)))))) else (None))
+    cu1_aggr = cu.sum(lambda x_customer: (record({"sum_acctbal": x_customer[0].c_acctbal, "count_acctbal": 1.0})) if ((
+                (x_customer[0].c_acctbal > 0.0) * ((((((((((
+                    (((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (
+                startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (
+                                                            startsWith(x_customer[0].c_phone, v30)))) + (
+                                                          startsWith(x_customer[0].c_phone, v18)))) + (
+                                                        startsWith(x_customer[0].c_phone, v17)))))) else (None))
 
     orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
-
-    avg_acctbal = ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))
 
     customer_aggr = cu.sum(lambda x_customer: (
         ({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (
                     orders_part[x_customer[0].c_custkey] == None) else (None)) if ((
-                (x_customer[0].c_acctbal > avg_acctbal) * ((((((((((
+                (x_customer[0].c_acctbal > ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))) * ((((((((((
                     (((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (
                 startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(
             x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(

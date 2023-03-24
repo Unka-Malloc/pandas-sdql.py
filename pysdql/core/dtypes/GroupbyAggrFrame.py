@@ -8,7 +8,7 @@ class GroupbyAggrFrame:
     def __init__(self, aggr_on):
         self.aggr_on = aggr_on
 
-        self.vname_aggr = f'{aggr_on.name}_aggr'
+        self.vname_aggr = f'{aggr_on.current_name}_aggr'
         self.var_aggr = VarExpr(self.vname_aggr)
         self.vname_x_aggr = f'x_{self.vname_aggr}'
         self.var_x_aggr = VarExpr(self.vname_x_aggr)
@@ -160,10 +160,11 @@ class GroupbyAggrFrame:
             prev_df = []
             for c in self.retriever.findall_cols_in_cond(cond, True):
                 if c.field not in self.aggr_on.columns:
-                    if c.col_of.name not in prev_df:
+                    if c.col_of.current_name not in prev_df:
                         if c.col_of.retriever.was_aggr:
                             need_mapper = True
-                            prev_df.append(c.col_of.name)
+
+                            prev_df.append(c.col_of.current_name)
                             prev_agg.append(c.col_of.get_aggr(as_part=True))
 
                     cond_mapper[c.field] = c.col_of.var_aggr
