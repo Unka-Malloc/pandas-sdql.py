@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     # opt_part2 = pysdql.tpch_query(range(12, 23), verbose=True, optimize=True)
 
-    opt_single = pysdql.tpch_query(8, verbose=True, optimize=True)
+    opt_single = pysdql.tpch_query(22, verbose=True, optimize=True)
 
     # unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
