@@ -26,4 +26,4 @@ def query(li, ord, na, su, pa, ps):
     
     # Complete
 
-    return 1
+    return results
