@@ -41,6 +41,8 @@ class GroupbyAggrFrame:
         key_mean = []
         mean_mapper = {}
 
+        interm_variables = {}
+
         for k in origin_dict.keys():
             if origin_dict[k][1] == 'sum':
                 cols_sum.append(origin_dict[k][0])
@@ -167,10 +169,13 @@ class GroupbyAggrFrame:
                             prev_df.append(c.col_of.current_name)
                             prev_agg.append(c.col_of.get_aggr(as_part=True))
 
-                    cond_mapper[c.field] = c.col_of.var_aggr
+                    cond_mapper[c.field] = VarExpr(c.field)
+                    interm_variables[c.field] = RecAccessExpr(c.col_of.var_aggr, c.field)
+
+            print(cond_mapper)
 
             if need_mapper:
-                aggr_body = IfExpr(condExpr=cond.replace(rec=None, inplace=False, mapper=cond_mapper),
+                aggr_body = IfExpr(condExpr=cond.replace(rec=None, inplace=True, mapper=cond_mapper),
                                    thenBodyExpr=aggr_body,
                                    elseBodyExpr=ConstantExpr(None))
             else:
@@ -294,7 +299,24 @@ class GroupbyAggrFrame:
             isin_let_expr = isin_expr.get_as_part()
 
             if prev_agg:
-                return SDQLInspector.concat_bindings(prev_agg + [isin_let_expr, aggr_let_expr, form_let_expr])
+                if interm_variables:
+                    first_vname = list(interm_variables.keys())[0]
+                    vars_let = LetExpr(varExpr=VarExpr(first_vname),
+                                       valExpr=interm_variables[first_vname],
+                                       bodyExpr=ConstantExpr(True))
+
+                    for tmp_vname in interm_variables.keys():
+                        if tmp_vname == first_vname:
+                            continue
+
+                        vars_let = LetExpr(varExpr=VarExpr(tmp_vname),
+                                       valExpr=interm_variables[tmp_vname],
+                                       bodyExpr=vars_let)
+
+                    return SDQLInspector.concat_bindings(prev_agg + [vars_let]
+                                                         + [isin_let_expr, aggr_let_expr, form_let_expr])
+                else:
+                    return SDQLInspector.concat_bindings(prev_agg + [isin_let_expr, aggr_let_expr, form_let_expr])
 
             return SDQLInspector.concat_bindings([isin_let_expr, aggr_let_expr, form_let_expr])
         else:
