@@ -503,12 +503,11 @@ def q13(cu, ord):
         x_orders[0].o_comment, special) != -1) * (firstIndex(x_orders[0].o_comment, requests) > (
                 (firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
 
-    customer_aggr = cu.sum(lambda x_customer: {
-        (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (
-            0.0): 1.0})
+    customer_aggr = cu.sum(lambda x_customer: {record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (
+                orders_part[x_customer[0].c_custkey] != None) else (0.0)}): 1.0})
 
     results = customer_aggr.sum(
-        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0], "custdist": x_customer_aggr[1]}): True})
+        lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
 
     return results
 

@@ -1387,6 +1387,7 @@ class JointFrame:
                                 part_groupby_aggr_expr = self.retriever.find_groupby_aggr_after(MergeExpr)
 
                                 if self.retriever.find_merge('as_joint').how == 'right':
+                                    # Q13
                                     aggr_val_expr = part_groupby_aggr_expr.origin_dict[only_key_col]
                                     if isinstance(aggr_val_expr, str):
                                         if aggr_val_expr == 'sum':
@@ -1411,6 +1412,8 @@ class JointFrame:
                                                                               ConstantExpr(None)),
                                                          thenBodyExpr=self.part_lookup(only_key_col),
                                                          elseBodyExpr=else_value)
+
+                                    dict_key_ir = RecConsExpr([(only_key_col, dict_key_ir)])
                                 else:
                                     raise NotImplementedError
                             else:
@@ -1550,7 +1553,13 @@ class JointFrame:
 
                             # aggr = {scalar : scalar}
                             if len(groupby_cols) == 1:
-                                format_key_tuples.append((groupby_cols[0],
+                                if isinstance(dict_key_ir, RecConsExpr):
+                                    # Q13 ->
+                                    format_key_tuples.append((groupby_cols[0],
+                                                              RecAccessExpr(PairAccessExpr(var_x_aggr, 0),
+                                                                            groupby_cols[0])))
+                                else:
+                                    format_key_tuples.append((groupby_cols[0],
                                                           PairAccessExpr(var_x_aggr, 0)))
                             # aggr = {record : scalar}
                             else:
