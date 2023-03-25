@@ -642,8 +642,6 @@ def q17(li, pa):
                               if (True) else (None)
                               )
 
-    results = ((part_l1_lineitem.price) / (7.0))
-
     # part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (
     #             x_lineitem[0].l_quantity < ((0.2) * (
     #     ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
@@ -653,6 +651,8 @@ def q17(li, pa):
     #             x_lineitem[0].l_quantity < ((0.2) * (
     #     ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
     #     0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}) if (True) else (None))
+
+    results = ((part_l1_lineitem.price) / (7.0))
 
     return results
 
