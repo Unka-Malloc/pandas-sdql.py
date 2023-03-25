@@ -722,7 +722,7 @@ class DataFrame(FlexIR, Retrivable):
         for k in right.context_constant.keys():
             next_context_const[k] = right.context_constant[k]
 
-        tmp_name = f'{self.name}_{right.name}'
+        tmp_name = f'{self.current_name}_{right.current_name}'
 
 
         self.get_opt(OptGoal.UnOptimized).fill_context_unopt()

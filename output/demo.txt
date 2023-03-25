@@ -1,65 +1,15 @@
->> Query 18 (Q18) <<
+>> Query 17 (Q17) <<
 >> SDQL <<
-customer_orders: neither joint
+part_l1: neither joint
 >> Optimized Query <<
 ============================================================
-customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
+brand23 = "Brand#23"
+medbox = "MED BOX"
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
 
-lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+part_l1 = li.sum(lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (part_part[x_l1[0].l_partkey] != None) else (None))
 
-lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 300) else (None))
+part_l1_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
 
-customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
-
-l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
-
-results = l1_aggr.sum(lambda x_l1_aggr: {record({"c_name": x_l1_aggr[0].c_name, "c_custkey": x_l1_aggr[0].c_custkey, "o_orderkey": x_l1_aggr[0].o_orderkey, "o_orderdate": x_l1_aggr[0].o_orderdate, "o_totalprice": x_l1_aggr[0].o_totalprice, "sum_quantity": x_l1_aggr[1]}): True})
-
-============================================================
- SDQL Execution Time: 13.007124185562134 s 
-{ { "c_name": "Customer#000001775", "c_custkey": 1775, "o_orderkey": 6882, "o_orderdate": 19970409, "o_totalprice": 408368.1, "sum_quantity": 303.0 }: True, { "c_name": "Customer#000006655", "c_custkey": 6655, "o_orderkey": 29158, "o_orderdate": 19951021, "o_totalprice": 452805.02, "sum_quantity": 305.0 }: True, { "c_name": "Customer#000001639", "c_custkey": 1639, "o_orderkey": 502886, "o_orderdate": 19940412, "o_totalprice": 456423.88, "sum_quantity": 312.0 }: True, { "c_name": "Customer#000011459", "c_custkey": 11459, "o_orderkey": 551136, "o_orderdate": 19930519, "o_totalprice": 386812.74, "sum_quantity": 308.0 }: True, { "c_name": "Customer#000014110", "c_custkey": 14110, "o_orderkey": 565574, "o_orderdate": 19950924, "o_totalprice": 425099.85, "sum_quantity": 301.0 }: True }
->> Pandas <<
-Pandas Execution Time: 0.16214251518249512 s 
-DuckDB Execution Time: 0.08107328414916992 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-               c_name  c_custkey  o_orderkey  o_orderdate  o_totalprice  \
-0  Customer#000001639       1639      502886   19940412.0        456423   
-1  Customer#000001775       1775        6882   19970409.0        408368   
-2  Customer#000006655       6655       29158   19951021.0        452805   
-3  Customer#000011459      11459      551136   19930519.0        386812   
-4  Customer#000014110      14110      565574   19950924.0        425099   
-
-   sum_quantity  
-0           312  
-1           303  
-2           305  
-3           308  
-4           301  
-============================================================
->> Comparing SDQL with Pandas ... <<
-Shape Check Passed: 5 rows x 6 columns
-============================================================
-
-    
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨[ ¨€¨€¨€¨€¨€¨[ 
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨^¨€¨€¨U¨^¨€¨€¨€¨€¨€¨X¨a
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a       ¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U        ¨€¨€¨U¨^¨€¨€¨€¨€¨€¨X¨a
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨a ¨^¨T¨T¨T¨T¨a 
-
-    
-           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
-           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
-           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
-    
-============================================================
-18:  Pass 
+results = ((part_l1_lineitem.l_extendedprice) / (7.0))
 ============================================================
