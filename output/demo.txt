@@ -16,3 +16,50 @@ lineitem_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].
 results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey, "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
 
 ============================================================
+ SDQL Execution Time: 13.24590539932251 s 
+{ { "c_name": "Customer#000001775", "c_custkey": 1775, "o_orderkey": 6882, "o_orderdate": 19970409, "o_totalprice": 408368.1, "sum_quantity": 303.0 }: True, { "c_name": "Customer#000006655", "c_custkey": 6655, "o_orderkey": 29158, "o_orderdate": 19951021, "o_totalprice": 452805.02, "sum_quantity": 305.0 }: True, { "c_name": "Customer#000001639", "c_custkey": 1639, "o_orderkey": 502886, "o_orderdate": 19940412, "o_totalprice": 456423.88, "sum_quantity": 312.0 }: True, { "c_name": "Customer#000011459", "c_custkey": 11459, "o_orderkey": 551136, "o_orderdate": 19930519, "o_totalprice": 386812.74, "sum_quantity": 308.0 }: True, { "c_name": "Customer#000014110", "c_custkey": 14110, "o_orderkey": 565574, "o_orderdate": 19950924, "o_totalprice": 425099.85, "sum_quantity": 301.0 }: True }
+>> Pandas <<
+Pandas Execution Time: 0.13412022590637207 s 
+DuckDB Execution Time: 0.06205558776855469 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+               c_name  c_custkey  o_orderkey  o_orderdate  o_totalprice  \
+0  Customer#000001639       1639      502886   19940412.0        456423   
+1  Customer#000001775       1775        6882   19970409.0        408368   
+2  Customer#000006655       6655       29158   19951021.0        452805   
+3  Customer#000011459      11459      551136   19930519.0        386812   
+4  Customer#000014110      14110      565574   19950924.0        425099   
+
+   sum_quantity  
+0           312  
+1           303  
+2           305  
+3           308  
+4           301  
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Shape Check Passed: 5 rows x 6 columns
+============================================================
+
+    
+ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨[ ¨€¨€¨€¨€¨€¨[ 
+¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[
+¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨^¨€¨€¨U¨^¨€¨€¨€¨€¨€¨X¨a
+¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a       ¨€¨€¨U¨€¨€¨X¨T¨T¨€¨€¨[
+¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U        ¨€¨€¨U¨^¨€¨€¨€¨€¨€¨X¨a
+ ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨a ¨^¨T¨T¨T¨T¨a 
+
+    
+           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
+           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
+           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
+           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
+           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
+           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
+    
+============================================================
+18:  Pass 
+============================================================

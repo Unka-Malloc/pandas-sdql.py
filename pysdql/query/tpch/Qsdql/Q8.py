@@ -12,7 +12,7 @@ def query(pa, su, li, ord, cu, na, re):
     economyanodizedsteel = "ECONOMY ANODIZED STEEL"
     america = "AMERICA"
     brazil = "BRAZIL"
-    n2_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n2_comment": x_nation[0].n_comment, "n2_name": x_nation[0].n_name, "n2_nationkey": x_nation[0].n_nationkey, "n2_regionkey": x_nation[0].n_regionkey})})
+    n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record({"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey, "n2_regionkey": x_n2[0].n_regionkey})})
     
     supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
     
@@ -20,7 +20,7 @@ def query(pa, su, li, ord, cu, na, re):
     
     region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
     
-    region_nation = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n1_nationkey": x_nation[0].n_nationkey})}) if (region_part[x_nation[0].n_regionkey] != None) else (None))
+    region_nation = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (region_part[x_n1[0].n_regionkey] != None) else (None))
     
     region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (region_nation[x_customer[0].c_nationkey] != None) else (None))
     

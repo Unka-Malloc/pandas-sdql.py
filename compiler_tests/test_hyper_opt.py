@@ -102,10 +102,9 @@ def q2(pa, su, ps, na, re):
          "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (
                 region_nation[x_supplier[0].s_nationkey] != None) else (None))
 
-    region_nation_supplier_partsupp = ps.sum(lambda x_partsupp: ({x_partsupp[0].ps_partkey: record(
-        {"min_supplycost": x_partsupp[0].ps_supplycost, "ps_partkey": x_partsupp[0].ps_partkey,
-         "ps_suppkey": x_partsupp[0].ps_suppkey, "s_suppkey": x_partsupp[0].ps_suppkey})}) if (
-                region_nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None))
+    region_nation_supplier_partsupp = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record(
+        {"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey,
+         "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
 
     part_part = pa.sum(lambda x_part: (
     {x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_mfgr": x_part[0].p_mfgr})}) if (
@@ -234,16 +233,19 @@ def q6(li):
 def q7(su, li, ord, cu, na):
     france = "FRANCE"
     germany = "GERMANY"
-    nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})}) if (
-    ((x_nation[0].n_name == france) + (x_nation[0].n_name == germany))) else (None))
+    n1_part = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n_name": x_n1[0].n_name})}) if (
+    ((x_n1[0].n_name == france) + (x_n1[0].n_name == germany))) else (None))
 
     nation_supplier = su.sum(lambda x_supplier: (
-    {x_supplier[0].s_suppkey: record({"n1_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (
-                nation_part[x_supplier[0].s_nationkey] != None) else (None))
+    {x_supplier[0].s_suppkey: record({"n1_name": n1_part[x_supplier[0].s_nationkey].n_name})}) if (
+                n1_part[x_supplier[0].s_nationkey] != None) else (None))
+
+    n2_part = na.sum(lambda x_n2: ({x_n2[0].n_nationkey: record({"n_name": x_n2[0].n_name})}) if (
+    ((x_n2[0].n_name == france) + (x_n2[0].n_name == germany))) else (None))
 
     nation_customer = cu.sum(lambda x_customer: (
-    {x_customer[0].c_custkey: record({"n_name": nation_part[x_customer[0].c_nationkey].n_name})}) if (
-                nation_part[x_customer[0].c_nationkey] != None) else (None))
+    {x_customer[0].c_custkey: record({"n_name": n2_part[x_customer[0].c_nationkey].n_name})}) if (
+                n2_part[x_customer[0].c_nationkey] != None) else (None))
 
     nation_customer_orders = ord.sum(lambda x_orders: (
     {x_orders[0].o_orderkey: record({"n2_name": nation_customer[x_orders[0].o_custkey].n_name})}) if (
@@ -280,9 +282,9 @@ def q8(pa, su, li, ord, cu, na, re):
     economyanodizedsteel = "ECONOMY ANODIZED STEEL"
     america = "AMERICA"
     brazil = "BRAZIL"
-    n2_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record(
-        {"n2_comment": x_nation[0].n_comment, "n2_name": x_nation[0].n_name, "n2_nationkey": x_nation[0].n_nationkey,
-         "n2_regionkey": x_nation[0].n_regionkey})})
+    n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record(
+        {"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey,
+         "n2_regionkey": x_n2[0].n_regionkey})})
 
     supplier_part = su.sum(
         lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
@@ -293,9 +295,8 @@ def q8(pa, su, li, ord, cu, na, re):
     region_part = re.sum(
         lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
 
-    region_nation = na.sum(
-        lambda x_nation: ({x_nation[0].n_nationkey: record({"n1_nationkey": x_nation[0].n_nationkey})}) if (
-                    region_part[x_nation[0].n_regionkey] != None) else (None))
+    region_nation = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (
+                region_part[x_n1[0].n_regionkey] != None) else (None))
 
     region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (
                 region_nation[x_customer[0].c_nationkey] != None) else (None))
@@ -615,9 +616,9 @@ def q17(li, pa):
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (
     ((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
 
-    part_lineitem = li.sum(lambda x_lineitem: (
-    {x_lineitem[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_lineitem[0].l_quantity})}) if (
-                part_part[x_lineitem[0].l_partkey] != None) else (None))
+    part_lineitem = li.sum(
+        lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (
+                    part_part[x_l1[0].l_partkey] != None) else (None))
 
     part_lineitem_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (
                 x_lineitem[0].l_quantity < ((0.2) * (((part_lineitem[x_lineitem[0].l_partkey].sum_quant) / (
@@ -801,10 +802,10 @@ def q21(su, li, ord, na):
         lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_name": x_supplier[0].s_name})}) if (
                     nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
-    l3_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: record({"l3_size": 1})}) if (
-                x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
+    l3_part = li.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (
+                x_l3[0].l_receiptdate > x_l3[0].l_commitdate) else (None))
 
-    l2_part = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: record({"l2_size": 1})})
+    l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
 
     orders_nation_supplier_lineitem_lineitem_lineitem = li.sum(lambda x_lineitem: (((((({
         nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (
@@ -834,13 +835,13 @@ def q22(cu, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu.sum(lambda x_customer: (record({"sum_acctbal": x_customer[0].c_acctbal, "count_acctbal": 1.0})) if ((
-                (x_customer[0].c_acctbal > 0.0) * ((((((((((
-                    (((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (
-                startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (
-                                                            startsWith(x_customer[0].c_phone, v30)))) + (
-                                                          startsWith(x_customer[0].c_phone, v18)))) + (
-                                                        startsWith(x_customer[0].c_phone, v17)))))) else (None))
+    cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if ((
+                (x_cu1[0].c_acctbal > 0.0) * ((((((((((
+                    (((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (
+                startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (
+                                                       startsWith(x_cu1[0].c_phone, v30)))) + (
+                                                     startsWith(x_cu1[0].c_phone, v18)))) + (
+                                                   startsWith(x_cu1[0].c_phone, v17)))))) else (None))
 
     count_acctbal = cu1_aggr.count_acctbal
     sum_acctbal = cu1_aggr.sum_acctbal
