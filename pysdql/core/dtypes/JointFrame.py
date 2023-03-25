@@ -2487,167 +2487,177 @@ class JointFrame:
                     else:
                         key_col = next_merge_expr.left_on
 
-                    if renamed_cols:
-                        if key_col in renamed_cols.keys():
-                            key_col = renamed_cols[key_col]
+                        if renamed_cols:
+                            if key_col in renamed_cols.keys():
+                                key_col = renamed_cols[key_col]
 
-                    dict_key_ir = self.probe_access(key_col)
+                        dict_key_ir = self.probe_access(key_col)
 
-                    # dict vals: multi(single) column
+                        # dict vals: multi(single) column
 
-                    val_cols = [x for x in self.retriever.findall_cols_used()
-                                if (x != last_merge_expr.left_on
-                                    and x != last_merge_expr.right_on
-                                    and x != key_col
-                                    and x not in self.retriever.find_renamed_cols())
-                                or (x in self.retriever.find_cols_used('merge')
-                                    and x != key_col
-                                    and x not in self.retriever.find_renamed_cols())
-                                or (x in self.retriever.findall_cols_for_groupby_aggr())]
+                        val_cols = [x for x in self.retriever.findall_cols_used()
+                                    if (x != last_merge_expr.left_on
+                                        and x != last_merge_expr.right_on
+                                        and x != key_col
+                                        and x not in self.retriever.find_renamed_cols())
+                                    or (x in self.retriever.find_cols_used('merge')
+                                        and x != key_col
+                                        and x not in self.retriever.find_renamed_cols())
+                                    or (x in self.retriever.findall_cols_for_groupby_aggr())]
 
-                    if not val_cols:
-                        if joint_col_proj:
-                            for i in joint_col_proj.proj_cols:
-                                val_cols.append(i)
+                        if not val_cols:
+                            if joint_col_proj:
+                                for i in joint_col_proj.proj_cols:
+                                    val_cols.append(i)
 
-                    dict_val_list = []
+                        dict_val_list = []
 
-                    for i in val_cols:
-                        if i == part_key:
-                            dict_val_list.append((i,
-                                                  probe_key_ir))
-                        elif i == probe_key:
-                            dict_val_list.append((i,
-                                                  probe_key_ir))
-                        elif i in self.part_frame.part_on.columns:
-                            if i in renamed_cols.keys():
-                                dict_val_list.append((renamed_cols[i],
-                                                      RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
-                                                                                          keyExpr=probe_on.key_access(
-                                                                                              probe_key)),
-                                                                    fieldName=renamed_cols[i])))
-                            else:
+                        for i in val_cols:
+                            if i == part_key:
                                 dict_val_list.append((i,
-                                                      RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
-                                                                                          keyExpr=probe_on.key_access(
-                                                                                              probe_key)),
-                                                                    fieldName=i)))
-                        elif i in self.probe_frame.probe_on.columns:
-                            # print(i, 'in', self.probe_frame.probe_on, 'with', self.probe_frame.probe_on.columns)
-                            dict_val_list.append((i,
-                                                  probe_on.key_access(i)))
-
-                        elif i in self.retriever.find_renamed_cols(mode='as_val'):
-                            origin_col = self.retriever.find_col_rename(col_name=i, by='val')
-
-                            if origin_col in probe_on.columns:
+                                                      probe_key_ir))
+                            elif i == probe_key:
                                 dict_val_list.append((i,
-                                                      probe_on.key_access(origin_col)))
-                            else:
-                                dict_val_list.append((i,
-                                                      self.part_lookup(origin_col)))
-
-                        elif self.probe_frame.retriever.was_groupby_aggr:
-                            groupby_aggr_expr = self.probe_frame.retriever.find_groupby_aggr()
-                            groupby_cols = groupby_aggr_expr.groupby_cols
-                            aggr_dict = groupby_aggr_expr.origin_dict
-
-                            if i in groupby_cols:
-                                dict_val_list.append((i,
-                                                      self.probe_access(i)))
-                            elif i in aggr_dict.keys():
-                                if isinstance(aggr_dict[i], tuple):
-                                    if aggr_dict[i][1] == 'sum':
-                                        dict_val_list.append((i,
-                                                              self.probe_access(aggr_dict[i][0])))
-                                    elif aggr_dict[i][1] == 'count':
-                                        # i: int to float
-                                        dict_val_list.append((i,
-                                                              ConstantExpr(1.0)))
-                                    else:
-                                        raise NotImplementedError
-                                elif isinstance(aggr_dict[i], str):
-                                    if aggr_dict[i] == 'sum':
-                                        dict_val_list.append((i,
-                                                              self.probe_access(i)))
-                                    elif aggr_dict[i] == 'count':
-                                        # i: int to float
-                                        dict_val_list.append((i,
-                                                              ConstantExpr(1.0)))
-                                    else:
-                                        raise NotImplementedError
+                                                      probe_key_ir))
+                            elif i in self.part_frame.part_on.columns:
+                                if i in renamed_cols.keys():
+                                    dict_val_list.append((renamed_cols[i],
+                                                          RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                              keyExpr=probe_on.key_access(
+                                                                                                  probe_key)),
+                                                                        fieldName=renamed_cols[i])))
                                 else:
-                                    raise ValueError(f'Unexpected aggrgation function: {aggr_dict}')
+                                    dict_val_list.append((i,
+                                                          RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
+                                                                                              keyExpr=probe_on.key_access(
+                                                                                                  probe_key)),
+                                                                        fieldName=i)))
+                            elif i in self.probe_frame.probe_on.columns:
+                                if i in self.probe_frame.retriever.find_renamed_cols(mode='as_val'):
+                                    origin_col = self.probe_frame.retriever.find_col_rename(col_name=i, by='val')
+
+                                    if origin_col in self.probe_frame.retriever.find_renamed_cols(mode='as_key'):
+                                        dict_val_list.append((i, probe_on.key_access(origin_col)))
+                                    else:
+                                        dict_val_list.append((i, self.part_lookup(origin_col)))
+                                else:
+                                    # print(i, 'in', self.probe_frame.probe_on, 'with', self.probe_frame.probe_on.columns)
+                                    dict_val_list.append((i,
+                                                          probe_on.key_access(i)))
+
+                            elif i in self.retriever.find_renamed_cols(mode='as_val'):
+                                origin_col = self.retriever.find_col_rename(col_name=i, by='val')
+
+                                if origin_col in probe_on.columns:
+                                    dict_val_list.append((i,
+                                                          probe_on.key_access(origin_col)))
+                                else:
+                                    dict_val_list.append((i,
+                                                          self.part_lookup(origin_col)))
+
+                            elif self.probe_frame.retriever.was_groupby_aggr:
+                                groupby_aggr_expr = self.probe_frame.retriever.find_groupby_aggr()
+                                groupby_cols = groupby_aggr_expr.groupby_cols
+                                aggr_dict = groupby_aggr_expr.origin_dict
+
+                                if i in groupby_cols:
+                                    dict_val_list.append((i,
+                                                          self.probe_access(i)))
+                                elif i in aggr_dict.keys():
+                                    if isinstance(aggr_dict[i], tuple):
+                                        if aggr_dict[i][1] == 'sum':
+                                            dict_val_list.append((i,
+                                                                  self.probe_access(aggr_dict[i][0])))
+                                        elif aggr_dict[i][1] == 'count':
+                                            # i: int to float
+                                            dict_val_list.append((i,
+                                                                  ConstantExpr(1.0)))
+                                        else:
+                                            raise NotImplementedError
+                                    elif isinstance(aggr_dict[i], str):
+                                        if aggr_dict[i] == 'sum':
+                                            dict_val_list.append((i,
+                                                                  self.probe_access(i)))
+                                        elif aggr_dict[i] == 'count':
+                                            # i: int to float
+                                            dict_val_list.append((i,
+                                                                  ConstantExpr(1.0)))
+                                        else:
+                                            raise NotImplementedError
+                                    else:
+                                        raise ValueError(f'Unexpected aggrgation function: {aggr_dict}')
+                                else:
+                                    raise NotImplementedError
                             else:
-                                raise NotImplementedError
+                                raise IndexError(f'Cannot find column {i}')
+
+                        # print(dict_val_list)
+
+                        dict_val_ir = RecConsExpr(dict_val_list) if dict_val_list else ConstantExpr(True)
+
+                        joint_op = DicConsExpr([(
+                            dict_key_ir,
+                            dict_val_ir
+                        )])
+
+                        transform = {
+                            'to': self.joint.name,
+                            'to_var': self.joint.var_expr,
+                            'to_struct': OpRetType.DICT,
+                            'struct_index': (tuple([key_col]), tuple(val_cols)),
+                            'struct_types': None
+                        }
+
+                        self.probe_frame.probe_on.transform.migrate(transform)
+
+                        # print(self.joint.name)
+                        # print('all', self.joint.columns)
+                        # print('used', self.retriever.findall_cols_used())
+                        # print('last', last_merge_expr)
+                        # print('next', next_merge_expr)
+                        # print({
+                        #     'key': key_col,
+                        #     'vals': val_cols
+                        # })
+                        # print(transform)
+                        # print(joint_op)
+                        # print('==============================')
+
+                        if joint_cond:
+                            joint_op = IfExpr(condExpr=joint_cond,
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=ConstantExpr(None))
+
+                        non_null_cond = CompareExpr(compareType=CompareSymbol.NE,
+                                                    leftExpr=DicLookupExpr(dicExpr=part_var,
+                                                                           keyExpr=probe_key_ir),
+                                                    rightExpr=ConstantExpr(None))
+
+                        joint_op = IfExpr(condExpr=non_null_cond,
+                                          thenBodyExpr=joint_op,
+                                          elseBodyExpr=ConstantExpr(None))
+
+                        if probe_isin:
+                            joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=ConstantExpr(None))
+
+                        if probe_cond:
+                            joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
+                                              thenBodyExpr=joint_op,
+                                              elseBodyExpr=ConstantExpr(None))
+
+                        out = LetExpr(varExpr=probe_var,
+                                      valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
+                                                      dictExpr=probe_on.var_expr,
+                                                      bodyExpr=joint_op,
+                                                      isAssignmentSum=False),
+                                      bodyExpr=next_op)
+
+                        if probe_isin:
+                            return probe_isin.get_as_part(out)
                         else:
-                            raise IndexError(f'Cannot find column {i}')
-
-                    dict_val_ir = RecConsExpr(dict_val_list) if dict_val_list else ConstantExpr(True)
-
-                    joint_op = DicConsExpr([(
-                        dict_key_ir,
-                        dict_val_ir
-                    )])
-
-                    transform = {
-                        'to': self.joint.name,
-                        'to_var': self.joint.var_expr,
-                        'to_struct': OpRetType.DICT,
-                        'struct_index': (tuple([key_col]), tuple(val_cols)),
-                        'struct_types': None
-                    }
-
-                    self.probe_frame.probe_on.transform.migrate(transform)
-
-                    # print(self.joint.name)
-                    # print('all', self.joint.columns)
-                    # print('used', self.retriever.findall_cols_used())
-                    # print('last', last_merge_expr)
-                    # print('next', next_merge_expr)
-                    # print({
-                    #     'key': key_col,
-                    #     'vals': val_cols
-                    # })
-                    # print(transform)
-                    # print(joint_op)
-                    # print('==============================')
-
-                    if joint_cond:
-                        joint_op = IfExpr(condExpr=joint_cond,
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=ConstantExpr(None))
-
-                    non_null_cond = CompareExpr(compareType=CompareSymbol.NE,
-                                                leftExpr=DicLookupExpr(dicExpr=part_var,
-                                                                       keyExpr=probe_key_ir),
-                                                rightExpr=ConstantExpr(None))
-
-                    joint_op = IfExpr(condExpr=non_null_cond,
-                                      thenBodyExpr=joint_op,
-                                      elseBodyExpr=ConstantExpr(None))
-
-                    if probe_isin:
-                        joint_op = IfExpr(condExpr=probe_isin.get_as_cond(),
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=ConstantExpr(None))
-
-                    if probe_cond:
-                        joint_op = IfExpr(condExpr=probe_cond.sdql_ir,
-                                          thenBodyExpr=joint_op,
-                                          elseBodyExpr=ConstantExpr(None))
-
-                    out = LetExpr(varExpr=probe_var,
-                                  valExpr=SumExpr(varExpr=probe_on.iter_el.sdql_ir,
-                                                  dictExpr=probe_on.var_expr,
-                                                  bodyExpr=joint_op,
-                                                  isAssignmentSum=False),
-                                  bodyExpr=next_op)
-
-                    if probe_isin:
-                        return probe_isin.get_as_part(out)
-                    else:
-                        return out
+                            return out
 
             # Q5
             # Q10

@@ -294,7 +294,7 @@ def q8(pa, su, li, ord, cu, na, re):
         lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
 
     region_nation = na.sum(
-        lambda x_nation: ({x_nation[0].n_nationkey: record({"n1_nationkey": x_nation[0].n1_nationkey})}) if (
+        lambda x_nation: ({x_nation[0].n_nationkey: record({"n1_nationkey": x_nation[0].n_nationkey})}) if (
                     region_part[x_nation[0].n_regionkey] != None) else (None))
 
     region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (
