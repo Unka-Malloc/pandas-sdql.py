@@ -19,3 +19,214 @@ nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({rec
 results = nation_supplier_part_partsupp_orders_lineitem.sum(lambda x_nation_supplier_part_partsupp_orders_lineitem: {record({"nation": x_nation_supplier_part_partsupp_orders_lineitem[0].nation, "o_year": x_nation_supplier_part_partsupp_orders_lineitem[0].o_year, "sum_profit": x_nation_supplier_part_partsupp_orders_lineitem[1].sum_profit}): True})
 
 ============================================================
+ SDQL Execution Time: 112.92174291610718 s 
+1
+>> Pandas <<
+Pandas Execution Time: 4.882387399673462 s 
+DuckDB Execution Time: 0.14713239669799805 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+             nation  o_year  sum_profit
+0           ALGERIA    1992    45636849
+1           ALGERIA    1993    46044207
+2           ALGERIA    1994    48694008
+3           ALGERIA    1995    44402273
+4           ALGERIA    1996    48285482
+5           ALGERIA    1997    48611833
+6           ALGERIA    1998    27136900
+7         ARGENTINA    1992    46654240
+8         ARGENTINA    1993    48605593
+9         ARGENTINA    1994    48268856
+10        ARGENTINA    1995    45631769
+11        ARGENTINA    1996    45255278
+12        ARGENTINA    1997    47143964
+13        ARGENTINA    1998    28341663
+14           BRAZIL    1992    45280216
+15           BRAZIL    1993    45766603
+16           BRAZIL    1994    44854218
+17           BRAZIL    1995    44015888
+18           BRAZIL    1996    45090647
+19           BRAZIL    1997    45640660
+20           BRAZIL    1998    26527736
+21           CANADA    1992    45873849
+22           CANADA    1993    46634791
+23           CANADA    1994    46691491
+24           CANADA    1995    47311993
+25           CANADA    1996    46307936
+26           CANADA    1997    44849954
+27           CANADA    1998    26828985
+28            CHINA    1992    46949457
+29            CHINA    1993    49634673
+30            CHINA    1994    46397896
+31            CHINA    1995    46734651
+32            CHINA    1996    49532807
+33            CHINA    1997    46123865
+34            CHINA    1998    27510180
+35            EGYPT    1992    47000574
+36            EGYPT    1993    49133627
+37            EGYPT    1994    47194895
+38            EGYPT    1995    45897160
+39            EGYPT    1996    47745727
+40            EGYPT    1997    47674857
+41            EGYPT    1998    28401491
+42         ETHIOPIA    1992    44385735
+43         ETHIOPIA    1993    42622804
+44         ETHIOPIA    1994    41597208
+45         ETHIOPIA    1995    43575757
+46         ETHIOPIA    1996    43636287
+47         ETHIOPIA    1997    43010596
+48         ETHIOPIA    1998    25135046
+49           FRANCE    1992    44052308
+50           FRANCE    1993    43729961
+51           FRANCE    1994    43447352
+52           FRANCE    1995    46377408
+53           FRANCE    1996    43306317
+54           FRANCE    1997    42392969
+55           FRANCE    1998    26210392
+56          GERMANY    1992    44361141
+57          GERMANY    1993    45126645
+58          GERMANY    1994    44616995
+59          GERMANY    1995    43314338
+60          GERMANY    1996    45882074
+61          GERMANY    1997    43968355
+62          GERMANY    1998    25991257
+63            INDIA    1992    47914303
+64            INDIA    1993    48112766
+65            INDIA    1994    50106952
+66            INDIA    1995    49344062
+67            INDIA    1996    47571018
+68            INDIA    1997    51386111
+69            INDIA    1998    29626417
+70        INDONESIA    1992    45185777
+71        INDONESIA    1993    46147963
+72        INDONESIA    1994    45988483
+73        INDONESIA    1995    45593622
+74        INDONESIA    1996    44746729
+75        INDONESIA    1997    44593812
+76        INDONESIA    1998    27734909
+77             IRAN    1992    43052338
+78             IRAN    1993    45362775
+79             IRAN    1994    43696360
+80             IRAN    1995    44414285
+81             IRAN    1996    45891397
+82             IRAN    1997    45019114
+83             IRAN    1998    26661608
+84             IRAQ    1992    47562355
+85             IRAQ    1993    47435691
+86             IRAQ    1994    48795847
+87             IRAQ    1995    48774801
+88             IRAQ    1996    50036593
+89             IRAQ    1997    48585307
+90             IRAQ    1998    31188498
+91            JAPAN    1992    39113493
+92            JAPAN    1993    39589074
+93            JAPAN    1994    41159518
+94            JAPAN    1995    40925317
+95            JAPAN    1996    40267778
+96            JAPAN    1997    42377052
+97            JAPAN    1998    24694102
+98           JORDAN    1992    41657604
+99           JORDAN    1993    39060405
+100          JORDAN    1994    40707555
+101          JORDAN    1995    39931672
+102          JORDAN    1996    41860855
+103          JORDAN    1997    41615962
+104          JORDAN    1998    23489867
+105           KENYA    1992    43217106
+106           KENYA    1993    42724038
+107           KENYA    1994    43612479
+108           KENYA    1995    42517988
+109           KENYA    1996    43482953
+110           KENYA    1997    43108847
+111           KENYA    1998    25566337
+112         MOROCCO    1992    42800781
+113         MOROCCO    1993    42672288
+114         MOROCCO    1994    43458604
+115         MOROCCO    1995    42316089
+116         MOROCCO    1996    42986113
+117         MOROCCO    1997    42698382
+118         MOROCCO    1998    24915496
+119      MOZAMBIQUE    1992    47809075
+120      MOZAMBIQUE    1993    48555926
+121      MOZAMBIQUE    1994    46092076
+122      MOZAMBIQUE    1995    48905200
+123      MOZAMBIQUE    1996    48072525
+124      MOZAMBIQUE    1997    51159216
+125      MOZAMBIQUE    1998    28279876
+126            PERU    1992    47711665
+127            PERU    1993    51536906
+128            PERU    1994    46420910
+129            PERU    1995    49647080
+130            PERU    1996    50310008
+131            PERU    1997    48324008
+132            PERU    1998    26713966
+133         ROMANIA    1992    44111439
+134         ROMANIA    1993    47515092
+135         ROMANIA    1994    46088041
+136         ROMANIA    1995    45710636
+137         ROMANIA    1996    47492335
+138         ROMANIA    1997    45063059
+139         ROMANIA    1998    27271993
+140          RUSSIA    1992    47672831
+141          RUSSIA    1993    48569624
+142          RUSSIA    1994    48000515
+143          RUSSIA    1995    46755990
+144          RUSSIA    1996    47553559
+145          RUSSIA    1997    48222347
+146          RUSSIA    1998    27935323
+147    SAUDI ARABIA    1992    48924913
+148    SAUDI ARABIA    1993    45692556
+149    SAUDI ARABIA    1994    48181672
+150    SAUDI ARABIA    1995    46657107
+151    SAUDI ARABIA    1996    47775782
+152    SAUDI ARABIA    1997    46690468
+153    SAUDI ARABIA    1998    27113516
+154  UNITED KINGDOM    1992    44123402
+155  UNITED KINGDOM    1993    44770146
+156  UNITED KINGDOM    1994    43081609
+157  UNITED KINGDOM    1995    46845879
+158  UNITED KINGDOM    1996    45539729
+159  UNITED KINGDOM    1997    44518130
+160  UNITED KINGDOM    1998    26366682
+161   UNITED STATES    1992    46168214
+162   UNITED STATES    1993    46181600
+163   UNITED STATES    1994    45099092
+164   UNITED STATES    1995    48951591
+165   UNITED STATES    1996    46688280
+166   UNITED STATES    1997    46638572
+167   UNITED STATES    1998    27826593
+168         VIETNAM    1992    47846355
+169         VIETNAM    1993    45352676
+170         VIETNAM    1994    47729256
+171         VIETNAM    1995    48235135
+172         VIETNAM    1996    47824595
+173         VIETNAM    1997    48735914
+174         VIETNAM    1998    27281931
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Mismatch Shape: {SDQL: 1, Pandas: 175}
+Warning: Column result not found!
+============================================================
+
+    
+ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨€¨€¨€¨[ 
+¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨X¨T¨T¨€¨€¨[
+¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨^¨€¨€¨€¨€¨€¨€¨U
+¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a       ¨^¨T¨T¨T¨€¨€¨U
+¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U        ¨€¨€¨€¨€¨€¨X¨a
+ ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨T¨T¨T¨a 
+
+    
+           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
+           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
+           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
+           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
+           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
+           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
+    
+============================================================
+9:  Pass 
+============================================================
