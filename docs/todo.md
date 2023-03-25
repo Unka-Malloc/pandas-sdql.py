@@ -15,6 +15,22 @@ TODO: Results, SF 0.1, text file
       `use a unique name for element in the record`: Failed,
       `use the original code provided in SDQL.py`: Failed
       }
+  5. Mysterious Bug! 
+    ```
+    # This one failed!
+    part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (
+                x_lineitem[0].l_quantity < ((0.2) * (
+        ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
+        0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
+    ```
+  
+    ```
+    # This one passed, with a meaningless (if (True) else (None)) at the end!
+    part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (
+                x_lineitem[0].l_quantity < ((0.2) * (
+        ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
+        0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}) if (True) else (None))
+    ```
 
 # Hyper-Unopt-Compiler
 - Fixed: Q6, Q19, Q22 from iteration on a record

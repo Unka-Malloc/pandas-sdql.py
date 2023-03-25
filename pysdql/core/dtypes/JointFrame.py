@@ -2100,6 +2100,10 @@ class JointFrame:
                     rec = IfExpr(condExpr=probe_cond.sdql_ir,
                                  thenBodyExpr=rec,
                                  elseBodyExpr=ConstantExpr(None))
+                else:
+                    rec = IfExpr(condExpr=ConstantExpr(True),
+                                 thenBodyExpr=rec,
+                                 elseBodyExpr=ConstantExpr(None))
 
                 sum_expr = SumExpr(varExpr=self.probe_frame.probe_on.iter_el.el,
                                    dictExpr=self.probe_frame.get_probe_on_var(),
