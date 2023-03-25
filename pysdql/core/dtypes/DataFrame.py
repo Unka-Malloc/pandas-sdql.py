@@ -106,9 +106,11 @@ class DataFrame(FlexIR, Retrivable):
         self.__retriever = Retriever(self)
         self.__previous_name = previous_name if previous_name else ""
 
+        tmp_useful_name = self.__name if self.__name else self.__previous_name
+
         self.__structure = DataFrameStruct('1DT')
 
-        self.__iter_el = IterEl(f'x_{self.get_name()}')
+        self.__iter_el = IterEl(f'x_{tmp_useful_name}')
         self.__var_expr = self.init_var_expr()
 
         self.__is_merged = is_joint
@@ -119,8 +121,6 @@ class DataFrame(FlexIR, Retrivable):
         self.context_constant = context_constant if context_constant else {}
 
         self.init_context_variable()
-
-        tmp_useful_name = self.__name if self.__name else self.__previous_name
 
         if is_joint:
             vname_part = f'{self.get_name()}'
