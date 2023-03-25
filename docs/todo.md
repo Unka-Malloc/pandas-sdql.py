@@ -12,7 +12,8 @@ TODO: Results, SF 0.1, text file
   2. Carefully checked syntax and semantic of query
   3. Very Unexpected 0.0
   4. Tried: {`create a variable of scalar rather than a record with single value`: Failed, 
-      `use a unique name for element in the record`: Filaed,
+      `use a unique name for element in the record`: Failed,
+      `use the original code provided in SDQL.py`: Failed
       }
 
 # Hyper-Unopt-Compiler
