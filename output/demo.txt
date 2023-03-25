@@ -11,16 +11,16 @@ lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: 
 
 customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
 
-lineitem_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
+l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey, "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
+results = l1_aggr.sum(lambda x_l1_aggr: {record({"c_name": x_l1_aggr[0].c_name, "c_custkey": x_l1_aggr[0].c_custkey, "o_orderkey": x_l1_aggr[0].o_orderkey, "o_orderdate": x_l1_aggr[0].o_orderdate, "o_totalprice": x_l1_aggr[0].o_totalprice, "sum_quantity": x_l1_aggr[1]}): True})
 
 ============================================================
- SDQL Execution Time: 13.24590539932251 s 
+ SDQL Execution Time: 13.007124185562134 s 
 { { "c_name": "Customer#000001775", "c_custkey": 1775, "o_orderkey": 6882, "o_orderdate": 19970409, "o_totalprice": 408368.1, "sum_quantity": 303.0 }: True, { "c_name": "Customer#000006655", "c_custkey": 6655, "o_orderkey": 29158, "o_orderdate": 19951021, "o_totalprice": 452805.02, "sum_quantity": 305.0 }: True, { "c_name": "Customer#000001639", "c_custkey": 1639, "o_orderkey": 502886, "o_orderdate": 19940412, "o_totalprice": 456423.88, "sum_quantity": 312.0 }: True, { "c_name": "Customer#000011459", "c_custkey": 11459, "o_orderkey": 551136, "o_orderdate": 19930519, "o_totalprice": 386812.74, "sum_quantity": 308.0 }: True, { "c_name": "Customer#000014110", "c_custkey": 14110, "o_orderkey": 565574, "o_orderdate": 19950924, "o_totalprice": 425099.85, "sum_quantity": 301.0 }: True }
 >> Pandas <<
-Pandas Execution Time: 0.13412022590637207 s 
-DuckDB Execution Time: 0.06205558776855469 s 
+Pandas Execution Time: 0.16214251518249512 s 
+DuckDB Execution Time: 0.08107328414916992 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================

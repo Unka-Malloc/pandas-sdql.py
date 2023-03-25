@@ -304,7 +304,7 @@ class JointFrame:
                                         bodyExpr=aggr_body,
                                         isAssignmentSum=False)
 
-                vname_aggr = f'{probe_on.name}_aggr'
+                vname_aggr = f'{probe_on.current_name}_aggr'
                 var_aggr = VarExpr(vname_aggr)
                 probe_on.add_context_variable(vname_aggr,
                                               var_aggr)
@@ -447,7 +447,7 @@ class JointFrame:
                                             bodyExpr=filt_body,
                                             isAssignmentSum=False)
 
-                    vname_aggr = f'{probe_on.name}_aggr'
+                    vname_aggr = f'{probe_on.current_name}_aggr'
                     var_aggr = VarExpr(vname_aggr)
                     probe_on.add_context_variable(vname_aggr,
                                                   var_aggr)
@@ -1075,7 +1075,7 @@ class JointFrame:
                                                     bodyExpr=aggr_body,
                                                     isAssignmentSum=False)
 
-                            vname_aggr = f'{probe_on.name}_aggr'
+                            vname_aggr = f'{probe_on.current_name}_aggr'
                             var_aggr = VarExpr(vname_aggr)
                             probe_on.add_context_variable(vname_aggr,
                                                           var_aggr)
@@ -1281,7 +1281,7 @@ class JointFrame:
                                                     bodyExpr=aggr_body,
                                                     isAssignmentSum=False)
 
-                            vname_aggr = f'{probe_on.name}_aggr'
+                            vname_aggr = f'{probe_on.current_name}_aggr'
                             var_aggr = VarExpr(vname_aggr)
                             probe_on.add_context_variable(vname_aggr,
                                                           var_aggr)
@@ -1531,7 +1531,7 @@ class JointFrame:
                                                 bodyExpr=aggr_body,
                                                 isAssignmentSum=False)
 
-                        vname_aggr = f'{probe_on.name}_aggr'
+                        vname_aggr = f'{probe_on.current_name}_aggr'
                         var_aggr = VarExpr(vname_aggr)
                         probe_on.add_context_variable(vname_aggr,
                                                       var_aggr)
@@ -1628,7 +1628,7 @@ class JointFrame:
                         groupby_cols = groupby_aggr_info.groupby_cols
                         aggr_dict = groupby_aggr_info.aggr_dict
 
-                        vname_aggr = f'{self.probe_frame.probe_on.name}_aggr'
+                        vname_aggr = f'{self.probe_frame.probe_on.current_name}_aggr'
                         var_aggr = VarExpr(vname_aggr)
                         vname_x_aggr = f'x_{vname_aggr}'
                         var_x_aggr = VarExpr(vname_x_aggr)
