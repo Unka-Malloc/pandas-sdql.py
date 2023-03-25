@@ -1,66 +1,18 @@
->> Query 22 (Q22) <<
+>> Query 18 (Q18) <<
 >> SDQL <<
-{'sum_acctbal': sum_acctbal, 'count_acctbal': count_acctbal}
-RecAccessExpr(PairAccessExpr(x_customer, 0), 'c_phone')
+customer_orders: neither joint
 >> Optimized Query <<
 ============================================================
-v13 = "13"
-v31 = "31"
-v23 = "23"
-v29 = "29"
-v30 = "30"
-v18 = "18"
-v17 = "17"
-cu1_aggr = cu.sum(lambda x_customer: (record({"sum_acctbal": x_customer[0].c_acctbal, "count_acctbal": 1.0})) if (((x_customer[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
 
-count_acctbal = cu1_aggr.count_acctbal
-sum_acctbal = cu1_aggr.sum_acctbal
-orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
+lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
 
-customer_aggr = cu.sum(lambda x_customer: (({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (orders_part[x_customer[0].c_custkey] == None) else (None)) if (((x_customer[0].c_acctbal > ((sum_acctbal) / (count_acctbal))) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 300) else (None))
 
-results = customer_aggr.sum(lambda x_customer_aggr: {record({"cntrycode": x_customer_aggr[0], "numcust": x_customer_aggr[1].numcust, "totacctbal": x_customer_aggr[1].totacctbal}): True})
+customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
 
-============================================================
- SDQL Execution Time: 1.647481918334961 s 
-{ { "cntrycode": "30", "numcust": 87.0, "totacctbal": 646748.0199999998 }: True, { "cntrycode": "18", "numcust": 99.0, "totacctbal": 738012.5200000004 }: True, { "cntrycode": "23", "numcust": 93.0, "totacctbal": 708285.25 }: True, { "cntrycode": "13", "numcust": 94.0, "totacctbal": 714035.0499999999 }: True, { "cntrycode": "31", "numcust": 87.0, "totacctbal": 647372.5000000001 }: True, { "cntrycode": "29", "numcust": 85.0, "totacctbal": 632693.46 }: True, { "cntrycode": "17", "numcust": 96.0, "totacctbal": 722560.15 }: True }
->> Pandas <<
-Pandas Execution Time: 0.07606840133666992 s 
-DuckDB Execution Time: 0.027025699615478516 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-  cntrycode  numcust  totacctbal
-0        13       94      714035
-1        17       96      722560
-2        18       99      738012
-3        23       93      708285
-4        29       85      632693
-5        30       87      646748
-6        31       87      647372
-============================================================
->> Comparing SDQL with Pandas ... <<
-Shape Check Passed: 7 rows x 3 columns
-============================================================
+lineitem_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
 
-    
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[    ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨[ 
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨^¨T¨T¨T¨T¨€¨€¨[¨^¨T¨T¨T¨T¨€¨€¨[
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a      ¨€¨€¨€¨€¨€¨X¨a ¨€¨€¨€¨€¨€¨X¨a
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨T¨a 
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a       ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_name": x_lineitem_aggr[0].c_name, "c_custkey": x_lineitem_aggr[0].c_custkey, "o_orderkey": x_lineitem_aggr[0].o_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_totalprice": x_lineitem_aggr[0].o_totalprice, "sum_quantity": x_lineitem_aggr[1]}): True})
 
-    
-           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
-           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
-           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
-    
-============================================================
-22:  Pass 
 ============================================================
