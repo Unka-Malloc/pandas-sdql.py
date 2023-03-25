@@ -8,71 +8,57 @@ def query(su, li, ord, cu, na):
     # Insert
     france = "FRANCE"
     germany = "GERMANY"
-    v0 = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950101) * (x[0].l_shipdate <= 19961231))) else (None))
+    nation_supplier_index = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
-    nation_customer_orders_lineitem_probe = v0
-    nation_customer_orders_probe = ord
-    nation_customer_probe = cu
-    v0 = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
+    nation_supplier_build_nest_dict = nation_supplier_index.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    nation_supplier_part = v0
-    v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
+    nation_supplier_0 = su.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
     
-    nation_customer_part = v1
-    build_side = nation_customer_part.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
+    nation_supplier_nation_customer_orders_lineitem_index = nation_supplier_0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
     
-    v0 = nation_customer_probe.sum(lambda x: (build_side[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
-    ) if (build_side[x[0].c_nationkey] != None) else (None))
+    nation_customer_index = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
-    nation_customer_orders_part = v0
-    build_side = nation_customer_orders_part.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+    nation_customer_build_nest_dict = nation_customer_index.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    v0 = nation_customer_orders_probe.sum(lambda x: (build_side[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
-    ) if (build_side[x[0].o_custkey] != None) else (None))
+    nation_customer_orders_index = cu.sum(lambda x: (nation_customer_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_customer_build_nest_dict[x[0].c_nationkey] != None) else (None))
     
-    v1 = v0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
+    nation_customer_orders_build_nest_dict = nation_customer_orders_index.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
     
-    nation_customer_orders_lineitem_part = v1
-    build_side = nation_customer_orders_lineitem_part.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+    nation_customer_orders_0 = ord.sum(lambda x: (nation_customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
     
-    v0 = nation_customer_orders_lineitem_probe.sum(lambda x: (build_side[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
-    ) if (build_side[x[0].l_orderkey] != None) else (None))
+    nation_customer_orders_lineitem_index = nation_customer_orders_0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
     
-    nation_supplier_nation_customer_orders_lineitem_probe = v0
-    nation_supplier_probe = su
-    v0 = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
+    nation_customer_orders_lineitem_probe = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950101) * (x[0].l_shipdate <= 19961231))) else (None))
     
-    nation_supplier_part = v0
-    build_side = nation_supplier_part.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
+    nation_customer_orders_lineitem_build_nest_dict = nation_customer_orders_lineitem_index.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
     
-    v0 = nation_supplier_probe.sum(lambda x: (build_side[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
-    ) if (build_side[x[0].s_nationkey] != None) else (None))
+    nation_supplier_nation_customer_orders_lineitem_probe = nation_customer_orders_lineitem_probe.sum(lambda x: (nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
     
-    v1 = v0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
+    nation_supplier_nation_customer_orders_lineitem_build_nest_dict = nation_supplier_nation_customer_orders_lineitem_index.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
     
-    nation_supplier_nation_customer_orders_lineitem_part = v1
-    build_side = nation_supplier_nation_customer_orders_lineitem_part.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+    nation_supplier_nation_customer_orders_lineitem_0 = nation_supplier_nation_customer_orders_lineitem_probe.sum(lambda x: (nation_supplier_nation_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_supplier_nation_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
     
-    v0 = nation_supplier_nation_customer_orders_lineitem_probe.sum(lambda x: (build_side[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
-    ) if (build_side[x[0].l_suppkey] != None) else (None))
+    nation_supplier_nation_customer_orders_lineitem_1 = nation_supplier_nation_customer_orders_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].n1_name == france) * (x[0].n2_name == germany))) + (((x[0].n1_name == germany) * (x[0].n2_name == france))))) else (None))
     
-    v1 = v0.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].n1_name == france) * (x[0].n2_name == germany))) + (((x[0].n1_name == germany) * (x[0].n2_name == france))))) else (None))
+    nation_supplier_nation_customer_orders_lineitem_2 = nation_supplier_nation_customer_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]})
     
-    v2 = v1.sum(lambda x: {x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]})
+    nation_supplier_nation_customer_orders_lineitem_3 = nation_supplier_nation_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]})
     
-    v3 = v2.sum(lambda x: {x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]})
+    nation_supplier_nation_customer_orders_lineitem_4 = nation_supplier_nation_customer_orders_lineitem_3.sum(lambda x: {x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]})
     
-    v4 = v3.sum(lambda x: {x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]})
+    nation_supplier_nation_customer_orders_lineitem_5 = nation_supplier_nation_customer_orders_lineitem_4.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
     
-    v5 = v4.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+    nation_supplier_nation_customer_orders_lineitem_6 = nation_supplier_nation_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year, "volume": x[0].volume}): True})
     
-    v6 = v5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year, "volume": x[0].volume}): True})
+    nation_supplier_nation_customer_orders_lineitem_7 = nation_supplier_nation_customer_orders_lineitem_6.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
     
-    v7 = v6.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
+    results = nation_supplier_nation_customer_orders_lineitem_7.sum(lambda x: {x[0].concat(x[1]): True})
     
-    v8 = v7.sum(lambda x: {x[0].concat(x[1]): True})
-    
-    results = v8
     # Complete
 
     return results

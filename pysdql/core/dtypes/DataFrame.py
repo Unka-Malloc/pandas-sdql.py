@@ -724,10 +724,25 @@ class DataFrame(FlexIR, Retrivable):
 
         tmp_name = f'{self.name}_{right.name}'
 
-        right.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_probe')
-        self.get_opt(OptGoal.UnOptimized).fill_context_unopt(f'{tmp_name}_part')
 
-        next_context_unopt = right.context_unopt + self.context_unopt
+        self.get_opt(OptGoal.UnOptimized).fill_context_unopt()
+        right.get_opt(OptGoal.UnOptimized).fill_context_unopt()
+
+        left_context_unopt = self.context_unopt
+
+        if left_context_unopt:
+            left_context_unopt[-1] = SDQLInspector.rename_last_binding(left_context_unopt[-1],
+                                                                        f'{tmp_name}_index',
+                                                                        with_res=False)
+
+        right_context_unopt = right.context_unopt
+
+        if right_context_unopt:
+            right_context_unopt[-1] = SDQLInspector.rename_last_binding(right_context_unopt[-1],
+                                                                        f'{tmp_name}_probe',
+                                                                        with_res=False)
+
+        next_context_unopt = self.context_unopt + right_context_unopt
 
         next_context_semiopt = self.context_semiopt + right.context_semiopt
 

@@ -9,15 +9,15 @@ if __name__ == '__main__':
 
     # opt_single = pysdql.tpch_query(13, verbose=True, optimize=True)
 
-    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
+    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
     # opt_part1 = pysdql.tpch_query(range(1, 11), verbose=True, optimize=False)
 
     # opt_part2 = pysdql.tpch_query(range(12, 23), verbose=True, optimize=False)
 
-    # unopt_single = pysdql.tpch_query([6, 19, 22], verbose=True, optimize=False)
+    # unopt_some = pysdql.tpch_query([7, 13, 20, 22], verbose=True, optimize=False)
 
-    # unopt_single = pysdql.tpch_query(8, verbose=True, optimize=False)
+    # unopt_single = pysdql.tpch_query(20, verbose=True, optimize=False)
 
     # psql_verified = pysdql.tpch_query([1, 6, 12, 13], verbose=True, optimize=True, mode='postgres')
 

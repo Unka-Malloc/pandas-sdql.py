@@ -179,15 +179,20 @@ def tpch_q7(supplier, lineitem, orders, customer, nation):
     var1 = tpch_vars[7][0]
     var2 = tpch_vars[7][1]
 
-    na_filt = nation[(nation['n_name'] == var1) | (nation['n_name'] == var2)]
+    n1 = nation.copy()
+    n2 = nation.copy()
 
-    na_su_join = nation.merge(right=supplier,
+    n1_filt = n1[(n1['n_name'] == var1) | (n1['n_name'] == var2)]
+
+    n2_filt = n2[(n2['n_name'] == var1) | (n2['n_name'] == var2)]
+
+    na_su_join = n1_filt.merge(right=supplier,
                               left_on='n_nationkey', right_on='s_nationkey',
                               how='inner')
 
     na_su_join.rename({'n_name': 'n1_name'}, axis=1, inplace=True)
 
-    na_cu_join = na_filt.merge(right=customer,
+    na_cu_join = n2_filt.merge(right=customer,
                                left_on='n_nationkey', right_on='c_nationkey',
                                how='inner')
 

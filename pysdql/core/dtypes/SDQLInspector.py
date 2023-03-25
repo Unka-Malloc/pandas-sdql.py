@@ -503,10 +503,9 @@ class SDQLInspector:
 
         result = None
 
-        if not len(flatten) >= 2:
-            print(flatten)
-            raise ValueError()
-        else:
+        if len(flatten) == 1:
+            return flatten[0]
+        elif len(flatten) >= 2:
             first_let = flatten[0]
             second_let = flatten[1]
 
@@ -520,8 +519,13 @@ class SDQLInspector:
                 if len(bindings) >= 3:
                     for i in range(2, len(flatten)):
                         result = SDQLInspector.replace_binding(result, flatten[i])
+        else:
+            print(flatten)
+            raise NotImplementedError
 
         return result
+
+
 
     @staticmethod
     def equal_expr(expr1, expr2):
