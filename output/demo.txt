@@ -9,42 +9,7 @@ part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (((x_part[0].
 
 part_l1 = li.sum(lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (part_part[x_l1[0].l_partkey] != None) else (None))
 
-part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
+part_l1_lineitem = li.sum(lambda x_lineitem: (record({"price": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)})) if (True) else (None))
 
 results = ((part_l1_lineitem.price) / (7.0))
-============================================================
- SDQL Execution Time: 114.52193593978882 s 
-348406.0542857138
->> Pandas <<
-Pandas Execution Time: 3.3116462230682373 s 
-DuckDB Execution Time: 0.36454224586486816 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-          result
-0  348406.054286
-============================================================
->> Comparing SDQL with Pandas ... <<
-============================================================
-
-    
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨^¨€¨€¨U   ¨€¨€¨X¨a 
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a       ¨€¨€¨U  ¨€¨€¨X¨a  
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U        ¨€¨€¨U  ¨€¨€¨U   
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨a  ¨^¨T¨a   
-
-    
-           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
-           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
-           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
-    
-============================================================
-17:  Pass 
 ============================================================
