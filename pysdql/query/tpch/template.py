@@ -1,28 +1,28 @@
-tpch_vars = {1: ("1998-09-02",),
-             2: (15, 'BRASS', 'EUROPE'),
-             3: ("BUILDING", "1995-03-15"),
-             4: ("1993-07-01", "1993-10-01"),
+tpch_vars = {1: ["1998-09-02",],
+             2: [15, 'BRASS', 'EUROPE'],
+             3: ["BUILDING", "1995-03-15"],
+             4: ["1993-07-01", "1993-10-01"],
              # 5: ("ASIA", "1994-01-01", "1996-12-31"),
-             5: ("ASIA", "1994-01-01", "1995-01-01"),
-             6: ('1994-01-01', '1995-01-01', 0.05, 0.07, 24),
-             7: ('FRANCE', 'GERMANY'),
-             8: ('BRAZIL', 'AMERICA', 'ECONOMY ANODIZED STEEL'),
-             9: ('green'),
-             10: ("1993-10-01", "1994-01-01"),
-             11: ('GERMANY',),
-             12: ('MAIL', 'SHIP', '1994-01-01', '1995-01-01'),
-             13: ('special', 'requests'),
-             14: ("1995-09-01", "1995-10-01"),
+             5: ["ASIA", "1994-01-01", "1995-01-01"],
+             6: ['1994-01-01', '1995-01-01', 0.05, 0.07, 24],
+             7: ['FRANCE', 'GERMANY'],
+             8: ['BRAZIL', 'AMERICA', 'ECONOMY ANODIZED STEEL'],
+             9: ['green', ],
+             10: ["1993-10-01", "1994-01-01"],
+             11: ['GERMANY',],
+             12: ['MAIL', 'SHIP', '1994-01-01', '1995-01-01'],
+             13: ['special', 'requests'],
+             14: ["1995-09-01", "1995-10-01"],
              # 15: ("1996-01-01", "1996-04-01", 1614410.2928),
-             15: ("1996-01-01", "1996-04-01", 1772627.2087),
-             16: ("Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)),
+             15: ["1996-01-01", "1996-04-01", 1772627.2087],
+             16: ["Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)],
              # 17: ("Brand#11", "WRAP CASE"),
-             17: ("Brand#23", "MED BOX"),
-             18: (300,),
-             19: ("Brand#12", "Brand#23", "Brand#34", (1, 11), (10, 20), (20, 30)),
-             20: ('forest', '1994-01-01', '1995-01-01', 'CANADA'),
-             21: ("SAUDI ARABIA",),
-             22: ('13', '31', '23', '29', '30', '18', '17')
+             17: ["Brand#23", "MED BOX"],
+             18: [300,],
+             19: ["Brand#12", "Brand#23", "Brand#34", (1, 11), (10, 20), (20, 30)],
+             20: ['forest', '1994-01-01', '1995-01-01', 'CANADA'],
+             21: ["SAUDI ARABIA", ],
+             22: ['13', '31', '23', '29', '30', '18', '17']
              }
 
 
@@ -333,13 +333,12 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
     ord_li_join = orders.merge(lineitem, left_on='o_orderkey', right_on='l_orderkey')
 
     all_join = su_ps_join.merge(ord_li_join,
-                                left_on=['ps_partkey', 'ps_suppkey'],
-                                right_on=['l_partkey', 'l_suppkey'])
+                                  left_on=['ps_suppkey', 'ps_partkey'], # 's_suppkey', 'p_partkey'
+                                  right_on=['l_suppkey', 'l_partkey']) # 'l_suppkey', 'l_partkey'
 
     all_join['nation'] = all_join['n_name']
     all_join['o_year'] = all_join['o_orderdate'].dt.year
-    all_join['amount'] = (all_join['l_extendedprice'] * (1.0 - all_join['l_discount'])) - (
-            all_join['ps_supplycost'] * all_join['l_quantity'])
+    all_join['amount'] = all_join['l_extendedprice'] * (1.0 - all_join['l_discount']) - all_join['ps_supplycost'] * all_join['l_quantity']
 
     profit = all_join[['nation', 'o_year', 'amount']]
 
@@ -547,11 +546,11 @@ def tpch_q17(lineitem, part):
     pa_li_join = pa_filt.merge(part_agg, left_on='p_partkey', right_on='l_partkey')
 
     pa_li_join = pa_li_join.merge(lineitem, left_on='l_partkey', right_on='l_partkey')
-    pa_li_join['l_extendedprice'] = pa_li_join.apply(
+    pa_li_join['price'] = pa_li_join.apply(
         lambda x: x['l_extendedprice'] if (x['l_quantity'] < (0.2 * (x['sum_quant'] / x['count_quant']))) else 0.0,
         axis=1)
 
-    result = pa_li_join['l_extendedprice'].sum() / 7.0
+    result = pa_li_join['price'].sum() / 7.0
 
     return result
 

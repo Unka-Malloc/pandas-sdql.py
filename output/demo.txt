@@ -1,50 +1,21 @@
->> Query 17 (Q17) <<
+>> Query 9 (Q9) <<
 >> SDQL <<
-part_l1: neither joint
+nation_supplier: neither joint
 >> Optimized Query <<
 ============================================================
-brand23 = "Brand#23"
-medbox = "MED BOX"
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
+green = "green"
+nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
 
-part_l1 = li.sum(lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (part_part[x_l1[0].l_partkey] != None) else (None))
+nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
-part_l1_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
 
-results = ((part_l1_lineitem.l_extendedprice) / (7.0))
-============================================================
- SDQL Execution Time: 110.92147731781006 s 
-348406.0542857138
->> Pandas <<
-Pandas Execution Time: 3.8004074096679688 s 
-DuckDB Execution Time: 0.2201979160308838 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-          result
-0  348406.054286
-============================================================
->> Comparing SDQL with Pandas ... <<
-============================================================
+nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({record({"ps_suppkey": x_partsupp[0].ps_suppkey, "ps_partkey": x_partsupp[0].ps_partkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
 
-    
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨^¨€¨€¨U   ¨€¨€¨X¨a 
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a       ¨€¨€¨U  ¨€¨€¨X¨a  
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U        ¨€¨€¨U  ¨€¨€¨U   
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨a  ¨^¨T¨a   
+orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})})
 
-    
-           ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨[ ¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨€¨€¨[¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨T¨T¨a
-           ¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[
-           ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨X¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U¨^¨T¨T¨T¨T¨€¨€¨U
-           ¨€¨€¨U     ¨€¨€¨U  ¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U¨€¨€¨€¨€¨€¨€¨€¨U
-           ¨^¨T¨a     ¨^¨T¨a  ¨^¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨T¨T¨T¨T¨T¨a                                                                  
-    
-============================================================
-17:  Pass 
+nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({record({"nation": nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].n_name, "o_year": extractYear(orders_part[x_lineitem[0].l_orderkey].o_orderdate)}): record({"sum_profit": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) - (((nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].ps_supplycost) * (x_lineitem[0].l_quantity))))})}) if (nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})] != None) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None))
+
+results = nation_supplier_part_partsupp_orders_lineitem.sum(lambda x_nation_supplier_part_partsupp_orders_lineitem: {record({"nation": x_nation_supplier_part_partsupp_orders_lineitem[0].nation, "o_year": x_nation_supplier_part_partsupp_orders_lineitem[0].o_year, "sum_profit": x_nation_supplier_part_partsupp_orders_lineitem[1].sum_profit}): True})
+
 ============================================================

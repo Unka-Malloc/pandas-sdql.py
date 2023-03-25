@@ -330,7 +330,7 @@ def q8(pa, su, li, ord, cu, na, re):
 @sdql_compile({"li": lineitem_type, "ord": order_type, "na": nation_type, "su": supplier_type, "pa": part_type,
                "ps": partsupp_type})
 def q9(li, ord, na, su, pa, ps):
-    g = "g"
+    green = "green"
     nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
 
     nation_supplier = su.sum(lambda x_supplier: (
@@ -338,10 +338,11 @@ def q9(li, ord, na, su, pa, ps):
                 nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
     part_part = pa.sum(
-        lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, g) != ((-1) * (1))) else (None))
+        lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (
+            None))
 
     nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({
-        record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey}): record(
+        record({"ps_suppkey": x_partsupp[0].ps_suppkey, "ps_partkey": x_partsupp[0].ps_partkey}): record(
             {"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey,
              "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (
                 nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (
@@ -351,12 +352,12 @@ def q9(li, ord, na, su, pa, ps):
 
     nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({record({"nation":
                                                                                              nation_supplier_part_partsupp[
-                                                                                                 record({"l_partkey":
+                                                                                                 record({"l_suppkey":
                                                                                                              x_lineitem[
-                                                                                                                 0].l_partkey,
-                                                                                                         "l_suppkey":
+                                                                                                                 0].l_suppkey,
+                                                                                                         "l_partkey":
                                                                                                              x_lineitem[
-                                                                                                                 0].l_suppkey})].n_name,
+                                                                                                                 0].l_partkey})].n_name,
                                                                                          "o_year": extractYear(
                                                                                              orders_part[x_lineitem[
                                                                                                  0].l_orderkey].o_orderdate)}): record(
@@ -364,16 +365,16 @@ def q9(li, ord, na, su, pa, ps):
                                                                                                              nation_supplier_part_partsupp[
                                                                                                                  record(
                                                                                                                      {
-                                                                                                                         "l_partkey":
-                                                                                                                             x_lineitem[
-                                                                                                                                 0].l_partkey,
                                                                                                                          "l_suppkey":
                                                                                                                              x_lineitem[
-                                                                                                                                 0].l_suppkey})].ps_supplycost) * (
+                                                                                                                                 0].l_suppkey,
+                                                                                                                         "l_partkey":
+                                                                                                                             x_lineitem[
+                                                                                                                                 0].l_partkey})].ps_supplycost) * (
                                                                                                              x_lineitem[
                                                                                                                  0].l_quantity))))})}) if (
                 nation_supplier_part_partsupp[record(
-                    {"l_partkey": x_lineitem[0].l_partkey, "l_suppkey": x_lineitem[0].l_suppkey})] != None) else (
+                    {"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})] != None) else (
         None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None))
 
     results = nation_supplier_part_partsupp_orders_lineitem.sum(
@@ -620,12 +621,12 @@ def q17(li, pa):
         lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (
                     part_part[x_l1[0].l_partkey] != None) else (None))
 
-    part_l1_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (
+    part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (
                 x_lineitem[0].l_quantity < ((0.2) * (
         ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
         0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
 
-    results = ((part_l1_lineitem.l_extendedprice) / (7.0))
+    results = ((part_l1_lineitem.price) / (7.0))
 
     return results
 
