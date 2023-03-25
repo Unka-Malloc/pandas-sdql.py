@@ -24,11 +24,24 @@ def query(li, pa):
     air = "AIR"
     airreg = "AIR REG"
     deliverinperson = "DELIVER IN PERSON"
-    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand})}) if (((((((((((x_part[0].p_brand == brand12) * (((((((x_part[0].p_container == smpkg) + (x_part[0].p_container == smpack))) + (x_part[0].p_container == smcase))) + (x_part[0].p_container == smbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 5))) + (((((((x_part[0].p_brand == brand23) * (((((((x_part[0].p_container == medpack) + (x_part[0].p_container == medpkg))) + (x_part[0].p_container == medbag))) + (x_part[0].p_container == medbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 10))))) + (((((((x_part[0].p_brand == brand34) * (((((((x_part[0].p_container == lgpkg) + (x_part[0].p_container == lgpack))) + (x_part[0].p_container == lgcase))) + (x_part[0].p_container == lgbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 15))))) else (None))
+    part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (((((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 5))) + (((((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 10))))) + (((((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 15))))) else (None))
     
-    lineitem_aggr = li.sum(lambda x_lineitem: (((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (((((((part_part[x_lineitem[0].l_partkey].p_brand == brand12) * (((x_lineitem[0].l_quantity >= 1) * (x_lineitem[0].l_quantity <= 11))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand23) * (((x_lineitem[0].l_quantity >= 10) * (x_lineitem[0].l_quantity <= 20))))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand34) * (((x_lineitem[0].l_quantity >= 20) * (x_lineitem[0].l_quantity <= 30))))))) else (0.0)) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0)) if (((((x_lineitem[0].l_shipmode == air) + (x_lineitem[0].l_shipmode == airreg))) * (x_lineitem[0].l_shipinstruct == deliverinperson))) else (0.0))
+    part_lineitem_index = part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey, "p_brand": x[0].p_brand}): True})
     
-    results = {record({"revenue": lineitem_aggr}): True}
+    part_lineitem_probe = li.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].l_shipmode == air) + (x[0].l_shipmode == airreg))) * (x[0].l_shipinstruct == deliverinperson))) else (None))
+    
+    part_lineitem_build_nest_dict = part_lineitem_index.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+    
+    part_lineitem_0 = part_lineitem_probe.sum(lambda x: (part_lineitem_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (part_lineitem_build_nest_dict[x[0].l_partkey] != None) else (None))
+    
+    part_lineitem_1 = part_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((((((x[0].p_brand == brand12) * (((x[0].l_quantity >= 1) * (x[0].l_quantity <= 11))))) + (((x[0].p_brand == brand23) * (((x[0].l_quantity >= 10) * (x[0].l_quantity <= 20))))))) + (((x[0].p_brand == brand34) * (((x[0].l_quantity >= 20) * (x[0].l_quantity <= 30))))))) else (None))
+    
+    part_lineitem_2 = part_lineitem_1.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+    
+    part_lineitem_3 = part_lineitem_2.sum(lambda x: record({"revenue": x[0].revenue}))
+    
+    results = {part_lineitem_3: True}
     # Complete
 
     return results
