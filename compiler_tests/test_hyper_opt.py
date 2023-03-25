@@ -621,26 +621,19 @@ def q17(li, pa):
         lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (
                     part_part[x_l1[0].l_partkey] != None) else (None))
 
-    # part_l1_lineitem = li.sum(lambda x_lineitem:
-    #                           (
-    #                               record({"price":
-    #                                           ((x_lineitem[0].l_extendedprice)
-    #                                            if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant)))))
-    #                                            else (0.0))
-    #                               if (part_l1[x_lineitem[0].l_partkey] != None)
-    #                               else (0.0)})
-    #                           )
-    #                           if (True) else (None)
-    #                           )
+    part_l1_lineitem = li.sum(lambda x_lineitem: (record({"price": ((x_lineitem[0].l_extendedprice)
+                                                 if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant)))))
+                                                 else (0.0))
+                                                    if (part_l1[x_lineitem[0].l_partkey] != None)
+                                                    else (0.0)}))
+                                                 if (True) else (None))
 
-    part_l1_lineitem = li.sum(lambda x_lineitem:
-                              record({"price": ((x_lineitem[0].l_extendedprice)
-                                                if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant)))))
-                                                else (0.0))
-                              if (part_l1[x_lineitem[0].l_partkey] != None)
-                              else (0.0)})
-                              if (True) else (None)
-                              )
+    part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice)
+                                                    if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant)))))
+                                                    else (0.0))
+                                                        if (part_l1[x_lineitem[0].l_partkey] != None)
+                                                        else (0.0)})
+                                                 if (True) else (None))
 
     # part_l1_lineitem = li.sum(lambda x_lineitem: record({"price": ((x_lineitem[0].l_extendedprice) if (
     #             x_lineitem[0].l_quantity < ((0.2) * (
