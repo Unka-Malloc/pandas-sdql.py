@@ -19,7 +19,7 @@ verbose = True
 show_results = True
 
 ## Number of iterations for benchmarking each query (must be >=2)
-iterations = 10
+iterations = 2
 
 ############ Reading Dataset
 
