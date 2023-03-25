@@ -13,7 +13,7 @@ def query(cu, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu.sum(lambda x_customer: (record({"sum_acctbal": x_customer[0].c_acctbal, "count_acctbal": 1.0})) if (((x_customer[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+    cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if (((x_cu1[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (startsWith(x_cu1[0].c_phone, v30)))) + (startsWith(x_cu1[0].c_phone, v18)))) + (startsWith(x_cu1[0].c_phone, v17)))))) else (None))
     
     count_acctbal = cu1_aggr.count_acctbal
     sum_acctbal = cu1_aggr.sum_acctbal
