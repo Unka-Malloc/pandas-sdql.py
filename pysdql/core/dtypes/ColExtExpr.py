@@ -7,7 +7,7 @@ from pysdql.core.dtypes.sdql_ir import *
 
 
 class ColExtExpr(FlexIR):
-    def __init__(self, col, ext_func, args=None, isinvert=False):
+    def __init__(self, col, ext_func, args=None, isinvert=False, is_apply_cond=False):
         """
 
         :param ColEl col:
@@ -22,6 +22,8 @@ class ColExtExpr(FlexIR):
         self.vars = {}
 
         self.isinvert = isinvert
+
+        self.is_apply_cond = is_apply_cond
 
     def replace(self, rec, inplace=False, mapper=None):
         return ColExtExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)

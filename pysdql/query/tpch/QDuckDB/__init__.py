@@ -1,0 +1,1 @@
+from pysdql.query.tpch.QDuckDB.DuckQ import *

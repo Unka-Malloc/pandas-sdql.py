@@ -759,7 +759,7 @@ def tpch_q20(supplier, nation, partsupp, part, lineitem):
     return df_limit_1
 
 
-def tpch_q21(suppier, lineitem, orders, nation):
+def tpch_q21(supplier, lineitem, orders, nation):
     df_filter_1 = orders[(orders.o_orderstatus == 'F')]
     df_filter_1 = df_filter_1[
         ['o_orderkey', 'o_custkey', 'o_orderstatus', 'o_totalprice', 'o_orderdate', 'o_orderpriority', 'o_clerk',
@@ -769,7 +769,7 @@ def tpch_q21(suppier, lineitem, orders, nation):
         ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
          'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
          'l_comment']]
-    df_filter_3 = suppier[['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']]
+    df_filter_3 = supplier[['s_suppkey', 's_name', 's_address', 's_nationkey', 's_phone', 's_acctbal', 's_comment']]
     df_filter_4 = nation[(nation.n_name == 'SAUDI ARABIA')]
     df_filter_4 = df_filter_4[['n_nationkey']]
     df_merge_1 = df_filter_3.merge(df_filter_4, left_on=['s_nationkey'], right_on=['n_nationkey'], how="inner",

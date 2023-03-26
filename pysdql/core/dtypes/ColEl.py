@@ -3,6 +3,7 @@ import re
 from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType, OptGoal
+from pysdql.core.dtypes.IsNullExpr import IsNullExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
@@ -351,10 +352,7 @@ class ColEl(FlexIR):
             for k in vals.relation.context_constant:
                 self.add_const(k)
 
-            vals.relation.get_opt(OptGoal.UnOptimized).fill_context_unopt(
-                f'{self.relation.name}_{vals.relation.name}_isin_build')
-
-            for o in vals.relation.context_unopt:
+            for o in vals.relation.get_context_unopt():
                 self.relation.context_unopt.append(o)
 
             self.relation.push(OpExpr(op_obj=isin_expr,
@@ -546,3 +544,6 @@ class ColEl(FlexIR):
                 raise IndexError(f'Invalid index {self.field}')
         else:
             raise NotImplementedError
+
+    def isnull(self):
+        return IsNullExpr(self)

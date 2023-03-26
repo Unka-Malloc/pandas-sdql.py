@@ -34,3 +34,9 @@ class ColProjExpr:
             'proj_cols': self.proj_cols
         })
 
+    @property
+    def oid(self):
+        return hash((
+            self.proj_on.oid,
+            tuple(self.proj_cols)
+        ))

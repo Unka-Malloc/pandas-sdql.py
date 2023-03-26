@@ -731,25 +731,23 @@ class DataFrame(FlexIR, Retrivable):
 
         tmp_name = f'{self.current_name}_{right.current_name}'
 
+        # left_context_unopt = self.get_context_unopt()
+        #
+        # if left_context_unopt:
+        #     left_context_unopt[-1] = SDQLInspector.rename_last_binding(left_context_unopt[-1],
+        #                                                                 f'{tmp_name}_index',
+        #                                                                 with_res=False)
+        #
+        # right_context_unopt = right.get_context_unopt()
+        #
+        # if right_context_unopt:
+        #     right_context_unopt[-1] = SDQLInspector.rename_last_binding(right_context_unopt[-1],
+        #                                                                 f'{tmp_name}_probe',
+        #                                                                 with_res=False)
+        #
+        # next_context_unopt = self.context_unopt + right_context_unopt
 
-        self.get_opt(OptGoal.UnOptimized).fill_context_unopt()
-        right.get_opt(OptGoal.UnOptimized).fill_context_unopt()
-
-        left_context_unopt = self.context_unopt
-
-        if left_context_unopt:
-            left_context_unopt[-1] = SDQLInspector.rename_last_binding(left_context_unopt[-1],
-                                                                        f'{tmp_name}_index',
-                                                                        with_res=False)
-
-        right_context_unopt = right.context_unopt
-
-        if right_context_unopt:
-            right_context_unopt[-1] = SDQLInspector.rename_last_binding(right_context_unopt[-1],
-                                                                        f'{tmp_name}_probe',
-                                                                        with_res=False)
-
-        next_context_unopt = self.context_unopt + right_context_unopt
+        next_context_unopt = []
 
         next_context_semiopt = self.context_semiopt + right.context_semiopt
 
@@ -1181,6 +1179,7 @@ class DataFrame(FlexIR, Retrivable):
             if isinstance(cond, ColExtExpr):
                 col_name = cond.col.field
                 if col_name in self.partition_side.columns:
+                    cond.is_apply_cond = True
                     self.partition_side.push(OpExpr(op_obj=cond,
                                                     op_on=self,
                                                     op_iter=False))
@@ -1210,6 +1209,8 @@ class DataFrame(FlexIR, Retrivable):
                                      thenBodyExpr=op.sdql_ir,
                                      elseBodyExpr=ConstantExpr(lamb_else))
 
+                    cond.is_apply_cond = True
+
                     return ColApplyExpr(
                         apply_op=if_expr,
                         apply_cond=cond.sdql_ir,
@@ -1228,6 +1229,8 @@ class DataFrame(FlexIR, Retrivable):
                 else:
                     raise IndexError(f'Cannot find column {col_name}')
             elif isinstance(cond, CondExpr):
+                cond.is_apply_cond = True
+
                 cond_on = self.retriever.find_cond_on(cond,
                                                       {self.partition_side.name: self.partition_side.cols_out,
                                                        self.probe_side.name: self.probe_side.columns,
@@ -1465,3 +1468,6 @@ class DataFrame(FlexIR, Retrivable):
 
     def rename_axis(self, *args):
         return self
+
+    def get_context_unopt(self, rename_last=''):
+        return Optimizer(self).get_unopt_context(rename_last)

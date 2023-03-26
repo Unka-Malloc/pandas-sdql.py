@@ -47,4 +47,5 @@ class OpSeq:
     def __getitem__(self, item):
         return self.stack[item]
 
-
+    def __len__(self):
+        return len(self.stack)

@@ -8,9 +8,9 @@ def query(cu, ord):
     # Insert
     special = "special"
     requests = "requests"
-    orders_customer_index = ord.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].o_comment, special) != -1) * (firstIndex(x[0].o_comment, requests) > ((firstIndex(x[0].o_comment, special)) + (6)))) == False) else (None))
+    orders_customer_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].o_comment, special) != -1) * (firstIndex(x[0].o_comment, requests) > ((firstIndex(x[0].o_comment, special)) + (6)))) == False) else (None))
     
-    orders_customer_build_nest_dict = orders_customer_index.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+    orders_customer_build_nest_dict = orders_customer_build_pre_ops.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
     
     orders_customer_0 = cu.sum(lambda x: ({x[0]: True}) if (orders_customer_build_nest_dict[x[0].c_custkey] == None) else (orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
     ))
