@@ -27,9 +27,9 @@ if __name__ == '__main__':
 
     # psql = pysdql.tpch_query(3, verbose=True, optimize=True, mode='postgres')
 
-    psql_unopt = pysdql.tpch_query(9, verbose=True, optimize=False, mode='postgres')
+    # psql_unopt = pysdql.tpch_query(9, verbose=True, optimize=False, mode='postgres')
 
-    # psql_unopt_verified = pysdql.tpch_query([1, 3, 4, 5, 6, 10, 12, 13, 14, 16, 19], verbose=True, optimize=False, mode='postgres')
+    psql_unopt_verified = pysdql.tpch_query([1, 3, 4, 5, 6, 10, 12, 13, 14, 16, 19], verbose=True, optimize=False, mode='postgres')
 
     # psql unopt current progress: 1, 3, 4, 5, 6, 10, 12, 13, 14, 16, 19
 
