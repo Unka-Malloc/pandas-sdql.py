@@ -1625,3 +1625,27 @@ class Retriever:
                     return target.unit1
                 else:
                     raise NotImplementedError
+
+    def count_except(self, ignore: List, stop=None):
+        if not ignore:
+            ignore = []
+
+        count = 0
+
+        for op_expr in self.history:
+            op_type = op_expr.op_type
+
+            if stop:
+                if op_type == stop:
+                    break
+
+            if op_type not in ignore:
+                count += 1
+
+        return count
+
+    def check_last(self, target):
+        if self.equal_expr(self.history[-1].op, target):
+            return True
+
+        return False

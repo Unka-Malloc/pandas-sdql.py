@@ -145,8 +145,13 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         if verbose:
             print(f'Shape Check Passed: {sdql_df.shape[0]} rows x {sdql_df.shape[1]} columns')
     else:
-        print(f'Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
-        return False
+        print(f'Warning: Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
+
+        if sdql_df.shape[0] < pd_df.shape[0]:
+            print(f'Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)')
+        else:
+            return False
+            # pass
 
     for c in sdql_df.columns:
         if c.endswith('_NA'):

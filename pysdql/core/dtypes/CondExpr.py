@@ -17,10 +17,11 @@ from pysdql.core.dtypes.EnumUtil import (
 
 
 class CondExpr(FlexIR):
-    def __init__(self, unit1, operator, unit2):
+    def __init__(self, unit1, operator, unit2, is_apply_cond=False):
         self.unit1 = unit1
         self.op = operator
         self.unit2 = unit2
+        self.is_apply_cond = is_apply_cond
 
     def __eq__(self, other):
         return CondExpr(unit1=self,

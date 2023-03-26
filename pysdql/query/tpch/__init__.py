@@ -58,6 +58,9 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                 if mode == 'postgres':
                     import pysdql.query.tpch.Qpostgres
                     sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+                elif mode == 'duckdb':
+                    import pysdql.query.tpch.QDuckDB
+                    sdql_result = eval(f'pysdql.query.tpch.QDuckDB.q{q}({execution_mode}, {threads_count}, {optimize})')
                 else:
                     import pysdql.query.tpch.Qsdql
                     sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
