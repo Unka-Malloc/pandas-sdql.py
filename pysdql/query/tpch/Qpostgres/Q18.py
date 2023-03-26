@@ -7,17 +7,48 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, cu, ord):
 
     # Insert
-    lineitem_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: record})}) if (x_lineitem[0].suml_quantity > 300) else (None))
+    lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
     
-    lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+    lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
     
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderkey": x_orders[0].o_orderkey, "o_orderdate": x_orders[0].o_orderdate, "o_totalprice": x_orders[0].o_totalprice, "o_custkey": x_orders[0].o_custkey})})
+    lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
     
-    orders_lineitem = li.sum(lambda x_lineitem: (({x_lineitem[0].o_custkey: record({"l_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": orders_part[x_lineitem[0].l_orderkey].o_orderdate, "o_orderkey": x_lineitem[0].l_orderkey, "o_totalprice": orders_part[x_lineitem[0].l_orderkey].o_totalprice})}) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].suml_quantity > 300) else (None))
+    orders_lineitem_probe = lineitem_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
     
-    lineitem_orders_lineitem_customer = cu.sum(lambda x_customer: (({record({"c_custkey": x_customer[0].c_custkey, "o_orderkey": x_customer[0].o_orderkey}): True}) if (lineitem_part[orders_lineitem[x_customer[0].c_custkey].o_orderkey] != None) else (None)) if (orders_lineitem[x_customer[0].c_custkey] != None) else (None))
+    lineitem_4 = lineitem_3.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
     
-    results = lineitem_orders_lineitem_customer.sum(lambda x_lineitem_orders_lineitem_customer: {record({"suml_quantity": x_lineitem_orders_lineitem_customer[1].suml_quantity}): True})
+    lineitem_5 = lineitem_4.sum(lambda x: {x[0].concat(x[1]): True})
+    
+    lineitem_6 = lineitem_5.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
+    
+    lineitem_orders_lineitem_customer_index = lineitem_6.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
+    
+    lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+    
+    lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
+    
+    lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
+    
+    orders_lineitem_probe = lineitem_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
+    
+    orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+    
+    orders_lineitem_customer_index = orders_lineitem_probe.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+    
+    orders_lineitem_customer_build_nest_dict = orders_lineitem_customer_index.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+    
+    lineitem_orders_lineitem_customer_probe = cu.sum(lambda x: (orders_lineitem_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (orders_lineitem_customer_build_nest_dict[x[0].c_custkey] != None) else (None))
+    
+    lineitem_orders_lineitem_customer_build_nest_dict = lineitem_orders_lineitem_customer_index.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+    
+    lineitem_orders_lineitem_customer_0 = lineitem_orders_lineitem_customer_probe.sum(lambda x: (lineitem_orders_lineitem_customer_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (lineitem_orders_lineitem_customer_build_nest_dict[x[0].o_orderkey] != None) else (None))
+    
+    lineitem_orders_lineitem_customer_1 = lineitem_orders_lineitem_customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey, "o_orderkey": x[0].o_orderkey, "c_name": x[0].c_name, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice}): record({"suml_quantity": x[0].l_quantity})})
+    
+    results = lineitem_orders_lineitem_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 

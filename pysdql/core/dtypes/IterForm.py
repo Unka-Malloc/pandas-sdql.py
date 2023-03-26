@@ -1,4 +1,5 @@
 from pysdql.core.dtypes import NewColOpExpr, AggrExpr, OldColOpExpr, ColExtExpr
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IsInExpr import IsInExpr

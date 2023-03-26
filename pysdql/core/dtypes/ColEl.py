@@ -536,3 +536,13 @@ class ColEl(FlexIR):
         # if re.match('^.*?[^\.\*\?].*?$', pattern):
         #     print(re.match('^.*?[^\.\*\?].*?$', pattern).group())
 
+    def __getitem__(self, item):
+        if item == 0:
+            col_ins_list = self.relation.retriever.findall_col_insert_as_list()
+
+            if self.field in col_ins_list.keys():
+                return col_ins_list[self.field][0]
+            else:
+                raise IndexError(f'Invalid index {self.field}')
+        else:
+            raise NotImplementedError

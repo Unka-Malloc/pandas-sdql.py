@@ -21,6 +21,28 @@
 # Psql - Opt - Python
 
 # Psql - Unopt - Python
+1. Pass: Removed Additional Column Projection
+2. Waiting for refactor (copy object from original relation)
+3. Pass
+4. Pass
+5. Pass
+6. Pass
+7. Not Implemented: Auto rename to \_x and \_y
+8. Not Implemented: Apply
+9. Not Implemented: Might be easy to fix
+10. Pass
+11. Waiting for refactor (copy object from original relation)
+12. Pass
+13. Pass
+14. Pass
+15. Waiting for condition connection between relations
+16. Pass
+17. Waiting for refactor (copy object from original relation)
+18. Waiting for refactor (copy object from original relation)
+19. Pass
+20. Unknown Error
+21. outer, indicator 
+22. outer, indicator
 
 # Compiler Mode
 

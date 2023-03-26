@@ -1,0 +1,754 @@
+>> Query 1 (Q1) <<
+>> Optimized Query <<
+============================================================
+lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate <= 19980902) else (None))
+
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"before_1": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
+
+lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"before_2": ((((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))) * (((1) + (x[0].l_tax))))})): x[1]})
+
+lineitem_3 = lineitem_2.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus}): record({"sum_qty": x[0].l_quantity, "sum_base_price": x[0].l_extendedprice, "sum_disc_price": x[0].before_1, "sum_charge": x[0].before_2, "avg_qty_sum_for_mean": x[0].l_quantity, "avg_qty_count_for_mean": 1.0, "avg_price_sum_for_mean": x[0].l_extendedprice, "avg_price_count_for_mean": 1.0, "avg_disc_sum_for_mean": x[0].l_discount, "avg_disc_count_for_mean": 1.0, "count_order": 1.0})})
+
+results = lineitem_3.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus, "sum_qty": x[1].sum_qty, "sum_base_price": x[1].sum_base_price, "sum_disc_price": x[1].sum_disc_price, "sum_charge": x[1].sum_charge, "avg_qty": ((x[1].avg_qty_sum_for_mean) / (x[1].avg_qty_count_for_mean)), "avg_price": ((x[1].avg_price_sum_for_mean) / (x[1].avg_price_count_for_mean)), "avg_disc": ((x[1].avg_disc_sum_for_mean) / (x[1].avg_disc_count_for_mean)), "count_order": x[1].count_order}): True})
+
+============================================================
+{ { "l_returnflag": "N", "l_linestatus": "O", "sum_qty": 7459297.0, "sum_base_price": 10512270008.89992, "sum_disc_price": 9986238338.384766, "sum_charge": 10385578376.585476, "avg_qty": 25.545537671232875, "avg_price": 36000.92468801342, "avg_disc": 0.05009595890418491, "count_order": 292000.0 }: True, { "l_returnflag": "R", "l_linestatus": "F", "sum_qty": 3785523.0, "sum_base_price": 5337950526.4698715, "sum_disc_price": 5071818532.942101, "sum_charge": 5274405503.049366, "avg_qty": 25.5259438574251, "avg_price": 35994.02921403006, "avg_disc": 0.04998927856189752, "count_order": 148301.0 }: True, { "l_returnflag": "A", "l_linestatus": "F", "sum_qty": 3774200.0, "sum_base_price": 5320753880.68998, "sum_disc_price": 5054096266.682835, "sum_charge": 5256751331.449267, "avg_qty": 25.537587116854997, "avg_price": 36002.123829014, "avg_disc": 0.05014459706345448, "count_order": 147790.0 }: True, { "l_returnflag": "N", "l_linestatus": "F", "sum_qty": 95257.0, "sum_base_price": 133737795.83999994, "sum_disc_price": 127132372.6512, "sum_charge": 132286291.22944473, "avg_qty": 25.30066401062417, "avg_price": 35521.32691633465, "avg_disc": 0.0493944223107573, "count_order": 3765.0 }: True }
+ SDQL Execution Time: 73.61121916770935 s 
+Pandas Execution Time: 0.1931748390197754 s 
+T:\pd2sd_env\lib\site-packages\pandas\core\dtypes\astype.py:189: RuntimeWarning: invalid value encountered in cast
+DuckDB Execution Time: 0.027024269104003906 s   return values.astype(dtype, copy=copy)
+
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+T:\pd2sd_env\lib\site-packages\pandas\core\dtypes\astype.py:189: RuntimeWarning: invalid value encountered in cast
+  return values.astype(dtype, copy=copy)
+ Query 1: Pass 
+============================================================
+>> Query 2 (Q2) <<
+^.*?BRASS$ is endswith
+>> Optimized Query <<
+============================================================
+brass = "BRASS"
+europe = "EUROPE"
+part_partsupp_supplier_nation_region_index = pa.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
+
+nation_region_probe = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+
+nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
+
+supplier_nation_region_probe = nation_region_probe.sum(lambda x: (nation_region_build_nest_dict[x[0].r_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_region_build_nest_dict[x[0].r_regionkey] != None) else (None))
+
+supplier_nation_region_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
+
+partsupp_supplier_nation_region_probe = supplier_nation_region_probe.sum(lambda x: (supplier_nation_region_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_nation_region_build_nest_dict[x[0].n_nationkey] != None) else (None))
+
+partsupp_supplier_nation_region_build_nest_dict = ps.sum(lambda x: {x[0].ps_suppkey: sr_dict({x[0]: x[1]})})
+
+part_partsupp_supplier_nation_region_probe = partsupp_supplier_nation_region_probe.sum(lambda x: (partsupp_supplier_nation_region_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (partsupp_supplier_nation_region_build_nest_dict[x[0].s_suppkey] != None) else (None))
+
+part_partsupp_supplier_nation_region_build_nest_dict = part_partsupp_supplier_nation_region_index.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_index = part_partsupp_supplier_nation_region_probe.sum(lambda x: (part_partsupp_supplier_nation_region_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_partsupp_supplier_nation_region_build_nest_dict[x[0].ps_partkey] != None) else (None))
+
+part_partsupp_supplier_nation_region_index = pa.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
+
+partsupp_part_probe = part_0.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
+
+partsupp_part_build_nest_dict = partsupp_part_index.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
+
+supplier_partsupp_part_probe = partsupp_part_probe.sum(lambda x: (partsupp_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (partsupp_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+supplier_partsupp_part_build_nest_dict = supplier_partsupp_part_index.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+supplier_partsupp_part_nation_region_index = supplier_partsupp_part_probe.sum(lambda x: (supplier_partsupp_part_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_partsupp_part_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+
+nation_region_probe = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+
+region_1 = region_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+
+nation_region_probe = region_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+
+nation_region_build_nest_dict = nation_region_index.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
+
+supplier_partsupp_part_nation_region_probe = nation_region_probe.sum(lambda x: (nation_region_build_nest_dict[x[0].r_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_region_build_nest_dict[x[0].r_regionkey] != None) else (None))
+
+supplier_partsupp_part_nation_region_build_nest_dict = supplier_partsupp_part_nation_region_index.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
+
+supplier_partsupp_part_nation_region_0 = supplier_partsupp_part_nation_region_probe.sum(lambda x: (supplier_partsupp_part_nation_region_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_partsupp_part_nation_region_build_nest_dict[x[0].n_nationkey] != None) else (None))
+
+supplier_partsupp_part_nation_region_1 = supplier_partsupp_part_nation_region_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): record({"min_ps_supplycost": x[0].ps_supplycost})})
+
+supplier_partsupp_part_nation_region_2 = supplier_partsupp_part_nation_region_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_probe = supplier_partsupp_part_nation_region_2.sum(lambda x: {x[0].concat(record({"minps_supplycost": x[0].min_ps_supplycost})): x[1]})
+
+part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_nest_dict = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_index.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "p_partkey": x[0].p_partkey}): sr_dict({x[0]: x[1]})})
+
+results = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_probe.sum(lambda x: (part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_nest_dict[record({"minps_supplycost": x[0].minps_supplycost, "p_partkey": x[0].p_partkey})].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_nest_dict[record({"minps_supplycost": x[0].minps_supplycost, "p_partkey": x[0].p_partkey})] != None) else (None))
+
+============================================================
+Query 2: Error
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 95, in q2
+    sdql_result = Q.query(part_data, supplier_data, partsupp_data, partsupp_data, nation_data, region_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 430, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\Q2.py", line 37, in query
+    partsupp_part_probe = part_0.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
+NameError: name 'part_0' is not defined
+>> Query 3 (Q3) <<
+>> Optimized Query <<
+============================================================
+building = "BUILDING"
+lineitem_orders_customer_index = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate > 19950315) else (None))
+
+orders_customer_index = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderdate < 19950315) else (None))
+
+orders_customer_probe = cu.sum(lambda x: ({x[0]: x[1]}) if (x[0].c_mktsegment == building) else (None))
+
+orders_customer_build_nest_dict = orders_customer_index.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+
+lineitem_orders_customer_probe = orders_customer_probe.sum(lambda x: (orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_customer_build_nest_dict[x[0].c_custkey] != None) else (None))
+
+lineitem_orders_customer_build_nest_dict = lineitem_orders_customer_index.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+lineitem_orders_customer_0 = lineitem_orders_customer_probe.sum(lambda x: (lineitem_orders_customer_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_orders_customer_build_nest_dict[x[0].o_orderkey] != None) else (None))
+
+lineitem_orders_customer_1 = lineitem_orders_customer_0.sum(lambda x: {x[0].concat(record({"before_1": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
+
+lineitem_orders_customer_2 = lineitem_orders_customer_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "o_orderdate": x[0].o_orderdate, "o_shippriority": x[0].o_shippriority}): record({"revenue": x[0].before_1})})
+
+results = lineitem_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 8.91405701637268 s 
+Pandas Execution Time: 0.14011621475219727 s 
+DuckDB Execution Time: 0.03202962875366211 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Mismatch Shape: {SDQL: 23, Pandas: 1216}
+============================================================
+ Query 3: Fail 
+============================================================
+>> Query 4 (Q4) <<
+>> Optimized Query <<
+============================================================
+orders_lineitem_index = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19930701) * (x[0].o_orderdate < 19931001))) else (None))
+
+orders_lineitem_probe = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None))
+
+orders_lineitem_build_nest_dict = orders_lineitem_index.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+orders_lineitem_0 = orders_lineitem_probe.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+orders_lineitem_1 = orders_lineitem_0.sum(lambda x: {record({"o_orderpriority": x[0].o_orderpriority}): record({"order_count": 1.0})})
+
+results = orders_lineitem_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 18.8680362701416 s 
+Pandas Execution Time: 0.12210965156555176 s 
+DuckDB Execution Time: 0.03302145004272461 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Not found {'o_orderpriority': '1-URGENT', 'order_count': 2767}
+Failed while looking for order_count == 2767
+The answer is as following:
+  o_orderpriority  order_count
+0        1-URGENT          999
+============================================================
+ Query 4: Fail 
+============================================================
+>> Query 5 (Q5) <<
+>> Optimized Query <<
+============================================================
+asia = "ASIA"
+nation_region_probe = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == asia) else (None))
+
+nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
+
+supplier_nation_region_probe = nation_region_probe.sum(lambda x: (nation_region_build_nest_dict[x[0].r_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_region_build_nest_dict[x[0].r_regionkey] != None) else (None))
+
+supplier_nation_region_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
+
+lineitem_supplier_nation_region_probe = supplier_nation_region_probe.sum(lambda x: (supplier_nation_region_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_nation_region_build_nest_dict[x[0].n_nationkey] != None) else (None))
+
+lineitem_supplier_nation_region_build_nest_dict = li.sum(lambda x: {x[0].l_suppkey: sr_dict({x[0]: x[1]})})
+
+lineitem_supplier_nation_region_orders_index = lineitem_supplier_nation_region_probe.sum(lambda x: (lineitem_supplier_nation_region_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_supplier_nation_region_build_nest_dict[x[0].s_suppkey] != None) else (None))
+
+lineitem_supplier_nation_region_orders_probe = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19940101) * (x[0].o_orderdate < 19950101))) else (None))
+
+lineitem_supplier_nation_region_orders_build_nest_dict = lineitem_supplier_nation_region_orders_index.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+lineitem_supplier_nation_region_orders_customer_index = lineitem_supplier_nation_region_orders_probe.sum(lambda x: (lineitem_supplier_nation_region_orders_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_supplier_nation_region_orders_build_nest_dict[x[0].o_orderkey] != None) else (None))
+
+lineitem_supplier_nation_region_orders_customer_build_nest_dict = lineitem_supplier_nation_region_orders_customer_index.sum(lambda x: {record({"o_custkey": x[0].o_custkey, "s_nationkey": x[0].s_nationkey}): sr_dict({x[0]: x[1]})})
+
+lineitem_supplier_nation_region_orders_customer_0 = cu.sum(lambda x: (lineitem_supplier_nation_region_orders_customer_build_nest_dict[record({"c_custkey": x[0].c_custkey, "c_nationkey": x[0].c_nationkey})].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_supplier_nation_region_orders_customer_build_nest_dict[record({"c_custkey": x[0].c_custkey, "c_nationkey": x[0].c_nationkey})] != None) else (None))
+
+lineitem_supplier_nation_region_orders_customer_1 = lineitem_supplier_nation_region_orders_customer_0.sum(lambda x: {x[0].concat(record({"before_1": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
+
+lineitem_supplier_nation_region_orders_customer_2 = lineitem_supplier_nation_region_orders_customer_1.sum(lambda x: {record({"n_name": x[0].n_name}): record({"revenue": x[0].before_1})})
+
+results = lineitem_supplier_nation_region_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 43.693540811538696 s 
+Pandas Execution Time: 0.09308409690856934 s 
+DuckDB Execution Time: 0.040036916732788086 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 5: Pass 
+============================================================
+>> Query 6 (Q6) <<
+>> Optimized Query <<
+============================================================
+results = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) * (x[0].l_discount >= 0.05))) * (x[0].l_discount <= 0.07))) * (x[0].l_quantity < 24))) else (None))
+
+============================================================
+ SDQL Execution Time: 11.193114757537842 s 
+Pandas Execution Time: 0.06605958938598633 s 
+DuckDB Execution Time: 0.014016151428222656 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Mismatch Shape: {SDQL: 11618, Pandas: 1}
+============================================================
+ Query 6: Fail 
+============================================================
+>> Query 7 (Q7) <<
+Query 7: Error
+Traceback (most recent call last):
+>> Query 8 (Q8) <<
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 219, in q7
+    write_query(7, tpch_q7(supplier, lineitem, orders, customer, nation).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 248, in tpch_q7
+    df_merge_5 = df_merge_5[((df_merge_5.n_name_x == 'FRANCE') & (df_merge_5.n_name_y == 'GERMANY')) | (
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 595, in __getattr__
+    return self.get_col(col_name=item)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 613, in get_col
+    raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+IndexError: Cannot find column "n_name_x" in lineitem_supplier_nation_orders_customer_nation: ['l_shipdate', 'l_extendedprice', 'l_discount', 'l_orderkey', 'n_name', 'o_orderkey', 'n_name']
+Query 8: Error
+>> Query 9 (Q9) <<
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 251, in q8
+    write_query(8, tpch_q8(part, supplier, lineitem, orders, customer, nation, region).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 304, in tpch_q8
+    df_sort_1['case_a'] = df_sort_1.apply(
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 1269, in apply
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+^.*?green.*?$ is contains
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 285, in q9
+    write_query(9, tpch_q9(lineitem, orders, nation, supplier, part, partsupp).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 328, in tpch_q9
+    df_merge_1 = df_filter_2.merge(df_filter_3, left_on=['l_partkey'], right_on=['p_partkey'], how="inner", sort=False)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 734, in merge
+Query 9: Error
+>> Query 10 (Q10) <<
+    right.get_opt(OptGoal.UnOptimized).fill_context_unopt()
+  File "T:\pd2sd\pysdql\core\dtypes\Optimizer.py", line 682, in fill_context_unopt
+    valExpr=tmp_it.sdql_ir,
+  File "T:\pd2sd\pysdql\core\dtypes\IterForm.py", line 98, in sdql_ir
+    cond = cond.replace(self.iter_key).sdql_ir
+  File "T:\pd2sd\pysdql\core\dtypes\ColExtExpr.py", line 27, in replace
+    return ColExtExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
+TypeError: 'NoneType' object is not callable
+>> Optimized Query <<
+============================================================
+r = "R"
+lineitem_orders_index = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_returnflag == r) else (None))
+
+lineitem_orders_probe = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19931001) * (x[0].o_orderdate < 19940101))) else (None))
+
+lineitem_orders_build_nest_dict = lineitem_orders_index.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+customer_lineitem_orders_probe = lineitem_orders_probe.sum(lambda x: (lineitem_orders_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_orders_build_nest_dict[x[0].o_orderkey] != None) else (None))
+
+customer_lineitem_orders_build_nest_dict = cu.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+
+customer_lineitem_orders_nation_index = customer_lineitem_orders_probe.sum(lambda x: (customer_lineitem_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_lineitem_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+customer_lineitem_orders_nation_build_nest_dict = customer_lineitem_orders_nation_index.sum(lambda x: {x[0].c_nationkey: sr_dict({x[0]: x[1]})})
+
+customer_lineitem_orders_nation_0 = na.sum(lambda x: (customer_lineitem_orders_nation_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_lineitem_orders_nation_build_nest_dict[x[0].n_nationkey] != None) else (None))
+
+customer_lineitem_orders_nation_1 = customer_lineitem_orders_nation_0.sum(lambda x: {x[0].concat(record({"before_1": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
+
+customer_lineitem_orders_nation_2 = customer_lineitem_orders_nation_1.sum(lambda x: {record({"c_custkey": x[0].c_custkey, "n_name": x[0].n_name}): record({"revenue": x[0].before_1})})
+
+results = customer_lineitem_orders_nation_2.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 18.226457357406616 s 
+Pandas Execution Time: 0.1261136531829834 s 
+DuckDB Execution Time: 0.037033796310424805 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 10: Pass 
+============================================================
+>> Query 11 (Q11) <<
+Traceback (most recent call last):
+Query 11: Error
+>> Query 12 (Q12) <<
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 342, in q11
+    write_query(11, tpch_q11(partsupp, supplier, nation).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 422, in tpch_q11
+    dollar_0 = df_aggr_1['sumps_supplycostps_availqty00001'][0]
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 544, in __getitem__
+    return self.get_col(col_name=item)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 613, in get_col
+    raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+IndexError: Cannot find column "sumps_supplycostps_availqty00001" in df_aggr_1: []
+>> Optimized Query <<
+============================================================
+mail = "MAIL"
+ship = "SHIP"
+urgent1 = "1-URGENT"
+high2 = "2-HIGH"
+orders_lineitem_probe = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((((x[0].l_shipmode == ship) + (x[0].l_shipmode == mail))) * (x[0].l_commitdate < x[0].l_receiptdate))) * (x[0].l_shipdate < x[0].l_commitdate))) * (x[0].l_receiptdate >= 19940101))) * (x[0].l_receiptdate < 19950101))) else (None))
+
+orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+orders_lineitem_0 = orders_lineitem_probe.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+orders_lineitem_1 = orders_lineitem_0.sum(lambda x: {x[0].concat(record({"case_a": (1) if (((x[0].o_orderpriority == urgent1) + (x[0].o_orderpriority == high2))) else (0)})): x[1]})
+
+orders_lineitem_2 = orders_lineitem_1.sum(lambda x: {x[0].concat(record({"case_b": (1) if (((x[0].o_orderpriority != urgent1) * (x[0].o_orderpriority != high2))) else (0)})): x[1]})
+
+orders_lineitem_3 = orders_lineitem_2.sum(lambda x: {record({"l_shipmode": x[0].l_shipmode}): record({"high_line_count": x[0].case_a, "low_line_count": x[0].case_b})})
+
+results = orders_lineitem_3.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 13.255969047546387 s 
+Pandas Execution Time: 0.23421168327331543 s 
+DuckDB Execution Time: 0.029026508331298828 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 12: Pass 
+============================================================
+>> Query 13 (Q13) <<
+^.*?special.*?requests.*?$ is contains in order
+>> Optimized Query <<
+============================================================
+special = "special"
+requests = "requests"
+orders_customer_index = ord.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].o_comment, special) != ((-1) * (1))) * (firstIndex(x[0].o_comment, requests) > ((firstIndex(x[0].o_comment, special)) + (6)))) == False) else (None))
+
+orders_customer_build_nest_dict = orders_customer_index.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+
+orders_customer_0 = cu.sum(lambda x: ({x[0]: True}) if (orders_customer_build_nest_dict[x[0].c_custkey] == None) else (orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+))
+
+orders_customer_1 = orders_customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey}): record({"c_count": 1.0})})
+
+orders_customer_2 = orders_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+orders_customer_3 = orders_customer_2.sum(lambda x: {record({"c_count": x[0].c_count}): record({"custdist": 1.0})})
+
+results = orders_customer_3.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 16.42558264732361 s 
+Pandas Execution Time: 0.3513176441192627 s 
+DuckDB Execution Time: 0.03803443908691406 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Mismatch Shape: {SDQL: 36, Pandas: 37}
+============================================================
+ Query 13: Fail 
+============================================================
+>> Query 14 (Q14) <<
+>> Optimized Query <<
+============================================================
+promo = "PROMO"
+lineitem_part_index = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950901) * (x[0].l_shipdate < 19951001))) else (None))
+
+lineitem_part_build_nest_dict = lineitem_part_index.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+
+lineitem_part_0 = pa.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+lineitem_part_1 = lineitem_part_0.sum(lambda x: {x[0].concat(record({"case_a": ((((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))) if (True) else (0)) if (startsWith(x[0].p_type, promo)) else (0)})): x[1]})
+
+lineitem_part_2 = lineitem_part_1.sum(lambda x: record({"case_a": x[0].case_a, "l_extendedprice": x[0].l_extendedprice, "l_discount": x[0].l_discount}))
+
+results = ((((100.0) * (lineitem_part_2.case_a))) / (((lineitem_part_2.l_extendedprice) * (((1) - (lineitem_part_2.l_discount))))))
+============================================================
+ SDQL Execution Time: 7.738996267318726 s 
+Pandas Execution Time: 0.11910533905029297 s 
+DuckDB Execution Time: 0.02302241325378418 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Not found {'result': -40}
+Failed while looking for result == -40
+The answer is as following:
+   result
+0      16
+============================================================
+ Query 14: Fail 
+============================================================
+>> Query 15 (Q15) <<
+Query 15: Error
+>> Query 16 (Q16) <<
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 439, in q15
+    write_query(15, tpch_q15(lineitem, supplier).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 543, in tpch_q15
+    dollar_0 = df_aggr_1['maxtotal_revenue'][0]
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 544, in __getitem__
+    return self.get_col(col_name=item)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 613, in get_col
+    raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+IndexError: Cannot find column "maxtotal_revenue" in df_aggr_1: []
+^.*?Customer.*?Complaints.*?$ is contains in order
+^MEDIUM POLISHED.*?$ is startswith
+>> Optimized Query <<
+============================================================
+customer = "Customer"
+complaints = "Complaints"
+brand45 = "Brand#45"
+mediumpolished = "MEDIUM POLISHED"
+supplier_0 = su.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x[0].s_comment, complaints) > ((firstIndex(x[0].s_comment, customer)) + (7))))) else (None))
+
+supplier_partsupp_isin_build_index = supplier_0.sum(lambda x: {x[0].s_suppkey: True})
+
+partsupp_part_index = ps.sum(lambda x: ({x[0]: x[1]}) if (supplier_partsupp_isin_build_index[x[0].ps_suppkey] == None) else (None))
+
+partsupp_part_probe = pa.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].p_brand != brand45) * (startsWith(x[0].p_type, mediumpolished) == False))) * (((((((((((((((x[0].p_size == 9) + (x[0].p_size == 36))) + (x[0].p_size == 49))) + (x[0].p_size == 14))) + (x[0].p_size == 23))) + (x[0].p_size == 45))) + (x[0].p_size == 19))) + (x[0].p_size == 3))))) else (None))
+
+partsupp_part_build_nest_dict = partsupp_part_index.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
+
+partsupp_part_0 = partsupp_part_probe.sum(lambda x: (partsupp_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (partsupp_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+partsupp_part_1 = partsupp_part_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size}): record({"supplier_cnt": 1.0})})
+
+results = partsupp_part_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+ SDQL Execution Time: 3.6953365802764893 s 
+Pandas Execution Time: 0.19417810440063477 s 
+DuckDB Execution Time: 0.03702259063720703 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 16: Pass 
+============================================================
+>> Query 17 (Q17) <<
+>> Optimized Query <<
+============================================================
+brand23 = "Brand#23"
+medbox = "MED BOX"
+lineitem_part_probe = pa.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_brand == brand23) * (x[0].p_container == medbox))) else (None))
+
+lineitem_part_build_nest_dict = lineitem_part_index.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+
+lineitem_part_lineitem_part_index = lineitem_part_probe.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+lineitem_part_probe = pa.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_brand == brand23) * (x[0].p_container == medbox))) else (None))
+
+lineitem_part_probe = part_0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_brand == brand23) * (x[0].p_container == medbox))) else (None))
+
+lineitem_part_build_nest_dict = lineitem_part_index.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+
+lineitem_part_0 = lineitem_part_probe.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+lineitem_part_1 = lineitem_part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): record({"mean_l_quantity_sum_for_mean": x[0].l_quantity, "mean_l_quantity_count_for_mean": 1.0})})
+
+lineitem_part_2 = lineitem_part_1.sum(lambda x: {record({"p_partkey": x[0].p_partkey, "mean_l_quantity": ((x[1].mean_l_quantity_sum_for_mean) / (x[1].mean_l_quantity_count_for_mean))}): True})
+
+lineitem_part_lineitem_part_probe = lineitem_part_2.sum(lambda x: {x[0].concat(record({"avgl_quantity": ((0.2) * (x[0].mean_l_quantity))})): x[1]})
+
+lineitem_part_lineitem_part_build_nest_dict = lineitem_part_lineitem_part_index.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+lineitem_part_lineitem_part_0 = lineitem_part_lineitem_part_probe.sum(lambda x: (lineitem_part_lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_part_lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+lineitem_part_lineitem_part_1 = lineitem_part_lineitem_part_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_quantity < x[0].avgl_quantity) else (None))
+
+lineitem_part_lineitem_part_2 = lineitem_part_lineitem_part_1.sum(lambda x: record({"l_extendedprice": x[0].l_extendedprice}))
+
+results = ((lineitem_part_lineitem_part_2.l_extendedprice) / (7.0))
+============================================================
+Query 17: Error
+>> Query 18 (Q18) <<
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 498, in q17
+    sdql_result = Q.query(lineitem_data, lineitem_data, part_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 430, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\Q17.py", line 13, in query
+    lineitem_part_build_nest_dict = lineitem_part_index.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+NameError: name 'lineitem_part_index' is not defined
+>> Optimized Query <<
+============================================================
+lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
+
+lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
+
+orders_lineitem_probe = lineitem_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
+
+lineitem_4 = lineitem_3.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+
+lineitem_5 = lineitem_4.sum(lambda x: {x[0].concat(x[1]): True})
+
+lineitem_6 = lineitem_5.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
+
+lineitem_orders_lineitem_customer_index = lineitem_6.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
+
+lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
+
+lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
+
+orders_lineitem_probe = lineitem_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300) else (None))
+
+orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+orders_lineitem_customer_index = orders_lineitem_probe.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+orders_lineitem_customer_build_nest_dict = orders_lineitem_customer_index.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+
+lineitem_orders_lineitem_customer_probe = cu.sum(lambda x: (orders_lineitem_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_customer_build_nest_dict[x[0].c_custkey] != None) else (None))
+
+lineitem_orders_lineitem_customer_build_nest_dict = lineitem_orders_lineitem_customer_index.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+lineitem_orders_lineitem_customer_0 = lineitem_orders_lineitem_customer_probe.sum(lambda x: (lineitem_orders_lineitem_customer_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_orders_lineitem_customer_build_nest_dict[x[0].o_orderkey] != None) else (None))
+
+lineitem_orders_lineitem_customer_1 = lineitem_orders_lineitem_customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey, "o_orderkey": x[0].o_orderkey}): record({"suml_quantity": x[0].l_quantity})})
+
+results = lineitem_orders_lineitem_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+============================================================
+Traceback (most recent call last):
+Query 18: Error
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 524, in q18
+    sdql_result = Q.query(lineitem_data, customer_data, orders_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 430, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\Q18.py", line 18, in query
+    lineitem_4 = lineitem_3.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+NameError: name 'lineitem_3' is not defined
+>> Query 19 (Q19) <<
+>> Optimized Query <<
+============================================================
+air = "AIR"
+airreg = "AIR REG"
+deliverinperson = "DELIVER IN PERSON"
+brand12 = "Brand#12"
+smcase = "SM CASE"
+smbox = "SM BOX"
+smpack = "SM PACK"
+smpkg = "SM PKG"
+brand23 = "Brand#23"
+medbag = "MED BAG"
+medbox = "MED BOX"
+medpkg = "MED PKG"
+medpack = "MED PACK"
+brand34 = "Brand#34"
+lgcase = "LG CASE"
+lgbox = "LG BOX"
+lgpack = "LG PACK"
+lgpkg = "LG PKG"
+lineitem_part_index = li.sum(lambda x: ({x[0]: x[1]}) if (((((((x[0].l_shipmode == airreg) + (x[0].l_shipmode == air))) * (x[0].l_shipinstruct == deliverinperson))) * (((((((x[0].l_quantity >= 1) * (x[0].l_quantity <= 11))) + (((x[0].l_quantity >= 10) * (x[0].l_quantity <= 20))))) + (((x[0].l_quantity >= 20) * (x[0].l_quantity <= 30))))))) else (None))
+
+lineitem_part_probe = pa.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_size >= 1) * (((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].p_size <= 5))) + (((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].p_size <= 10))))) + (((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].p_size <= 15))))))) else (None))
+
+lineitem_part_build_nest_dict = lineitem_part_index.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+
+lineitem_part_0 = lineitem_part_probe.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+
+results = lineitem_part_0.sum(lambda x: ({x[0]: x[1]}) if (((((((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].l_quantity >= 1))) * (x[0].l_quantity <= 11))) * (x[0].p_size <= 5))) + (((((((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].l_quantity >= 10))) * (x[0].l_quantity <= 20))) * (x[0].p_size <= 10))))) + (((((((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].l_quantity >= 20))) * (x[0].l_quantity <= 30))) * (x[0].p_size <= 15))))) else (None))
+
+============================================================
+ SDQL Execution Time: 15.323349475860596 s 
+Pandas Execution Time: 0.09408450126647949 s 
+DuckDB Execution Time: 0.02902698516845703 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Mismatch Shape: {SDQL: 10, Pandas: 1}
+============================================================
+ Query 19: Fail 
+============================================================
+>> Query 20 (Q20) <<
+Query 20: Error
+>> Query 21 (Q21) <<
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 566, in q20
+    write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 746, in tpch_q20
+    df_merge_3 = df_merge_3[(df_merge_3.ps_availqty) > df_merge_3.suml_quantity]
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 595, in __getattr__
+    return self.get_col(col_name=item)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 613, in get_col
+    raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+IndexError: Cannot find column "ps_availqty" in partsupp_lineitem_partsupp: ['ps_partkey', 'ps_suppkey', 'suml_quantity']
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+Query 21: Error
+>> Query 22 (Q22) <<
+    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 595, in q21
+    write_query(21, tpch_q21(supplier, lineitem, orders, nation).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 782, in tpch_q21
+Query 22: Error
+1:     inner_cond = inner_cond[inner_cond.l_suppkey_x != inner_cond.l_suppkey_y]['l_orderkey']
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 595, in __getattr__
+    return self.get_col(col_name=item)
+  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 613, in get_col
+    raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+ Pass IndexError: Cannot find column "l_suppkey_x" in lineitem_supplier_nation_lineitem: ['s_name', 'l_suppkey', 'l_orderkey', 'l_orderkey', 'l_suppkey']
+Traceback (most recent call last):
+
+2:   File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
+ Error     sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 621, in q22
+    write_query(22, tpch_q22(customer, orders).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 816, in tpch_q22
+    customer.c_phone.str.slice(0, 2).isin(['13', '31', '23', '29', '30', '18', '17']))]
+
+3: AttributeError: 'ColExtExpr' object has no attribute 'isin'
+ Fail 
+4:  Fail 
+5:  Pass 
+6:  Fail 
+7:  Error 
+8:  Error 
+9:  Error 
+10:  Pass 
+11:  Error 
+12:  Pass 
+13:  Fail 
+14:  Fail 
+15:  Error 
+16:  Pass 
+17:  Error 
+18:  Error 
+19:  Fail 
+20:  Error 
+21:  Error 
+22:  Error 
+============================================================
+5.786647431055704

@@ -7,11 +7,14 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, su):
 
     # Insert
-    lineitem_aggr = li.sum(lambda x_lineitem: ({x_lineitem[0].l_suppkey: ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (((x_lineitem[0].l_shipdate >= 19960101) * (x_lineitem[0].l_shipdate < 19960401))) else (None))
+    df_rename_1_0 = df_rename_1.sum(lambda x: {x[0].concat(record({"total_revenue": x[0].total_revenue})): x[1]})
     
-    supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_suppkey": x_supplier[0].s_suppkey, "s_name": x_supplier[0].s_name, "s_address": x_supplier[0].s_address, "s_phone": x_supplier[0].s_phone})})
+    supplier_df_rename_1_probe = df_rename_1_0.sum(lambda x: {x[0].concat(record({"supplier_no": x[0].supplier_no})): x[1]})
     
-    results = lineitem_aggr.sum(lambda x_lineitem_aggr: (({record({"s_suppkey": x_lineitem_aggr[0], "s_name": supplier_part[x_lineitem_aggr[0]].s_name, "s_address": supplier_part[x_lineitem_aggr[0]].s_address, "s_phone": supplier_part[x_lineitem_aggr[0]].s_phone, "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 797313.3838) else (None)) if (supplier_part[x_lineitem_aggr[0]] != None) else (None))
+    supplier_df_rename_1_build_nest_dict = su.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+    
+    results = supplier_df_rename_1_probe.sum(lambda x: (supplier_df_rename_1_build_nest_dict[x[0].supplier_no].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (supplier_df_rename_1_build_nest_dict[x[0].supplier_no] != None) else (None))
     
     # Complete
 

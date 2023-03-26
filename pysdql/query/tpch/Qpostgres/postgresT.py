@@ -27,9 +27,9 @@ tpch_vars = {1: ("1998-09-02",),
 
 def tpch_q1(lineitem):
     df_filter_1 = lineitem[(lineitem.l_shipdate <= '1998-09-02 00:00:00')]
-    df_filter_1 = df_filter_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
+    # df_filter_1 = df_filter_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
     df_sort_1 = df_filter_1.sort_values(by=['l_returnflag', 'l_linestatus'], ascending=[True, True])
-    df_sort_1 = df_sort_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
+    # df_sort_1 = df_sort_1[['l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]
     df_sort_1['before_1'] = ((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount)))
     df_sort_1['before_2'] = (((df_sort_1.l_extendedprice) * (1 - (df_sort_1.l_discount))) * (1 + (df_sort_1.l_tax)))
     df_group_1 = df_sort_1 \
@@ -213,6 +213,7 @@ def tpch_q6(lineitem):
     df_aggr_1 = df_aggr_1[['revenue']]
     df_limit_1 = df_aggr_1[['revenue']]
     df_limit_1 = df_limit_1.head(1)
+
     return df_limit_1
 
 

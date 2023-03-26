@@ -153,7 +153,7 @@ class Retriever:
 
         return cols
 
-    def findall_col_rename(self, reverse=False):
+    def findall_col_rename(self, reverse=False) -> dict:
         result = {}
         for op_expr in self.history:
             op_body = op_expr.op
@@ -457,7 +457,7 @@ class Retriever:
 
         return col_ins
 
-    def findall_col_insert_as_list(self):
+    def findall_col_insert_as_list(self) -> dict:
         col_ins = {}
 
         for op_expr in self.history:
@@ -794,7 +794,7 @@ class Retriever:
 
         return cleaned_all_merges
 
-    def find_merge(self, mode=''):
+    def find_merge(self, mode='') -> MergeExpr:
         """
 
         :param mode: ['as_part', 'as_probe', 'as_joint']
@@ -1480,7 +1480,7 @@ class Retriever:
         else:
             return False
 
-    def find_col_proj(self, body_only=True):
+    def find_col_proj(self, body_only=True) -> ColProjExpr:
         for op_expr in self.history:
             op_body = op_expr.op
 
@@ -1546,6 +1546,41 @@ class Retriever:
                 to_which.push(op_expr)
 
         return target_out
+
+    @staticmethod
+    def find_aggr_in_calc(target):
+        col_ops = []
+
+        if isinstance(target.unit1, ConstantExpr):
+            return col_ops
+
+        if isinstance(target.unit2, ConstantExpr):
+            return col_ops
+
+        if isinstance(target.unit1, AggrExpr):
+            col_ops.append(target.unit1)
+
+        if isinstance(target.unit2, AggrExpr):
+            col_ops.append(target.unit2)
+
+        if isinstance(target.unit1, CalcExpr):
+            col_ops += Retriever.find_aggr_in_calc(target.unit1)
+
+        if isinstance(target.unit2, CalcExpr):
+            col_ops += Retriever.find_aggr_in_calc(target.unit2)
+
+        return col_ops
+
+    def split_aggr_in_calc(self):
+        aggr_expr = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, CalcExpr):
+                aggr_expr += self.find_aggr_in_calc(op_body)
+
+        return aggr_expr
 
     def findall_cols_for_calc(self):
         used_cols = []
