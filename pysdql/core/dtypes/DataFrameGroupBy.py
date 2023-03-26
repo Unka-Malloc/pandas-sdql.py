@@ -2,6 +2,7 @@ import inspect
 import re
 
 from pysdql.core.dtypes import AggrExpr, ColEl
+from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -85,6 +86,8 @@ class DataFrameGroupBy:
                 agg_dict[f'{agg_key}_sum_for_mean'] = agg_calc
                 # i: int to float
                 agg_dict[f'{agg_key}_count_for_mean'] = ConstantExpr(1.0)
+            if agg_flag == 'last':
+                self.groupby_cols.append(agg_key)
 
         groupby_agg = GroupbyAggrExpr(groupby_from=self.groupby_from,
                                       groupby_cols=self.groupby_cols,
@@ -116,4 +119,11 @@ class DataFrameGroupBy:
         return self.groupby_from
 
     def last(self):
+        op_expr = OpExpr(op_obj=DropDupOpExpr(self.groupby_cols),
+                         op_on=self.groupby_from,
+                         op_iter=True,
+                         iter_on=self.groupby_from)
+
+        self.groupby_from.push(op_expr)
+
         return self.groupby_from

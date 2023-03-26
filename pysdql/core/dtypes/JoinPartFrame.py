@@ -178,6 +178,8 @@ class JoinPartFrame:
         return self.__group_key
 
     def get_part_expr(self, next_probe_op=None):
+        print(self.part_on.get_as_build_end())
+
         if not next_probe_op:
             if self.next_probe:
                 next_probe_op = self.next_probe

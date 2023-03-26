@@ -10,7 +10,11 @@ class ColProjExpr:
         :param List[str] proj_cols: list of columns to be projected
         """
         self.proj_on = proj_on
-        self.proj_cols = proj_cols
+        self.__proj_cols = tuple(proj_cols)
+
+    @property
+    def proj_cols(self):
+        return list(self.__proj_cols)
 
     @property
     def cols(self):

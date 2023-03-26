@@ -78,3 +78,10 @@ class PandasRetType(Enum):
     SERIES = 2
     SCALAR = 3
     DATETIME = 4
+
+@unique
+class StructType(Enum):
+    UNKNOWN = -1
+    SCALAR = 1
+    REC = 2
+    DICT = 3

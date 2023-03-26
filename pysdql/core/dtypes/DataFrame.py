@@ -16,6 +16,7 @@ from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
 from pysdql.core.dtypes.FlexChain import OpChain
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
+from pysdql.core.dtypes.HashBuildRelay import BuildEnd
 from pysdql.core.dtypes.IterEl import IterEl
 from pysdql.core.dtypes.CaseExpr import CaseExpr
 from pysdql.core.dtypes.ColEl import ColEl
@@ -320,14 +321,14 @@ class DataFrame(FlexIR, Retrivable):
                 else:
                     raise NotImplementedError(f'Unexpected type: {type(op_body.col_expr)}')
             elif isinstance(op_body, ColProjExpr):
-                tmp_cols = op_body.proj_cols
+                tmp_cols = op_body.proj_cols.copy()
             elif isinstance(op_body, AggrExpr):
-                tmp_cols = list(op_body.aggr_op.keys())
+                tmp_cols = [i for i in list(op_body.aggr_op.keys())]
             elif isinstance(op_body, GroupbyAggrExpr):
-                tmp_cols = op_body.groupby_cols + list(op_body.aggr_dict.keys())
+                tmp_cols = [i for i in (op_body.groupby_cols + list(op_body.aggr_dict.keys()))]
             elif isinstance(op_body, MergeExpr):
                 if self.name == op_body.joint.name:
-                    tmp_cols = op_body.left.cols_out + op_body.right.cols_out
+                    tmp_cols = [i for i in (op_body.left.cols_out + op_body.right.cols_out)]
         else:
             if tmp_cols:
                 for k in rename_cols.keys():
@@ -371,6 +372,10 @@ class DataFrame(FlexIR, Retrivable):
 
     @property
     def var_part(self):
+        return self.__var_merge_part
+
+    @property
+    def var_build(self):
         return self.__var_merge_part
 
     def get_var_aggr(self):
@@ -605,7 +610,9 @@ class DataFrame(FlexIR, Retrivable):
         else:
             # print(self.operations)
             # return ColEl(self, col_name)
-            raise IndexError(f'Cannot find column "{col_name}" in {self.name}: {self.columns}')
+            print(f'Warning: Cannot find column "{col_name}" in {self.name}: {self.columns}')
+
+            return ColEl(self, col_name)
 
     def __setitem__(self, key, value):
         if key in self.columns:
@@ -703,7 +710,7 @@ class DataFrame(FlexIR, Retrivable):
             output += op_expr.get_op_name_suffix()
         return output
 
-    def merge(self, right, how='inner', left_on=None, right_on=None, sort=False):
+    def merge(self, right, how='inner', left_on=None, right_on=None, indicator=False, sort=False):
         if isinstance(left_on, list) and len(left_on) == 1:
             left_on = left_on[0]
 
@@ -1451,4 +1458,10 @@ class DataFrame(FlexIR, Retrivable):
 
                             return target_expr
 
+        return self
+
+    def get_as_build_end(self):
+        return BuildEnd(self)
+
+    def rename_axis(self, *args):
         return self

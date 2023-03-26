@@ -37,20 +37,23 @@ class CalcExpr(FlexIR):
         #     print(self.unit2)
 
     def __mul__(self, other):
-        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.on)
+        return CalcExpr(self, other, MathSymbol.MUL, self.on)
 
     def __truediv__(self, other):
         if hasattr(other, 'unique_columns'):
-            return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on, unique_columns=other.unique_columns)
+            return CalcExpr(self, other, MathSymbol.DIV, self.on, unique_columns=other.unique_columns)
         else:
-            return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.on)
+            return CalcExpr(self, other, MathSymbol.DIV, self.on)
 
-    def match_aggr(self, target, to_which):
+    def replace_aggr(self, target, to_which):
+
         for k in target.keys():
-            if SDQLInspector.check_equal_expr(self.unit1, target[k]):
+            if SDQLInspector.check_equal_expr(self.unit1.sdql_ir, target[k]):
                 self.unit1 = RecAccessExpr(to_which.var_expr, k)
-            if SDQLInspector.check_equal_expr(self.unit2, target[k]):
+            if SDQLInspector.check_equal_expr(self.unit2.sdql_ir, target[k]):
                 self.unit2 = RecAccessExpr(to_which.var_expr, k)
+
+        return self
 
     @staticmethod
     def unit_fmt(value):
@@ -126,3 +129,17 @@ class CalcExpr(FlexIR):
     @property
     def op_name_suffix(self):
         return '_calc'
+
+    def replace(self, rec, inplace=False, mapper=None):
+        new_unit1 = self.unit1
+        new_unit2 = self.unit2
+
+        if isinstance(self.unit1, FlexIR):
+            new_unit1 = self.unit1.replace(rec, inplace, mapper)
+        if isinstance(self.unit2, FlexIR):
+            new_unit2 = self.unit2.replace(rec, inplace, mapper)
+
+        if self.op == MathSymbol.DIV:
+            return DivExpr(input_fmt(new_unit1), input_fmt(new_unit2))
+        if self.op == MathSymbol.MUL:
+            return MulExpr(input_fmt(new_unit1), input_fmt(new_unit2))

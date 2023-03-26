@@ -2079,20 +2079,24 @@ class JointFrame:
                         rec_list.append((j, col_renamed[j].sdql_ir))
                     else:
                         raise TypeError(f'Unsupported Type {type(col_renamed[j])}')
-                    
-                for k in self.retriever.findall_cols_for_calc():
-                    if k in col_inserted:
-                        continue
 
-                    if k in col_renamed:
-                        continue
+                tmp_aggr_cols = {}
 
-                    if k in part_on.columns:
-                        col_op = IfExpr(self.part_nonull(), 
-                                        self.part_lookup(k),
-                                        ConstantExpr(0.0))
+                for aggr_expr in self.retriever.split_aggr_in_calc():
+                    for aggr_key in aggr_expr.aggr_op.keys():
+                        target_expr = aggr_expr.aggr_op[aggr_key]
+                        if isinstance(aggr_expr.aggr_op[aggr_key], (AddExpr, MulExpr, SubExpr, DivExpr)):
+                            tmp_aggr_cols[f'{SDQLInspector.find_a_descriptor(target_expr)}'] = target_expr
+                            
+                for k in tmp_aggr_cols.keys():
+                    col_op = SDQLInspector.replace_access(tmp_aggr_cols[k],
+                                                          self.part_lookup())
 
-                        rec_list.append((k, UniqueExpr(col_op)))
+                    col_op = IfExpr(self.part_nonull(),
+                                    col_op,
+                                    ConstantExpr(0.0))
+
+                    rec_list.append((k, col_op))
 
                 rec = RecConsExpr(rec_list)
 
@@ -2112,18 +2116,9 @@ class JointFrame:
 
                 calc_expr = self.retriever.find_calc()
 
+                calc_expr = calc_expr.replace_aggr(tmp_aggr_cols, self.joint)
+
                 calc_expr = SDQLInspector.replace_access(calc_expr.sdql_ir, self.joint.var_expr)
-
-                # if calc_expr.unique_cols:
-                #     mapper = {}
-                #
-                #     for c in calc_expr.unique_cols:
-                #         mapper[c] = UniqueProbe(RecAccessExpr(self.joint.var_expr, c)).sdql_ir
-                #
-                #     calc_expr = SDQLInspector.replace_field(calc_expr.sdql_ir,
-                #                                             inplace=True,
-                #                                             mapper=mapper)
-
 
                 var_res = VarExpr('results')
                 self.joint.add_context_variable('results', var_res)

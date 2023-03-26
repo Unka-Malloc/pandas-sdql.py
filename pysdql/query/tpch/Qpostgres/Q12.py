@@ -10,11 +10,20 @@ def query(ord, li):
     ship = "SHIP"
     urgent1 = "1-URGENT"
     high2 = "2-HIGH"
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderkey": x_orders[0].o_orderkey, "o_custkey": x_orders[0].o_custkey, "o_orderstatus": x_orders[0].o_orderstatus, "o_totalprice": x_orders[0].o_totalprice, "o_orderdate": x_orders[0].o_orderdate, "o_orderpriority": x_orders[0].o_orderpriority, "o_clerk": x_orders[0].o_clerk, "o_shippriority": x_orders[0].o_shippriority, "o_comment": x_orders[0].o_comment})})
+    orders_lineitem_probe = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((((x[0].l_shipmode == ship) + (x[0].l_shipmode == mail))) * (x[0].l_commitdate < x[0].l_receiptdate))) * (x[0].l_shipdate < x[0].l_commitdate))) * (x[0].l_receiptdate >= 19940101))) * (x[0].l_receiptdate < 19950101))) else (None))
     
-    lineitem_aggr = li.sum(lambda x_lineitem: (({x_lineitem[0].l_shipmode: record({"high_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority == urgent1) + (orders_part[x_lineitem[0].l_orderkey].o_orderpriority == high2))) else (0), "low_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority != urgent1) * (orders_part[x_lineitem[0].l_orderkey].o_orderpriority != high2))) else (0)})}) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (((((((((((x_lineitem[0].l_shipmode == ship) + (x_lineitem[0].l_shipmode == mail))) * (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate))) * (x_lineitem[0].l_shipdate < x_lineitem[0].l_commitdate))) * (x_lineitem[0].l_receiptdate >= 19940101))) * (x_lineitem[0].l_receiptdate < 19950101))) else (None))
+    orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
     
-    results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_shipmode": x_lineitem_aggr[0], "high_line_count": x_lineitem_aggr[1].high_line_count, "low_line_count": x_lineitem_aggr[1].low_line_count}): True})
+    orders_lineitem_0 = orders_lineitem_probe.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+    
+    orders_lineitem_1 = orders_lineitem_0.sum(lambda x: {x[0].concat(record({"case_a": (1) if (((x[0].o_orderpriority == urgent1) + (x[0].o_orderpriority == high2))) else (0)})): x[1]})
+    
+    orders_lineitem_2 = orders_lineitem_1.sum(lambda x: {x[0].concat(record({"case_b": (1) if (((x[0].o_orderpriority != urgent1) * (x[0].o_orderpriority != high2))) else (0)})): x[1]})
+    
+    orders_lineitem_3 = orders_lineitem_2.sum(lambda x: {record({"l_shipmode": x[0].l_shipmode}): record({"high_line_count": x[0].case_a, "low_line_count": x[0].case_b})})
+    
+    results = orders_lineitem_3.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 

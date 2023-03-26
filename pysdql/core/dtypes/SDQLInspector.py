@@ -612,7 +612,7 @@ class SDQLInspector:
         return cleaned_non_null
 
     @staticmethod
-    def replace_access(sdql_obj, to_rec):
+    def replace_access(sdql_obj, to_rec, replace=False):
         if isinstance(sdql_obj, ConstantExpr):
             return sdql_obj
 
@@ -732,9 +732,52 @@ class SDQLInspector:
         if isinstance(sdql_obj, CompareExpr):
             return sdql_obj
 
+    # @staticmethod
+    # def replace_expr(sdql_obj, mapper):
+    #     for k in mapper.keys():
+    #         target = mapper[k]
+    #
+    #         if isinstance(sdql_obj, MulExpr):
+    #             u1 = sdql_obj.op1Expr
+    #             u2 = sdql_obj.op2Expr
+    #
+    #             if SDQLInspector.check_equal_expr(u1, target):
+    #                 return MulExpr()
+
+
     @staticmethod
     def check_equal_expr(op1, op2):
         if str(op1) == str(op2):
             return True
         else:
             return False
+
+    @staticmethod
+    def find_a_descriptor(sdql_obj):
+        if isinstance(sdql_obj, ConstantExpr):
+            return f'{str(sdql_obj.value).replace(".", "")}'
+
+        if isinstance(sdql_obj, RecAccessExpr):
+            return f'{sdql_obj.name}'
+
+        if isinstance(sdql_obj, AddExpr):
+            u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
+            u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
+            return f'{u1_name}_add_{u2_name}'
+
+        if isinstance(sdql_obj, MulExpr):
+            u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
+            u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
+            return f'{u1_name}_mul_{u2_name}'
+
+        if isinstance(sdql_obj, SubExpr):
+            u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
+            u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
+            return f'{u1_name}_sub_{u2_name}'
+
+        if isinstance(sdql_obj, DivExpr):
+            u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
+            u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
+            return f'{u1_name}_div_{u2_name}'
+
+        return ''

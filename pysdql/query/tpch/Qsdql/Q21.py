@@ -19,9 +19,9 @@ def query(su, li, ord, na):
     
     l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
     
-    orders_nation_supplier_lineitem_lineitem_lineitem = li.sum(lambda x_lineitem: (((((({nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (((l2_part[x_lineitem[0].l_orderkey].l2_size > 1) * (l3_part[x_lineitem[0].l_orderkey].l3_size == 1))) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (nation_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (l3_part[x_lineitem[0].l_orderkey] != None) else (None)) if (l2_part[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
+    orders_nation_supplier_l3_l2_lineitem = li.sum(lambda x_lineitem: (((((({nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (((l2_part[x_lineitem[0].l_orderkey].l2_size > 1) * (l3_part[x_lineitem[0].l_orderkey].l3_size == 1))) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (nation_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (l3_part[x_lineitem[0].l_orderkey] != None) else (None)) if (l2_part[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
     
-    results = orders_nation_supplier_lineitem_lineitem_lineitem.sum(lambda x_orders_nation_supplier_lineitem_lineitem_lineitem: {record({"s_name": x_orders_nation_supplier_lineitem_lineitem_lineitem[0], "numwait": x_orders_nation_supplier_lineitem_lineitem_lineitem[1].numwait}): True})
+    results = orders_nation_supplier_l3_l2_lineitem.sum(lambda x_orders_nation_supplier_l3_l2_lineitem: {record({"s_name": x_orders_nation_supplier_l3_l2_lineitem[0], "numwait": x_orders_nation_supplier_l3_l2_lineitem[1].numwait}): True})
     
     # Complete
 
