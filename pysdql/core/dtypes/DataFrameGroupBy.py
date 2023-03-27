@@ -2,6 +2,7 @@ import inspect
 import re
 
 from pysdql.core.dtypes import AggrExpr, ColEl
+from pysdql.core.dtypes.AggrLambdaExpr import AggrLambda
 from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
@@ -81,7 +82,8 @@ class DataFrameGroupBy:
             if callable(agg_flag):
                 # received lambda function
                 # i: int to float
-                agg_dict[agg_key] = ConstantExpr(1.0)
+                agg_dict[agg_key] = agg_flag(AggrLambda(self.groupby_from,
+                                                        agg_tuple_dict[agg_key][0]))
             if agg_flag == 'mean':
                 agg_dict[f'{agg_key}_sum_for_mean'] = agg_calc
                 # i: int to float

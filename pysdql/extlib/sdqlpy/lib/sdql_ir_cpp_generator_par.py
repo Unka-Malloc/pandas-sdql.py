@@ -47,7 +47,6 @@ def GenerateCPPCode(AST: Expr, cache: dict, isFirstCall=False, coresNo=1):
             return " /* " + AST.name + " */" + "get<" + str(selectedIdx) + ">(" + GenerateCPPCode(AST.recExpr, cache) + ")"
 
     elif inputType == IfExpr:
-
         condCode = GenerateCPPCode(AST.condExpr, cache)
 
         if isInRecConsExpr:
@@ -122,6 +121,19 @@ def GenerateCPPCode(AST: Expr, cache: dict, isFirstCall=False, coresNo=1):
         return AST.name
 
     elif inputType == PairAccessExpr:
+        
+        if (isInsideBodyOfDatasetReaderSum != None):
+            
+            if AST.index == 0:
+                record = "make_tuple("
+                for p in cache[AST.pairExpr.id][0].typesList:
+                    record += p[0] + "[" + GenerateCPPCode(AST.pairExpr, cache)  + "], "
+                record = record[:-2]
+                record += ")"
+                return record
+            if AST.index == 1:
+                return "true"
+
         if AST.index == 0:
             return "(" + GenerateCPPCode(AST.pairExpr, cache) + ".first)"
         if AST.index == 1:
@@ -713,9 +725,12 @@ def AdditionCodeGenerator(lhsVarExpr, rhsExpr, cache, isAssignmentSum=False, isI
     global globalCoresNo
     global isInRecConsExpr
 
+    print(cache[rhsExpr.id])
+
     res = ""
     rhsKey = ""
     rhsVal = ""
+
     if cache[rhsExpr.id] != DictionaryType():
         if isAssignmentSum:
             res += lhsVarExpr.name + " = " + GenerateCPPCode(rhsExpr, cache) + ";" 
@@ -726,8 +741,11 @@ def AdditionCodeGenerator(lhsVarExpr, rhsExpr, cache, isAssignmentSum=False, isI
                     res += "get<" + str(i) + ">(" + lhsVarExpr.name + ") += " + GenerateCPPCode(rhsExpr.exprList[i], cache) +";\n"
                 isInRecConsExpr = False
             else:
-                res += lhsVarExpr.name + " += " + GenerateCPPCode(rhsExpr, cache) + ";" 
 
+                print(lhsVarExpr.name)
+                print(GenerateCPPCode(rhsExpr, cache))
+
+                res += lhsVarExpr.name + " += " + GenerateCPPCode(rhsExpr, cache) + ";" 
     else:
         if type(rhsExpr) == DicConsExpr:
             rhsKey = GenerateCPPCode(rhsExpr.exprList[0], cache)

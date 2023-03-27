@@ -500,8 +500,8 @@ def tpch_q13(customer, orders):
     df_group_2 = df_group_2[['custdist']]
     df_sort_1 = df_group_2.sort_values(by=['custdist', 'c_count'], ascending=[False, False])
     df_sort_1 = df_sort_1[['custdist']]
-    df_limit_1 = df_sort_1.head(1)
-    return df_limit_1
+    # df_limit_1 = df_sort_1.head(1)
+    return df_sort_1
 
 
 def tpch_q14(lineitem, part):

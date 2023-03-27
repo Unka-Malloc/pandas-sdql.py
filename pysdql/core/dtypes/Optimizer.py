@@ -2,6 +2,7 @@ from pysdql.core.dtypes import OldColOpExpr, ColOpExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.AggrFrame import AggrFrame
+from pysdql.core.dtypes.AggrNunique import AggrNunique
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
@@ -10,6 +11,7 @@ from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
 from pysdql.core.dtypes.FlexChain import OpChain
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.FreeStateVarDefExpr import FreeStateVar
 from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
 from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
 from pysdql.core.dtypes.IterForm import IterForm
@@ -628,7 +630,12 @@ class Optimizer:
 
             op_body = op_expr.op
 
-            if isinstance(op_body, DropDupOpExpr):
+            if isinstance(op_body, FreeStateVar):
+                print(op_body)
+
+                continue
+
+            elif isinstance(op_body, DropDupOpExpr):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                 rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in op_body.unique_cols]
@@ -646,7 +653,11 @@ class Optimizer:
 
                     rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in op_body.proj_cols]
 
-                    tmp_it.iter_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+                    proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                    tmp_it.iter_op = proj_op
+
+                    # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
 
                     unopt_context.append(
                         LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -661,6 +672,14 @@ class Optimizer:
                         continue
 
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                free_vars = self.retriever.find_free_vars(op_body)
+
+                if free_vars:
+                    for free_vname in free_vars.keys():
+                        free_expr = free_vars[free_vname]
+
+                        print(free_expr.create_from.get_context_unopt())
 
                 if any([(i not in self.opt_on.cols_out)
                         & (i not in self.retriever.find_cols_used('groupby_aggr'))
@@ -750,7 +769,6 @@ class Optimizer:
                 )
             elif isinstance(op_body, IsInExpr):
                 if op_expr.op_on.current_name != this_name:
-
                     continue
 
                 prev_isin_count = 0
@@ -818,7 +836,7 @@ class Optimizer:
                 )
             elif isinstance(op_body, MergeExpr):
                 if op_body.how == 'inner':
-                    if self.opt_on.name == op_body.joint.name:
+                    if self.opt_on.current_name == op_body.joint.current_name:
                         build_prev_count = 0
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
@@ -1058,7 +1076,7 @@ class Optimizer:
 
                     aggr_dict = op_body.aggr_op
                 else:
-                    raise NotImplementedError
+                    raise NotImplementedError(f'{type(op_body)} -> {op_body}')
 
                 tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
@@ -1132,6 +1150,8 @@ class Optimizer:
                                                  aggr_dict[k],
                                                  ConstantExpr(0.0))
                             val_rec_list.append((k, check_count))
+                    elif isinstance(v, AggrNunique):
+                        val_rec_list.append((k, ConstantExpr(1.0)))
                     else:
                         val_rec_list.append((k, aggr_dict[k]))
 

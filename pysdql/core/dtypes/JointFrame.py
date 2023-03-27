@@ -1,4 +1,5 @@
 from pysdql.core.dtypes import ColOpExpr, ColEl, ColExtExpr, GroupbyAggrExpr, AggrExpr, NewColOpExpr, OldColOpExpr
+from pysdql.core.dtypes.AggrNunique import AggrNunique
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.EnumUtil import OpRetType, AggrType
@@ -1375,6 +1376,8 @@ class JointFrame:
                         joint_col_ins = self.retriever.find_col_ins_before(GroupbyAggrExpr)
                         probe_isin_expr = self.probe_frame.retriever.find_isin_before(MergeExpr)
 
+                        nunique_column = False
+
                         if len(groupby_cols) == 0:
                             raise ValueError()
                         elif len(groupby_cols) == 1:
@@ -1462,6 +1465,12 @@ class JointFrame:
                                 # (, 'count')
                                 aggr_body = DicConsExpr([(dict_key_ir,
                                                           dict_val)])
+                            elif isinstance(dict_val, AggrNunique):
+                                # x.nunique
+                                nunique_column = True
+                                aggr_body = DicConsExpr([(dict_key_ir,
+                                                          sr_dict({dict_val.col.replace(probe_on.iter_el.key):
+                                                                       ConstantExpr(True)}))])
                             else:
                                 raise NotImplementedError
                         else:
@@ -1566,7 +1575,13 @@ class JointFrame:
                                 for c in groupby_cols:
                                     format_key_tuples.append((c, RecAccessExpr(PairAccessExpr(var_x_aggr, 0), c)))
 
-                            format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
+                            if nunique_column:
+                                format_key_tuples.append((dict_key, ExtFuncExpr(ExtFuncSymbol.DictSize,
+                                                                                PairAccessExpr(var_x_aggr, 1),
+                                                                                ConstantExpr("Nothing"),
+                                                                                ConstantExpr("Nothing"))))
+                            else:
+                                format_key_tuples.append((dict_key, PairAccessExpr(var_x_aggr, 1)))
 
                             format_op = DicConsExpr([(RecConsExpr(format_key_tuples),
                                                       ConstantExpr(True))])

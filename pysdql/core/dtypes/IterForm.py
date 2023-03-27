@@ -7,6 +7,7 @@ from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.sdql_ir import VarExpr, SumExpr, IfExpr, ConstantExpr, DicConsExpr, PairAccessExpr, ConcatExpr, \
     RecAccessExpr, RecConsExpr, Expr, CompareExpr, CompareSymbol, MulExpr, AddExpr, DivExpr, SubExpr
 from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
+from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
 
 
 class IterForm:
@@ -30,6 +31,8 @@ class IterForm:
     def iter_body(self):
         if self.iter_op:
             if isinstance(self.iter_op, Expr):
+                return self.iter_op
+            if isinstance(self.iter_op, sr_dict):
                 return self.iter_op
             if isinstance(self.iter_op, NewColOpExpr):
                 col = self.iter_op

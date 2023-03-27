@@ -1,5 +1,6 @@
 from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
+from pysdql.core.dtypes.FreeStateVarDefExpr import FreeStateVar
 from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
@@ -1649,3 +1650,37 @@ class Retriever:
             return True
 
         return False
+
+    @staticmethod
+    def find_free_vars(target, as_expr=False) -> dict:
+        free_vars = {}
+
+        if isinstance(target, CondExpr):
+            u1 = target.unit1
+            u2 = target.unit2
+
+            if isinstance(u1, FreeStateVar):
+                if as_expr:
+                    free_vars[u1.var_name] = u1.var_value
+                else:
+                    free_vars[u1.var_name] = u1
+
+            if isinstance(u2, FreeStateVar):
+                if as_expr:
+                    free_vars[u2.var_name] = u2.var_value
+                else:
+                    free_vars[u2.var_name] = u2
+
+            if isinstance(u1, CondExpr):
+                tmp_vars = Retriever.find_free_vars(u1, as_expr)
+                for k in tmp_vars.keys():
+                    free_vars[k] = tmp_vars[k]
+
+            if isinstance(u2, CondExpr):
+                tmp_vars = Retriever.find_free_vars(u2, as_expr)
+                for k in tmp_vars.keys():
+                    free_vars[k] = tmp_vars[k]
+        else:
+            print(f'Warning: Unexpected Type {type(target)}')
+
+        return free_vars

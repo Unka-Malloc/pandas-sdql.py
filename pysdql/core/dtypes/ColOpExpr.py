@@ -3,6 +3,7 @@ from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.IterStmt import IterStmt
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.VarExpr import VarExpr
 
 from pysdql.core.dtypes.sdql_ir import (
@@ -177,3 +178,7 @@ class ColOpExpr(FlexIR):
 
     def __repr__(self):
         return repr(self.sdql_ir)
+
+    @property
+    def descriptor(self):
+        return SDQLInspector.find_a_descriptor(self.sdql_ir)

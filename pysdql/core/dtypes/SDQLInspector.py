@@ -612,7 +612,7 @@ class SDQLInspector:
         return cleaned_non_null
 
     @staticmethod
-    def replace_access(sdql_obj, to_rec, replace=False):
+    def replace_access(sdql_obj, to_rec, inplace=False):
         if isinstance(sdql_obj, ConstantExpr):
             return sdql_obj
 
@@ -754,6 +754,19 @@ class SDQLInspector:
 
     @staticmethod
     def find_a_descriptor(sdql_obj):
+        """
+        JQ: (
+        XZ: )
+
+        ( 1 + 1 ) * 2 -> JQ_JQ_1_add_1_XZ_add_2_XZ
+
+        :param sdql_obj:
+        :return:
+        """
+
+        lbrace = f'JQ_'
+        rbrace = f'_XZ'
+
         if isinstance(sdql_obj, ConstantExpr):
             return f'{str(sdql_obj.value).replace(".", "")}'
 
@@ -763,21 +776,21 @@ class SDQLInspector:
         if isinstance(sdql_obj, AddExpr):
             u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
             u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
-            return f'{u1_name}_add_{u2_name}'
+            return f'{lbrace}{u1_name}_add_{u2_name}{rbrace}'
 
         if isinstance(sdql_obj, MulExpr):
             u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
             u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
-            return f'{u1_name}_mul_{u2_name}'
+            return f'{lbrace}{u1_name}_mul_{u2_name}{rbrace}'
 
         if isinstance(sdql_obj, SubExpr):
             u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
             u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
-            return f'{u1_name}_sub_{u2_name}'
+            return f'{lbrace}{u1_name}_sub_{u2_name}{rbrace}'
 
         if isinstance(sdql_obj, DivExpr):
             u1_name = SDQLInspector.find_a_descriptor(sdql_obj.op1Expr)
             u2_name = SDQLInspector.find_a_descriptor(sdql_obj.op2Expr)
-            return f'{u1_name}_div_{u2_name}'
+            return f'{lbrace}{u1_name}_div_{u2_name}{rbrace}'
 
         return ''

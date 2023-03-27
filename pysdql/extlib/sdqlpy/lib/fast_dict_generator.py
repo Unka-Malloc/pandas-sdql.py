@@ -79,7 +79,7 @@ def getCPPType(targettype):
     else:
         p = targettype
         if type(p)==StringType:
-            result += "VarChar<" + str(p[1].charCount) + ">, "
+            result += "VarChar<" + str(p.charCount) + ">, "
         elif type(p)==IntType:
             result += "long, "
         elif type(p)==FloatType:

@@ -1,192 +1,1148 @@
->> Query 2 (Q2) <<
->> SDQL <<
+>> Query 1 (Q1) <<
+{}
 >> Optimized Query <<
 ============================================================
-europe = "EUROPE"
-brass = "BRASS"
-region_nation_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+lineitem_aggr = li.sum(lambda x_lineitem: ({record({"l_returnflag": x_lineitem[0].l_returnflag, "l_linestatus": x_lineitem[0].l_linestatus}): record({"sum_qty": x_lineitem[0].l_quantity, "sum_base_price": x_lineitem[0].l_extendedprice, "sum_disc_price": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount)))), "sum_charge": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) * (((1.0) + (x_lineitem[0].l_tax)))), "avg_disc_sum_for_mean": x_lineitem[0].l_discount, "count_order": 1.0})}) if (x_lineitem[0].l_shipdate <= 19980902) else (None))
 
-region_nation_build_nest_dict = region_nation_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_build_pre_ops = na.sum(lambda x: (region_nation_build_nest_dict[x[0].n_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_build_nest_dict[x[0].n_regionkey] != None) else (None))
-
-region_nation_supplier_build_nest_dict = region_nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_pre_ops = su.sum(lambda x: (region_nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
-
-region_nation_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
-
-region_nation_build_nest_dict = region_nation_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_build_pre_ops = na.sum(lambda x: (region_nation_build_nest_dict[x[0].n_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_build_nest_dict[x[0].n_regionkey] != None) else (None))
-
-region_nation_supplier_build_nest_dict = region_nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_ps1_build_pre_ops = su.sum(lambda x: (region_nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
-
-region_nation_supplier_ps1_build_nest_dict = region_nation_supplier_ps1_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_ps1_0 = ps.sum(lambda x: (region_nation_supplier_ps1_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_supplier_ps1_build_nest_dict[x[0].ps_suppkey] != None) else (None))
-
-region_nation_supplier_ps1_1 = region_nation_supplier_ps1_0.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"ps_supplycost": x[0].ps_supplycost})})
-
-region_nation_supplier_ps1_2 = region_nation_supplier_ps1_1.sum(lambda x: {x[0].concat(x[1]): True})
-
-region_nation_supplier_ps1_part_partsupp_build_pre_ops = region_nation_supplier_ps1_2.sum(lambda x: {x[0].concat(record({"min_supplycost": x[0].ps_supplycost})): x[1]})
-
-part_partsupp_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
-
-part_partsupp_build_nest_dict = part_partsupp_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_ps1_part_partsupp_probe_pre_ops = ps.sum(lambda x: (part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
-
-region_nation_supplier_ps1_part_partsupp_build_nest_dict = region_nation_supplier_ps1_part_partsupp_build_pre_ops.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_region_nation_supplier_ps1_part_partsupp_probe_pre_ops = region_nation_supplier_ps1_part_partsupp_probe_pre_ops.sum(lambda x: (region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
-
-region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
-
-region_nation_supplier_region_nation_supplier_ps1_part_partsupp_0 = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_probe_pre_ops.sum(lambda x: (region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
-) if (region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_suppkey] != None) else (None))
-
-region_nation_supplier_region_nation_supplier_ps1_part_partsupp_1 = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].ps_supplycost == x[0].min_supplycost) else (None))
-
-results = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_1.sum(lambda x: {record({"s_acctbal": x[0].s_acctbal, "s_name": x[0].s_name, "n_name": x[0].n_name, "p_partkey": x[0].p_partkey, "p_mfgr": x[0].p_mfgr, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "s_comment": x[0].s_comment}): True})
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_returnflag": x_lineitem_aggr[0].l_returnflag, "l_linestatus": x_lineitem_aggr[0].l_linestatus, "sum_qty": x_lineitem_aggr[1].sum_qty, "sum_base_price": x_lineitem_aggr[1].sum_base_price, "sum_disc_price": x_lineitem_aggr[1].sum_disc_price, "sum_charge": x_lineitem_aggr[1].sum_charge, "avg_qty": ((x_lineitem_aggr[1].sum_qty) / (x_lineitem_aggr[1].count_order)), "avg_price": ((x_lineitem_aggr[1].sum_base_price) / (x_lineitem_aggr[1].count_order)), "avg_disc": ((x_lineitem_aggr[1].avg_disc_sum_for_mean) / (x_lineitem_aggr[1].count_order)), "count_order": x_lineitem_aggr[1].count_order}): True})
 
 ============================================================
- SDQL Execution Time: 2.260344982147217 s 
-{ { "s_acctbal": 8096.98, "s_name": "Supplier#000000574", "n_name": "RUSSIA", "p_partkey": 323, "p_mfgr": "Manufacturer#4", "s_address": "2O8 sy9g2mlBOuEjzj0pA2pevk,", "s_phone": "32-866-246-8752", "s_comment": "ully after the regular requests. slyly final dependencies wake slyly along the busy deposit" }: True, { "s_acctbal": 2972.26, "s_name": "Supplier#000000016", "n_name": "RUSSIA", "p_partkey": 1015, "p_mfgr": "Manufacturer#4", "s_address": "YjP5C55zHDXL7LalK27zfQnwejdpin4AMpvh", "s_phone": "32-822-502-4215", "s_comment": "ously express ideas haggle quickly dugouts? fu" }: True, { "s_acctbal": 165.76, "s_name": "Supplier#000000769", "n_name": "FRANCE", "p_partkey": 1015, "p_mfgr": "Manufacturer#4", "s_address": "ak2320fUkG", "s_phone": "16-655-591-2134", "s_comment": "ly ironic ideas. quickly ironic platelets hag" }: True, { "s_acctbal": 167.56, "s_name": "Supplier#000000290", "n_name": "FRANCE", "p_partkey": 2037, "p_mfgr": "Manufacturer#1", "s_address": "6Bk06GVtwZaKqg01", "s_phone": "16-675-286-5102", "s_comment": " the theodolites. ironic, ironic deposits above " }: True, { "s_acctbal": -820.89, "s_name": "Supplier#000000409", "n_name": "GERMANY", "p_partkey": 2156, "p_mfgr": "Manufacturer#5", "s_address": "LyXUYFz7aXrvy65kKAbTatGzGS,NDBcdtD", "s_phone": "17-719-517-9836", "s_comment": "y final, slow theodolites. furiously regular req" }: True, { "s_acctbal": 5322.35, "s_name": "Supplier#000000587", "n_name": "GERMANY", "p_partkey": 3080, "p_mfgr": "Manufacturer#2", "s_address": "58,gb EuMperMCg2lv XUQ9vi4GzhO2a", "s_phone": "17-128-699-9949", "s_comment": "thin pinto beans boost silently. ruthless deposits haggle quickly above the slyly unusual th" }: True, { "s_acctbal": 2963.09, "s_name": "Supplier#000000840", "n_name": "ROMANIA", "p_partkey": 3080, "p_mfgr": "Manufacturer#2", "s_address": "iYzUIypKhC0Y", "s_phone": "29-781-337-5584", "s_comment": "eep blithely regular dependencies. blithely regular platelets sublate alongside o" }: True, { "s_acctbal": 9508.37, "s_name": "Supplier#000000070", "n_name": "FRANCE", "p_partkey": 3563, "p_mfgr": "Manufacturer#1", "s_address": "INWNH2w,OOWgNDq0BRCcBwOMQc6PdFDc4", "s_phone": "16-821-608-1166", "s_comment": "ests sleep quickly express ideas. ironic ideas haggle about the final T" }: True, { "s_acctbal": 704.83, "s_name": "Supplier#000000323", "n_name": "RUSSIA", "p_partkey": 3563, "p_mfgr": "Manufacturer#1", "s_address": "0LEOmcTTomY1F0y", "s_phone": "32-563-275-6438", "s_comment": "accounts. unusual requests haggle slyly special packages. always silent instructions e" }: True, { "s_acctbal": 6721.7, "s_name": "Supplier#000000954", "n_name": "FRANCE", "p_partkey": 4191, "p_mfgr": "Manufacturer#3", "s_address": "P3O5p UFz1QsLmZX", "s_phone": "16-537-341-8517", "s_comment": "ect blithely blithely final acco" }: True, { "s_acctbal": 8271.39, "s_name": "Supplier#000000146", "n_name": "RUSSIA", "p_partkey": 4637, "p_mfgr": "Manufacturer#5", "s_address": "rBDNgCr04x0sfdzD5,gFOutCiG2", "s_phone": "32-792-619-3155", "s_comment": "s cajole quickly special requests. quickly enticing theodolites h" }: True, { "s_acctbal": 3294.68, "s_name": "Supplier#000000350", "n_name": "GERMANY", "p_partkey": 4841, "p_mfgr": "Manufacturer#4", "s_address": "KIFxV73eovmwhh", "s_phone": "17-113-181-4017", "s_comment": "e slyly special foxes. furiously unusual deposits detect carefully carefully ruthless foxes. quick" }: True, { "s_acctbal": 683.07, "s_name": "Supplier#000000651", "n_name": "RUSSIA", "p_partkey": 4888, "p_mfgr": "Manufacturer#4", "s_address": "oWekiBV6s,1g", "s_phone": "32-181-426-4490", "s_comment": "ly regular requests cajole abou" }: True, { "s_acctbal": 9032.15, "s_name": "Supplier#000000959", "n_name": "GERMANY", "p_partkey": 4958, "p_mfgr": "Manufacturer#4", "s_address": "8grA EHBnwOZhO", "s_phone": "17-108-642-3106", "s_comment": "nding dependencies nag furiou" }: True, { "s_acctbal": 4586.49, "s_name": "Supplier#000000680", "n_name": "RUSSIA", "p_partkey": 5679, "p_mfgr": "Manufacturer#3", "s_address": "UhvDfdEfJh,Qbe7VZb8uSGO2TU 0jEa6nXZXE", "s_phone": "32-522-382-1620", "s_comment": " the regularly regular dependencies. carefully bold excuses under th" }: True, { "s_acctbal": 6177.35, "s_name": "Supplier#000000053", "n_name": "GERMANY", "p_partkey": 5797, "p_mfgr": "Manufacturer#1", "s_address": "i9v3 EsYCfLKFU6PIt8iihBOHBB37yR7b3GD7Rt", "s_phone": "17-886-101-6083", "s_comment": "onic, special deposits wake furio" }: True, { "s_acctbal": -942.73, "s_name": "Supplier#000000563", "n_name": "GERMANY", "p_partkey": 5797, "p_mfgr": "Manufacturer#1", "s_address": "Rc7U1cRUhYs03JD", "s_phone": "17-108-537-2691", "s_comment": "slyly furiously final decoys; silent, special realms poach f" }: True, { "s_acctbal": 727.89, "s_name": "Supplier#000000470", "n_name": "ROMANIA", "p_partkey": 6213, "p_mfgr": "Manufacturer#3", "s_address": "XckbzsAgBLbUkdfjgJEPjmUMTM8ebSMEvI", "s_phone": "29-165-289-1523", "s_comment": "gular excuses. furiously regular excuses sleep slyly caref" }: True, { "s_acctbal": 8488.53, "s_name": "Supplier#000000367", "n_name": "RUSSIA", "p_partkey": 6854, "p_mfgr": "Manufacturer#4", "s_address": "E Sv9brQVf43Mzz", "s_phone": "32-458-198-9557", "s_comment": "ages. carefully final excuses nag finally. carefully ironic deposits abov" }: True, { "s_acctbal": 5408.07, "s_name": "Supplier#000000623", "n_name": "GERMANY", "p_partkey": 6854, "p_mfgr": "Manufacturer#4", "s_address": "dSSQ3dTYwThbLppbetVUeuPfBIUF", "s_phone": "17-593-337-7365", "s_comment": "ial frays use. carefully special foxes wake carefully slyly pending deposits-- final requests a" }: True, { "s_acctbal": 4941.88, "s_name": "Supplier#000000321", "n_name": "ROMANIA", "p_partkey": 7320, "p_mfgr": "Manufacturer#5", "s_address": "pLngFl5yeMcHyov", "s_phone": "29-573-279-1406", "s_comment": "y final requests impress s" }: True, { "s_acctbal": 8069.74, "s_name": "Supplier#000000656", "n_name": "ROMANIA", "p_partkey": 7655, "p_mfgr": "Manufacturer#2", "s_address": "mQXqRMgstvOI", "s_phone": "29-633-362-8481", "s_comment": "ronic packages integrate. even excuses integrate carefully ruthlessly bold packages. regular ideas a" }: True, { "s_acctbal": 7392.78, "s_name": "Supplier#000000170", "n_name": "UNITED KINGDOM", "p_partkey": 7655, "p_mfgr": "Manufacturer#2", "s_address": "RtsXQ,SunkA XHy9", "s_phone": "33-803-340-5398", "s_comment": "ake carefully across the quickly" }: True, { "s_acctbal": -435.02, "s_name": "Supplier#000000295", "n_name": "UNITED KINGDOM", "p_partkey": 8036, "p_mfgr": "Manufacturer#4", "s_address": "gpm7fahY9j6YyTr Dozul", "s_phone": "33-998-989-3147", "s_comment": "en requests according to the " }: True, { "s_acctbal": 3526.53, "s_name": "Supplier#000000553", "n_name": "FRANCE", "p_partkey": 8036, "p_mfgr": "Manufacturer#4", "s_address": "a,liVofXbCJ", "s_phone": "16-599-552-3755", "s_comment": "lar dinos nag slyly brave" }: True, { "s_acctbal": 906.07, "s_name": "Supplier#000000138", "n_name": "ROMANIA", "p_partkey": 8363, "p_mfgr": "Manufacturer#4", "s_address": "utbplAm g7RmxVfYoNdhcrQGWuzRqPe0qHSwbKw", "s_phone": "29-533-434-6776", "s_comment": "ickly unusual requests cajole. accounts above the furiously special excuses " }: True, { "s_acctbal": 7448.46, "s_name": "Supplier#000000690", "n_name": "ROMANIA", "p_partkey": 9430, "p_mfgr": "Manufacturer#2", "s_address": "nK6Lv WWUh59jE525", "s_phone": "29-330-952-4018", "s_comment": "nic pinto beans doubt blithely b" }: True, { "s_acctbal": 91.39, "s_name": "Supplier#000000949", "n_name": "UNITED KINGDOM", "p_partkey": 9430, "p_mfgr": "Manufacturer#2", "s_address": "a,UE,6nRVl2fCphkOoetR1ajIzAEJ1Aa1G1HV", "s_phone": "33-332-697-2768", "s_comment": "pinto beans. carefully express requests hagg" }: True, { "s_acctbal": -845.44, "s_name": "Supplier#000000704", "n_name": "ROMANIA", "p_partkey": 9926, "p_mfgr": "Manufacturer#5", "s_address": "hQvlBqbqqnA5Dgo1BffRBX78tkkRu", "s_phone": "29-300-896-5991", "s_comment": "ctions. carefully sly requ" }: True, { "s_acctbal": 9453.01, "s_name": "Supplier#000000802", "n_name": "ROMANIA", "p_partkey": 10021, "p_mfgr": "Manufacturer#5", "s_address": ",6HYXb4uaHITmtMBj4Ak57Pd", "s_phone": "29-342-882-6463", "s_comment": "gular frets. permanently special multipliers believe blithely alongs" }: True, { "s_acctbal": 8615.5, "s_name": "Supplier#000000812", "n_name": "FRANCE", "p_partkey": 10551, "p_mfgr": "Manufacturer#2", "s_address": "8qh4tezyScl5bidLAysvutB,,ZI2dn6xP", "s_phone": "16-585-724-6633", "s_comment": "y quickly regular deposits? quickly pending packages after the caref" }: True, { "s_acctbal": 6329.9, "s_name": "Supplier#000000996", "n_name": "GERMANY", "p_partkey": 10735, "p_mfgr": "Manufacturer#2", "s_address": "Wx4dQwOAwWjfSCGupfrM", "s_phone": "17-447-811-3282", "s_comment": " ironic forges cajole blithely agai" }: True, { "s_acctbal": 4324.51, "s_name": "Supplier#000000957", "n_name": "UNITED KINGDOM", "p_partkey": 10956, "p_mfgr": "Manufacturer#5", "s_address": "mSpFa,4jJ5R40k10YOvGEtl4KYjo", "s_phone": "33-616-674-6155", "s_comment": "hily after the fluffily regular dependencies. deposits nag regular, silent accounts. i" }: True, { "s_acctbal": 7205.2, "s_name": "Supplier#000000477", "n_name": "GERMANY", "p_partkey": 10956, "p_mfgr": "Manufacturer#5", "s_address": "VtaNKN5Mqui5yh7j2ldd5waf", "s_phone": "17-180-144-7991", "s_comment": " excuses wake express deposits. furiously careful asymptotes according to the carefull" }: True, { "s_acctbal": 765.69, "s_name": "Supplier#000000799", "n_name": "RUSSIA", "p_partkey": 11276, "p_mfgr": "Manufacturer#2", "s_address": "jwFN7ZB3T9sMF", "s_phone": "32-579-339-1495", "s_comment": "nusual requests. furiously unusual epitaphs integrate. slyly " }: True, { "s_acctbal": 8430.52, "s_name": "Supplier#000000646", "n_name": "FRANCE", "p_partkey": 11384, "p_mfgr": "Manufacturer#3", "s_address": "IUzsmT,2oBgjhWP2TlXTL6IkJH,4h,1SJRt", "s_phone": "16-601-220-5489", "s_comment": "ites among the always final ideas kindle according to the theodolites. notornis in" }: True, { "s_acctbal": 8702.02, "s_name": "Supplier#000000333", "n_name": "RUSSIA", "p_partkey": 11810, "p_mfgr": "Manufacturer#3", "s_address": "MaVf XgwPdkiX4nfJGOis8Uu2zKiIZH", "s_phone": "32-508-202-6136", "s_comment": "oss the deposits cajole carefully even pinto beans. regular foxes detect alo" }: True, { "s_acctbal": 4672.25, "s_name": "Supplier#000000239", "n_name": "RUSSIA", "p_partkey": 12238, "p_mfgr": "Manufacturer#1", "s_address": "XO101kgHrJagK2FL1U6QCaTE ncCsMbeuTgK6o8", "s_phone": "32-396-654-6826", "s_comment": "arls wake furiously deposits. even, regular depen" }: True, { "s_acctbal": 9198.31, "s_name": "Supplier#000000025", "n_name": "RUSSIA", "p_partkey": 12238, "p_mfgr": "Manufacturer#1", "s_address": "RCQKONXMFnrodzz6w7fObFVV6CUm2q", "s_phone": "32-431-945-3541", "s_comment": "ely regular deposits. carefully regular sauternes engage furiously above the regular accounts. idly " }: True, { "s_acctbal": 5733.61, "s_name": "Supplier#000000121", "n_name": "FRANCE", "p_partkey": 13120, "p_mfgr": "Manufacturer#5", "s_address": "CWGri,tKI 7gDcDsI", "s_phone": "16-275-849-2485", "s_comment": "against the ironic, permanent pinto beans. doggedly pending deposits sleep agai" }: True, { "s_acctbal": 1342.17, "s_name": "Supplier#000000384", "n_name": "GERMANY", "p_partkey": 13120, "p_mfgr": "Manufacturer#5", "s_address": "zMr51gtJ0Vu83Dk", "s_phone": "17-554-428-8511", "s_comment": "taphs cajole furiously blithely final " }: True, { "s_acctbal": 9828.21, "s_name": "Supplier#000000647", "n_name": "UNITED KINGDOM", "p_partkey": 13120, "p_mfgr": "Manufacturer#5", "s_address": "x5U7MBZmwfG9", "s_phone": "33-258-202-4782", "s_comment": "s the slyly even ideas poach fluffily " }: True, { "s_acctbal": 6820.35, "s_name": "Supplier#000000007", "n_name": "UNITED KINGDOM", "p_partkey": 13217, "p_mfgr": "Manufacturer#5", "s_address": "s,4TicNGB4uO6PaSqNBUq", "s_phone": "33-990-965-2201", "s_comment": "s unwind silently furiously regular courts. final requests are deposits. requests wake quietly blit" }: True, { "s_acctbal": 7144.78, "s_name": "Supplier#000000276", "n_name": "FRANCE", "p_partkey": 13275, "p_mfgr": "Manufacturer#4", "s_address": "KdVDs6EGfWVsPdjuCh9iep", "s_phone": "16-752-344-8255", "s_comment": "cial, ironic theodolites against the decoys cajole slyly ironic foxes. carefull" }: True, { "s_acctbal": 9453.01, "s_name": "Supplier#000000802", "n_name": "ROMANIA", "p_partkey": 13275, "p_mfgr": "Manufacturer#4", "s_address": ",6HYXb4uaHITmtMBj4Ak57Pd", "s_phone": "29-342-882-6463", "s_comment": "gular frets. permanently special multipliers believe blithely alongs" }: True, { "s_acctbal": -963.79, "s_name": "Supplier#000000065", "n_name": "RUSSIA", "p_partkey": 13275, "p_mfgr": "Manufacturer#4", "s_address": "BsAnHUmSFArppKrM", "s_phone": "32-444-835-2434", "s_comment": "l ideas wake carefully around the regular packages. furiously ruthless pinto bea" }: True, { "s_acctbal": 4680.75, "s_name": "Supplier#000000326", "n_name": "GERMANY", "p_partkey": 13325, "p_mfgr": "Manufacturer#1", "s_address": "9kFiCwhcBldg4xwm", "s_phone": "17-390-604-7483", "s_comment": "quests could use furiously across the ironic, even f" }: True, { "s_acctbal": 9192.1, "s_name": "Supplier#000000115", "n_name": "UNITED KINGDOM", "p_partkey": 13325, "p_mfgr": "Manufacturer#1", "s_address": "nJ 2t0f7Ve,wL1,6WzGBJLNBUCKlsV", "s_phone": "33-597-248-1220", "s_comment": "es across the carefully express accounts boost caref" }: True, { "s_acctbal": 5364.99, "s_name": "Supplier#000000785", "n_name": "RUSSIA", "p_partkey": 13784, "p_mfgr": "Manufacturer#4", "s_address": "W VkHBpQyD3qjQjWGpWicOpmILFehmEdWy67kUGY", "s_phone": "32-297-653-2203", "s_comment": " packages boost carefully. express ideas along" }: True, { "s_acctbal": 7431.0, "s_name": "Supplier#000000311", "n_name": "RUSSIA", "p_partkey": 13784, "p_mfgr": "Manufacturer#4", "s_address": "yjGDnCKi4Wmtim H3n9p", "s_phone": "32-445-679-8585", "s_comment": "uriously final requests integrate. sheaves against the furiously final accounts are evenly abo" }: True, { "s_acctbal": 8096.98, "s_name": "Supplier#000000574", "n_name": "RUSSIA", "p_partkey": 13784, "p_mfgr": "Manufacturer#4", "s_address": "2O8 sy9g2mlBOuEjzj0pA2pevk,", "s_phone": "32-866-246-8752", "s_comment": "ully after the regular requests. slyly final dependencies wake slyly along the busy deposit" }: True, { "s_acctbal": 8615.5, "s_name": "Supplier#000000812", "n_name": "FRANCE", "p_partkey": 13811, "p_mfgr": "Manufacturer#4", "s_address": "8qh4tezyScl5bidLAysvutB,,ZI2dn6xP", "s_phone": "16-585-724-6633", "s_comment": "y quickly regular deposits? quickly pending packages after the caref" }: True, { "s_acctbal": 2221.25, "s_name": "Supplier#000000771", "n_name": "ROMANIA", "p_partkey": 13981, "p_mfgr": "Manufacturer#2", "s_address": "lwZ I15rq9kmZXUNhl", "s_phone": "29-986-304-9006", "s_comment": "nal foxes eat slyly about the fluffily permanent id" }: True, { "s_acctbal": 5069.27, "s_name": "Supplier#000000328", "n_name": "GERMANY", "p_partkey": 16327, "p_mfgr": "Manufacturer#1", "s_address": "SMm24d WG62", "s_phone": "17-231-513-5721", "s_comment": "he unusual ideas. slyly final packages a" }: True, { "s_acctbal": 3526.53, "s_name": "Supplier#000000553", "n_name": "FRANCE", "p_partkey": 17018, "p_mfgr": "Manufacturer#3", "s_address": "a,liVofXbCJ", "s_phone": "16-599-552-3755", "s_comment": "lar dinos nag slyly brave" }: True, { "s_acctbal": 747.88, "s_name": "Supplier#000000243", "n_name": "FRANCE", "p_partkey": 17242, "p_mfgr": "Manufacturer#4", "s_address": "8aQ3HGeOXxgYeMAXZQe B5y2RKEF5jdmN3Qb", "s_phone": "16-554-376-5494", "s_comment": "kly silent requests among the blithely regular foxes use fu" }: True, { "s_acctbal": -314.06, "s_name": "Supplier#000000510", "n_name": "ROMANIA", "p_partkey": 17242, "p_mfgr": "Manufacturer#4", "s_address": "VmXQl ,vY8JiEseo8Mv4zscvNCfsY", "s_phone": "29-207-852-3454", "s_comment": " bold deposits. carefully even d" }: True, { "s_acctbal": 9759.38, "s_name": "Supplier#000000044", "n_name": "GERMANY", "p_partkey": 17242, "p_mfgr": "Manufacturer#4", "s_address": "kERxlLDnlIZJdN66zAPHklyL", "s_phone": "17-713-930-5667", "s_comment": "x. carefully quiet account" }: True, { "s_acctbal": 9508.37, "s_name": "Supplier#000000070", "n_name": "FRANCE", "p_partkey": 17268, "p_mfgr": "Manufacturer#4", "s_address": "INWNH2w,OOWgNDq0BRCcBwOMQc6PdFDc4", "s_phone": "16-821-608-1166", "s_comment": "ests sleep quickly express ideas. ironic ideas haggle about the final T" }: True, { "s_acctbal": 1381.97, "s_name": "Supplier#000000104", "n_name": "FRANCE", "p_partkey": 18103, "p_mfgr": "Manufacturer#3", "s_address": "Dcl4yGrzqv3OPeRO49bKh78XmQEDR7PBXIs0m", "s_phone": "16-434-972-6922", "s_comment": "gular ideas. bravely bold deposits haggle through the carefully final deposits. slyly unusual idea" }: True, { "s_acctbal": 6173.87, "s_name": "Supplier#000000408", "n_name": "RUSSIA", "p_partkey": 18139, "p_mfgr": "Manufacturer#1", "s_address": "qcor1u,vJXAokjnL5,dilyYNmh", "s_phone": "32-858-724-2950", "s_comment": "blithely pending packages cajole furiously slyly pending notornis. slyly final " }: True, { "s_acctbal": 4518.31, "s_name": "Supplier#000000149", "n_name": "FRANCE", "p_partkey": 18344, "p_mfgr": "Manufacturer#5", "s_address": "pVyWsjOidpHKp4NfKU4yLeym", "s_phone": "16-660-553-2456", "s_comment": "ts detect along the foxes. final Tiresias are. idly pending deposits haggle; even, blithe pin" }: True, { "s_acctbal": 4315.15, "s_name": "Supplier#000000509", "n_name": "FRANCE", "p_partkey": 18972, "p_mfgr": "Manufacturer#2", "s_address": "SF7dR8V5pK", "s_phone": "16-298-154-3365", "s_comment": "ronic orbits are furiously across the requests. quickly express ideas across the special, bold" }: True }
->> Pandas <<
-Pandas Execution Time: 0.042969465255737305 s 
-DuckDB Execution Time: 0.04590034484863281 s 
+ SDQL Execution Time: 15.130653619766235 s 
+Pandas Execution Time: 0.19117331504821777 s 
+DuckDB Execution Time: 0.027024030685424805 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
  Check Pandas with DuckDB: Pass 
 ============================================================
-    s_acctbal              s_name          n_name  p_partkey          p_mfgr  \
-1        9508  Supplier#000000070          FRANCE      17268  Manufacturer#4   
-2        1381  Supplier#000000104          FRANCE      18103  Manufacturer#3   
-4        4518  Supplier#000000149          FRANCE      18344  Manufacturer#5   
-7         167  Supplier#000000290          FRANCE       2037  Manufacturer#1   
-8        4315  Supplier#000000509          FRANCE      18972  Manufacturer#2   
-10       3526  Supplier#000000553          FRANCE      17018  Manufacturer#3   
-11       8430  Supplier#000000646          FRANCE      11384  Manufacturer#3   
-13       8615  Supplier#000000812          FRANCE      10551  Manufacturer#2   
-14       8615  Supplier#000000812          FRANCE      13811  Manufacturer#4   
-15       6721  Supplier#000000954          FRANCE       4191  Manufacturer#3   
-19       5069  Supplier#000000328         GERMANY      16327  Manufacturer#1   
-20       3294  Supplier#000000350         GERMANY       4841  Manufacturer#4   
-22       -820  Supplier#000000409         GERMANY       2156  Manufacturer#5   
-27       9032  Supplier#000000959         GERMANY       4958  Manufacturer#4   
-28       6329  Supplier#000000996         GERMANY      10735  Manufacturer#2   
-29        906  Supplier#000000138         ROMANIA       8363  Manufacturer#4   
-30       4941  Supplier#000000321         ROMANIA       7320  Manufacturer#5   
-31        727  Supplier#000000470         ROMANIA       6213  Manufacturer#3   
-35       -845  Supplier#000000704         ROMANIA       9926  Manufacturer#5   
-36       2221  Supplier#000000771         ROMANIA      13981  Manufacturer#2   
-37       9453  Supplier#000000802         ROMANIA      10021  Manufacturer#5   
-43       8271  Supplier#000000146          RUSSIA       4637  Manufacturer#5   
-47       8702  Supplier#000000333          RUSSIA      11810  Manufacturer#3   
-49       6173  Supplier#000000408          RUSSIA      18139  Manufacturer#1   
-50       8096  Supplier#000000574          RUSSIA        323  Manufacturer#4   
-52        683  Supplier#000000651          RUSSIA       4888  Manufacturer#4   
-53       4586  Supplier#000000680          RUSSIA       5679  Manufacturer#3   
-55        765  Supplier#000000799          RUSSIA      11276  Manufacturer#2   
-56       6820  Supplier#000000007  UNITED KINGDOM      13217  Manufacturer#5   
-
-                                  s_address          s_phone  \
-1         INWNH2w,OOWgNDq0BRCcBwOMQc6PdFDc4  16-821-608-1166   
-2     Dcl4yGrzqv3OPeRO49bKh78XmQEDR7PBXIs0m  16-434-972-6922   
-4                  pVyWsjOidpHKp4NfKU4yLeym  16-660-553-2456   
-7                          6Bk06GVtwZaKqg01  16-675-286-5102   
-8                                SF7dR8V5pK  16-298-154-3365   
-10                              a,liVofXbCJ  16-599-552-3755   
-11      IUzsmT,2oBgjhWP2TlXTL6IkJH,4h,1SJRt  16-601-220-5489   
-13        8qh4tezyScl5bidLAysvutB,,ZI2dn6xP  16-585-724-6633   
-14        8qh4tezyScl5bidLAysvutB,,ZI2dn6xP  16-585-724-6633   
-15                         P3O5p UFz1QsLmZX  16-537-341-8517   
-19                              SMm24d WG62  17-231-513-5721   
-20                           KIFxV73eovmwhh  17-113-181-4017   
-22       LyXUYFz7aXrvy65kKAbTatGzGS,NDBcdtD  17-719-517-9836   
-27                           8grA EHBnwOZhO  17-108-642-3106   
-28                     Wx4dQwOAwWjfSCGupfrM  17-447-811-3282   
-29  utbplAm g7RmxVfYoNdhcrQGWuzRqPe0qHSwbKw  29-533-434-6776   
-30                          pLngFl5yeMcHyov  29-573-279-1406   
-31       XckbzsAgBLbUkdfjgJEPjmUMTM8ebSMEvI  29-165-289-1523   
-35            hQvlBqbqqnA5Dgo1BffRBX78tkkRu  29-300-896-5991   
-36                       lwZ I15rq9kmZXUNhl  29-986-304-9006   
-37                 ,6HYXb4uaHITmtMBj4Ak57Pd  29-342-882-6463   
-43              rBDNgCr04x0sfdzD5,gFOutCiG2  32-792-619-3155   
-47          MaVf XgwPdkiX4nfJGOis8Uu2zKiIZH  32-508-202-6136   
-49               qcor1u,vJXAokjnL5,dilyYNmh  32-858-724-2950   
-50              2O8 sy9g2mlBOuEjzj0pA2pevk,  32-866-246-8752   
-52                             oWekiBV6s,1g  32-181-426-4490   
-53    UhvDfdEfJh,Qbe7VZb8uSGO2TU 0jEa6nXZXE  32-522-382-1620   
-55                            jwFN7ZB3T9sMF  32-579-339-1495   
-56                    s,4TicNGB4uO6PaSqNBUq  33-990-965-2201   
-
-                                            s_comment  
-1   ests sleep quickly express ideas. ironic ideas...  
-2   gular ideas. bravely bold deposits haggle thro...  
-4   ts detect along the foxes. final Tiresias are....  
-7     the theodolites. ironic, ironic deposits above   
-8   ronic orbits are furiously across the requests...  
-10                          lar dinos nag slyly brave  
-11  ites among the always final ideas kindle accor...  
-13  y quickly regular deposits? quickly pending pa...  
-14  y quickly regular deposits? quickly pending pa...  
-15                   ect blithely blithely final acco  
-19           he unusual ideas. slyly final packages a  
-20  e slyly special foxes. furiously unusual depos...  
-22   y final, slow theodolites. furiously regular req  
-27                      nding dependencies nag furiou  
-28                 ironic forges cajole blithely agai  
-29  ickly unusual requests cajole. accounts above ...  
-30                         y final requests impress s  
-31  gular excuses. furiously regular excuses sleep...  
-35                         ctions. carefully sly requ  
-36  nal foxes eat slyly about the fluffily permane...  
-37  gular frets. permanently special multipliers b...  
-43  s cajole quickly special requests. quickly ent...  
-47  oss the deposits cajole carefully even pinto b...  
-49  blithely pending packages cajole furiously sly...  
-50  ully after the regular requests. slyly final d...  
-52                    ly regular requests cajole abou  
-53   the regularly regular dependencies. carefully...  
-55  nusual requests. furiously unusual epitaphs in...  
-56  s unwind silently furiously regular courts. fi...  
 ============================================================
 >> Comparing SDQL with Pandas ... <<
-Warning: Mismatch Shape: {SDQL: 63, Pandas: 29}
 ============================================================
+ Query 1: Pass 
+============================================================
+>> Query 2 (Q2) <<
+region_nation: neither joint
+region ->
+   | probe end: nation
+   | build key: r_regionkey
+   | probe key: n_regionkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
 
-    
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[    ¨€¨€¨€¨€¨€¨€¨[ 
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨^¨T¨T¨T¨T¨€¨€¨[
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a      ¨€¨€¨€¨€¨€¨X¨a
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨a 
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨€¨€¨€¨€¨€¨€¨€¨[
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a       ¨^¨T¨T¨T¨T¨T¨T¨a
-    
-             ¨€¨€¨€¨€¨€? ¨{¨{¨{       ¨€¨€¨ˆ ¨€¨€¨ˆ    
-           ¨ˆ¨€¨€   ? ?¨€¨€¨€¨€¨{    ¨ˆ¨€¨€?¨ˆ¨€¨€?    
-           ?¨€¨€¨€¨€ ? ?¨€¨€  ?¨€¨{  ?¨€¨€??¨€¨€?    
-           ?¨ˆ¨€?  ? ?¨€¨€¨{¨{¨{¨{¨€¨€ ?¨€¨€??¨€¨€?    
-           ??¨€?     ¨ˆ¨€   ¨ˆ¨€¨€??¨€¨€??¨€¨€¨€¨€¨€¨€?
-            ? ?     ??   ¨ˆ?¨€??¨ˆ  ? ??¨ˆ  ?
-            ?        ?   ?? ? ? ?? ? ?  ?
-            ? ?      ?   ?    ? ?  ? ?   
-                         ?  ? ?      ?  ?
-    
+region_nation: neither joint
+region ->
+   | probe end: nation
+   | build key: r_regionkey
+   | probe key: n_regionkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+part ->
+   | probe end: partsupp
+   | build key: p_partkey
+   | probe key: ps_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: ['p_partkey', 'p_mfgr']
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
 ============================================================
-2:  Fail 
+europe = "EUROPE"
+brass = "BRASS"
+region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == europe) else (None))
+
+region_nation = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n_nationkey": x_nation[0].n_nationkey, "n_name": x_nation[0].n_name})}) if (region_part[x_nation[0].n_regionkey] != None) else (None))
+
+region_nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_suppkey": x_supplier[0].s_suppkey, "s_acctbal": x_supplier[0].s_acctbal, "s_name": x_supplier[0].s_name, "n_name": region_nation[x_supplier[0].s_nationkey].n_name, "s_address": x_supplier[0].s_address, "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (region_nation[x_supplier[0].s_nationkey] != None) else (None))
+
+region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record({"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey, "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
+
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_mfgr": x_part[0].p_mfgr})}) if (((endsWith(x_part[0].p_type, brass)) * (x_part[0].p_size == 15))) else (None))
+
+results = ps.sum(lambda x_partsupp: (((({record({"s_acctbal": region_nation_supplier[x_partsupp[0].ps_suppkey].s_acctbal, "s_name": region_nation_supplier[x_partsupp[0].ps_suppkey].s_name, "n_name": region_nation_supplier[x_partsupp[0].ps_suppkey].n_name, "p_partkey": part_part[x_partsupp[0].ps_partkey].p_partkey, "p_mfgr": part_part[x_partsupp[0].ps_partkey].p_mfgr, "s_address": region_nation_supplier[x_partsupp[0].ps_suppkey].s_address, "s_phone": region_nation_supplier[x_partsupp[0].ps_suppkey].s_phone, "s_comment": region_nation_supplier[x_partsupp[0].ps_suppkey].s_comment}): True}) if (x_partsupp[0].ps_supplycost == region_nation_supplier_ps1[x_partsupp[0].ps_partkey].min_supplycost) else (None)) if (region_nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (region_nation_supplier_ps1[x_partsupp[0].ps_partkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+
 ============================================================
-0.06462694803873698
+ SDQL Execution Time: 1.1090004444122314 s 
+Pandas Execution Time: 0.037033796310424805 s 
+DuckDB Execution Time: 0.0370333194732666 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 2: Pass 
+============================================================
+>> Query 3 (Q3) <<
+customer_orders: neither joint
+customer ->
+   | probe end: orders
+   | build key: c_custkey
+   | probe key: o_custkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+building = "BUILDING"
+customer_part = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (x_customer[0].c_mktsegment == building) else (None))
+
+customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate, "o_shippriority": x_orders[0].o_shippriority})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (x_orders[0].o_orderdate < 19950315) else (None))
+
+lineitem_aggr = li.sum(lambda x_lineitem: (({record({"l_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": customer_orders[x_lineitem[0].l_orderkey].o_orderdate, "o_shippriority": customer_orders[x_lineitem[0].l_orderkey].o_shippriority}): ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_shipdate > 19950315) else (None))
+
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_orderkey": x_lineitem_aggr[0].l_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_shippriority": x_lineitem_aggr[0].o_shippriority, "revenue": x_lineitem_aggr[1]}): True})
+
+============================================================
+ SDQL Execution Time: 6.776113510131836 s 
+Pandas Execution Time: 0.1331193447113037 s 
+DuckDB Execution Time: 0.03102850914001465 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 3: Pass 
+============================================================
+>> Query 4 (Q4) <<
+{}
+>> Optimized Query <<
+============================================================
+lineitem_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: True}) if (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate) else (None))
+
+orders_aggr = ord.sum(lambda x_orders: (({x_orders[0].o_orderpriority: 1.0}) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19930701) * (x_orders[0].o_orderdate < 19931001))) else (None))
+
+results = orders_aggr.sum(lambda x_orders_aggr: {record({"o_orderpriority": x_orders_aggr[0], "order_count": x_orders_aggr[1]}): True})
+
+============================================================
+ SDQL Execution Time: 8.283472776412964 s 
+Pandas Execution Time: 0.12411141395568848 s 
+DuckDB Execution Time: 0.03302955627441406 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 4: Pass 
+============================================================
+>> Query 5 (Q5) <<
+supplier ->
+   | probe end: region_nation_customer_orders_lineitem
+   | build key: ['s_suppkey', 's_nationkey']
+   | probe key: ['l_suppkey', 'c_nationkey']
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+region_nation: neither joint
+region ->
+   | probe end: nation
+   | build key: r_regionkey
+   | probe key: n_regionkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+asia = "ASIA"
+region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == asia) else (None))
+
+region_nation = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})}) if (region_part[x_nation[0].n_regionkey] != None) else (None))
+
+region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"c_nationkey": x_customer[0].c_nationkey, "n_name": region_nation[x_customer[0].c_nationkey].n_name})}) if (region_nation[x_customer[0].c_nationkey] != None) else (None))
+
+region_nation_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey, "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19950101))) else (None))
+
+supplier_part = su.sum(lambda x_supplier: {record({"s_suppkey": x_supplier[0].s_suppkey, "s_nationkey": x_supplier[0].s_nationkey}): True})
+
+supplier_region_nation_customer_orders_lineitem = li.sum(lambda x_lineitem: (({region_nation_customer_orders[x_lineitem[0].l_orderkey].n_name: record({"revenue": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (supplier_part[record({"l_suppkey": x_lineitem[0].l_suppkey, "c_nationkey": region_nation_customer_orders[x_lineitem[0].l_orderkey].c_nationkey})] != None) else (None)) if (region_nation_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+
+results = supplier_region_nation_customer_orders_lineitem.sum(lambda x_supplier_region_nation_customer_orders_lineitem: {record({"n_name": x_supplier_region_nation_customer_orders_lineitem[0], "revenue": x_supplier_region_nation_customer_orders_lineitem[1].revenue}): True})
+
+============================================================
+ SDQL Execution Time: 6.784899473190308 s 
+Pandas Execution Time: 0.10309290885925293 s 
+DuckDB Execution Time: 0.0420379638671875 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 5: Pass 
+============================================================
+>> Query 6 (Q6) <<
+>> Optimized Query <<
+============================================================
+lineitem_aggr = li.sum(lambda x_lineitem: (((x_lineitem[0].l_extendedprice) * (x_lineitem[0].l_discount))) if (((((((((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) * (x_lineitem[0].l_discount >= 0.05))) * (x_lineitem[0].l_discount <= 0.07))) * (x_lineitem[0].l_quantity < 24))) else (0.0))
+
+results = {record({"revenue": lineitem_aggr}): True}
+============================================================
+ SDQL Execution Time: 10.218229293823242 s 
+Pandas Execution Time: 0.06305694580078125 s 
+DuckDB Execution Time: 0.01501321792602539 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 6: Pass 
+============================================================
+>> Query 7 (Q7) <<
+n1_supplier: neither joint
+n1 ->
+   | probe end: supplier
+   | build key: n_nationkey
+   | probe key: s_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+n2_customer: neither joint
+n2 ->
+   | probe end: customer
+   | build key: n_nationkey
+   | probe key: c_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+france = "FRANCE"
+germany = "GERMANY"
+n1_part = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n_name": x_n1[0].n_name})}) if (((x_n1[0].n_name == france) + (x_n1[0].n_name == germany))) else (None))
+
+n1_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n1_name": n1_part[x_supplier[0].s_nationkey].n_name})}) if (n1_part[x_supplier[0].s_nationkey] != None) else (None))
+
+n2_part = na.sum(lambda x_n2: ({x_n2[0].n_nationkey: record({"n_name": x_n2[0].n_name})}) if (((x_n2[0].n_name == france) + (x_n2[0].n_name == germany))) else (None))
+
+n2_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"n_name": n2_part[x_customer[0].c_nationkey].n_name})}) if (n2_part[x_customer[0].c_nationkey] != None) else (None))
+
+n2_customer_orders = ord.sum(lambda x_orders: ({x_orders[0].o_orderkey: record({"n2_name": n2_customer[x_orders[0].o_custkey].n_name})}) if (n2_customer[x_orders[0].o_custkey] != None) else (None))
+
+n1_supplier_n2_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({record({"supp_nation": n1_supplier[x_lineitem[0].l_suppkey].n1_name, "cust_nation": n2_customer_orders[x_lineitem[0].l_orderkey].n2_name, "l_year": extractYear(x_lineitem[0].l_shipdate)}): record({"revenue": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (((((n1_supplier[x_lineitem[0].l_suppkey].n1_name == france) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == germany))) + (((n1_supplier[x_lineitem[0].l_suppkey].n1_name == germany) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == france))))) else (None)) if (n1_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (n2_customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19950101) * (x_lineitem[0].l_shipdate <= 19961231))) else (None))
+
+results = n1_supplier_n2_customer_orders_lineitem.sum(lambda x_n1_supplier_n2_customer_orders_lineitem: {record({"supp_nation": x_n1_supplier_n2_customer_orders_lineitem[0].supp_nation, "cust_nation": x_n1_supplier_n2_customer_orders_lineitem[0].cust_nation, "l_year": x_n1_supplier_n2_customer_orders_lineitem[0].l_year, "revenue": x_n1_supplier_n2_customer_orders_lineitem[1].revenue}): True})
+
+============================================================
+ SDQL Execution Time: 7.9571802616119385 s 
+Pandas Execution Time: 0.0940854549407959 s 
+DuckDB Execution Time: 0.07006359100341797 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 7: Pass 
+============================================================
+>> Query 8 (Q8) <<
+n2 ->
+   | probe end: supplier_part_region_n1_customer_orders_lineitem
+   | build key: n2_nationkey
+   | probe key: s_nationkey
+   | rename columns: {'n_nationkey': 'n2_nationkey', 'n_name': 'n2_name', 'n_regionkey': 'n2_regionkey', 'n_comment': 'n2_comment'}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+supplier ->
+   | probe end: part_region_n1_customer_orders_lineitem
+   | build key: s_suppkey
+   | probe key: l_suppkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+part ->
+   | probe end: region_n1_customer_orders_lineitem
+   | build key: p_partkey
+   | probe key: l_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+region_n1: neither joint
+region ->
+   | probe end: n1
+   | build key: r_regionkey
+   | probe key: n1_regionkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+economyanodizedsteel = "ECONOMY ANODIZED STEEL"
+america = "AMERICA"
+brazil = "BRAZIL"
+n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record({"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey, "n2_regionkey": x_n2[0].n_regionkey})})
+
+supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
+
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (x_part[0].p_type == economyanodizedsteel) else (None))
+
+region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
+
+region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (region_part[x_n1[0].n_regionkey] != None) else (None))
+
+region_n1_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (region_n1[x_customer[0].c_nationkey] != None) else (None))
+
+region_n1_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})}) if (region_n1_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19950101) * (x_orders[0].o_orderdate <= 19961231))) else (None))
+
+n2_supplier_part_region_n1_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({extractYear(region_n1_customer_orders[x_lineitem[0].l_orderkey].o_orderdate): record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey].n2_name == brazil) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (region_n1_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+
+results = n2_supplier_part_region_n1_customer_orders_lineitem.sum(lambda x_n2_supplier_part_region_n1_customer_orders_lineitem: {record({"o_year": x_n2_supplier_part_region_n1_customer_orders_lineitem[0], "mkt_share": ((x_n2_supplier_part_region_n1_customer_orders_lineitem[1].A) / (x_n2_supplier_part_region_n1_customer_orders_lineitem[1].B))}): True})
+
+============================================================
+ SDQL Execution Time: 6.7651050090789795 s 
+Pandas Execution Time: 0.11409997940063477 s 
+DuckDB Execution Time: 0.05004525184631348 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 8: Pass 
+============================================================
+>> Query 9 (Q9) <<
+nation_supplier: neither joint
+nation ->
+   | probe end: supplier
+   | build key: n_nationkey
+   | probe key: s_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+part ->
+   | probe end: partsupp
+   | build key: p_partkey
+   | probe key: ps_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+orders ->
+   | probe end: lineitem
+   | build key: o_orderkey
+   | probe key: l_orderkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+green = "green"
+nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
+
+nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
+
+nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({record({"ps_suppkey": x_partsupp[0].ps_suppkey, "ps_partkey": x_partsupp[0].ps_partkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+
+orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})})
+
+nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({record({"nation": nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].n_name, "o_year": extractYear(orders_part[x_lineitem[0].l_orderkey].o_orderdate)}): record({"sum_profit": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) - (((nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].ps_supplycost) * (x_lineitem[0].l_quantity))))})}) if (nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})] != None) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None))
+
+results = nation_supplier_part_partsupp_orders_lineitem.sum(lambda x_nation_supplier_part_partsupp_orders_lineitem: {record({"nation": x_nation_supplier_part_partsupp_orders_lineitem[0].nation, "o_year": x_nation_supplier_part_partsupp_orders_lineitem[0].o_year, "sum_profit": x_nation_supplier_part_partsupp_orders_lineitem[1].sum_profit}): True})
+
+============================================================
+ SDQL Execution Time: 11.163082599639893 s 
+Pandas Execution Time: 0.41736769676208496 s 
+DuckDB Execution Time: 0.0520479679107666 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 9: Pass 
+============================================================
+>> Query 10 (Q10) <<
+nation ->
+   | probe end: customer_orders
+   | build key: n_nationkey
+   | probe key: c_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+customer ->
+   | probe end: orders
+   | build key: c_custkey
+   | probe key: o_custkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+r = "R"
+nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
+
+customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_acctbal": x_customer[0].c_acctbal, "c_address": x_customer[0].c_address, "c_comment": x_customer[0].c_comment, "c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name, "c_phone": x_customer[0].c_phone, "c_nationkey": x_customer[0].c_nationkey})})
+
+nation_customer_orders = ord.sum(lambda x_orders: (((({x_orders[0].o_orderkey: record({"o_orderkey": x_orders[0].o_orderkey, "c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "c_acctbal": customer_part[x_orders[0].o_custkey].c_acctbal, "c_phone": customer_part[x_orders[0].o_custkey].c_phone, "n_name": nation_part[customer_part[x_orders[0].o_custkey].c_nationkey].n_name, "c_address": customer_part[x_orders[0].o_custkey].c_address, "c_comment": customer_part[x_orders[0].o_custkey].c_comment})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (nation_part[customer_part[x_orders[0].o_custkey].c_nationkey] != None) else (None)) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19931001) * (x_orders[0].o_orderdate < 19940101))) else (None))
+
+lineitem_aggr = li.sum(lambda x_lineitem: (({record({"c_custkey": nation_customer_orders[x_lineitem[0].l_orderkey].c_custkey, "c_name": nation_customer_orders[x_lineitem[0].l_orderkey].c_name, "c_acctbal": nation_customer_orders[x_lineitem[0].l_orderkey].c_acctbal, "c_phone": nation_customer_orders[x_lineitem[0].l_orderkey].c_phone, "n_name": nation_customer_orders[x_lineitem[0].l_orderkey].n_name, "c_address": nation_customer_orders[x_lineitem[0].l_orderkey].c_address, "c_comment": nation_customer_orders[x_lineitem[0].l_orderkey].c_comment}): ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (nation_customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_returnflag == r) else (None))
+
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_custkey": x_lineitem_aggr[0].c_custkey, "c_name": x_lineitem_aggr[0].c_name, "c_acctbal": x_lineitem_aggr[0].c_acctbal, "c_phone": x_lineitem_aggr[0].c_phone, "n_name": x_lineitem_aggr[0].n_name, "c_address": x_lineitem_aggr[0].c_address, "c_comment": x_lineitem_aggr[0].c_comment, "revenue": x_lineitem_aggr[1]}): True})
+
+============================================================
+ SDQL Execution Time: 7.196495771408081 s 
+Pandas Execution Time: 0.12511277198791504 s 
+DuckDB Execution Time: 0.036031484603881836 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 10: Pass 
+============================================================
+>> Query 11 (Q11) <<
+nation_supplier: neither joint
+nation ->
+   | probe end: supplier
+   | build key: n_nationkey
+   | probe key: s_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+germany = "GERMANY"
+nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == germany) else (None))
+
+nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: True}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+
+partsupp_aggr = ps.sum(lambda x_partsupp: (record({"filt_val": ((((x_partsupp[0].ps_supplycost) * (x_partsupp[0].ps_availqty))) * (0.0001)), "filt_agg": sr_dict({x_partsupp[0].ps_partkey: ((x_partsupp[0].ps_supplycost) * (x_partsupp[0].ps_availqty))})})) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None))
+
+results = partsupp_aggr.filt_agg.sum(lambda x_partsupp_aggr: ({record({"ps_partkey": x_partsupp_aggr[0], "value": x_partsupp_aggr[1]}): True}) if (x_partsupp_aggr[1] > partsupp_aggr.filt_val) else (None))
+
+============================================================
+ SDQL Execution Time: 0.4333920478820801 s 
+Pandas Execution Time: 0.710641622543335 s 
+DuckDB Execution Time: 0.021019935607910156 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 11: Pass 
+============================================================
+>> Query 12 (Q12) <<
+orders_lineitem: neither joint
+orders ->
+   | probe end: lineitem
+   | build key: o_orderkey
+   | probe key: l_orderkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+mail = "MAIL"
+ship = "SHIP"
+urgent1 = "1-URGENT"
+high2 = "2-HIGH"
+orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderpriority": x_orders[0].o_orderpriority})})
+
+lineitem_aggr = li.sum(lambda x_lineitem: (({x_lineitem[0].l_shipmode: record({"high_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority == urgent1) + (orders_part[x_lineitem[0].l_orderkey].o_orderpriority == high2))) else (0), "low_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority != urgent1) * (orders_part[x_lineitem[0].l_orderkey].o_orderpriority != high2))) else (0)})}) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (((((((((((x_lineitem[0].l_shipmode == ship) + (x_lineitem[0].l_shipmode == mail))) * (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate))) * (x_lineitem[0].l_shipdate < x_lineitem[0].l_commitdate))) * (x_lineitem[0].l_receiptdate >= 19940101))) * (x_lineitem[0].l_receiptdate < 19950101))) else (None))
+
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_shipmode": x_lineitem_aggr[0], "high_line_count": x_lineitem_aggr[1].high_line_count, "low_line_count": x_lineitem_aggr[1].low_line_count}): True})
+
+============================================================
+ SDQL Execution Time: 11.31822156906128 s 
+Pandas Execution Time: 0.23822379112243652 s 
+DuckDB Execution Time: 0.027016162872314453 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 12: Pass 
+============================================================
+>> Query 13 (Q13) <<
+orders_customer: neither joint
+orders ->
+   | probe end: customer
+   | build key: o_custkey
+   | probe key: c_custkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+special = "special"
+requests = "requests"
+orders_part = ord.sum(lambda x_orders: ({x_orders[0].o_custkey: record({"c_count": 1.0})}) if (((firstIndex(x_orders[0].o_comment, special) != -1) * (firstIndex(x_orders[0].o_comment, requests) > ((firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
+
+customer_aggr = cu.sum(lambda x_customer: {record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (0.0)}): 1.0})
+
+results = customer_aggr.sum(lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
+
+============================================================
+ SDQL Execution Time: 2.1129071712493896 s 
+Pandas Execution Time: 0.34731364250183105 s 
+DuckDB Execution Time: 0.03403043746948242 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+At row number 9 / 37
+Not found {'c_count': 4, 'custdist': 93}
+Failed while looking for custdist == 93
+The answer is as following:
+    c_count  custdist
+26        4        94
+At row number 10 / 37
+Not found {'c_count': 5, 'custdist': 203}
+Failed while looking for custdist == 203
+The answer is as following:
+    c_count  custdist
+25        5       204
+At row number 13 / 37
+Not found {'c_count': 7, 'custdist': 477}
+Failed while looking for custdist == 477
+The answer is as following:
+   c_count  custdist
+0        7       480
+At row number 14 / 37
+Not found {'c_count': 8, 'custdist': 565}
+Failed while looking for custdist == 565
+The answer is as following:
+    c_count  custdist
+15        8       564
+At row number 17 / 37
+Not found {'c_count': 10, 'custdist': 668}
+Failed while looking for custdist == 668
+The answer is as following:
+   c_count  custdist
+3       10       665
+At row number 18 / 37
+Not found {'c_count': 11, 'custdist': 620}
+Failed while looking for custdist == 620
+The answer is as following:
+   c_count  custdist
+7       11       621
+At row number 19 / 37
+Not found {'c_count': 12, 'custdist': 568}
+Failed while looking for custdist == 568
+The answer is as following:
+   c_count  custdist
+8       12       567
+At row number 20 / 37
+Not found {'c_count': 13, 'custdist': 491}
+Failed while looking for custdist == 491
+The answer is as following:
+    c_count  custdist
+16       13       492
+At row number 21 / 37
+Not found {'c_count': 14, 'custdist': 455}
+Failed while looking for custdist == 455
+The answer is as following:
+   c_count  custdist
+5       14       456
+At row number 22 / 37
+Not found {'c_count': 15, 'custdist': 433}
+Failed while looking for custdist == 433
+The answer is as following:
+   c_count  custdist
+2       15       432
+At row number 23 / 37
+Not found {'c_count': 16, 'custdist': 447}
+Failed while looking for custdist == 447
+The answer is as following:
+    c_count  custdist
+19       16       449
+At row number 26 / 37
+Not found {'c_count': 18, 'custdist': 486}
+Failed while looking for custdist == 486
+The answer is as following:
+    c_count  custdist
+18       18       482
+At row number 27 / 37
+Not found {'c_count': 19, 'custdist': 443}
+Failed while looking for custdist == 443
+The answer is as following:
+    c_count  custdist
+23       19       447
+At row number 32 / 37
+Not found {'c_count': 22, 'custdist': 370}
+Failed while looking for custdist == 370
+The answer is as following:
+    c_count  custdist
+12       22       371
+At row number 33 / 37
+Not found {'c_count': 23, 'custdist': 326}
+Failed while looking for custdist == 326
+The answer is as following:
+   c_count  custdist
+9       23       323
+At row number 36 / 37
+Not found {'c_count': 25, 'custdist': 205}
+Failed while looking for custdist == 205
+The answer is as following:
+    c_count  custdist
+13       25       204
+At row number 39 / 37
+Not found {'c_count': 27, 'custdist': 142}
+Failed while looking for custdist == 142
+The answer is as following:
+   c_count  custdist
+1       27       141
+At row number 40 / 37
+Not found {'c_count': 28, 'custdist': 95}
+Failed while looking for custdist == 95
+The answer is as following:
+    c_count  custdist
+22       28        97
+At row number 41 / 37
+Not found {'c_count': 29, 'custdist': 66}
+Failed while looking for custdist == 66
+The answer is as following:
+    c_count  custdist
+10       29        64
+number of mismatch records: 19
+============================================================
+ Check Pandas with DuckDB: Fail 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 13: Pass 
+============================================================
+>> Query 14 (Q14) <<
+part_lineitem: neither joint
+part ->
+   | probe end: lineitem
+   | build key: p_partkey
+   | probe key: l_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+promo = "PROMO"
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (startsWith(x_part[0].p_type, promo)) else (None))
+
+part_lineitem = li.sum(lambda x_lineitem: (record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})) if (((x_lineitem[0].l_shipdate >= 19950901) * (x_lineitem[0].l_shipdate < 19951001))) else (None))
+
+results = ((((part_lineitem.A) * (100.0))) / (part_lineitem.B))
+============================================================
+ SDQL Execution Time: 6.600956439971924 s 
+Pandas Execution Time: 0.11910772323608398 s 
+DuckDB Execution Time: 0.022019624710083008 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 14: Pass 
+============================================================
+>> Query 15 (Q15) <<
+supplier_lineitem: neither joint
+{}
+supplier ->
+   | probe end: lineitem
+   | build key: s_suppkey
+   | probe key: l_suppkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+lineitem_aggr = li.sum(lambda x_lineitem: ({x_lineitem[0].l_suppkey: ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (((x_lineitem[0].l_shipdate >= 19960101) * (x_lineitem[0].l_shipdate < 19960401))) else (None))
+
+supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: True})
+
+results = lineitem_aggr.sum(lambda x_lineitem_aggr: (({record({"s_suppkey": x_lineitem_aggr[0], "s_name": supplier_part[x_lineitem_aggr[0]].s_name, "s_address": supplier_part[x_lineitem_aggr[0]].s_address, "s_phone": supplier_part[x_lineitem_aggr[0]].s_phone, "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 1772627.2087) else (None)) if (supplier_part[x_lineitem_aggr[0]] != None) else (None))
+
+============================================================
+ SDQL Execution Time: 6.531905174255371 s 
+Pandas Execution Time: 0.06805920600891113 s 
+DuckDB Execution Time: 0.020009517669677734 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 15: Pass 
+============================================================
+>> Query 16 (Q16) <<
+part_partsupp: neither joint
+part ->
+   | probe end: partsupp
+   | build key: p_partkey
+   | probe key: ps_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: ['p_partkey', 'p_brand', 'p_type', 'p_size']
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+brand45 = "Brand#45"
+mediumpolished = "MEDIUM POLISHED"
+customer = "Customer"
+complaints = "Complaints"
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand, "p_type": x_part[0].p_type, "p_size": x_part[0].p_size})}) if (((((x_part[0].p_brand != brand45) * (startsWith(x_part[0].p_type, mediumpolished) == False))) * (((((((((((((((x_part[0].p_size == 9) + (x_part[0].p_size == 36))) + (x_part[0].p_size == 49))) + (x_part[0].p_size == 14))) + (x_part[0].p_size == 23))) + (x_part[0].p_size == 45))) + (x_part[0].p_size == 19))) + (x_part[0].p_size == 3))))) else (None))
+
+supplier_part = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: True}) if (((firstIndex(x_supplier[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x_supplier[0].s_comment, complaints) > ((firstIndex(x_supplier[0].s_comment, customer)) + (7))))) else (None))
+
+partsupp_aggr = ps.sum(lambda x_partsupp: (({record({"p_brand": part_part[x_partsupp[0].ps_partkey].p_brand, "p_type": part_part[x_partsupp[0].ps_partkey].p_type, "p_size": part_part[x_partsupp[0].ps_partkey].p_size}): sr_dict({x_partsupp[0].ps_suppkey: True})}) if (supplier_part[x_partsupp[0].ps_suppkey] == None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+
+results = partsupp_aggr.sum(lambda x_partsupp_aggr: {record({"p_brand": x_partsupp_aggr[0].p_brand, "p_type": x_partsupp_aggr[0].p_type, "p_size": x_partsupp_aggr[0].p_size, "supplier_cnt": dictSize(x_partsupp_aggr[1])}): True})
+
+============================================================
+ SDQL Execution Time: 1.1810660362243652 s 
+Pandas Execution Time: 0.19317388534545898 s 
+DuckDB Execution Time: 0.02402210235595703 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 16: Pass 
+============================================================
+>> Query 17 (Q17) <<
+part_l1: neither joint
+part ->
+   | probe end: l1
+   | build key: p_partkey
+   | probe key: l_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+brand23 = "Brand#23"
+medbox = "MED BOX"
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
+
+part_l1 = li.sum(lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (part_part[x_l1[0].l_partkey] != None) else (None))
+
+part_l1_lineitem = li.sum(lambda x_lineitem: (record({"price": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)})) if (True) else (None))
+
+results = ((part_l1_lineitem.price) / (7.0))
+============================================================
+ SDQL Execution Time: 11.515392541885376 s 
+Pandas Execution Time: 0.25322914123535156 s 
+DuckDB Execution Time: 0.036032915115356445 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 17: Pass 
+============================================================
+>> Query 18 (Q18) <<
+customer_orders: neither joint
+customer ->
+   | probe end: orders
+   | build key: c_custkey
+   | probe key: o_custkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
+
+lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+
+lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 300) else (None))
+
+customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
+
+l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
+
+results = l1_aggr.sum(lambda x_l1_aggr: {record({"c_name": x_l1_aggr[0].c_name, "c_custkey": x_l1_aggr[0].c_custkey, "o_orderkey": x_l1_aggr[0].o_orderkey, "o_orderdate": x_l1_aggr[0].o_orderdate, "o_totalprice": x_l1_aggr[0].o_totalprice, "sum_quantity": x_l1_aggr[1]}): True})
+
+============================================================
+ SDQL Execution Time: 12.899640321731567 s 
+Pandas Execution Time: 0.13912558555603027 s 
+DuckDB Execution Time: 0.054048776626586914 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 18: Pass 
+============================================================
+>> Query 19 (Q19) <<
+part_lineitem: neither joint
+part ->
+   | probe end: lineitem
+   | build key: p_partkey
+   | probe key: l_partkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: ['p_partkey', 'p_brand']
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+brand12 = "Brand#12"
+smcase = "SM CASE"
+smbox = "SM BOX"
+smpack = "SM PACK"
+smpkg = "SM PKG"
+brand23 = "Brand#23"
+medbag = "MED BAG"
+medbox = "MED BOX"
+medpkg = "MED PKG"
+medpack = "MED PACK"
+brand34 = "Brand#34"
+lgcase = "LG CASE"
+lgbox = "LG BOX"
+lgpack = "LG PACK"
+lgpkg = "LG PKG"
+air = "AIR"
+airreg = "AIR REG"
+deliverinperson = "DELIVER IN PERSON"
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand})}) if (((((((((((x_part[0].p_brand == brand12) * (((((((x_part[0].p_container == smpkg) + (x_part[0].p_container == smpack))) + (x_part[0].p_container == smcase))) + (x_part[0].p_container == smbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 5))) + (((((((x_part[0].p_brand == brand23) * (((((((x_part[0].p_container == medpack) + (x_part[0].p_container == medpkg))) + (x_part[0].p_container == medbag))) + (x_part[0].p_container == medbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 10))))) + (((((((x_part[0].p_brand == brand34) * (((((((x_part[0].p_container == lgpkg) + (x_part[0].p_container == lgpack))) + (x_part[0].p_container == lgcase))) + (x_part[0].p_container == lgbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 15))))) else (None))
+
+lineitem_aggr = li.sum(lambda x_lineitem: (((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (((((((part_part[x_lineitem[0].l_partkey].p_brand == brand12) * (((x_lineitem[0].l_quantity >= 1) * (x_lineitem[0].l_quantity <= 11))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand23) * (((x_lineitem[0].l_quantity >= 10) * (x_lineitem[0].l_quantity <= 20))))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand34) * (((x_lineitem[0].l_quantity >= 20) * (x_lineitem[0].l_quantity <= 30))))))) else (0.0)) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0)) if (((((x_lineitem[0].l_shipmode == air) + (x_lineitem[0].l_shipmode == airreg))) * (x_lineitem[0].l_shipinstruct == deliverinperson))) else (0.0))
+
+results = {record({"revenue": lineitem_aggr}): True}
+============================================================
+ SDQL Execution Time: 7.155458211898804 s 
+Pandas Execution Time: 0.09008073806762695 s 
+DuckDB Execution Time: 0.030028343200683594 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 19: Pass 
+============================================================
+>> Query 20 (Q20) <<
+nation_supplier: neither joint
+lineitem_partsupp: neither joint
+lineitem ->
+   | probe end: partsupp
+   | build key: ['l_partkey', 'l_suppkey']
+   | probe key: ['ps_partkey', 'ps_suppkey']
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+nation ->
+   | probe end: supplier
+   | build key: n_nationkey
+   | probe key: s_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+canada = "CANADA"
+forest = "forest"
+nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == canada) else (None))
+
+part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (startsWith(x_part[0].p_name, forest)) else (None))
+
+supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: True})
+
+lineitem_part = li.sum(lambda x_lineitem: ((({record({"l_partkey": x_lineitem[0].l_partkey, "l_suppkey": x_lineitem[0].l_suppkey}): record({"sum_quantity": x_lineitem[0].l_quantity})}) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) else (None))
+
+lineitem_partsupp = ps.sum(lambda x_partsupp: (({x_partsupp[0].ps_suppkey: True}) if (x_partsupp[0].ps_availqty > ((lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})].sum_quantity) * (0.5))) else (None)) if (lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})] != None) else (None))
+
+results = su.sum(lambda x_supplier: (({record({"s_name": x_supplier[0].s_name, "s_address": x_supplier[0].s_address}): True}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None)) if (lineitem_partsupp[x_supplier[0].s_suppkey] != None) else (None))
+
+============================================================
+ SDQL Execution Time: 7.528793573379517 s 
+Pandas Execution Time: 0.09708762168884277 s 
+DuckDB Execution Time: 0.04103732109069824 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Warning: Mismatch Shape: {SDQL: 0, Pandas: 9}
+Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)
+============================================================
+ Query 20: Fail 
+============================================================
+>> Query 21 (Q21) <<
+orders ->
+   | probe end: nation_supplier_l3_l2_lineitem
+   | build key: o_orderkey
+   | probe key: l_orderkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+nation_supplier: neither joint
+nation ->
+   | probe end: supplier
+   | build key: n_nationkey
+   | probe key: s_nationkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: []
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+l3 ->
+   | probe end: l2_lineitem
+   | build key: l_orderkey
+   | probe key: l_orderkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: ['l_orderkey', 'l3_size']
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+l2 ->
+   | probe end: lineitem
+   | build key: l_orderkey
+   | probe key: l_orderkey
+   | rename columns: {}
+   | insert columns: {}
+   | project columns: ['l_orderkey', 'l2_size']
+   | unique columns: []
+   | modify columns: []
+   | result struct: None
+
+>> Optimized Query <<
+============================================================
+f = "F"
+saudiarabia = "SAUDI ARABIA"
+orders_part = ord.sum(lambda x_orders: ({x_orders[0].o_orderkey: True}) if (x_orders[0].o_orderstatus == f) else (None))
+
+nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == saudiarabia) else (None))
+
+nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_name": x_supplier[0].s_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+
+l3_part = li.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (x_l3[0].l_receiptdate > x_l3[0].l_commitdate) else (None))
+
+l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
+
+orders_nation_supplier_l3_l2_lineitem = li.sum(lambda x_lineitem: (((((({nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (((l2_part[x_lineitem[0].l_orderkey].l2_size > 1) * (l3_part[x_lineitem[0].l_orderkey].l3_size == 1))) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (nation_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (l3_part[x_lineitem[0].l_orderkey] != None) else (None)) if (l2_part[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
+
+results = orders_nation_supplier_l3_l2_lineitem.sum(lambda x_orders_nation_supplier_l3_l2_lineitem: {record({"s_name": x_orders_nation_supplier_l3_l2_lineitem[0], "numwait": x_orders_nation_supplier_l3_l2_lineitem[1].numwait}): True})
+
+============================================================
+ SDQL Execution Time: 21.570473194122314 s 
+Pandas Execution Time: 0.914825439453125 s 
+DuckDB Execution Time: 0.09408426284790039 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 21: Pass 
+============================================================
+>> Query 22 (Q22) <<
+{'sum_acctbal': sum_acctbal, 'count_acctbal': count_acctbal}
+RecAccessExpr(PairAccessExpr(x_customer, 0), 'c_phone')
+>> Optimized Query <<
+============================================================
+v13 = "13"
+v31 = "31"
+v23 = "23"
+v29 = "29"
+v30 = "30"
+v18 = "18"
+v17 = "17"
+cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if (((x_cu1[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (startsWith(x_cu1[0].c_phone, v30)))) + (startsWith(x_cu1[0].c_phone, v18)))) + (startsWith(x_cu1[0].c_phone, v17)))))) else (None))
+
+count_acctbal = cu1_aggr.count_acctbal
+sum_acctbal = cu1_aggr.sum_acctbal
+orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
+
+customer_aggr = cu.sum(lambda x_customer: (({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (orders_part[x_customer[0].c_custkey] == None) else (None)) if (((x_customer[0].c_acctbal > ((sum_acctbal) / (count_acctbal))) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+
+results = customer_aggr.sum(lambda x_customer_aggr: {record({"cntrycode": x_customer_aggr[0], "numcust": x_customer_aggr[1].numcust, "totacctbal": x_customer_aggr[1].totacctbal}): True})
+
+============================================================
+ SDQL Execution Time: 1.9747834205627441 s 
+Pandas Execution Time: 0.12811636924743652 s 
+DuckDB Execution Time: 0.0370326042175293 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+============================================================
+>> Comparing SDQL with Pandas ... <<
+============================================================
+ Query 22: Pass 
+============================================================
+1:  Pass 
+2:  Pass 
+3:  Pass 
+4:  Pass 
+5:  Pass 
+6:  Pass 
+7:  Pass 
+8:  Pass 
+9:  Pass 
+10:  Pass 
+11:  Pass 
+12:  Pass 
+13:  Pass 
+14:  Pass 
+15:  Pass 
+16:  Pass 
+17:  Pass 
+18:  Pass 
+19:  Pass 
+20:  Fail 
+21:  Pass 
+22:  Pass 
+============================================================
+6.05360635916392

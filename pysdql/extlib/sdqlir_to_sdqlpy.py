@@ -129,6 +129,16 @@ def GenerateSDQLPYCode(AST: Expr, cache):
         code += ": "
         code += GenerateSDQLPYCode(AST.initialPairs[0][1], cache)
         code += "}"
+        # code += "sr_dict({"
+        # if (type(AST.initialPairs[0][0])==str):
+        #     code += "\""
+        #     code += AST.initialPairs[0][0]
+        #     code += "\""
+        # else:
+        #     code += GenerateSDQLPYCode(AST.initialPairs[0][0], cache)
+        # code += ": "
+        # code += GenerateSDQLPYCode(AST.initialPairs[0][1], cache)
+        # code += "})"
         return code
     elif inputType == EmptyDicConsExpr:
         code += "{}"

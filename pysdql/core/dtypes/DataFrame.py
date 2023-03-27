@@ -1,3 +1,4 @@
+import copy
 import os
 import re
 import inspect
@@ -90,10 +91,9 @@ class DataFrame(FlexIR, Retrivable):
                  is_original=True,
                  context_variable=None,
                  context_constant=None,
-                 context_unopt=None,
-                 context_semiopt=None,
                  loader=None,
-                 previous_name=None):
+                 previous_name=None,
+                 dataset_name=None):
         super().__init__()
         self.loader = loader
         self.__default_name = 'R'
@@ -106,6 +106,7 @@ class DataFrame(FlexIR, Retrivable):
         self.__operations = operations if operations else OpSeq()
         self.__retriever = Retriever(self)
         self.__previous_name = previous_name if previous_name else ""
+        self.__dataset_name = dataset_name if dataset_name else ""
 
         tmp_useful_name = self.__name if self.__name else self.__previous_name
 
@@ -140,30 +141,40 @@ class DataFrame(FlexIR, Retrivable):
         self.unopt_count = 0
         self.unopt_vars = {}
         self.unopt_consts = {}
-        self.context_unopt = context_unopt if context_unopt else []
 
         self.transform = TransExpr(self)
 
-        self.context_semiopt = context_semiopt if context_semiopt else []
-
         self.original = is_original
+        self.__is_original = is_original
+
+        self.copy_cache = None
+
+    @property
+    def is_original(self):
+        return self.__is_original
 
     @property
     def dtypes(self):
         return self.__dtype
 
     def copy(self):
-        new_name = varname()
+        next_name = varname()
 
-        return DataFrame(name=new_name,
-                         is_joint=self.is_joint,
-                         is_original=False,
-                         columns=self.columns.copy(),
-                         context_variable=self.context_variable,
-                         context_constant=self.context_constant,
-                         context_unopt=self.context_unopt,
-                         context_semiopt=self.context_semiopt,
-                         previous_name=self.name)
+        next_df = DataFrame(data=copy.copy(self.data),
+                            index=copy.copy(self.index),
+                            columns=copy.copy(self.columns),
+                            dtype=copy.copy(self.dtypes),
+                            name=next_name,
+                            operations=copy.copy(self.operations),
+                            is_joint=copy.copy(self.is_joint),
+                            is_original=False,
+                            context_variable=copy.copy(self.context_variable),
+                            context_constant=copy.copy(self.context_constant),
+                            loader=copy.deepcopy(self.loader),
+                            previous_name=copy.copy(self.current_name),
+                            dataset_name=copy.copy(self.dataset_name))
+
+        return next_df
 
     @property
     def is_joint(self):
@@ -237,20 +248,21 @@ class DataFrame(FlexIR, Retrivable):
 
     @property
     def data(self):
-        if self.columns:
-            columns_names = self.columns
-        else:
-            columns_names = list(self.__data.keys())
-
-        data_size = len(self.__data[columns_names[0]])
-
-        rec_dict = {}
-        for i in range(data_size):
-            tmp_dict = {}
-            for k in columns_names:
-                tmp_dict[k] = self.__data[k][i]
-            rec_dict[RecEl(tmp_dict)] = 1
-        return DictEl(rec_dict)
+        return self.__data
+        # if self.columns:
+        #     columns_names = self.columns
+        # else:
+        #     columns_names = list(self.__data.keys())
+        #
+        # data_size = len(self.__data[columns_names[0]])
+        #
+        # rec_dict = {}
+        # for i in range(data_size):
+        #     tmp_dict = {}
+        #     for k in columns_names:
+        #         tmp_dict[k] = self.__data[k][i]
+        #     rec_dict[RecEl(tmp_dict)] = 1
+        # return DictEl(rec_dict)
 
     @property
     def index(self):
@@ -343,6 +355,10 @@ class DataFrame(FlexIR, Retrivable):
     @property
     def cols_used(self):
         return self.retriever.findall_cols_used(as_owner=True)
+
+    @property
+    def dataset_name(self):
+        return self.__dataset_name
 
     @property
     def previous_name(self):
@@ -541,6 +557,7 @@ class DataFrame(FlexIR, Retrivable):
 
     def __getitem__(self, item):
         if type(item) == str:
+            # next_df = self.copy_cache if self.copy_cache else self.create_copy(location=f'__getitem__({item})')
             return self.get_col(col_name=item)
 
         if type(item) == CompareExpr:
@@ -557,24 +574,28 @@ class DataFrame(FlexIR, Retrivable):
                                  unit2=item.op2Expr)]
 
         if type(item) == CondExpr:
-            self.push(OpExpr(op_obj=item,
-                             op_on=self,
+            next_df = self.create_copy(location='__getitem__(filter)')
+
+            next_df.push(OpExpr(op_obj=item,
+                             op_on=next_df,
                              op_iter=False))
-            return self
+            return next_df
 
         if type(item) == list:
-            self.push(OpExpr(op_obj=ColProjExpr(self, item),
-                             op_on=self,
+            next_df = self.create_copy(location='__getitem__(projection)')
+            self.push(OpExpr(op_obj=ColProjExpr(next_df, item),
+                             op_on=next_df,
                              op_iter=False))
 
-            return self
+            return next_df
 
         if type(item) == IsInExpr:
+            next_df = self.create_copy(location='__getitem__(isin)')
             # self.operations.push(OpExpr(op_obj=item,
             #                             op_on=self,
             #                             op_iter=True))
 
-            return self
+            return next_df
 
         if isinstance(item, ColExtExpr):
             if item.func in [ExtFuncSymbol.StringContains,
@@ -615,6 +636,8 @@ class DataFrame(FlexIR, Retrivable):
             return ColEl(self, col_name)
 
     def __setitem__(self, key, value):
+        # next_df = self.create_copy(location=f'__setitem__.({key})')
+
         if key in self.columns:
             if type(value) in (bool, int, float, str):
                 return self.rename_col_scalar(key, value)
@@ -634,37 +657,6 @@ class DataFrame(FlexIR, Retrivable):
                                                        col_list=value),
                                  op_on=self,
                                  op_iter=True))
-                # if isinstance(key, str) and len(value) == 1:
-                #     if isinstance(value[0], AggrExpr):
-                #         aggr_obj = value[0]
-                #         aggr_obj.update_default(key)
-                #         aggr_obj.aggr_type = AggrType.Dict
-                #         op_expr = OpExpr(op_obj=aggr_obj,
-                #                          op_on=aggr_obj.aggr_on,
-                #                          op_iter=True,
-                #                          iter_on=aggr_obj.aggr_on,
-                #                          ret_type=OpRetType.FLOAT)
-                #         self.push(op_expr)
-                #     elif isinstance(value[0], CalcExpr):
-                #         calc_obj = value[0]
-                #
-                #         target = calc_obj.on.retriever.insert_aggr(calc_obj.on)
-                #
-                #         calc_obj.match_aggr(target, calc_obj.on)
-                #
-                #         op_expr = OpExpr(op_obj=calc_obj,
-                #                          op_on=calc_obj.on,
-                #                          op_iter=True,
-                #                          iter_on=calc_obj.on,
-                #                          ret_type=OpRetType.FLOAT)
-                #
-                #         calc_obj.on.push(op_expr)
-                #         self.push(op_expr)
-                #     else:
-                #         raise NotImplementedError
-                # else:
-                #     raise NotImplementedError
-
                 return self
 
     def rename(self, mapper: dict, axis=1, inplace=True):
@@ -700,7 +692,9 @@ class DataFrame(FlexIR, Retrivable):
                          op_iter=False))
 
     def groupby(self, cols, as_index=False, sort=False):
-        return DataFrameGroupBy(groupby_from=self,
+        next_df = self.create_copy(location='groupby')
+
+        return DataFrameGroupBy(groupby_from=next_df,
                                 groupby_cols=cols)
 
     @property
@@ -711,73 +705,60 @@ class DataFrame(FlexIR, Retrivable):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None, indicator=False, sort=False):
-        if isinstance(left_on, list) and len(left_on) == 1:
-            left_on = left_on[0]
+        if isinstance(left_on, str) and isinstance(right_on, str):
+            pass
 
-        if isinstance(right_on, list) and len(right_on) == 1:
-            right_on = right_on[0]
+        if isinstance(left_on, list) and isinstance(right_on, list):
+            if len(left_on) != len(right_on):
+                raise IndexError(f'Mismatch shape: left_on {left_on}, right_on {right_on}')
 
-        next_context_var = {}
-        for k in self.context_variable.keys():
-            next_context_var[k] = self.context_variable[k]
-        for k in right.context_variable.keys():
-            next_context_var[k] = right.context_variable[k]
+            if (isinstance(left_on, list) and len(left_on) == 1) and (isinstance(right_on, list) and len(right_on) == 1):
+                left_on = left_on[0]
+                right_on = right_on[0]
 
-        next_context_const = {}
-        for k in self.context_constant.keys():
-            next_context_const[k] = self.context_constant[k]
-        for k in right.context_constant.keys():
-            next_context_const[k] = right.context_constant[k]
+        next_left_df = self.create_copy(location=f'merge(left)')
+        next_right_df = right.create_copy(location=f'merge(right)')
 
-        tmp_name = f'{self.current_name}_{right.current_name}'
+        next_context_variable = {}
+        for k in next_left_df.context_variable.keys():
+            next_context_variable[k] = next_left_df.context_variable[k]
+        for k in next_right_df.context_variable.keys():
+            next_context_variable[k] = next_right_df.context_variable[k]
 
-        # left_context_unopt = self.get_context_unopt()
-        #
-        # if left_context_unopt:
-        #     left_context_unopt[-1] = SDQLInspector.rename_last_binding(left_context_unopt[-1],
-        #                                                                 f'{tmp_name}_index',
-        #                                                                 with_res=False)
-        #
-        # right_context_unopt = right.get_context_unopt()
-        #
-        # if right_context_unopt:
-        #     right_context_unopt[-1] = SDQLInspector.rename_last_binding(right_context_unopt[-1],
-        #                                                                 f'{tmp_name}_probe',
-        #                                                                 with_res=False)
-        #
-        # next_context_unopt = self.context_unopt + right_context_unopt
+        next_context_constant = {}
+        for k in next_left_df.context_constant.keys():
+            next_context_constant[k] = next_left_df.context_constant[k]
+        for k in next_right_df.context_constant.keys():
+            next_context_constant[k] = next_right_df.context_constant[k]
 
-        next_context_unopt = []
+        next_name = f'{next_left_df.current_name}_{next_right_df.current_name}'
 
-        next_context_semiopt = self.context_semiopt + right.context_semiopt
+        next_cols = next_left_df.cols_out + next_right_df.cols_out
 
-        next_cols = self.cols_out + right.cols_out
-
-        tmp_df = DataFrame(name=tmp_name,
+        tmp_df = DataFrame(name=next_name,
                            is_joint=True,
+                           is_original=False,
                            columns=next_cols,
-                           context_variable=next_context_var,
-                           context_constant=next_context_const,
-                           context_unopt=next_context_unopt,
-                           context_semiopt=next_context_semiopt)
+                           context_variable=next_context_variable,
+                           context_constant=next_context_constant)
 
-        merge_expr = MergeExpr(left=self,
-                               right=right,
+        merge_expr = MergeExpr(left=next_left_df,
+                               right=next_right_df,
                                how=how,
                                left_on=left_on,
                                right_on=right_on,
                                joint=tmp_df)
 
-        self.push(OpExpr(op_obj=merge_expr,
-                         op_on=[self, right],
+        next_left_df.push(OpExpr(op_obj=merge_expr,
+                         op_on=[next_left_df, next_right_df],
                          op_iter=True))
 
-        right.push(OpExpr(op_obj=merge_expr,
-                          op_on=[self, right],
+        next_right_df.push(OpExpr(op_obj=merge_expr,
+                          op_on=[next_left_df, next_right_df],
                           op_iter=True))
 
         tmp_df.push(OpExpr(op_obj=merge_expr,
-                           op_on=[self, right],
+                           op_on=[next_left_df, next_right_df],
                            op_iter=True))
 
         return tmp_df
@@ -803,6 +784,9 @@ class DataFrame(FlexIR, Retrivable):
         if agg_kwargs:
             return self.agg_kwargs_parse(agg_kwargs)
 
+    def agg_str_parse(self, input_func):
+        raise NotImplementedError
+
     def agg_dict_parse(self, input_aggr_dict):
         aggr_tuple_dict = {}
         for k in input_aggr_dict.keys():
@@ -819,21 +803,23 @@ class DataFrame(FlexIR, Retrivable):
                 # i: int to float
                 output_aggr_dict[aggr_key] = ConstantExpr(1.0)
 
+        next_df = self.create_copy(location='agg')
+
         aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
-                             aggr_on=self,
+                             aggr_on=next_df,
                              aggr_op=output_aggr_dict,
                              aggr_else=ConstantExpr(None),
                              origin_dict=aggr_tuple_dict)
 
         op_expr = OpExpr(op_obj=aggr_expr,
-                         op_on=self,
+                         op_on=next_df,
                          op_iter=True,
-                         iter_on=self,
+                         iter_on=next_df,
                          ret_type=OpRetType.DICT)
 
-        self.push(op_expr)
+        next_df.push(op_expr)
 
-        return self
+        return next_df
 
     def agg_kwargs_parse(self, aggr_tuple_dict):
         agg_dict = {}
@@ -855,21 +841,23 @@ class DataFrame(FlexIR, Retrivable):
                 # i: int to float
                 agg_dict[agg_key] = ConstantExpr(1.0)
 
+        next_df = self.create_copy(location='agg')
+
         aggr_expr = AggrExpr(aggr_type=AggrType.Dict,
-                             aggr_on=self,
+                             aggr_on=next_df,
                              aggr_op=agg_dict,
-                             aggr_else=EmptyDicConsExpr(),
+                             aggr_else=ConstantExpr(None),
                              origin_dict=aggr_tuple_dict)
 
         op_expr = OpExpr(op_obj=aggr_expr,
-                         op_on=self,
+                         op_on=next_df,
                          op_iter=True,
-                         iter_on=self,
+                         iter_on=next_df,
                          ret_type=OpRetType.DICT)
 
-        self.push(op_expr)
+        next_df.push(op_expr)
 
-        return self
+        return next_df
 
     def peek(self):
         return self.operations.peek()
@@ -1375,7 +1363,7 @@ class DataFrame(FlexIR, Retrivable):
     def retriever(self) -> Retriever:
         return self.__retriever
 
-    def drop_duplicates(self):
+    def drop_duplicates(self, *args):
         return self
 
     def squeeze(self):
@@ -1409,7 +1397,7 @@ class DataFrame(FlexIR, Retrivable):
             if isinstance(i, DataFrame):
                 compile_params += f'"{i}": {i.dtypes_as_str()}'
 
-        print(compile_params)
+        # print(compile_params)
 
         query_list = ['from pysdql.extlib.sdqlpy.sdql_lib import *',
                       f'@sdql_compile({{{compile_params}}})',
@@ -1470,4 +1458,75 @@ class DataFrame(FlexIR, Retrivable):
         return self
 
     def get_context_unopt(self, rename_last=''):
+
         return Optimizer(self).get_unopt_context(rename_last)
+
+    def create_copy(self, next_name="", location=None):
+        """
+        data=None,
+        index=None,
+        columns=None,
+        dtype=None,
+        name=None,
+        operations=None,
+        is_joint=False,
+        is_original=True,
+        context_variable=None,
+        context_constant=None,
+        loader=None,
+        previous_name=None
+        dataset_name=None
+        :return:
+        """
+
+        verbose = False
+
+        if not location:
+            location = "unknown"
+
+        if self.is_original:
+            if next_name:
+                if verbose:
+                    print(f'create and rename copy {next_name} for {self.current_name} at {location}')
+
+                next_df = DataFrame(data=copy.copy(self.data),
+                                    index=copy.copy(self.index),
+                                    columns=copy.copy(self.columns),
+                                    dtype=copy.copy(self.dtypes),
+                                    name=next_name,
+                                    operations=copy.copy(self.operations),
+                                    is_joint=copy.copy(self.is_joint),
+                                    is_original=False,
+                                    context_variable=copy.copy(self.context_variable),
+                                    context_constant=copy.copy(self.context_constant),
+                                    loader=copy.deepcopy(self.loader),
+                                    previous_name=copy.copy(self.current_name),
+                                    dataset_name=copy.copy(self.dataset_name))
+
+                self.copy_cache = next_df
+            else:
+                if verbose:
+                    print(f'create copy for {self.current_name} at {location}')
+
+                next_df = DataFrame(data=copy.copy(self.data),
+                                    index=copy.copy(self.index),
+                                    columns=copy.copy(self.columns),
+                                    dtype=copy.copy(self.dtypes),
+                                    name=copy.copy(self.current_name),
+                                    operations=copy.copy(self.operations),
+                                    is_joint=copy.copy(self.is_joint),
+                                    is_original=False,
+                                    context_variable=copy.copy(self.context_variable),
+                                    context_constant=copy.copy(self.context_constant),
+                                    loader=copy.deepcopy(self.loader),
+                                    previous_name=copy.copy(self.previous_name),
+                                    dataset_name=copy.copy(self.dataset_name))
+
+                self.copy_cache = next_df
+        else:
+            if verbose:
+                print(f'keep {self.current_name} at {location}')
+
+            next_df = self
+
+        return next_df

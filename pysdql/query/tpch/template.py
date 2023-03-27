@@ -436,7 +436,14 @@ def tpch_q13(customer, orders):
     var2 = tpch_vars[13][1]
 
     ord_filt = orders[~((orders['o_comment'].str.find(var1) != -1)
-                        & (orders['o_comment'].str.find(var2) > (orders['o_comment'].str.find(var1) + 6)))]
+                        & (orders['o_comment'].str.find(var2) > (orders['o_comment'].str.find(var1) + 6)))] # 148380
+
+    # 148318
+    # ord_filt = orders[~((orders['o_comment'].str.find('special') != -1)
+    #                         & (orders['o_comment'].str.rfind('requests') > (orders['o_comment'].str.find('special') + 6)))]
+
+    # 148318
+    # ord_filt = orders[~(orders.o_comment.str.contains("^.*?special.*?requests.*?$", regex=True))]
 
     # customer left outer join ord_filt
     # is equivalent to
@@ -448,7 +455,7 @@ def tpch_q13(customer, orders):
         .agg(c_count=('o_orderkey', 'count'))
 
     result = c_orders.groupby(['c_count'], as_index=False) \
-        .agg(custdist=('c_custkey', 'count'))
+        .agg(custdist=('c_count', 'count'))
 
     return result
 

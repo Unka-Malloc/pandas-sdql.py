@@ -584,6 +584,7 @@ class DB
         all_functions_out_types[f_name] = (getattr(mod, f_name + "_typecache")[getattr(mod, "results").id])
 
         out_type = all_functions_out_types[f_name]
+        abbrOutType = ""
         if type(out_type) == IntType:
             out_type = "int"
         elif type(out_type) == FloatType:
