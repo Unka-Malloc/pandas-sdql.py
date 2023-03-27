@@ -14,7 +14,7 @@ def query(pa, su, ps, na, re):
     
     region_nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_suppkey": x_supplier[0].s_suppkey, "s_acctbal": x_supplier[0].s_acctbal, "s_name": x_supplier[0].s_name, "n_name": region_nation[x_supplier[0].s_nationkey].n_name, "s_address": x_supplier[0].s_address, "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (region_nation[x_supplier[0].s_nationkey] != None) else (None))
     
-    region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record({"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey, "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
+    region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record({"ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey, "min_supplycost": x_ps1[0].ps_supplycost, "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
     
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_mfgr": x_part[0].p_mfgr})}) if (((endsWith(x_part[0].p_type, brass)) * (x_part[0].p_size == 15))) else (None))
     

@@ -1,15 +1,21 @@
 >> Query 1 (Q1) <<
-{}
 >> Optimized Query <<
 ============================================================
-lineitem_aggr = li.sum(lambda x_lineitem: ({record({"l_returnflag": x_lineitem[0].l_returnflag, "l_linestatus": x_lineitem[0].l_linestatus}): record({"sum_qty": x_lineitem[0].l_quantity, "sum_base_price": x_lineitem[0].l_extendedprice, "sum_disc_price": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount)))), "sum_charge": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) * (((1.0) + (x_lineitem[0].l_tax)))), "avg_disc_sum_for_mean": x_lineitem[0].l_discount, "count_order": 1.0})}) if (x_lineitem[0].l_shipdate <= 19980902) else (None))
+lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate <= 19980902) else (None))
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_returnflag": x_lineitem_aggr[0].l_returnflag, "l_linestatus": x_lineitem_aggr[0].l_linestatus, "sum_qty": x_lineitem_aggr[1].sum_qty, "sum_base_price": x_lineitem_aggr[1].sum_base_price, "sum_disc_price": x_lineitem_aggr[1].sum_disc_price, "sum_charge": x_lineitem_aggr[1].sum_charge, "avg_qty": ((x_lineitem_aggr[1].sum_qty) / (x_lineitem_aggr[1].count_order)), "avg_price": ((x_lineitem_aggr[1].sum_base_price) / (x_lineitem_aggr[1].count_order)), "avg_disc": ((x_lineitem_aggr[1].avg_disc_sum_for_mean) / (x_lineitem_aggr[1].count_order)), "count_order": x_lineitem_aggr[1].count_order}): True})
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"disc_price": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"charge": ((((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))) * (((1.0) + (x[0].l_tax))))})): x[1]})
+
+lineitem_3 = lineitem_2.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus}): record({"sum_qty": x[0].l_quantity, "sum_base_price": x[0].l_extendedprice, "sum_disc_price": x[0].disc_price, "sum_charge": x[0].charge, "avg_qty_sum_for_mean": x[0].l_quantity, "avg_qty_count_for_mean": 1.0, "avg_price_sum_for_mean": x[0].l_extendedprice, "avg_price_count_for_mean": 1.0, "avg_disc_sum_for_mean": x[0].l_discount, "avg_disc_count_for_mean": 1.0, "count_order": (1.0) if (x[0].l_quantity != None) else (0.0)})})
+
+results = lineitem_3.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus, "sum_qty": x[1].sum_qty, "sum_base_price": x[1].sum_base_price, "sum_disc_price": x[1].sum_disc_price, "sum_charge": x[1].sum_charge, "avg_qty": ((x[1].avg_qty_sum_for_mean) / (x[1].avg_qty_count_for_mean)), "avg_price": ((x[1].avg_price_sum_for_mean) / (x[1].avg_price_count_for_mean)), "avg_disc": ((x[1].avg_disc_sum_for_mean) / (x[1].avg_disc_count_for_mean)), "count_order": x[1].count_order}): True})
 
 ============================================================
- SDQL Execution Time: 15.130653619766235 s 
-Pandas Execution Time: 0.19117331504821777 s 
-DuckDB Execution Time: 0.027024030685424805 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+ SDQL Execution Time: 74.03480696678162 s 
+Pandas Execution Time: 0.19317340850830078 s 
+DuckDB Execution Time: 0.026023387908935547 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -21,61 +27,73 @@ DuckDB Execution Time: 0.027024030685424805 s
  Query 1: Pass 
 ============================================================
 >> Query 2 (Q2) <<
-region_nation: neither joint
-region ->
-   | probe end: nation
-   | build key: r_regionkey
-   | probe key: n_regionkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-region_nation: neither joint
-region ->
-   | probe end: nation
-   | build key: r_regionkey
-   | probe key: n_regionkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-part ->
-   | probe end: partsupp
-   | build key: p_partkey
-   | probe key: ps_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: ['p_partkey', 'p_mfgr']
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 europe = "EUROPE"
 brass = "BRASS"
-region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == europe) else (None))
+region_nation_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
 
-region_nation = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n_nationkey": x_nation[0].n_nationkey, "n_name": x_nation[0].n_name})}) if (region_part[x_nation[0].n_regionkey] != None) else (None))
+region_nation_build_nest_dict = region_nation_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
 
-region_nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_suppkey": x_supplier[0].s_suppkey, "s_acctbal": x_supplier[0].s_acctbal, "s_name": x_supplier[0].s_name, "n_name": region_nation[x_supplier[0].s_nationkey].n_name, "s_address": x_supplier[0].s_address, "s_phone": x_supplier[0].s_phone, "s_comment": x_supplier[0].s_comment})}) if (region_nation[x_supplier[0].s_nationkey] != None) else (None))
+region_nation_supplier_build_pre_ops = na.sum(lambda x: (region_nation_build_nest_dict[x[0].n_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_build_nest_dict[x[0].n_regionkey] != None) else (None))
 
-region_nation_supplier_ps1 = ps.sum(lambda x_ps1: ({x_ps1[0].ps_partkey: record({"min_supplycost": x_ps1[0].ps_supplycost, "ps_partkey": x_ps1[0].ps_partkey, "ps_suppkey": x_ps1[0].ps_suppkey, "s_suppkey": x_ps1[0].ps_suppkey})}) if (region_nation_supplier[x_ps1[0].ps_suppkey] != None) else (None))
+region_nation_supplier_build_nest_dict = region_nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_mfgr": x_part[0].p_mfgr})}) if (((endsWith(x_part[0].p_type, brass)) * (x_part[0].p_size == 15))) else (None))
+region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_pre_ops = su.sum(lambda x: (region_nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
 
-results = ps.sum(lambda x_partsupp: (((({record({"s_acctbal": region_nation_supplier[x_partsupp[0].ps_suppkey].s_acctbal, "s_name": region_nation_supplier[x_partsupp[0].ps_suppkey].s_name, "n_name": region_nation_supplier[x_partsupp[0].ps_suppkey].n_name, "p_partkey": part_part[x_partsupp[0].ps_partkey].p_partkey, "p_mfgr": part_part[x_partsupp[0].ps_partkey].p_mfgr, "s_address": region_nation_supplier[x_partsupp[0].ps_suppkey].s_address, "s_phone": region_nation_supplier[x_partsupp[0].ps_suppkey].s_phone, "s_comment": region_nation_supplier[x_partsupp[0].ps_suppkey].s_comment}): True}) if (x_partsupp[0].ps_supplycost == region_nation_supplier_ps1[x_partsupp[0].ps_partkey].min_supplycost) else (None)) if (region_nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (region_nation_supplier_ps1[x_partsupp[0].ps_partkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+region_nation_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
+
+region_nation_build_nest_dict = region_nation_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_build_pre_ops = na.sum(lambda x: (region_nation_build_nest_dict[x[0].n_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_build_nest_dict[x[0].n_regionkey] != None) else (None))
+
+region_nation_supplier_build_nest_dict = region_nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_ps1_build_pre_ops = su.sum(lambda x: (region_nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
+
+region_nation_supplier_ps1_build_nest_dict = region_nation_supplier_ps1_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_ps1_0 = ps.sum(lambda x: (region_nation_supplier_ps1_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_supplier_ps1_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+
+region_nation_supplier_ps1_1 = region_nation_supplier_ps1_0.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"min_supplycost": x[0].ps_supplycost})})
+
+region_nation_supplier_ps1_part_partsupp_build_pre_ops = region_nation_supplier_ps1_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+part_partsupp_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
+
+part_partsupp_build_nest_dict = part_partsupp_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_ps1_part_partsupp_probe_pre_ops = ps.sum(lambda x: (part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
+
+region_nation_supplier_ps1_part_partsupp_build_nest_dict = region_nation_supplier_ps1_part_partsupp_build_pre_ops.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_region_nation_supplier_ps1_part_partsupp_probe_pre_ops = region_nation_supplier_ps1_part_partsupp_probe_pre_ops.sum(lambda x: (region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
+
+region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+region_nation_supplier_region_nation_supplier_ps1_part_partsupp_0 = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_probe_pre_ops.sum(lambda x: (region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_supplier_region_nation_supplier_ps1_part_partsupp_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+
+region_nation_supplier_region_nation_supplier_ps1_part_partsupp_1 = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].ps_supplycost == x[0].min_supplycost) else (None))
+
+results = region_nation_supplier_region_nation_supplier_ps1_part_partsupp_1.sum(lambda x: {record({"s_acctbal": x[0].s_acctbal, "s_name": x[0].s_name, "n_name": x[0].n_name, "p_partkey": x[0].p_partkey, "p_mfgr": x[0].p_mfgr, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "s_comment": x[0].s_comment}): True})
 
 ============================================================
- SDQL Execution Time: 1.1090004444122314 s 
-Pandas Execution Time: 0.037033796310424805 s 
-DuckDB Execution Time: 0.0370333194732666 s 
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/partsupp.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+Reading T:/tpch_dataset/100M/region.tbl Finished.
+ SDQL Execution Time: 2.035837173461914 s 
+Pandas Execution Time: 0.04103732109069824 s 
+DuckDB Execution Time: 0.03803443908691406 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -87,33 +105,38 @@ DuckDB Execution Time: 0.0370333194732666 s
  Query 2: Pass 
 ============================================================
 >> Query 3 (Q3) <<
-customer_orders: neither joint
-customer ->
-   | probe end: orders
-   | build key: c_custkey
-   | probe key: o_custkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 building = "BUILDING"
-customer_part = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (x_customer[0].c_mktsegment == building) else (None))
+customer_orders_build_pre_ops = cu.sum(lambda x: ({x[0]: x[1]}) if (x[0].c_mktsegment == building) else (None))
 
-customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate, "o_shippriority": x_orders[0].o_shippriority})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (x_orders[0].o_orderdate < 19950315) else (None))
+customer_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderdate < 19950315) else (None))
 
-lineitem_aggr = li.sum(lambda x_lineitem: (({record({"l_orderkey": x_lineitem[0].l_orderkey, "o_orderdate": customer_orders[x_lineitem[0].l_orderkey].o_orderdate, "o_shippriority": customer_orders[x_lineitem[0].l_orderkey].o_shippriority}): ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_shipdate > 19950315) else (None))
+customer_orders_build_nest_dict = customer_orders_build_pre_ops.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_orderkey": x_lineitem_aggr[0].l_orderkey, "o_orderdate": x_lineitem_aggr[0].o_orderdate, "o_shippriority": x_lineitem_aggr[0].o_shippriority, "revenue": x_lineitem_aggr[1]}): True})
+customer_orders_lineitem_build_pre_ops = customer_orders_probe_pre_ops.sum(lambda x: (customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate > 19950315) else (None))
+
+customer_orders_lineitem_build_nest_dict = customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+customer_orders_lineitem_0 = customer_orders_lineitem_probe_pre_ops.sum(lambda x: (customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+customer_orders_lineitem_1 = customer_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+customer_orders_lineitem_2 = customer_orders_lineitem_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "o_orderdate": x[0].o_orderdate, "o_shippriority": x[0].o_shippriority}): record({"revenue": x[0].revenue})})
+
+results = customer_orders_lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 6.776113510131836 s 
-Pandas Execution Time: 0.1331193447113037 s 
-DuckDB Execution Time: 0.03102850914001465 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+ SDQL Execution Time: 18.407411575317383 s 
+Pandas Execution Time: 0.13512110710144043 s 
+DuckDB Execution Time: 0.0320286750793457 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -125,19 +148,26 @@ DuckDB Execution Time: 0.03102850914001465 s
  Query 3: Pass 
 ============================================================
 >> Query 4 (Q4) <<
-{}
 >> Optimized Query <<
 ============================================================
-lineitem_part = li.sum(lambda x_lineitem: ({x_lineitem[0].l_orderkey: True}) if (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate) else (None))
+lineitem_orders_isin_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None))
 
-orders_aggr = ord.sum(lambda x_orders: (({x_orders[0].o_orderpriority: 1.0}) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19930701) * (x_orders[0].o_orderdate < 19931001))) else (None))
+lineitem_orders_isin_build_index = lineitem_orders_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
 
-results = orders_aggr.sum(lambda x_orders_aggr: {record({"o_orderpriority": x_orders_aggr[0], "order_count": x_orders_aggr[1]}): True})
+orders_0 = ord.sum(lambda x: ({x[0]: x[1]}) if (lineitem_orders_isin_build_index[x[0].o_orderkey] != None) else (None))
+
+orders_1 = orders_0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19930701) * (x[0].o_orderdate < 19931001))) else (None))
+
+orders_2 = orders_1.sum(lambda x: {record({"o_orderpriority": x[0].o_orderpriority}): record({"order_count": (1.0) if (x[0].o_orderdate != None) else (0.0)})})
+
+results = orders_2.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 8.283472776412964 s 
-Pandas Execution Time: 0.12411141395568848 s 
-DuckDB Execution Time: 0.03302955627441406 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+ SDQL Execution Time: 21.293214082717896 s 
+Pandas Execution Time: 0.12010812759399414 s 
+DuckDB Execution Time: 0.034029245376586914 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -149,50 +179,54 @@ DuckDB Execution Time: 0.03302955627441406 s
  Query 4: Pass 
 ============================================================
 >> Query 5 (Q5) <<
-supplier ->
-   | probe end: region_nation_customer_orders_lineitem
-   | build key: ['s_suppkey', 's_nationkey']
-   | probe key: ['l_suppkey', 'c_nationkey']
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-region_nation: neither joint
-region ->
-   | probe end: nation
-   | build key: r_regionkey
-   | probe key: n_regionkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 asia = "ASIA"
-region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == asia) else (None))
+region_nation_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == asia) else (None))
 
-region_nation = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})}) if (region_part[x_nation[0].n_regionkey] != None) else (None))
+region_nation_build_nest_dict = region_nation_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
 
-region_nation_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"c_nationkey": x_customer[0].c_nationkey, "n_name": region_nation[x_customer[0].c_nationkey].n_name})}) if (region_nation[x_customer[0].c_nationkey] != None) else (None))
+region_nation_customer_build_pre_ops = na.sum(lambda x: (region_nation_build_nest_dict[x[0].n_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_build_nest_dict[x[0].n_regionkey] != None) else (None))
 
-region_nation_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey, "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19950101))) else (None))
+region_nation_customer_build_nest_dict = region_nation_customer_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-supplier_part = su.sum(lambda x_supplier: {record({"s_suppkey": x_supplier[0].s_suppkey, "s_nationkey": x_supplier[0].s_nationkey}): True})
+region_nation_customer_orders_build_pre_ops = cu.sum(lambda x: (region_nation_customer_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_customer_build_nest_dict[x[0].c_nationkey] != None) else (None))
 
-supplier_region_nation_customer_orders_lineitem = li.sum(lambda x_lineitem: (({region_nation_customer_orders[x_lineitem[0].l_orderkey].n_name: record({"revenue": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (supplier_part[record({"l_suppkey": x_lineitem[0].l_suppkey, "c_nationkey": region_nation_customer_orders[x_lineitem[0].l_orderkey].c_nationkey})] != None) else (None)) if (region_nation_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+region_nation_customer_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19940101) * (x[0].o_orderdate < 19950101))) else (None))
 
-results = supplier_region_nation_customer_orders_lineitem.sum(lambda x_supplier_region_nation_customer_orders_lineitem: {record({"n_name": x_supplier_region_nation_customer_orders_lineitem[0], "revenue": x_supplier_region_nation_customer_orders_lineitem[1].revenue}): True})
+region_nation_customer_orders_build_nest_dict = region_nation_customer_orders_build_pre_ops.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+
+region_nation_customer_orders_lineitem_build_pre_ops = region_nation_customer_orders_probe_pre_ops.sum(lambda x: (region_nation_customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+region_nation_customer_orders_lineitem_build_nest_dict = region_nation_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+supplier_region_nation_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: (region_nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+supplier_region_nation_customer_orders_lineitem_build_nest_dict = su.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_nationkey": x[0].s_nationkey}): sr_dict({x[0]: x[1]})})
+
+supplier_region_nation_customer_orders_lineitem_0 = supplier_region_nation_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (supplier_region_nation_customer_orders_lineitem_build_nest_dict[record({"s_suppkey": x[0].l_suppkey, "s_nationkey": x[0].c_nationkey})].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_region_nation_customer_orders_lineitem_build_nest_dict[record({"s_suppkey": x[0].l_suppkey, "s_nationkey": x[0].c_nationkey})] != None) else (None))
+
+supplier_region_nation_customer_orders_lineitem_1 = supplier_region_nation_customer_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+supplier_region_nation_customer_orders_lineitem_2 = supplier_region_nation_customer_orders_lineitem_1.sum(lambda x: {record({"n_name": x[0].n_name}): record({"revenue": x[0].revenue})})
+
+results = supplier_region_nation_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 6.784899473190308 s 
-Pandas Execution Time: 0.10309290885925293 s 
-DuckDB Execution Time: 0.0420379638671875 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/region.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+ SDQL Execution Time: 9.230337619781494 s 
+Pandas Execution Time: 0.09508514404296875 s 
+DuckDB Execution Time: 0.0420382022857666 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -206,13 +240,18 @@ DuckDB Execution Time: 0.0420379638671875 s
 >> Query 6 (Q6) <<
 >> Optimized Query <<
 ============================================================
-lineitem_aggr = li.sum(lambda x_lineitem: (((x_lineitem[0].l_extendedprice) * (x_lineitem[0].l_discount))) if (((((((((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) * (x_lineitem[0].l_discount >= 0.05))) * (x_lineitem[0].l_discount <= 0.07))) * (x_lineitem[0].l_quantity < 24))) else (0.0))
+lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) * (x[0].l_discount >= 0.05))) * (x[0].l_discount <= 0.07))) * (x[0].l_quantity < 24))) else (None))
 
-results = {record({"revenue": lineitem_aggr}): True}
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]})
+
+lineitem_2 = lineitem_1.sum(lambda x: record({"revenue": x[0].revenue}))
+
+results = {lineitem_2: True}
 ============================================================
- SDQL Execution Time: 10.218229293823242 s 
-Pandas Execution Time: 0.06305694580078125 s 
-DuckDB Execution Time: 0.01501321792602539 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+ SDQL Execution Time: 11.009935855865479 s 
+Pandas Execution Time: 0.06706094741821289 s 
+DuckDB Execution Time: 0.014011621475219727 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -224,52 +263,68 @@ DuckDB Execution Time: 0.01501321792602539 s
  Query 6: Pass 
 ============================================================
 >> Query 7 (Q7) <<
-n1_supplier: neither joint
-n1 ->
-   | probe end: supplier
-   | build key: n_nationkey
-   | probe key: s_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-n2_customer: neither joint
-n2 ->
-   | probe end: customer
-   | build key: n_nationkey
-   | probe key: c_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 france = "FRANCE"
 germany = "GERMANY"
-n1_part = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n_name": x_n1[0].n_name})}) if (((x_n1[0].n_name == france) + (x_n1[0].n_name == germany))) else (None))
+n1_supplier_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
 
-n1_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n1_name": n1_part[x_supplier[0].s_nationkey].n_name})}) if (n1_part[x_supplier[0].s_nationkey] != None) else (None))
+n1_supplier_build_nest_dict = n1_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-n2_part = na.sum(lambda x_n2: ({x_n2[0].n_nationkey: record({"n_name": x_n2[0].n_name})}) if (((x_n2[0].n_name == france) + (x_n2[0].n_name == germany))) else (None))
+n1_supplier_0 = su.sum(lambda x: (n1_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n1_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
 
-n2_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"n_name": n2_part[x_customer[0].c_nationkey].n_name})}) if (n2_part[x_customer[0].c_nationkey] != None) else (None))
+n1_supplier_n2_customer_orders_lineitem_build_pre_ops = n1_supplier_0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
 
-n2_customer_orders = ord.sum(lambda x_orders: ({x_orders[0].o_orderkey: record({"n2_name": n2_customer[x_orders[0].o_custkey].n_name})}) if (n2_customer[x_orders[0].o_custkey] != None) else (None))
+n2_customer_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
 
-n1_supplier_n2_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({record({"supp_nation": n1_supplier[x_lineitem[0].l_suppkey].n1_name, "cust_nation": n2_customer_orders[x_lineitem[0].l_orderkey].n2_name, "l_year": extractYear(x_lineitem[0].l_shipdate)}): record({"revenue": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (((((n1_supplier[x_lineitem[0].l_suppkey].n1_name == france) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == germany))) + (((n1_supplier[x_lineitem[0].l_suppkey].n1_name == germany) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == france))))) else (None)) if (n1_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (n2_customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19950101) * (x_lineitem[0].l_shipdate <= 19961231))) else (None))
+n2_customer_build_nest_dict = n2_customer_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-results = n1_supplier_n2_customer_orders_lineitem.sum(lambda x_n1_supplier_n2_customer_orders_lineitem: {record({"supp_nation": x_n1_supplier_n2_customer_orders_lineitem[0].supp_nation, "cust_nation": x_n1_supplier_n2_customer_orders_lineitem[0].cust_nation, "l_year": x_n1_supplier_n2_customer_orders_lineitem[0].l_year, "revenue": x_n1_supplier_n2_customer_orders_lineitem[1].revenue}): True})
+n2_customer_orders_build_pre_ops = cu.sum(lambda x: (n2_customer_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n2_customer_build_nest_dict[x[0].c_nationkey] != None) else (None))
+
+n2_customer_orders_build_nest_dict = n2_customer_orders_build_pre_ops.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+
+n2_customer_orders_0 = ord.sum(lambda x: (n2_customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n2_customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+n2_customer_orders_lineitem_build_pre_ops = n2_customer_orders_0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
+
+n2_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950101) * (x[0].l_shipdate <= 19961231))) else (None))
+
+n2_customer_orders_lineitem_build_nest_dict = n2_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+n1_supplier_n2_customer_orders_lineitem_probe_pre_ops = n2_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (n2_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n2_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+n1_supplier_n2_customer_orders_lineitem_build_nest_dict = n1_supplier_n2_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+n1_supplier_n2_customer_orders_lineitem_0 = n1_supplier_n2_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (n1_supplier_n2_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n1_supplier_n2_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
+
+n1_supplier_n2_customer_orders_lineitem_1 = n1_supplier_n2_customer_orders_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].n1_name == france) * (x[0].n2_name == germany))) + (((x[0].n1_name == germany) * (x[0].n2_name == france))))) else (None))
+
+n1_supplier_n2_customer_orders_lineitem_2 = n1_supplier_n2_customer_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]})
+
+n1_supplier_n2_customer_orders_lineitem_3 = n1_supplier_n2_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]})
+
+n1_supplier_n2_customer_orders_lineitem_4 = n1_supplier_n2_customer_orders_lineitem_3.sum(lambda x: {x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]})
+
+n1_supplier_n2_customer_orders_lineitem_5 = n1_supplier_n2_customer_orders_lineitem_4.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+n1_supplier_n2_customer_orders_lineitem_6 = n1_supplier_n2_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
+
+results = n1_supplier_n2_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 7.9571802616119385 s 
-Pandas Execution Time: 0.0940854549407959 s 
-DuckDB Execution Time: 0.07006359100341797 s 
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+ SDQL Execution Time: 15.803260326385498 s 
+Pandas Execution Time: 0.09508562088012695 s 
+DuckDB Execution Time: 0.06706047058105469 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -281,78 +336,95 @@ DuckDB Execution Time: 0.07006359100341797 s
  Query 7: Pass 
 ============================================================
 >> Query 8 (Q8) <<
-n2 ->
-   | probe end: supplier_part_region_n1_customer_orders_lineitem
-   | build key: n2_nationkey
-   | probe key: s_nationkey
-   | rename columns: {'n_nationkey': 'n2_nationkey', 'n_name': 'n2_name', 'n_regionkey': 'n2_regionkey', 'n_comment': 'n2_comment'}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-supplier ->
-   | probe end: part_region_n1_customer_orders_lineitem
-   | build key: s_suppkey
-   | probe key: l_suppkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-part ->
-   | probe end: region_n1_customer_orders_lineitem
-   | build key: p_partkey
-   | probe key: l_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-region_n1: neither joint
-region ->
-   | probe end: n1
-   | build key: r_regionkey
-   | probe key: n1_regionkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 economyanodizedsteel = "ECONOMY ANODIZED STEEL"
 america = "AMERICA"
 brazil = "BRAZIL"
-n2_part = na.sum(lambda x_n2: {x_n2[0].n_nationkey: record({"n2_comment": x_n2[0].n_comment, "n2_name": x_n2[0].n_name, "n2_nationkey": x_n2[0].n_nationkey, "n2_regionkey": x_n2[0].n_regionkey})})
+n2_0 = na.sum(lambda x: {x[0].concat(record({"n2_nationkey": x[0].n_nationkey})): x[1]})
 
-supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: record({"s_nationkey": x_supplier[0].s_nationkey})})
+n2_1 = n2_0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
 
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (x_part[0].p_type == economyanodizedsteel) else (None))
+n2_2 = n2_1.sum(lambda x: {x[0].concat(record({"n2_regionkey": x[0].n_regionkey})): x[1]})
 
-region_part = re.sum(lambda x_region: ({x_region[0].r_regionkey: True}) if (x_region[0].r_name == america) else (None))
+n2_supplier_part_region_n1_customer_orders_lineitem_build_pre_ops = n2_2.sum(lambda x: {x[0].concat(record({"n2_comment": x[0].n_comment})): x[1]})
 
-region_n1 = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n1_nationkey": x_n1[0].n_nationkey})}) if (region_part[x_n1[0].n_regionkey] != None) else (None))
+part_region_n1_customer_orders_lineitem_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (x[0].p_type == economyanodizedsteel) else (None))
 
-region_n1_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: True}) if (region_n1[x_customer[0].c_nationkey] != None) else (None))
+region_n1_build_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == america) else (None))
 
-region_n1_customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})}) if (region_n1_customer[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19950101) * (x_orders[0].o_orderdate <= 19961231))) else (None))
+n1_0 = na.sum(lambda x: {x[0].concat(record({"n1_nationkey": x[0].n_nationkey})): x[1]})
 
-n2_supplier_part_region_n1_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({extractYear(region_n1_customer_orders[x_lineitem[0].l_orderkey].o_orderdate): record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey].n2_name == brazil) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (n2_part[supplier_part[x_lineitem[0].l_suppkey].s_nationkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (region_n1_customer_orders[x_lineitem[0].l_orderkey] != None) else (None))
+n1_1 = n1_0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
 
-results = n2_supplier_part_region_n1_customer_orders_lineitem.sum(lambda x_n2_supplier_part_region_n1_customer_orders_lineitem: {record({"o_year": x_n2_supplier_part_region_n1_customer_orders_lineitem[0], "mkt_share": ((x_n2_supplier_part_region_n1_customer_orders_lineitem[1].A) / (x_n2_supplier_part_region_n1_customer_orders_lineitem[1].B))}): True})
+n1_2 = n1_1.sum(lambda x: {x[0].concat(record({"n1_regionkey": x[0].n_regionkey})): x[1]})
+
+region_n1_probe_pre_ops = n1_2.sum(lambda x: {x[0].concat(record({"n1_comment": x[0].n_comment})): x[1]})
+
+region_n1_build_nest_dict = region_n1_build_pre_ops.sum(lambda x: {x[0].r_regionkey: sr_dict({x[0]: x[1]})})
+
+region_n1_customer_build_pre_ops = region_n1_probe_pre_ops.sum(lambda x: (region_n1_build_nest_dict[x[0].n1_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_n1_build_nest_dict[x[0].n1_regionkey] != None) else (None))
+
+region_n1_customer_build_nest_dict = region_n1_customer_build_pre_ops.sum(lambda x: {x[0].n1_nationkey: sr_dict({x[0]: x[1]})})
+
+region_n1_customer_orders_build_pre_ops = cu.sum(lambda x: (region_n1_customer_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_n1_customer_build_nest_dict[x[0].c_nationkey] != None) else (None))
+
+region_n1_customer_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19950101) * (x[0].o_orderdate <= 19961231))) else (None))
+
+region_n1_customer_orders_build_nest_dict = region_n1_customer_orders_build_pre_ops.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+
+region_n1_customer_orders_lineitem_build_pre_ops = region_n1_customer_orders_probe_pre_ops.sum(lambda x: (region_n1_customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_n1_customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+region_n1_customer_orders_lineitem_build_nest_dict = region_n1_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+part_region_n1_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: (region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+part_region_n1_customer_orders_lineitem_build_nest_dict = part_region_n1_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+supplier_part_region_n1_customer_orders_lineitem_probe_pre_ops = part_region_n1_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_partkey] != None) else (None))
+
+supplier_part_region_n1_customer_orders_lineitem_build_nest_dict = su.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_probe_pre_ops = supplier_part_region_n1_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (supplier_part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
+
+n2_supplier_part_region_n1_customer_orders_lineitem_build_nest_dict = n2_supplier_part_region_n1_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].n2_nationkey: sr_dict({x[0]: x[1]})})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_0 = n2_supplier_part_region_n1_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (n2_supplier_part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (n2_supplier_part_region_n1_customer_orders_lineitem_build_nest_dict[x[0].s_nationkey] != None) else (None))
+
+n2_supplier_part_region_n1_customer_orders_lineitem_1 = n2_supplier_part_region_n1_customer_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"o_year": extractYear(x[0].o_orderdate)})): x[1]})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_2 = n2_supplier_part_region_n1_customer_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_3 = n2_supplier_part_region_n1_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"nation": x[0].n2_name})): x[1]})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_4 = n2_supplier_part_region_n1_customer_orders_lineitem_3.sum(lambda x: {x[0].concat(record({"volume_A": (x[0].volume) if (x[0].nation == brazil) else (0.0)})): x[1]})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_5 = n2_supplier_part_region_n1_customer_orders_lineitem_4.sum(lambda x: {record({"o_year": x[0].o_year}): record({"A": x[0].volume_A, "B": x[0].volume})})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_6 = n2_supplier_part_region_n1_customer_orders_lineitem_5.sum(lambda x: {x[0].concat(x[1]): True})
+
+n2_supplier_part_region_n1_customer_orders_lineitem_7 = n2_supplier_part_region_n1_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].A) / (x[0].B))})): x[1]})
+
+results = n2_supplier_part_region_n1_customer_orders_lineitem_7.sum(lambda x: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True})
 
 ============================================================
- SDQL Execution Time: 6.7651050090789795 s 
-Pandas Execution Time: 0.11409997940063477 s 
-DuckDB Execution Time: 0.05004525184631348 s 
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+Reading T:/tpch_dataset/100M/region.tbl Finished.
+ SDQL Execution Time: 11.832505941390991 s 
+Pandas Execution Time: 0.11210083961486816 s 
+DuckDB Execution Time: 0.052046775817871094 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -364,61 +436,57 @@ DuckDB Execution Time: 0.05004525184631348 s
  Query 8: Pass 
 ============================================================
 >> Query 9 (Q9) <<
-nation_supplier: neither joint
-nation ->
-   | probe end: supplier
-   | build key: n_nationkey
-   | probe key: s_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-part ->
-   | probe end: partsupp
-   | build key: p_partkey
-   | probe key: ps_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-orders ->
-   | probe end: lineitem
-   | build key: o_orderkey
-   | probe key: l_orderkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
+Warning: Unexpected Type <class 'pysdql.core.dtypes.ColExtExpr.ColExtExpr'>
 >> Optimized Query <<
 ============================================================
 green = "green"
-nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
+nation_supplier_build_nest_dict = na.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+nation_supplier_part_partsupp_build_pre_ops = su.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
 
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
+part_partsupp_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (firstIndex(x[0].p_name, green) != ((-1) * (1))) else (None))
 
-nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({record({"ps_suppkey": x_partsupp[0].ps_suppkey, "ps_partkey": x_partsupp[0].ps_partkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+part_partsupp_build_nest_dict = part_partsupp_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
 
-orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})})
+nation_supplier_part_partsupp_probe_pre_ops = ps.sum(lambda x: (part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
 
-nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({record({"nation": nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].n_name, "o_year": extractYear(orders_part[x_lineitem[0].l_orderkey].o_orderdate)}): record({"sum_profit": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) - (((nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].ps_supplycost) * (x_lineitem[0].l_quantity))))})}) if (nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})] != None) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None))
+nation_supplier_part_partsupp_build_nest_dict = nation_supplier_part_partsupp_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
 
-results = nation_supplier_part_partsupp_orders_lineitem.sum(lambda x_nation_supplier_part_partsupp_orders_lineitem: {record({"nation": x_nation_supplier_part_partsupp_orders_lineitem[0].nation, "o_year": x_nation_supplier_part_partsupp_orders_lineitem[0].o_year, "sum_profit": x_nation_supplier_part_partsupp_orders_lineitem[1].sum_profit}): True})
+nation_supplier_part_partsupp_orders_lineitem_build_pre_ops = nation_supplier_part_partsupp_probe_pre_ops.sum(lambda x: (nation_supplier_part_partsupp_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_part_partsupp_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+
+orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+nation_supplier_part_partsupp_orders_lineitem_probe_pre_ops = li.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+nation_supplier_part_partsupp_orders_lineitem_build_nest_dict = nation_supplier_part_partsupp_orders_lineitem_build_pre_ops.sum(lambda x: {record({"ps_suppkey": x[0].ps_suppkey, "ps_partkey": x[0].ps_partkey}): sr_dict({x[0]: x[1]})})
+
+nation_supplier_part_partsupp_orders_lineitem_0 = nation_supplier_part_partsupp_orders_lineitem_probe_pre_ops.sum(lambda x: (nation_supplier_part_partsupp_orders_lineitem_build_nest_dict[record({"ps_suppkey": x[0].l_suppkey, "ps_partkey": x[0].l_partkey})].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_part_partsupp_orders_lineitem_build_nest_dict[record({"ps_suppkey": x[0].l_suppkey, "ps_partkey": x[0].l_partkey})] != None) else (None))
+
+nation_supplier_part_partsupp_orders_lineitem_1 = nation_supplier_part_partsupp_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"nation": x[0].n_name})): x[1]})
+
+nation_supplier_part_partsupp_orders_lineitem_2 = nation_supplier_part_partsupp_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"o_year": extractYear(x[0].o_orderdate)})): x[1]})
+
+nation_supplier_part_partsupp_orders_lineitem_3 = nation_supplier_part_partsupp_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"amount": ((((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))) - (((x[0].ps_supplycost) * (x[0].l_quantity))))})): x[1]})
+
+nation_supplier_part_partsupp_orders_lineitem_4 = nation_supplier_part_partsupp_orders_lineitem_3.sum(lambda x: {record({"nation": x[0].nation, "o_year": x[0].o_year}): record({"sum_profit": x[0].amount})})
+
+results = nation_supplier_part_partsupp_orders_lineitem_4.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 11.163082599639893 s 
-Pandas Execution Time: 0.41736769676208496 s 
-DuckDB Execution Time: 0.0520479679107666 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+Reading T:/tpch_dataset/100M/partsupp.tbl Finished.
+ SDQL Execution Time: 54.40809726715088 s 
+Pandas Execution Time: 0.43639349937438965 s 
+DuckDB Execution Time: 0.07006311416625977 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -430,45 +498,42 @@ DuckDB Execution Time: 0.0520479679107666 s
  Query 9: Pass 
 ============================================================
 >> Query 10 (Q10) <<
-nation ->
-   | probe end: customer_orders
-   | build key: n_nationkey
-   | probe key: c_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-customer ->
-   | probe end: orders
-   | build key: c_custkey
-   | probe key: o_custkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 r = "R"
-nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
+customer_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19931001) * (x[0].o_orderdate < 19940101))) else (None))
 
-customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_acctbal": x_customer[0].c_acctbal, "c_address": x_customer[0].c_address, "c_comment": x_customer[0].c_comment, "c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name, "c_phone": x_customer[0].c_phone, "c_nationkey": x_customer[0].c_nationkey})})
+customer_orders_build_nest_dict = cu.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
 
-nation_customer_orders = ord.sum(lambda x_orders: (((({x_orders[0].o_orderkey: record({"o_orderkey": x_orders[0].o_orderkey, "c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "c_acctbal": customer_part[x_orders[0].o_custkey].c_acctbal, "c_phone": customer_part[x_orders[0].o_custkey].c_phone, "n_name": nation_part[customer_part[x_orders[0].o_custkey].c_nationkey].n_name, "c_address": customer_part[x_orders[0].o_custkey].c_address, "c_comment": customer_part[x_orders[0].o_custkey].c_comment})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (nation_part[customer_part[x_orders[0].o_custkey].c_nationkey] != None) else (None)) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (((x_orders[0].o_orderdate >= 19931001) * (x_orders[0].o_orderdate < 19940101))) else (None))
+nation_customer_orders_probe_pre_ops = customer_orders_probe_pre_ops.sum(lambda x: (customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
 
-lineitem_aggr = li.sum(lambda x_lineitem: (({record({"c_custkey": nation_customer_orders[x_lineitem[0].l_orderkey].c_custkey, "c_name": nation_customer_orders[x_lineitem[0].l_orderkey].c_name, "c_acctbal": nation_customer_orders[x_lineitem[0].l_orderkey].c_acctbal, "c_phone": nation_customer_orders[x_lineitem[0].l_orderkey].c_phone, "n_name": nation_customer_orders[x_lineitem[0].l_orderkey].n_name, "c_address": nation_customer_orders[x_lineitem[0].l_orderkey].c_address, "c_comment": nation_customer_orders[x_lineitem[0].l_orderkey].c_comment}): ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (nation_customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_returnflag == r) else (None))
+nation_customer_orders_build_nest_dict = na.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"c_custkey": x_lineitem_aggr[0].c_custkey, "c_name": x_lineitem_aggr[0].c_name, "c_acctbal": x_lineitem_aggr[0].c_acctbal, "c_phone": x_lineitem_aggr[0].c_phone, "n_name": x_lineitem_aggr[0].n_name, "c_address": x_lineitem_aggr[0].c_address, "c_comment": x_lineitem_aggr[0].c_comment, "revenue": x_lineitem_aggr[1]}): True})
+nation_customer_orders_lineitem_build_pre_ops = nation_customer_orders_probe_pre_ops.sum(lambda x: (nation_customer_orders_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_customer_orders_build_nest_dict[x[0].c_nationkey] != None) else (None))
+
+nation_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_returnflag == r) else (None))
+
+nation_customer_orders_lineitem_build_nest_dict = nation_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+nation_customer_orders_lineitem_0 = nation_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+nation_customer_orders_lineitem_1 = nation_customer_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+nation_customer_orders_lineitem_2 = nation_customer_orders_lineitem_1.sum(lambda x: {record({"c_custkey": x[0].c_custkey, "c_name": x[0].c_name, "c_acctbal": x[0].c_acctbal, "c_phone": x[0].c_phone, "n_name": x[0].n_name, "c_address": x[0].c_address, "c_comment": x[0].c_comment}): record({"revenue": x[0].revenue})})
+
+results = nation_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 7.196495771408081 s 
-Pandas Execution Time: 0.12511277198791504 s 
-DuckDB Execution Time: 0.036031484603881836 s 
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+ SDQL Execution Time: 15.205721378326416 s 
+Pandas Execution Time: 0.1261136531829834 s 
+DuckDB Execution Time: 0.037033796310424805 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -480,33 +545,40 @@ DuckDB Execution Time: 0.036031484603881836 s
  Query 10: Pass 
 ============================================================
 >> Query 11 (Q11) <<
-nation_supplier: neither joint
-nation ->
-   | probe end: supplier
-   | build key: n_nationkey
-   | probe key: s_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 germany = "GERMANY"
-nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == germany) else (None))
+nation_supplier_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == germany) else (None))
 
-nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: True}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+nation_supplier_build_nest_dict = nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-partsupp_aggr = ps.sum(lambda x_partsupp: (record({"filt_val": ((((x_partsupp[0].ps_supplycost) * (x_partsupp[0].ps_availqty))) * (0.0001)), "filt_agg": sr_dict({x_partsupp[0].ps_partkey: ((x_partsupp[0].ps_supplycost) * (x_partsupp[0].ps_availqty))})})) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None))
+nation_supplier_partsupp_build_pre_ops = su.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
 
-results = partsupp_aggr.filt_agg.sum(lambda x_partsupp_aggr: ({record({"ps_partkey": x_partsupp_aggr[0], "value": x_partsupp_aggr[1]}): True}) if (x_partsupp_aggr[1] > partsupp_aggr.filt_val) else (None))
+nation_supplier_partsupp_build_nest_dict = nation_supplier_partsupp_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+nation_supplier_partsupp_0 = ps.sum(lambda x: (nation_supplier_partsupp_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_partsupp_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+
+tmp_var_JQ_JQ_ps_supplycost_mul_ps_availqty_XZ_mul_00001_XZ = nation_supplier_partsupp_0.sum(lambda x: ((((x[0].ps_supplycost) * (x[0].ps_availqty))) * (0.0001)))
+
+nation_supplier_partsupp_1 = nation_supplier_partsupp_0.sum(lambda x: {x[0]: ((x[0].ps_supplycost) * (x[0].ps_availqty))})
+
+nation_supplier_partsupp_2 = nation_supplier_partsupp_1.sum(lambda x: ({x[0]: True}) if (tmp_var_JQ_JQ_ps_supplycost_mul_ps_availqty_XZ_mul_00001_XZ < x[1]) else (None))
+
+nation_supplier_partsupp_3 = nation_supplier_partsupp_2.sum(lambda x: {x[0].concat(record({"value": ((x[0].ps_supplycost) * (x[0].ps_availqty))})): x[1]})
+
+nation_supplier_partsupp_4 = nation_supplier_partsupp_3.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"value": x[0].value})})
+
+results = nation_supplier_partsupp_4.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 0.4333920478820801 s 
-Pandas Execution Time: 0.710641622543335 s 
-DuckDB Execution Time: 0.021019935607910156 s 
+Reading T:/tpch_dataset/100M/partsupp.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+ SDQL Execution Time: 0.9498639106750488 s 
+Pandas Execution Time: 0.7256550788879395 s 
+DuckDB Execution Time: 0.01901698112487793 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -514,38 +586,742 @@ DuckDB Execution Time: 0.021019935607910156 s
 ============================================================
 ============================================================
 >> Comparing SDQL with Pandas ... <<
+Warning: Mismatch Shape: {SDQL: 2532, Pandas: 2541}
+Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)
+At row number 2 / 2532
+Not found {'ps_partkey': 32.0, 'value': 5958441.5}
+Failed while looking for value == 5958441.5
+The answer is as following:
+   ps_partkey      value
+2          32  6852925.6
+At row number 37 / 2532
+Not found {'ps_partkey': 282.0, 'value': 2932171.2}
+Failed while looking for value == 2932171.2
+The answer is as following:
+    ps_partkey      value
+38         282  3381785.4
+At row number 69 / 2532
+Not found {'ps_partkey': 532.0, 'value': 1682311.5}
+Failed while looking for value == 1682311.5
+The answer is as following:
+    ps_partkey      value
+71         532  1694356.2
+At row number 99 / 2532
+Not found {'ps_partkey': 782.0, 'value': 3869941.9}
+Failed while looking for value == 3869941.9
+The answer is as following:
+     ps_partkey      value
+102         782  4001299.9
+At row number 115 / 2532
+Not found {'ps_partkey': 884.0, 'value': 2107479.6}
+Failed while looking for value == 2107479.6
+The answer is as following:
+     ps_partkey      value
+119         884  2148325.0
+At row number 152 / 2532
+Not found {'ps_partkey': 1157.0, 'value': 5775479.0}
+Failed while looking for value == 5775479.0
+The answer is as following:
+     ps_partkey      value
+159        1157  6117749.2
+At row number 176 / 2532
+Not found {'ps_partkey': 1393.0, 'value': 1314691.7}
+Failed while looking for value == 1314691.7
+The answer is as following:
+     ps_partkey      value
+184        1393  1675545.4
+At row number 209 / 2532
+Not found {'ps_partkey': 1655.0, 'value': 3302428.2}
+Failed while looking for value == 3302428.2
+The answer is as following:
+     ps_partkey      value
+218        1655  3383051.5
+At row number 227 / 2532
+Not found {'ps_partkey': 1825.0, 'value': 3203235.4}
+Failed while looking for value == 3203235.4
+The answer is as following:
+     ps_partkey      value
+237        1825  3543198.8
+At row number 242 / 2532
+Not found {'ps_partkey': 1906.0, 'value': 1626282.3}
+Failed while looking for value == 1626282.3
+The answer is as following:
+     ps_partkey      value
+253        1906  2319757.6
+At row number 256 / 2532
+Not found {'ps_partkey': 2058.0, 'value': 3760785.8}
+Failed while looking for value == 3760785.8
+The answer is as following:
+     ps_partkey      value
+268        2058  3796109.0
+At row number 268 / 2532
+Not found {'ps_partkey': 2134.0, 'value': 7478783.6}
+Failed while looking for value == 7478783.6
+The answer is as following:
+     ps_partkey      value
+281        2134  7800185.4
+At row number 289 / 2532
+Not found {'ps_partkey': 2310.0, 'value': 2481128.6}
+Failed while looking for value == 2481128.6
+The answer is as following:
+     ps_partkey      value
+303        2310  2651631.1
+At row number 321 / 2532
+Not found {'ps_partkey': 2562.0, 'value': 4500842.1}
+Failed while looking for value == 4500842.1
+The answer is as following:
+     ps_partkey      value
+336        2562  5126763.8
+At row number 333 / 2532
+Not found {'ps_partkey': 2630.0, 'value': 5935461.1}
+Failed while looking for value == 5935461.1
+The answer is as following:
+     ps_partkey      value
+349        2630  5997008.4
+At row number 334 / 2532
+Not found {'ps_partkey': 2643.0, 'value': 5751563.0}
+Failed while looking for value == 5751563.0
+The answer is as following:
+     ps_partkey      value
+351        2643  6617305.0
+At row number 338 / 2532
+Not found {'ps_partkey': 2653.0, 'value': 5412446.6}
+Failed while looking for value == 5412446.6
+The answer is as following:
+     ps_partkey      value
+356        2653  5623860.0
+At row number 339 / 2532
+Not found {'ps_partkey': 2680.0, 'value': 4853222.5}
+Failed while looking for value == 4853222.5
+The answer is as following:
+     ps_partkey      value
+358        2680  4861223.7
+At row number 359 / 2532
+Not found {'ps_partkey': 2882.0, 'value': 2918614.3}
+Failed while looking for value == 2918614.3
+The answer is as following:
+     ps_partkey      value
+379        2882  3453986.9
+At row number 366 / 2532
+Not found {'ps_partkey': 2932.0, 'value': 5854454.1}
+Failed while looking for value == 5854454.1
+The answer is as following:
+     ps_partkey      value
+387        2932  5868995.8
+At row number 417 / 2532
+Not found {'ps_partkey': 3375.0, 'value': 3494864.8}
+Failed while looking for value == 3494864.8
+The answer is as following:
+     ps_partkey      value
+440        3375  4346529.5
+At row number 450 / 2532
+Not found {'ps_partkey': 3628.0, 'value': 5078571.9}
+Failed while looking for value == 5078571.9
+The answer is as following:
+     ps_partkey      value
+474        3628  5966340.1
+At row number 458 / 2532
+Not found {'ps_partkey': 3705.0, 'value': 6618834.3}
+Failed while looking for value == 6618834.3
+The answer is as following:
+     ps_partkey      value
+483        3705  7299380.1
+At row number 495 / 2532
+Not found {'ps_partkey': 3958.0, 'value': 6696431.3}
+Failed while looking for value == 6696431.3
+The answer is as following:
+     ps_partkey      value
+521        3958  6969833.2
+At row number 504 / 2532
+Not found {'ps_partkey': 4052.0, 'value': 3929285.4}
+Failed while looking for value == 3929285.4
+The answer is as following:
+     ps_partkey      value
+531        4052  4446397.3
+At row number 509 / 2532
+Not found {'ps_partkey': 4114.0, 'value': 3589172.3}
+Failed while looking for value == 3589172.3
+The answer is as following:
+     ps_partkey      value
+538        4114  4433657.9
+At row number 535 / 2532
+Not found {'ps_partkey': 4332.0, 'value': 1050276.0}
+Failed while looking for value == 1050276.0
+The answer is as following:
+     ps_partkey      value
+565        4332  1605448.8
+At row number 568 / 2532
+Not found {'ps_partkey': 4586.0, 'value': 2403657.0}
+Failed while looking for value == 2403657.0
+The answer is as following:
+     ps_partkey      value
+599        4586  2424123.9
+At row number 569 / 2532
+Not found {'ps_partkey': 4606.0, 'value': 2243584.0}
+Failed while looking for value == 2243584.0
+The answer is as following:
+     ps_partkey      value
+601        4606  2927832.6
+At row number 574 / 2532
+Not found {'ps_partkey': 4641.0, 'value': 1096787.5}
+Failed while looking for value == 1096787.5
+The answer is as following:
+     ps_partkey      value
+607        4641  1573363.5
+At row number 599 / 2532
+Not found {'ps_partkey': 4860.0, 'value': 2626812.9}
+Failed while looking for value == 2626812.9
+The answer is as following:
+     ps_partkey      value
+633        4860  3852862.0
+At row number 605 / 2532
+Not found {'ps_partkey': 4895.0, 'value': 2170435.6}
+Failed while looking for value == 2170435.6
+The answer is as following:
+     ps_partkey      value
+640        4895  2645152.3
+At row number 622 / 2532
+Not found {'ps_partkey': 5052.0, 'value': 1387005.9}
+Failed while looking for value == 1387005.9
+The answer is as following:
+     ps_partkey      value
+658        5052  1431900.9
+At row number 629 / 2532
+Not found {'ps_partkey': 5119.0, 'value': 3480535.2}
+Failed while looking for value == 3480535.2
+The answer is as following:
+     ps_partkey      value
+666        5119  3611038.2
+At row number 631 / 2532
+Not found {'ps_partkey': 5134.0, 'value': 15181866.5}
+Failed while looking for value == 15181866.5
+The answer is as following:
+     ps_partkey       value
+669        5134  15709338.5
+At row number 637 / 2532
+Not found {'ps_partkey': 5181.0, 'value': 3593738.8}
+Failed while looking for value == 3593738.8
+The answer is as following:
+     ps_partkey      value
+676        5181  3625965.9
+At row number 640 / 2532
+Not found {'ps_partkey': 5230.0, 'value': 1159688.9}
+Failed while looking for value == 1159688.9
+The answer is as following:
+     ps_partkey      value
+680        5230  2072161.7
+At row number 675 / 2532
+Not found {'ps_partkey': 5562.0, 'value': 8139105.9}
+Failed while looking for value == 8139105.9
+The answer is as following:
+     ps_partkey      value
+716        5562  8252365.2
+At row number 683 / 2532
+Not found {'ps_partkey': 5624.0, 'value': 2263107.6}
+Failed while looking for value == 2263107.6
+The answer is as following:
+     ps_partkey      value
+725        5624  3207777.4
+At row number 696 / 2532
+Not found {'ps_partkey': 5740.0, 'value': 2900518.4}
+Failed while looking for value == 2900518.4
+The answer is as following:
+     ps_partkey      value
+739        5740  3551324.7
+At row number 700 / 2532
+Not found {'ps_partkey': 5788.0, 'value': 2791952.4}
+Failed while looking for value == 2791952.4
+The answer is as following:
+     ps_partkey      value
+744        5788  2867210.2
+At row number 749 / 2532
+Not found {'ps_partkey': 6127.0, 'value': 3109129.1}
+Failed while looking for value == 3109129.1
+The answer is as following:
+     ps_partkey      value
+794        6127  3879166.7
+At row number 846 / 2532
+Not found {'ps_partkey': 6860.0, 'value': 8944457.8}
+Failed while looking for value == 8944457.8
+The answer is as following:
+     ps_partkey      value
+893        6860  9805871.3
+At row number 852 / 2532
+Not found {'ps_partkey': 6891.0, 'value': 3365589.7}
+Failed while looking for value == 3365589.7
+The answer is as following:
+     ps_partkey      value
+900        6891  3846386.8
+At row number 858 / 2532
+Not found {'ps_partkey': 6964.0, 'value': 2234846.8}
+Failed while looking for value == 2234846.8
+The answer is as following:
+     ps_partkey      value
+907        6964  2766653.8
+At row number 910 / 2532
+Not found {'ps_partkey': 7386.0, 'value': 3030607.7}
+Failed while looking for value == 3030607.7
+The answer is as following:
+     ps_partkey      value
+960        7386  3891916.5
+At row number 947 / 2532
+Not found {'ps_partkey': 7665.0, 'value': 1745805.6}
+Failed while looking for value == 1745805.6
+The answer is as following:
+     ps_partkey      value
+998        7665  1801765.4
+At row number 972 / 2532
+Not found {'ps_partkey': 7877.0, 'value': 2537751.7}
+Failed while looking for value == 2537751.7
+The answer is as following:
+      ps_partkey      value
+1024        7877  2705439.4
+At row number 1028 / 2532
+Not found {'ps_partkey': 8368.0, 'value': 2329340.0}
+Failed while looking for value == 2329340.0
+The answer is as following:
+      ps_partkey      value
+1081        8368  3203376.4
+At row number 1044 / 2532
+Not found {'ps_partkey': 8479.0, 'value': 2087304.2}
+Failed while looking for value == 2087304.2
+The answer is as following:
+      ps_partkey      value
+1099        8479  2232189.0
+At row number 1080 / 2532
+Not found {'ps_partkey': 8737.0, 'value': 4667734.7}
+Failed while looking for value == 4667734.7
+The answer is as following:
+      ps_partkey      value
+1136        8737  4880640.4
+At row number 1082 / 2532
+Not found {'ps_partkey': 8755.0, 'value': 8062549.7}
+Failed while looking for value == 8062549.7
+The answer is as following:
+      ps_partkey      value
+1139        8755  8085017.0
+At row number 1110 / 2532
+Not found {'ps_partkey': 8995.0, 'value': 1054520.0}
+Failed while looking for value == 1054520.0
+The answer is as following:
+      ps_partkey      value
+1168        8995  1653627.6
+At row number 1121 / 2532
+Not found {'ps_partkey': 9068.0, 'value': 3211216.4}
+Failed while looking for value == 3211216.4
+The answer is as following:
+      ps_partkey      value
+1180        9068  3869767.7
+At row number 1157 / 2532
+Not found {'ps_partkey': 9357.0, 'value': 5224733.3}
+Failed while looking for value == 5224733.3
+The answer is as following:
+      ps_partkey      value
+1217        9357  5239695.8
+At row number 1191 / 2532
+Not found {'ps_partkey': 9601.0, 'value': 1272738.6}
+Failed while looking for value == 1272738.6
+The answer is as following:
+      ps_partkey      value
+1252        9601  2059715.8
+At row number 1192 / 2532
+Not found {'ps_partkey': 9616.0, 'value': 6464414.3}
+Failed while looking for value == 6464414.3
+The answer is as following:
+      ps_partkey      value
+1254        9616  7265005.3
+At row number 1200 / 2532
+Not found {'ps_partkey': 9699.0, 'value': 4284271.2}
+Failed while looking for value == 4284271.2
+The answer is as following:
+      ps_partkey      value
+1263        9699  4385891.0
+At row number 1215 / 2532
+Not found {'ps_partkey': 9860.0, 'value': 1655934.7}
+Failed while looking for value == 1655934.7
+The answer is as following:
+      ps_partkey      value
+1279        9860  1775071.3
+At row number 1229 / 2532
+Not found {'ps_partkey': 9958.0, 'value': 6016373.4}
+Failed while looking for value == 6016373.4
+The answer is as following:
+      ps_partkey      value
+1294        9958  6267714.6
+At row number 1229 / 2532
+Not found {'ps_partkey': 9963.0, 'value': 5928662.8}
+Failed while looking for value == 5928662.8
+The answer is as following:
+      ps_partkey      value
+1295        9963  6725919.4
+At row number 1263 / 2532
+Not found {'ps_partkey': 10272.0, 'value': 1795295.9}
+Failed while looking for value == 1795295.9
+The answer is as following:
+      ps_partkey      value
+1330       10272  2402834.5
+At row number 1334 / 2532
+Not found {'ps_partkey': 10848.0, 'value': 6298429.2}
+Failed while looking for value == 6298429.2
+The answer is as following:
+      ps_partkey      value
+1402       10848  6678666.2
+At row number 1363 / 2532
+Not found {'ps_partkey': 11064.0, 'value': 4411596.2}
+Failed while looking for value == 4411596.2
+The answer is as following:
+      ps_partkey      value
+1432       11064  5180667.6
+At row number 1368 / 2532
+Not found {'ps_partkey': 11122.0, 'value': 1720223.4}
+Failed while looking for value == 1720223.4
+The answer is as following:
+      ps_partkey      value
+1438       11122  1757430.0
+At row number 1372 / 2532
+Not found {'ps_partkey': 11175.0, 'value': 3815072.3}
+Failed while looking for value == 3815072.3
+The answer is as following:
+      ps_partkey      value
+1443       11175  4223704.1
+At row number 1373 / 2532
+Not found {'ps_partkey': 11181.0, 'value': 2661168.5}
+Failed while looking for value == 2661168.5
+The answer is as following:
+      ps_partkey      value
+1445       11181  3199500.5
+At row number 1385 / 2532
+Not found {'ps_partkey': 11301.0, 'value': 4253089.6}
+Failed while looking for value == 4253089.6
+The answer is as following:
+      ps_partkey      value
+1458       11301  4276847.9
+At row number 1388 / 2532
+Not found {'ps_partkey': 11336.0, 'value': 1320353.6}
+Failed while looking for value == 1320353.6
+The answer is as following:
+      ps_partkey      value
+1462       11336  1883573.6
+At row number 1409 / 2532
+Not found {'ps_partkey': 11562.0, 'value': 7991193.0}
+Failed while looking for value == 7991193.0
+The answer is as following:
+      ps_partkey      value
+1484       11562  8528028.6
+At row number 1413 / 2532
+Not found {'ps_partkey': 11597.0, 'value': 2886434.6}
+Failed while looking for value == 2886434.6
+The answer is as following:
+      ps_partkey      value
+1489       11597  3706528.6
+At row number 1422 / 2532
+Not found {'ps_partkey': 11653.0, 'value': 2654234.6}
+Failed while looking for value == 2654234.6
+The answer is as following:
+      ps_partkey      value
+1499       11653  2739731.1
+At row number 1508 / 2532
+Not found {'ps_partkey': 12371.0, 'value': 5160633.1}
+Failed while looking for value == 5160633.1
+The answer is as following:
+      ps_partkey      value
+1586       12371  5635710.4
+At row number 1510 / 2532
+Not found {'ps_partkey': 12386.0, 'value': 1955087.5}
+Failed while looking for value == 1955087.5
+The answer is as following:
+      ps_partkey      value
+1589       12386  2145001.5
+At row number 1519 / 2532
+Not found {'ps_partkey': 12471.0, 'value': 2294173.4}
+Failed while looking for value == 2294173.4
+The answer is as following:
+      ps_partkey      value
+1599       12471  3003991.9
+At row number 1531 / 2532
+Not found {'ps_partkey': 12597.0, 'value': 4550387.6}
+Failed while looking for value == 4550387.6
+The answer is as following:
+      ps_partkey      value
+1612       12597  4742077.8
+At row number 1555 / 2532
+Not found {'ps_partkey': 12814.0, 'value': 2937862.0}
+Failed while looking for value == 2937862.0
+The answer is as following:
+      ps_partkey      value
+1637       12814  3587083.8
+At row number 1564 / 2532
+Not found {'ps_partkey': 12862.0, 'value': 1890028.5}
+Failed while looking for value == 1890028.5
+The answer is as following:
+      ps_partkey      value
+1647       12862  1964014.1
+At row number 1568 / 2532
+Not found {'ps_partkey': 12884.0, 'value': 5347887.7}
+Failed while looking for value == 5347887.7
+The answer is as following:
+      ps_partkey      value
+1652       12884  5432632.3
+At row number 1633 / 2532
+Not found {'ps_partkey': 13390.0, 'value': 5609013.5}
+Failed while looking for value == 5609013.5
+The answer is as following:
+      ps_partkey      value
+1720       13390  5944104.7
+At row number 1652 / 2532
+Not found {'ps_partkey': 13597.0, 'value': 8172909.9}
+Failed while looking for value == 8172909.9
+The answer is as following:
+      ps_partkey      value
+1740       13597  8702669.8
+At row number 1656 / 2532
+Not found {'ps_partkey': 13621.0, 'value': 2694467.2}
+Failed while looking for value == 2694467.2
+The answer is as following:
+      ps_partkey      value
+1745       13621  3054774.6
+At row number 1680 / 2532
+Not found {'ps_partkey': 13860.0, 'value': 5761398.0}
+Failed while looking for value == 5761398.0
+The answer is as following:
+      ps_partkey      value
+1770       13860  6008170.3
+At row number 1722 / 2532
+Not found {'ps_partkey': 14172.0, 'value': 2637807.8}
+Failed while looking for value == 2637807.8
+The answer is as following:
+      ps_partkey      value
+1814       14172  2695307.5
+At row number 1724 / 2532
+Not found {'ps_partkey': 14212.0, 'value': 1160135.5}
+Failed while looking for value == 1160135.5
+The answer is as following:
+      ps_partkey      value
+1817       14212  1236365.5
+At row number 1745 / 2532
+Not found {'ps_partkey': 14389.0, 'value': 8923348.3}
+Failed while looking for value == 8923348.3
+The answer is as following:
+      ps_partkey      value
+1839       14389  9475588.3
+At row number 1749 / 2532
+Not found {'ps_partkey': 14436.0, 'value': 4976070.0}
+Failed while looking for value == 4976070.0
+The answer is as following:
+      ps_partkey      value
+1844       14436  5325517.1
+At row number 1752 / 2532
+Not found {'ps_partkey': 14476.0, 'value': 1867509.0}
+Failed while looking for value == 1867509.0
+The answer is as following:
+      ps_partkey      value
+1848       14476  2839853.0
+At row number 1761 / 2532
+Not found {'ps_partkey': 14576.0, 'value': 2471847.8}
+Failed while looking for value == 2471847.8
+The answer is as following:
+      ps_partkey      value
+1858       14576  2501606.7
+At row number 1761 / 2532
+Not found {'ps_partkey': 14591.0, 'value': 2087095.2}
+Failed while looking for value == 2087095.2
+The answer is as following:
+      ps_partkey      value
+1859       14591  2506344.7
+At row number 1772 / 2532
+Not found {'ps_partkey': 14653.0, 'value': 5149614.3}
+Failed while looking for value == 5149614.3
+The answer is as following:
+      ps_partkey      value
+1871       14653  5581550.4
+At row number 1778 / 2532
+Not found {'ps_partkey': 14740.0, 'value': 5029729.3}
+Failed while looking for value == 5029729.3
+The answer is as following:
+      ps_partkey      value
+1878       14740  5613929.4
+At row number 1793 / 2532
+Not found {'ps_partkey': 14855.0, 'value': 1287340.1}
+Failed while looking for value == 1287340.1
+The answer is as following:
+      ps_partkey      value
+1894       14855  1309280.8
+At row number 1804 / 2532
+Not found {'ps_partkey': 14948.0, 'value': 1370406.7}
+Failed while looking for value == 1370406.7
+The answer is as following:
+      ps_partkey      value
+1906       14948  1541721.6
+At row number 1804 / 2532
+Not found {'ps_partkey': 14963.0, 'value': 1791874.7}
+Failed while looking for value == 1791874.7
+The answer is as following:
+      ps_partkey      value
+1907       14963  2395781.1
+At row number 1808 / 2532
+Not found {'ps_partkey': 15032.0, 'value': 1562267.1}
+Failed while looking for value == 1562267.1
+The answer is as following:
+      ps_partkey      value
+1912       15032  2557926.2
+At row number 1813 / 2532
+Not found {'ps_partkey': 15084.0, 'value': 2116481.5}
+Failed while looking for value == 2116481.5
+The answer is as following:
+      ps_partkey      value
+1918       15084  2184327.0
+At row number 1819 / 2532
+Not found {'ps_partkey': 15118.0, 'value': 8146222.1}
+Failed while looking for value == 8146222.1
+The answer is as following:
+      ps_partkey      value
+1925       15118  9120819.5
+At row number 1834 / 2532
+Not found {'ps_partkey': 15211.0, 'value': 5552070.1}
+Failed while looking for value == 5552070.1
+The answer is as following:
+      ps_partkey      value
+1941       15211  6065678.1
+At row number 1837 / 2532
+Not found {'ps_partkey': 15257.0, 'value': 2059311.6}
+Failed while looking for value == 2059311.6
+The answer is as following:
+      ps_partkey      value
+1945       15257  2100297.8
+At row number 1853 / 2532
+Not found {'ps_partkey': 15386.0, 'value': 6529027.4}
+Failed while looking for value == 6529027.4
+The answer is as following:
+      ps_partkey      value
+1962       15386  6996871.8
+At row number 1858 / 2532
+Not found {'ps_partkey': 15436.0, 'value': 2354214.3}
+Failed while looking for value == 2354214.3
+The answer is as following:
+      ps_partkey      value
+1968       15436  3007499.8
+At row number 1919 / 2532
+Not found {'ps_partkey': 15946.0, 'value': 7102444.7}
+Failed while looking for value == 7102444.7
+The answer is as following:
+      ps_partkey      value
+2030       15946  7722773.9
+At row number 1947 / 2532
+Not found {'ps_partkey': 16134.0, 'value': 4502787.8}
+Failed while looking for value == 4502787.8
+The answer is as following:
+      ps_partkey      value
+2059       16134  5137482.5
+At row number 1977 / 2532
+Not found {'ps_partkey': 16383.0, 'value': 8247927.0}
+Failed while looking for value == 8247927.0
+The answer is as following:
+      ps_partkey      value
+2090       16383  8691505.9
+At row number 2058 / 2532
+Not found {'ps_partkey': 17094.0, 'value': 6769938.6}
+Failed while looking for value == 6769938.6
+The answer is as following:
+      ps_partkey      value
+2172       17094  7665368.2
+At row number 2095 / 2532
+Not found {'ps_partkey': 17430.0, 'value': 1448311.8}
+Failed while looking for value == 1448311.8
+The answer is as following:
+      ps_partkey      value
+2210       17430  1599681.4
+At row number 2111 / 2532
+Not found {'ps_partkey': 17585.0, 'value': 3024229.5}
+Failed while looking for value == 3024229.5
+The answer is as following:
+      ps_partkey      value
+2227       17585  3462450.5
+At row number 2117 / 2532
+Not found {'ps_partkey': 17628.0, 'value': 4923494.0}
+Failed while looking for value == 4923494.0
+The answer is as following:
+      ps_partkey      value
+2234       17628  5209882.4
+At row number 2133 / 2532
+Not found {'ps_partkey': 17785.0, 'value': 5107759.2}
+Failed while looking for value == 5107759.2
+The answer is as following:
+      ps_partkey      value
+2251       17785  5766838.8
+At row number 2137 / 2532
+Not found {'ps_partkey': 17815.0, 'value': 6477339.4}
+Failed while looking for value == 6477339.4
+The answer is as following:
+      ps_partkey      value
+2256       17815  6502284.8
+At row number 2143 / 2532
+Not found {'ps_partkey': 17852.0, 'value': 10561799.5}
+Failed while looking for value == 10561799.5
+The answer is as following:
+      ps_partkey       value
+2263       17852  10934711.9
+At row number 2173 / 2532
+Not found {'ps_partkey': 18080.0, 'value': 1977727.7}
+Failed while looking for value == 1977727.7
+The answer is as following:
+      ps_partkey      value
+2294       18080  2299416.8
+At row number 2209 / 2532
+Not found {'ps_partkey': 18348.0, 'value': 4393386.3}
+Failed while looking for value == 4393386.3
+The answer is as following:
+      ps_partkey      value
+2331       18348  5132981.1
+At row number 2243 / 2532
+Not found {'ps_partkey': 18616.0, 'value': 2941591.1}
+Failed while looking for value == 2941591.1
+The answer is as following:
+      ps_partkey      value
+2366       18616  3409880.9
+At row number 2316 / 2532
+Not found {'ps_partkey': 19157.0, 'value': 3148555.2}
+Failed while looking for value == 3148555.2
+The answer is as following:
+      ps_partkey      value
+2440       19157  3723844.7
+At row number 2383 / 2532
+Not found {'ps_partkey': 19755.0, 'value': 5095608.9}
+Failed while looking for value == 5095608.9
+The answer is as following:
+      ps_partkey      value
+2508       19755  5686913.4
+number of mismatch records: 117
 ============================================================
- Query 11: Pass 
+ Query 11: Fail 
 ============================================================
 >> Query 12 (Q12) <<
-orders_lineitem: neither joint
-orders ->
-   | probe end: lineitem
-   | build key: o_orderkey
-   | probe key: l_orderkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 mail = "MAIL"
 ship = "SHIP"
 urgent1 = "1-URGENT"
 high2 = "2-HIGH"
-orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderpriority": x_orders[0].o_orderpriority})})
+orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((((x[0].l_shipmode == ship) + (x[0].l_shipmode == mail))) * (x[0].l_commitdate < x[0].l_receiptdate))) * (x[0].l_shipdate < x[0].l_commitdate))) * (x[0].l_receiptdate >= 19940101))) * (x[0].l_receiptdate < 19950101))) else (None))
 
-lineitem_aggr = li.sum(lambda x_lineitem: (({x_lineitem[0].l_shipmode: record({"high_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority == urgent1) + (orders_part[x_lineitem[0].l_orderkey].o_orderpriority == high2))) else (0), "low_line_count": (1) if (((orders_part[x_lineitem[0].l_orderkey].o_orderpriority != urgent1) * (orders_part[x_lineitem[0].l_orderkey].o_orderpriority != high2))) else (0)})}) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (((((((((((x_lineitem[0].l_shipmode == ship) + (x_lineitem[0].l_shipmode == mail))) * (x_lineitem[0].l_commitdate < x_lineitem[0].l_receiptdate))) * (x_lineitem[0].l_shipdate < x_lineitem[0].l_commitdate))) * (x_lineitem[0].l_receiptdate >= 19940101))) * (x_lineitem[0].l_receiptdate < 19950101))) else (None))
+orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: {record({"l_shipmode": x_lineitem_aggr[0], "high_line_count": x_lineitem_aggr[1].high_line_count, "low_line_count": x_lineitem_aggr[1].low_line_count}): True})
+orders_lineitem_0 = orders_lineitem_probe_pre_ops.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+orders_lineitem_1 = orders_lineitem_0.sum(lambda x: {x[0].concat(record({"high_line_priority": (1) if (((x[0].o_orderpriority == urgent1) + (x[0].o_orderpriority == high2))) else (0)})): x[1]})
+
+orders_lineitem_2 = orders_lineitem_1.sum(lambda x: {x[0].concat(record({"low_line_priority": (1) if (((x[0].o_orderpriority != urgent1) * (x[0].o_orderpriority != high2))) else (0)})): x[1]})
+
+orders_lineitem_3 = orders_lineitem_2.sum(lambda x: {record({"l_shipmode": x[0].l_shipmode}): record({"high_line_count": x[0].high_line_priority, "low_line_count": x[0].low_line_priority})})
+
+results = orders_lineitem_3.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 11.31822156906128 s 
-Pandas Execution Time: 0.23822379112243652 s 
-DuckDB Execution Time: 0.027016162872314453 s 
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+ SDQL Execution Time: 13.393085479736328 s 
+Pandas Execution Time: 0.25322914123535156 s 
+DuckDB Execution Time: 0.028025150299072266 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -557,143 +1333,142 @@ DuckDB Execution Time: 0.027016162872314453 s
  Query 12: Pass 
 ============================================================
 >> Query 13 (Q13) <<
-orders_customer: neither joint
-orders ->
-   | probe end: customer
-   | build key: o_custkey
-   | probe key: c_custkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 special = "special"
 requests = "requests"
-orders_part = ord.sum(lambda x_orders: ({x_orders[0].o_custkey: record({"c_count": 1.0})}) if (((firstIndex(x_orders[0].o_comment, special) != -1) * (firstIndex(x_orders[0].o_comment, requests) > ((firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
+orders_customer_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].o_comment, special) != -1) * (firstIndex(x[0].o_comment, requests) > ((firstIndex(x[0].o_comment, special)) + (6)))) == False) else (None))
 
-customer_aggr = cu.sum(lambda x_customer: {record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (0.0)}): 1.0})
+orders_customer_build_nest_dict = orders_customer_build_pre_ops.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
 
-results = customer_aggr.sum(lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
+orders_customer_0 = cu.sum(lambda x: ({x[0]: True}) if (orders_customer_build_nest_dict[x[0].c_custkey] == None) else (orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+))
+
+orders_customer_1 = orders_customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey}): record({"c_count": (1.0) if (x[0].o_orderkey != None) else (0.0)})})
+
+orders_customer_2 = orders_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+orders_customer_3 = orders_customer_2.sum(lambda x: {record({"c_count": x[0].c_count}): record({"custdist": (1.0) if (x[0].c_count != None) else (0.0)})})
+
+results = orders_customer_3.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 2.1129071712493896 s 
-Pandas Execution Time: 0.34731364250183105 s 
-DuckDB Execution Time: 0.03403043746948242 s 
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+ SDQL Execution Time: 17.045382022857666 s 
+Pandas Execution Time: 0.35932374000549316 s 
+DuckDB Execution Time: 0.030027389526367188 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
-At row number 9 / 37
+At row number 4 / 37
 Not found {'c_count': 4, 'custdist': 93}
 Failed while looking for custdist == 93
 The answer is as following:
     c_count  custdist
 26        4        94
-At row number 10 / 37
+At row number 4 / 37
 Not found {'c_count': 5, 'custdist': 203}
 Failed while looking for custdist == 203
 The answer is as following:
     c_count  custdist
 25        5       204
-At row number 13 / 37
+At row number 5 / 37
 Not found {'c_count': 7, 'custdist': 477}
 Failed while looking for custdist == 477
 The answer is as following:
    c_count  custdist
 0        7       480
-At row number 14 / 37
+At row number 5 / 37
 Not found {'c_count': 8, 'custdist': 565}
 Failed while looking for custdist == 565
 The answer is as following:
     c_count  custdist
 15        8       564
-At row number 17 / 37
+At row number 6 / 37
 Not found {'c_count': 10, 'custdist': 668}
 Failed while looking for custdist == 668
 The answer is as following:
    c_count  custdist
 3       10       665
-At row number 18 / 37
+At row number 6 / 37
 Not found {'c_count': 11, 'custdist': 620}
 Failed while looking for custdist == 620
 The answer is as following:
    c_count  custdist
 7       11       621
-At row number 19 / 37
+At row number 6 / 37
 Not found {'c_count': 12, 'custdist': 568}
 Failed while looking for custdist == 568
 The answer is as following:
    c_count  custdist
 8       12       567
-At row number 20 / 37
+At row number 6 / 37
 Not found {'c_count': 13, 'custdist': 491}
 Failed while looking for custdist == 491
 The answer is as following:
     c_count  custdist
 16       13       492
-At row number 21 / 37
+At row number 6 / 37
 Not found {'c_count': 14, 'custdist': 455}
 Failed while looking for custdist == 455
 The answer is as following:
    c_count  custdist
 5       14       456
-At row number 22 / 37
+At row number 6 / 37
 Not found {'c_count': 15, 'custdist': 433}
 Failed while looking for custdist == 433
 The answer is as following:
    c_count  custdist
 2       15       432
-At row number 23 / 37
+At row number 6 / 37
 Not found {'c_count': 16, 'custdist': 447}
 Failed while looking for custdist == 447
 The answer is as following:
     c_count  custdist
 19       16       449
-At row number 26 / 37
+At row number 7 / 37
 Not found {'c_count': 18, 'custdist': 486}
 Failed while looking for custdist == 486
 The answer is as following:
     c_count  custdist
 18       18       482
-At row number 27 / 37
+At row number 7 / 37
 Not found {'c_count': 19, 'custdist': 443}
 Failed while looking for custdist == 443
 The answer is as following:
     c_count  custdist
 23       19       447
-At row number 32 / 37
+At row number 9 / 37
 Not found {'c_count': 22, 'custdist': 370}
 Failed while looking for custdist == 370
 The answer is as following:
     c_count  custdist
 12       22       371
-At row number 33 / 37
+At row number 9 / 37
 Not found {'c_count': 23, 'custdist': 326}
 Failed while looking for custdist == 326
 The answer is as following:
    c_count  custdist
 9       23       323
-At row number 36 / 37
+At row number 10 / 37
 Not found {'c_count': 25, 'custdist': 205}
 Failed while looking for custdist == 205
 The answer is as following:
     c_count  custdist
 13       25       204
-At row number 39 / 37
+At row number 11 / 37
 Not found {'c_count': 27, 'custdist': 142}
 Failed while looking for custdist == 142
 The answer is as following:
    c_count  custdist
 1       27       141
-At row number 40 / 37
+At row number 11 / 37
 Not found {'c_count': 28, 'custdist': 95}
 Failed while looking for custdist == 95
 The answer is as following:
     c_count  custdist
 22       28        97
-At row number 41 / 37
+At row number 11 / 37
 Not found {'c_count': 29, 'custdist': 66}
 Failed while looking for custdist == 66
 The answer is as following:
@@ -709,30 +1484,29 @@ number of mismatch records: 19
  Query 13: Pass 
 ============================================================
 >> Query 14 (Q14) <<
-part_lineitem: neither joint
-part ->
-   | probe end: lineitem
-   | build key: p_partkey
-   | probe key: l_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 promo = "PROMO"
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (startsWith(x_part[0].p_type, promo)) else (None))
+part_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950901) * (x[0].l_shipdate < 19951001))) else (None))
 
-part_lineitem = li.sum(lambda x_lineitem: (record({"A": (((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0), "B": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})) if (((x_lineitem[0].l_shipdate >= 19950901) * (x_lineitem[0].l_shipdate < 19951001))) else (None))
+part_lineitem_build_nest_dict = pa.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
 
-results = ((((part_lineitem.A) * (100.0))) / (part_lineitem.B))
+part_lineitem_0 = part_lineitem_probe_pre_ops.sum(lambda x: (part_lineitem_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_lineitem_build_nest_dict[x[0].l_partkey] != None) else (None))
+
+part_lineitem_1 = part_lineitem_0.sum(lambda x: {x[0].concat(record({"A": (((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))) if (startsWith(x[0].p_type, promo)) else (0.0)})): x[1]})
+
+part_lineitem_2 = part_lineitem_1.sum(lambda x: {x[0].concat(record({"B": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+part_lineitem_3 = part_lineitem_2.sum(lambda x: record({"A": x[0].A, "B": x[0].B}))
+
+results = ((((part_lineitem_3.A) * (100.0))) / (part_lineitem_3.B))
 ============================================================
- SDQL Execution Time: 6.600956439971924 s 
-Pandas Execution Time: 0.11910772323608398 s 
-DuckDB Execution Time: 0.022019624710083008 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+ SDQL Execution Time: 8.250445127487183 s 
+Pandas Execution Time: 0.12010884284973145 s 
+DuckDB Execution Time: 0.024021625518798828 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -744,72 +1518,71 @@ DuckDB Execution Time: 0.022019624710083008 s
  Query 14: Pass 
 ============================================================
 >> Query 15 (Q15) <<
-supplier_lineitem: neither joint
-{}
-supplier ->
-   | probe end: lineitem
-   | build key: s_suppkey
-   | probe key: l_suppkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
-lineitem_aggr = li.sum(lambda x_lineitem: ({x_lineitem[0].l_suppkey: ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))}) if (((x_lineitem[0].l_shipdate >= 19960101) * (x_lineitem[0].l_shipdate < 19960401))) else (None))
+lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19960101) * (x[0].l_shipdate < 19960401))) else (None))
 
-supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: True})
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
 
-results = lineitem_aggr.sum(lambda x_lineitem_aggr: (({record({"s_suppkey": x_lineitem_aggr[0], "s_name": supplier_part[x_lineitem_aggr[0]].s_name, "s_address": supplier_part[x_lineitem_aggr[0]].s_address, "s_phone": supplier_part[x_lineitem_aggr[0]].s_phone, "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 1772627.2087) else (None)) if (supplier_part[x_lineitem_aggr[0]] != None) else (None))
+lineitem_2 = lineitem_1.sum(lambda x: {record({"l_suppkey": x[0].l_suppkey}): record({"total_revenue": x[0].revenue})})
+
+lineitem_3 = lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
+
+supplier_lineitem_probe_pre_ops = lineitem_3.sum(lambda x: ({x[0]: x[1]}) if (x[0].total_revenue == 1772627.2087) else (None))
+
+supplier_lineitem_build_nest_dict = su.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+supplier_lineitem_0 = supplier_lineitem_probe_pre_ops.sum(lambda x: (supplier_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (supplier_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
+
+results = supplier_lineitem_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "total_revenue": x[0].total_revenue}): True})
 
 ============================================================
- SDQL Execution Time: 6.531905174255371 s 
-Pandas Execution Time: 0.06805920600891113 s 
-DuckDB Execution Time: 0.020009517669677734 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-============================================================
->> Comparing SDQL with Pandas ... <<
-============================================================
- Query 15: Pass 
-============================================================
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Query 15: Error
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 66, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.Qsdql.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\Qsdql\sdqlQ.py", line 443, in q15
+    sdql_result = Q.query(lineitem_data, supplier_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 409, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\Qsdql\Q15.py", line 22, in query
+    supplier_lineitem_0 = supplier_lineitem_probe_pre_ops.sum(lambda x: (supplier_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+AttributeError: 'NoneType' object has no attribute 'sum'
 >> Query 16 (Q16) <<
-part_partsupp: neither joint
-part ->
-   | probe end: partsupp
-   | build key: p_partkey
-   | probe key: ps_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: ['p_partkey', 'p_brand', 'p_type', 'p_size']
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 brand45 = "Brand#45"
 mediumpolished = "MEDIUM POLISHED"
 customer = "Customer"
 complaints = "Complaints"
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand, "p_type": x_part[0].p_type, "p_size": x_part[0].p_size})}) if (((((x_part[0].p_brand != brand45) * (startsWith(x_part[0].p_type, mediumpolished) == False))) * (((((((((((((((x_part[0].p_size == 9) + (x_part[0].p_size == 36))) + (x_part[0].p_size == 49))) + (x_part[0].p_size == 14))) + (x_part[0].p_size == 23))) + (x_part[0].p_size == 45))) + (x_part[0].p_size == 19))) + (x_part[0].p_size == 3))))) else (None))
+part_partsupp_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].p_brand != brand45) * (startsWith(x[0].p_type, mediumpolished) == False))) * (((((((((((((((x[0].p_size == 9) + (x[0].p_size == 36))) + (x[0].p_size == 49))) + (x[0].p_size == 14))) + (x[0].p_size == 23))) + (x[0].p_size == 45))) + (x[0].p_size == 19))) + (x[0].p_size == 3))))) else (None))
 
-supplier_part = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: True}) if (((firstIndex(x_supplier[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x_supplier[0].s_comment, complaints) > ((firstIndex(x_supplier[0].s_comment, customer)) + (7))))) else (None))
+supplier_partsupp_isin_pre_ops = su.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x[0].s_comment, complaints) > ((firstIndex(x[0].s_comment, customer)) + (7))))) else (None))
 
-partsupp_aggr = ps.sum(lambda x_partsupp: (({record({"p_brand": part_part[x_partsupp[0].ps_partkey].p_brand, "p_type": part_part[x_partsupp[0].ps_partkey].p_type, "p_size": part_part[x_partsupp[0].ps_partkey].p_size}): sr_dict({x_partsupp[0].ps_suppkey: True})}) if (supplier_part[x_partsupp[0].ps_suppkey] == None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+supplier_partsupp_isin_build_index = supplier_partsupp_isin_pre_ops.sum(lambda x: {x[0].s_suppkey: True})
 
-results = partsupp_aggr.sum(lambda x_partsupp_aggr: {record({"p_brand": x_partsupp_aggr[0].p_brand, "p_type": x_partsupp_aggr[0].p_type, "p_size": x_partsupp_aggr[0].p_size, "supplier_cnt": dictSize(x_partsupp_aggr[1])}): True})
+part_partsupp_probe_pre_ops = ps.sum(lambda x: ({x[0]: x[1]}) if (supplier_partsupp_isin_build_index[x[0].ps_suppkey] == None) else (None))
+
+part_partsupp_build_nest_dict = part_partsupp_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+part_partsupp_0 = part_partsupp_probe_pre_ops.sum(lambda x: (part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
+
+part_partsupp_1 = part_partsupp_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size}): record({"supplier_cnt": sr_dict({x[0].ps_suppkey: True})})})
+
+results = part_partsupp_1.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size, "supplier_cnt": dictSize(x[1].supplier_cnt)}): True})
 
 ============================================================
- SDQL Execution Time: 1.1810660362243652 s 
-Pandas Execution Time: 0.19317388534545898 s 
-DuckDB Execution Time: 0.02402210235595703 s 
+Reading T:/tpch_dataset/100M/partsupp.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+ SDQL Execution Time: 2.8846030235290527 s 
+Pandas Execution Time: 0.19617676734924316 s 
+DuckDB Execution Time: 0.0370333194732666 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -821,33 +1594,37 @@ DuckDB Execution Time: 0.02402210235595703 s
  Query 16: Pass 
 ============================================================
 >> Query 17 (Q17) <<
-part_l1: neither joint
-part ->
-   | probe end: l1
-   | build key: p_partkey
-   | probe key: l_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 brand23 = "Brand#23"
 medbox = "MED BOX"
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
+part_l1_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_brand == brand23) * (x[0].p_container == medbox))) else (None))
 
-part_l1 = li.sum(lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (part_part[x_l1[0].l_partkey] != None) else (None))
+l1_0 = li.sum(lambda x: {record({"l_partkey": x[0].l_partkey}): record({"sum_quant": x[0].l_quantity, "count_quant": (1.0) if (x[0].l_quantity != None) else (0.0)})})
 
-part_l1_lineitem = li.sum(lambda x_lineitem: (record({"price": ((x_lineitem[0].l_extendedprice) if (x_lineitem[0].l_quantity < ((0.2) * (((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)})) if (True) else (None))
+part_l1_probe_pre_ops = l1_0.sum(lambda x: {x[0].concat(x[1]): True})
 
-results = ((part_l1_lineitem.price) / (7.0))
+part_l1_build_nest_dict = part_l1_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+part_l1_lineitem_build_pre_ops = part_l1_probe_pre_ops.sum(lambda x: (part_l1_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_l1_build_nest_dict[x[0].l_partkey] != None) else (None))
+
+part_l1_lineitem_build_nest_dict = part_l1_lineitem_build_pre_ops.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
+
+part_l1_lineitem_0 = li.sum(lambda x: (part_l1_lineitem_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_l1_lineitem_build_nest_dict[x[0].l_partkey] != None) else (None))
+
+part_l1_lineitem_1 = part_l1_lineitem_0.sum(lambda x: {x[0].concat(record({"price": (x[0].l_extendedprice) if (x[0].l_quantity < ((0.2) * (((x[0].sum_quant) / (x[0].count_quant))))) else (0.0)})): x[1]})
+
+part_l1_lineitem_2 = part_l1_lineitem_1.sum(lambda x: record({"price": x[0].price}))
+
+results = ((part_l1_lineitem_2.price) / (7.0))
 ============================================================
- SDQL Execution Time: 11.515392541885376 s 
-Pandas Execution Time: 0.25322914123535156 s 
-DuckDB Execution Time: 0.036032915115356445 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+ SDQL Execution Time: 19.319433450698853 s 
+Pandas Execution Time: 0.2962672710418701 s 
+DuckDB Execution Time: 0.04003620147705078 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -859,36 +1636,39 @@ DuckDB Execution Time: 0.036032915115356445 s
  Query 17: Pass 
 ============================================================
 >> Query 18 (Q18) <<
-customer_orders: neither joint
-customer ->
-   | probe end: orders
-   | build key: c_custkey
-   | probe key: o_custkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
-customer_part = cu.sum(lambda x_customer: {x_customer[0].c_custkey: record({"c_custkey": x_customer[0].c_custkey, "c_name": x_customer[0].c_name})})
+lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_quantity": x[0].l_quantity})})
 
-lineitem_aggr = li.sum(lambda x_lineitem: {x_lineitem[0].l_orderkey: x_lineitem[0].l_quantity})
+lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
 
-lineitem_part = lineitem_aggr.sum(lambda x_lineitem_aggr: ({x_lineitem_aggr[0]: True}) if (x_lineitem_aggr[1] > 300) else (None))
+lineitem_orders_isin_pre_ops = lineitem_1.sum(lambda x: ({x[0]: x[1]}) if (x[0].sum_quantity > 300) else (None))
 
-customer_orders = ord.sum(lambda x_orders: (({x_orders[0].o_orderkey: record({"c_custkey": x_orders[0].o_custkey, "c_name": customer_part[x_orders[0].o_custkey].c_name, "o_orderdate": x_orders[0].o_orderdate, "o_orderkey": x_orders[0].o_orderkey, "o_totalprice": x_orders[0].o_totalprice})}) if (customer_part[x_orders[0].o_custkey] != None) else (None)) if (lineitem_part[x_orders[0].o_orderkey] != None) else (None))
+lineitem_orders_isin_build_index = lineitem_orders_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
 
-l1_aggr = li.sum(lambda x_l1: ({record({"c_name": customer_orders[x_l1[0].l_orderkey].c_name, "c_custkey": customer_orders[x_l1[0].l_orderkey].c_custkey, "o_orderkey": x_l1[0].l_orderkey, "o_orderdate": customer_orders[x_l1[0].l_orderkey].o_orderdate, "o_totalprice": customer_orders[x_l1[0].l_orderkey].o_totalprice}): x_l1[0].l_quantity}) if (customer_orders[x_l1[0].l_orderkey] != None) else (None))
+customer_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (lineitem_orders_isin_build_index[x[0].o_orderkey] != None) else (None))
 
-results = l1_aggr.sum(lambda x_l1_aggr: {record({"c_name": x_l1_aggr[0].c_name, "c_custkey": x_l1_aggr[0].c_custkey, "o_orderkey": x_l1_aggr[0].o_orderkey, "o_orderdate": x_l1_aggr[0].o_orderdate, "o_totalprice": x_l1_aggr[0].o_totalprice, "sum_quantity": x_l1_aggr[1]}): True})
+customer_orders_build_nest_dict = cu.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+
+customer_orders_l1_build_pre_ops = customer_orders_probe_pre_ops.sum(lambda x: (customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+
+customer_orders_l1_build_nest_dict = customer_orders_l1_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+customer_orders_l1_0 = li.sum(lambda x: (customer_orders_l1_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (customer_orders_l1_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+customer_orders_l1_1 = customer_orders_l1_0.sum(lambda x: {record({"c_name": x[0].c_name, "c_custkey": x[0].c_custkey, "o_orderkey": x[0].o_orderkey, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice}): record({"sum_quantity": x[0].l_quantity})})
+
+results = customer_orders_l1_1.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 12.899640321731567 s 
-Pandas Execution Time: 0.13912558555603027 s 
-DuckDB Execution Time: 0.054048776626586914 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+ SDQL Execution Time: 19.81688404083252 s 
+Pandas Execution Time: 0.13312053680419922 s 
+DuckDB Execution Time: 0.0570521354675293 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -900,18 +1680,6 @@ DuckDB Execution Time: 0.054048776626586914 s
  Query 18: Pass 
 ============================================================
 >> Query 19 (Q19) <<
-part_lineitem: neither joint
-part ->
-   | probe end: lineitem
-   | build key: p_partkey
-   | probe key: l_partkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: ['p_partkey', 'p_brand']
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 brand12 = "Brand#12"
@@ -932,15 +1700,28 @@ lgpkg = "LG PKG"
 air = "AIR"
 airreg = "AIR REG"
 deliverinperson = "DELIVER IN PERSON"
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: record({"p_partkey": x_part[0].p_partkey, "p_brand": x_part[0].p_brand})}) if (((((((((((x_part[0].p_brand == brand12) * (((((((x_part[0].p_container == smpkg) + (x_part[0].p_container == smpack))) + (x_part[0].p_container == smcase))) + (x_part[0].p_container == smbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 5))) + (((((((x_part[0].p_brand == brand23) * (((((((x_part[0].p_container == medpack) + (x_part[0].p_container == medpkg))) + (x_part[0].p_container == medbag))) + (x_part[0].p_container == medbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 10))))) + (((((((x_part[0].p_brand == brand34) * (((((((x_part[0].p_container == lgpkg) + (x_part[0].p_container == lgpack))) + (x_part[0].p_container == lgcase))) + (x_part[0].p_container == lgbox))))) * (x_part[0].p_size >= 1))) * (x_part[0].p_size <= 15))))) else (None))
+part_lineitem_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 5))) + (((((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 10))))) + (((((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].p_size >= 1))) * (x[0].p_size <= 15))))) else (None))
 
-lineitem_aggr = li.sum(lambda x_lineitem: (((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) if (((((((part_part[x_lineitem[0].l_partkey].p_brand == brand12) * (((x_lineitem[0].l_quantity >= 1) * (x_lineitem[0].l_quantity <= 11))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand23) * (((x_lineitem[0].l_quantity >= 10) * (x_lineitem[0].l_quantity <= 20))))))) + (((part_part[x_lineitem[0].l_partkey].p_brand == brand34) * (((x_lineitem[0].l_quantity >= 20) * (x_lineitem[0].l_quantity <= 30))))))) else (0.0)) if (part_part[x_lineitem[0].l_partkey] != None) else (0.0)) if (((((x_lineitem[0].l_shipmode == air) + (x_lineitem[0].l_shipmode == airreg))) * (x_lineitem[0].l_shipinstruct == deliverinperson))) else (0.0))
+part_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].l_shipmode == air) + (x[0].l_shipmode == airreg))) * (x[0].l_shipinstruct == deliverinperson))) else (None))
 
-results = {record({"revenue": lineitem_aggr}): True}
+part_lineitem_build_nest_dict = part_lineitem_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
+
+part_lineitem_0 = part_lineitem_probe_pre_ops.sum(lambda x: (part_lineitem_build_nest_dict[x[0].l_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (part_lineitem_build_nest_dict[x[0].l_partkey] != None) else (None))
+
+part_lineitem_1 = part_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((((((x[0].p_brand == brand12) * (((x[0].l_quantity >= 1) * (x[0].l_quantity <= 11))))) + (((x[0].p_brand == brand23) * (((x[0].l_quantity >= 10) * (x[0].l_quantity <= 20))))))) + (((x[0].p_brand == brand34) * (((x[0].l_quantity >= 20) * (x[0].l_quantity <= 30))))))) else (None))
+
+part_lineitem_2 = part_lineitem_1.sum(lambda x: {x[0].concat(record({"revenue": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+
+part_lineitem_3 = part_lineitem_2.sum(lambda x: record({"revenue": x[0].revenue}))
+
+results = {part_lineitem_3: True}
 ============================================================
- SDQL Execution Time: 7.155458211898804 s 
-Pandas Execution Time: 0.09008073806762695 s 
-DuckDB Execution Time: 0.030028343200683594 s 
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+ SDQL Execution Time: 7.249541282653809 s 
+Pandas Execution Time: 0.09108257293701172 s 
+DuckDB Execution Time: 0.029026031494140625 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -952,50 +1733,56 @@ DuckDB Execution Time: 0.030028343200683594 s
  Query 19: Pass 
 ============================================================
 >> Query 20 (Q20) <<
-nation_supplier: neither joint
-lineitem_partsupp: neither joint
-lineitem ->
-   | probe end: partsupp
-   | build key: ['l_partkey', 'l_suppkey']
-   | probe key: ['ps_partkey', 'ps_suppkey']
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-nation ->
-   | probe end: supplier
-   | build key: n_nationkey
-   | probe key: s_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
+Warning: Unexpected Type <class 'pysdql.core.dtypes.ColExtExpr.ColExtExpr'>
 >> Optimized Query <<
 ============================================================
 canada = "CANADA"
 forest = "forest"
-nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == canada) else (None))
+nation_supplier_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == canada) else (None))
 
-part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (startsWith(x_part[0].p_name, forest)) else (None))
+lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) else (None))
 
-supplier_part = su.sum(lambda x_supplier: {x_supplier[0].s_suppkey: True})
+part_lineitem_isin_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (startsWith(x[0].p_name, forest)) else (None))
 
-lineitem_part = li.sum(lambda x_lineitem: ((({record({"l_partkey": x_lineitem[0].l_partkey, "l_suppkey": x_lineitem[0].l_suppkey}): record({"sum_quantity": x_lineitem[0].l_quantity})}) if (part_part[x_lineitem[0].l_partkey] != None) else (None)) if (supplier_part[x_lineitem[0].l_suppkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19940101) * (x_lineitem[0].l_shipdate < 19950101))) else (None))
+part_lineitem_isin_build_index = part_lineitem_isin_pre_ops.sum(lambda x: {x[0].p_partkey: True})
 
-lineitem_partsupp = ps.sum(lambda x_partsupp: (({x_partsupp[0].ps_suppkey: True}) if (x_partsupp[0].ps_availqty > ((lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})].sum_quantity) * (0.5))) else (None)) if (lineitem_part[record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey})] != None) else (None))
+lineitem_1 = lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (part_lineitem_isin_build_index[x[0].l_partkey] != None) else (None))
 
-results = su.sum(lambda x_supplier: (({record({"s_name": x_supplier[0].s_name, "s_address": x_supplier[0].s_address}): True}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None)) if (lineitem_partsupp[x_supplier[0].s_suppkey] != None) else (None))
+supplier_lineitem_isin_build_index = su.sum(lambda x: {x[0].s_suppkey: True})
+
+lineitem_2 = lineitem_1.sum(lambda x: ({x[0]: x[1]}) if (supplier_lineitem_isin_build_index[x[0].l_suppkey] != None) else (None))
+
+lineitem_3 = lineitem_2.sum(lambda x: {record({"l_partkey": x[0].l_partkey, "l_suppkey": x[0].l_suppkey}): record({"sum_quantity": x[0].l_quantity})})
+
+lineitem_partsupp_build_pre_ops = lineitem_3.sum(lambda x: {x[0].concat(x[1]): True})
+
+lineitem_partsupp_build_nest_dict = lineitem_partsupp_build_pre_ops.sum(lambda x: {record({"l_partkey": x[0].l_partkey, "l_suppkey": x[0].l_suppkey}): sr_dict({x[0]: x[1]})})
+
+lineitem_partsupp_0 = ps.sum(lambda x: (lineitem_partsupp_build_nest_dict[record({"l_partkey": x[0].ps_partkey, "l_suppkey": x[0].ps_suppkey})].sum(lambda y: {x[0].concat(y[0]): True})
+) if (lineitem_partsupp_build_nest_dict[record({"l_partkey": x[0].ps_partkey, "l_suppkey": x[0].ps_suppkey})] != None) else (None))
+
+lineitem_partsupp_supplier_isin_pre_ops = lineitem_partsupp_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].ps_availqty > ((x[0].sum_quantity) * (0.5))) else (None))
+
+lineitem_partsupp_supplier_isin_build_index = lineitem_partsupp_supplier_isin_pre_ops.sum(lambda x: {x[0].l_suppkey: True})
+
+nation_supplier_probe_pre_ops = su.sum(lambda x: ({x[0]: x[1]}) if (lineitem_partsupp_supplier_isin_build_index[x[0].s_suppkey] != None) else (None))
+
+nation_supplier_build_nest_dict = nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
+
+nation_supplier_0 = nation_supplier_probe_pre_ops.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
+
+results = nation_supplier_0.sum(lambda x: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True})
 
 ============================================================
- SDQL Execution Time: 7.528793573379517 s 
-Pandas Execution Time: 0.09708762168884277 s 
-DuckDB Execution Time: 0.04103732109069824 s 
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+Reading T:/tpch_dataset/100M/partsupp.tbl Finished.
+Reading T:/tpch_dataset/100M/part.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+ SDQL Execution Time: 10.505480527877808 s 
+Pandas Execution Time: 0.10409331321716309 s 
+DuckDB Execution Time: 0.04403948783874512 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -1003,79 +1790,69 @@ DuckDB Execution Time: 0.04103732109069824 s
 ============================================================
 ============================================================
 >> Comparing SDQL with Pandas ... <<
-Warning: Mismatch Shape: {SDQL: 0, Pandas: 9}
-Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)
 ============================================================
- Query 20: Fail 
+ Query 20: Pass 
 ============================================================
 >> Query 21 (Q21) <<
-orders ->
-   | probe end: nation_supplier_l3_l2_lineitem
-   | build key: o_orderkey
-   | probe key: l_orderkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-nation_supplier: neither joint
-nation ->
-   | probe end: supplier
-   | build key: n_nationkey
-   | probe key: s_nationkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: []
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-l3 ->
-   | probe end: l2_lineitem
-   | build key: l_orderkey
-   | probe key: l_orderkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: ['l_orderkey', 'l3_size']
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
-l2 ->
-   | probe end: lineitem
-   | build key: l_orderkey
-   | probe key: l_orderkey
-   | rename columns: {}
-   | insert columns: {}
-   | project columns: ['l_orderkey', 'l2_size']
-   | unique columns: []
-   | modify columns: []
-   | result struct: None
-
 >> Optimized Query <<
 ============================================================
 f = "F"
 saudiarabia = "SAUDI ARABIA"
-orders_part = ord.sum(lambda x_orders: ({x_orders[0].o_orderkey: True}) if (x_orders[0].o_orderstatus == f) else (None))
+orders_nation_supplier_l3_l2_lineitem_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderstatus == f) else (None))
 
-nation_part = na.sum(lambda x_nation: ({x_nation[0].n_nationkey: True}) if (x_nation[0].n_name == saudiarabia) else (None))
+nation_supplier_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == saudiarabia) else (None))
 
-nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"s_name": x_supplier[0].s_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+nation_supplier_build_nest_dict = nation_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
 
-l3_part = li.sum(lambda x_l3: ({x_l3[0].l_orderkey: record({"l3_size": 1})}) if (x_l3[0].l_receiptdate > x_l3[0].l_commitdate) else (None))
+nation_supplier_l3_l2_lineitem_build_pre_ops = su.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
 
-l2_part = li.sum(lambda x_l2: {x_l2[0].l_orderkey: record({"l2_size": 1})})
+l3_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
 
-orders_nation_supplier_l3_l2_lineitem = li.sum(lambda x_lineitem: (((((({nation_supplier[x_lineitem[0].l_suppkey].s_name: record({"numwait": 1.0})}) if (((l2_part[x_lineitem[0].l_orderkey].l2_size > 1) * (l3_part[x_lineitem[0].l_orderkey].l3_size == 1))) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None)) if (nation_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (l3_part[x_lineitem[0].l_orderkey] != None) else (None)) if (l2_part[x_lineitem[0].l_orderkey] != None) else (None)) if (x_lineitem[0].l_receiptdate > x_lineitem[0].l_commitdate) else (None))
+l3_1 = l3_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"l3_size": (1.0) if (x[0].l_suppkey != None) else (0.0)})})
 
-results = orders_nation_supplier_l3_l2_lineitem.sum(lambda x_orders_nation_supplier_l3_l2_lineitem: {record({"s_name": x_orders_nation_supplier_l3_l2_lineitem[0], "numwait": x_orders_nation_supplier_l3_l2_lineitem[1].numwait}): True})
+l3_l2_lineitem_build_pre_ops = l3_1.sum(lambda x: {x[0].concat(x[1]): True})
+
+l2_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"l2_size": (1.0) if (x[0].l_suppkey != None) else (0.0)})})
+
+l2_lineitem_build_pre_ops = l2_0.sum(lambda x: {x[0].concat(x[1]): True})
+
+l2_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
+
+l2_lineitem_build_nest_dict = l2_lineitem_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+l3_l2_lineitem_probe_pre_ops = l2_lineitem_probe_pre_ops.sum(lambda x: (l2_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (l2_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+l3_l2_lineitem_build_nest_dict = l3_l2_lineitem_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
+
+nation_supplier_l3_l2_lineitem_probe_pre_ops = l3_l2_lineitem_probe_pre_ops.sum(lambda x: (l3_l2_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (l3_l2_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+nation_supplier_l3_l2_lineitem_build_nest_dict = nation_supplier_l3_l2_lineitem_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+
+orders_nation_supplier_l3_l2_lineitem_probe_pre_ops = nation_supplier_l3_l2_lineitem_probe_pre_ops.sum(lambda x: (nation_supplier_l3_l2_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (nation_supplier_l3_l2_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
+
+orders_nation_supplier_l3_l2_lineitem_build_nest_dict = orders_nation_supplier_l3_l2_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+
+orders_nation_supplier_l3_l2_lineitem_0 = orders_nation_supplier_l3_l2_lineitem_probe_pre_ops.sum(lambda x: (orders_nation_supplier_l3_l2_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+) if (orders_nation_supplier_l3_l2_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+
+orders_nation_supplier_l3_l2_lineitem_1 = orders_nation_supplier_l3_l2_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l2_size > 1) * (x[0].l3_size == 1))) else (None))
+
+orders_nation_supplier_l3_l2_lineitem_2 = orders_nation_supplier_l3_l2_lineitem_1.sum(lambda x: {record({"s_name": x[0].s_name}): record({"numwait": (1.0) if (x[0].s_name != None) else (0.0)})})
+
+results = orders_nation_supplier_l3_l2_lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 21.570473194122314 s 
-Pandas Execution Time: 0.914825439453125 s 
-DuckDB Execution Time: 0.09408426284790039 s 
+Reading T:/tpch_dataset/100M/supplier.tbl Finished.
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+Reading T:/tpch_dataset/100M/nation.tbl Finished.
+ SDQL Execution Time: 89.04423117637634 s 
+Pandas Execution Time: 0.9318406581878662 s 
+DuckDB Execution Time: 0.1010904312133789 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -1087,8 +1864,8 @@ DuckDB Execution Time: 0.09408426284790039 s
  Query 21: Pass 
 ============================================================
 >> Query 22 (Q22) <<
-{'sum_acctbal': sum_acctbal, 'count_acctbal': count_acctbal}
-RecAccessExpr(PairAccessExpr(x_customer, 0), 'c_phone')
+we are here customer
+RecAccessExpr(PairAccessExpr(x, 0), 'c_phone')
 >> Optimized Query <<
 ============================================================
 v13 = "13"
@@ -1098,20 +1875,28 @@ v29 = "29"
 v30 = "30"
 v18 = "18"
 v17 = "17"
-cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if (((x_cu1[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (startsWith(x_cu1[0].c_phone, v30)))) + (startsWith(x_cu1[0].c_phone, v18)))) + (startsWith(x_cu1[0].c_phone, v17)))))) else (None))
+cu1_0 = cu.sum(lambda x: ({x[0]: x[1]}) if (((x[0].c_acctbal > 0.0) * (((((((((((((startsWith(x[0].c_phone, v13)) + (startsWith(x[0].c_phone, v31)))) + (startsWith(x[0].c_phone, v23)))) + (startsWith(x[0].c_phone, v29)))) + (startsWith(x[0].c_phone, v30)))) + (startsWith(x[0].c_phone, v18)))) + (startsWith(x[0].c_phone, v17)))))) else (None))
 
-count_acctbal = cu1_aggr.count_acctbal
-sum_acctbal = cu1_aggr.sum_acctbal
-orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
+cu1_1 = cu1_0.sum(lambda x: record({"sum_acctbal": x[0].c_acctbal, "count_acctbal": 1.0}))
 
-customer_aggr = cu.sum(lambda x_customer: (({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (orders_part[x_customer[0].c_custkey] == None) else (None)) if (((x_customer[0].c_acctbal > ((sum_acctbal) / (count_acctbal))) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+customer_0 = cu.sum(lambda x: ({x[0]: x[1]}) if (((x[0].c_acctbal > ((cu1_1.sum_acctbal) / (cu1_1.count_acctbal))) * (((((((((((((startsWith(x[0].c_phone, v13)) + (startsWith(x[0].c_phone, v31)))) + (startsWith(x[0].c_phone, v23)))) + (startsWith(x[0].c_phone, v29)))) + (startsWith(x[0].c_phone, v30)))) + (startsWith(x[0].c_phone, v18)))) + (startsWith(x[0].c_phone, v17)))))) else (None))
 
-results = customer_aggr.sum(lambda x_customer_aggr: {record({"cntrycode": x_customer_aggr[0], "numcust": x_customer_aggr[1].numcust, "totacctbal": x_customer_aggr[1].totacctbal}): True})
+orders_customer_isin_build_index = ord.sum(lambda x: {x[0].o_custkey: True})
+
+customer_1 = customer_0.sum(lambda x: ({x[0]: x[1]}) if (orders_customer_isin_build_index[x[0].c_custkey] == None) else (None))
+
+customer_2 = customer_1.sum(lambda x: {x[0].concat(record({"cntrycode": substr(x[0].c_phone, 0, 1)})): x[1]})
+
+customer_3 = customer_2.sum(lambda x: {record({"cntrycode": x[0].cntrycode}): record({"numcust": (1.0) if (x[0].c_acctbal != None) else (0.0), "totacctbal": x[0].c_acctbal})})
+
+results = customer_3.sum(lambda x: {x[0].concat(x[1]): True})
 
 ============================================================
- SDQL Execution Time: 1.9747834205627441 s 
-Pandas Execution Time: 0.12811636924743652 s 
-DuckDB Execution Time: 0.0370326042175293 s 
+Reading T:/tpch_dataset/100M/customer.tbl Finished.
+Reading T:/tpch_dataset/100M/orders.tbl Finished.
+ SDQL Execution Time: 1.8937082290649414 s 
+Pandas Execution Time: 0.07406735420227051 s 
+DuckDB Execution Time: 0.030026674270629883 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -1132,17 +1917,17 @@ DuckDB Execution Time: 0.0370326042175293 s
 8:  Pass 
 9:  Pass 
 10:  Pass 
-11:  Pass 
+11:  Fail 
 12:  Pass 
 13:  Pass 
 14:  Pass 
-15:  Pass 
+15:  Error 
 16:  Pass 
 17:  Pass 
 18:  Pass 
 19:  Pass 
-20:  Fail 
+20:  Pass 
 21:  Pass 
 22:  Pass 
 ============================================================
-6.05360635916392
+10.413300148646037
