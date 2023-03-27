@@ -2,6 +2,7 @@ import inspect
 import re
 
 from pysdql.core.dtypes import AggrExpr, ColEl
+from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
 from pysdql.core.dtypes.AggrLambdaExpr import AggrLambda
 from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
@@ -110,6 +111,9 @@ class DataFrameGroupBy:
 
     def filter(self, func):
         cond = func(self)
+
+        if isinstance(cond, AggrFiltCond):
+            cond.groupby_cols = self.groupby_cols
 
         op_expr = OpExpr(op_obj=cond,
                          op_on=self.groupby_from,

@@ -2,8 +2,9 @@ from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.sdql_ir import CompareSymbol
 
 
-class AggrFiltCond():
-    def __init__(self, aggr_unit1, aggr_unit2, cond_op):
+class AggrFiltCond:
+    def __init__(self, aggr_unit1, aggr_unit2, cond_op, groupby_cols=None):
+        self.groupby_cols = groupby_cols if groupby_cols else []
         self.aggr_unit1 = aggr_unit1
         self.aggr_unit2 = aggr_unit2
         self.cond_op = cond_op

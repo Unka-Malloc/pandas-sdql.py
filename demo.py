@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # opt_single = pysdql.tpch_query(5, verbose=True, optimize=True)
 
-    unoptimized = pysdql.tpch_query(range(1, 23), verbose=False, optimize=False)
+    unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
     # fix after refactor: 2, 11, 16, 20
 

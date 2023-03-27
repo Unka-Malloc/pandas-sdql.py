@@ -755,7 +755,15 @@ class Optimizer:
                 tmp_aggr_value = SDQLInspector.replace_access(tmp_pairs[2].sdql_ir,
                                                               PairAccessExpr(VarExpr(tmp_el_on), 0))
 
-                tmp_it_2.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), tmp_aggr_value)])
+                groupby_rec = RecConsExpr([(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
+                                      for i in op_body.groupby_cols])
+
+                # tmp_2_body = sr_dict({groupby_rec: tmp_aggr_value})
+                # tmp_it_2.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), tmp_2_body)])
+
+                tmp_2_body = DicConsExpr([(groupby_rec, tmp_aggr_value)])
+
+                tmp_it_2.iter_op = tmp_2_body
 
                 unopt_context.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -766,9 +774,13 @@ class Optimizer:
                 unopt_count += 1
 
                 tmp_vn_on_3 = f'{this_name}_{unopt_count - 1}'
-                tmp_vn_nx = f'{this_name}_{unopt_count}'
+                tmp_vn_nx_3 = f'{this_name}_{unopt_count}'
 
                 tmp_it_3 = IterForm(tmp_vn_on_3, tmp_el_on)
+
+                # DicLookupExpr(VarExpr(tmp_vn_nx),
+                #               groupby_rec)
+                #
 
                 tmp_it_3.iter_cond.append(CompareExpr(tmp_pairs[0],
                                                       VarExpr(tmp_calc_value),
@@ -777,8 +789,28 @@ class Optimizer:
                 tmp_it_3.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), ConstantExpr(True))])
 
                 unopt_context.append(
-                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx_3),
                             valExpr=tmp_it_3.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
+
+                unopt_count += 1
+
+                tmp_vn_on_4 = f'{this_name}_{unopt_count - 1}'
+                tmp_vn_nx_4 = f'{this_name}_{unopt_count}'
+
+                tmp_it_4 = IterForm(tmp_vn_on, tmp_el_on)
+
+                tmp_it_4.iter_cond.append(CompareExpr(CompareSymbol.NE,
+                                                      DicLookupExpr(VarExpr(tmp_vn_nx_3),
+                                                                    groupby_rec),
+                                                      ConstantExpr(None)))
+
+                tmp_it_4.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), ConstantExpr(True))])
+
+                unopt_context.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx_4),
+                            valExpr=tmp_it_4.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, (OldColOpExpr, NewColOpExpr)):
