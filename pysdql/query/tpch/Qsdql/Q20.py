@@ -23,4 +23,4 @@ def query(su, na, ps, pa, li):
     
     # Complete
 
-    return su
+    return results

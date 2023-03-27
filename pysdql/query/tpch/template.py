@@ -67,10 +67,15 @@ def tpch_q2(part, supplier, partsupp, nation, region):
 
     su_ps1_join = na_su_join.merge(ps1, left_on='s_suppkey', right_on='ps_suppkey')
 
-    min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False) \
-        .agg({'ps_supplycost': 'sum'})
+    su_ps1_join = su_ps1_join[['ps_partkey', 'ps_supplycost']]
 
-    min_agg.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
+    min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False) \
+            .agg(min_supplycost=('ps_supplycost', 'sum'))
+
+    # min_agg = su_ps1_join.groupby(['ps_partkey'], as_index=False) \
+    #     .agg({'ps_supplycost': 'sum'})
+    #
+    # min_agg.rename({'ps_supplycost': 'min_supplycost'}, axis=1, inplace=True)
 
     pa_ps_join = pa_filt.merge(partsupp, left_on='p_partkey', right_on='ps_partkey')
 

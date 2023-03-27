@@ -148,11 +148,12 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         print(f'Warning: Mismatch Shape: {{SDQL: {sdql_df.shape[0]}, Pandas: {pd_df.shape[0]}}}')
 
         if sdql_df.shape[0] < pd_df.shape[0]:
+            # compatible with SQL pipeline
             print(f'Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)')
             # return False
         else:
-            return False
-            # pass
+            # return False
+            pass
 
     for c in sdql_df.columns:
         if c.endswith('_NA'):
@@ -185,6 +186,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
     for xi, xrow in sdql_df.iterrows():
         answer_df = pd_df
 
+        row_success = False
+
         for k in xrow.keys():
             if k.endswith('_NA'):
                 continue
@@ -199,11 +202,18 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
                 print(answer_df)
                 # return False
 
-                mismatch_count += 1
+                row_success = False
             else:
                 answer_df = subset_df
-                verified_count += 1
+
+                row_success = True
+
         else:
+            if row_success:
+                verified_count += 1
+            else:
+                mismatch_count += 1
+
             if verbose:
                 # print(f'Success Verify {xrow.to_dict()}')
                 pass

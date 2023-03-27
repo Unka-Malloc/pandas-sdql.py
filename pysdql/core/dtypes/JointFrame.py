@@ -1812,6 +1812,8 @@ class JointFrame:
                                 dicExpr=this_part_side.get_var_part(),
                                 keyExpr=root_probe_side.key_access(this_probe_key))
 
+                        cond_mapper[tuple(root_probe_side.cols_out)] = root_probe_side.iter_el.key
+
                         if cond_mapper:
                             joint_cond_ir = joint_cond.replace(rec=None, inplace=False, mapper=cond_mapper)
                         else:
@@ -2309,16 +2311,18 @@ class JointFrame:
                     # Q18
                     # Q21
 
+                    groupby_aggr_expr = self.retriever.find_groupby_aggr()
+
                     last_merge_expr = self.retriever.find_merge(mode='as_joint')
                     next_merge_expr = self.retriever.find_merge(mode='as_part')
 
                     probe_isin = self.probe_frame.retriever.find_isin()
 
-                    renamed_cols = self.probe_frame.retriever.findall_col_rename(reverse=True)
+                    rename_col_mapper = self.probe_frame.retriever.findall_col_rename(reverse=True)
 
-                    if renamed_cols:
-                        if probe_key in renamed_cols.keys():
-                            probe_key = renamed_cols[probe_key]
+                    if rename_col_mapper:
+                        if probe_key in rename_col_mapper.keys():
+                            probe_key = rename_col_mapper[probe_key]
                             probe_key_ir = RecAccessExpr(probe_on.iter_el.key, probe_key)
 
                     # dict key: single column
@@ -2328,10 +2332,10 @@ class JointFrame:
                         else:
                             key_col = next_merge_expr.left_on
 
-                            if renamed_cols:
+                            if rename_col_mapper:
                                 for k in key_col:
-                                    if k in renamed_cols.keys():
-                                        key_col[key_col.index(k)] = renamed_cols[k]
+                                    if k in rename_col_mapper.keys():
+                                        key_col[key_col.index(k)] = rename_col_mapper[k]
 
                             dict_key_cols = []
 
@@ -2370,12 +2374,12 @@ class JointFrame:
                                     dict_val_list.append((i,
                                                           probe_key_ir))
                                 elif i in self.part_frame.part_on.columns:
-                                    if i in renamed_cols.keys():
-                                        dict_val_list.append((renamed_cols[i],
+                                    if i in rename_col_mapper.keys():
+                                        dict_val_list.append((rename_col_mapper[i],
                                                               RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
                                                                                                   keyExpr=probe_on.key_access(
                                                                                                       probe_key)),
-                                                                            fieldName=renamed_cols[i])))
+                                                                            fieldName=rename_col_mapper[i])))
                                     else:
                                         dict_val_list.append((i,
                                                               RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
@@ -2501,9 +2505,9 @@ class JointFrame:
                     else:
                         key_col = next_merge_expr.left_on
 
-                        if renamed_cols:
-                            if key_col in renamed_cols.keys():
-                                key_col = renamed_cols[key_col]
+                        if rename_col_mapper:
+                            if key_col in rename_col_mapper.keys():
+                                key_col = rename_col_mapper[key_col]
 
                         dict_key_ir = self.probe_access(key_col)
 
@@ -2527,19 +2531,32 @@ class JointFrame:
                         dict_val_list = []
 
                         for i in val_cols:
+                            if groupby_aggr_expr:
+                                for k in groupby_aggr_expr.origin_dict.keys():
+                                    if i == groupby_aggr_expr.origin_dict[k][0]:
+                                        rename_col_mapper[i] = k
+
                             if i == part_key:
-                                dict_val_list.append((i,
+                                if i in rename_col_mapper.keys():
+                                    dict_val_list.append((rename_col_mapper[i],
+                                                          probe_key_ir))
+                                else:
+                                    dict_val_list.append((i,
                                                       probe_key_ir))
                             elif i == probe_key:
-                                dict_val_list.append((i,
+                                if i in rename_col_mapper.keys():
+                                    dict_val_list.append((rename_col_mapper[i],
+                                                      probe_key_ir))
+                                else:
+                                    dict_val_list.append((i,
                                                       probe_key_ir))
                             elif i in self.part_frame.part_on.columns:
-                                if i in renamed_cols.keys():
-                                    dict_val_list.append((renamed_cols[i],
+                                if i in rename_col_mapper.keys():
+                                    dict_val_list.append((rename_col_mapper[i],
                                                           RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
                                                                                               keyExpr=probe_on.key_access(
                                                                                                   probe_key)),
-                                                                        fieldName=renamed_cols[i])))
+                                                                        fieldName=rename_col_mapper[i])))
                                 else:
                                     dict_val_list.append((i,
                                                           RecAccessExpr(recExpr=DicLookupExpr(dicExpr=part_var,
@@ -2554,6 +2571,8 @@ class JointFrame:
                                         dict_val_list.append((i, probe_on.key_access(origin_col)))
                                     else:
                                         dict_val_list.append((i, self.part_lookup(origin_col)))
+                                elif i in rename_col_mapper.keys():
+                                    dict_val_list.append((rename_col_mapper[i], probe_on.key_access(i)))
                                 else:
                                     # print(i, 'in', self.probe_frame.probe_on, 'with', self.probe_frame.probe_on.columns)
                                     dict_val_list.append((i,
@@ -2777,11 +2796,11 @@ class JointFrame:
 
             all_part_expr = self.retriever.findall_part_for_root_probe('as_expr')
 
+            # for i in all_part_expr:
+            #     print(i)
+
             all_bindings += all_part_expr
             all_bindings.append(self.get_probe_expr(next_op))
-
-            # for i in all_bindings:
-            #     print(i)
 
             return SDQLInspector.concat_bindings(all_bindings)
 

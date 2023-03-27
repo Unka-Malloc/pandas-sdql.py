@@ -745,16 +745,40 @@ class Optimizer:
 
                 tmp_it_2 = IterForm(tmp_vn_on, tmp_el_on)
 
+                # tmp_aggr_value = SDQLInspector.replace_access(tmp_pairs[2].sdql_ir,
+                #                                               PairAccessExpr(VarExpr(tmp_el_on), 0))
+                #
+                # tmp_it_2.iter_cond.append(CompareExpr(tmp_pairs[0],
+                #                                       VarExpr(tmp_calc_value),
+                #                                       tmp_aggr_value))
+
                 tmp_aggr_value = SDQLInspector.replace_access(tmp_pairs[2].sdql_ir,
                                                               PairAccessExpr(VarExpr(tmp_el_on), 0))
 
-                tmp_it_2.iter_cond.append(CompareExpr(tmp_pairs[0],
-                                                      VarExpr(tmp_calc_value),
-                                                      tmp_aggr_value))
+                tmp_it_2.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), tmp_aggr_value)])
 
                 unopt_context.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
                             valExpr=tmp_it_2.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
+
+                unopt_count += 1
+
+                tmp_vn_on_3 = f'{this_name}_{unopt_count - 1}'
+                tmp_vn_nx = f'{this_name}_{unopt_count}'
+
+                tmp_it_3 = IterForm(tmp_vn_on_3, tmp_el_on)
+
+                tmp_it_3.iter_cond.append(CompareExpr(tmp_pairs[0],
+                                                      VarExpr(tmp_calc_value),
+                                                      PairAccessExpr(VarExpr(tmp_el_on), 1)))
+
+                tmp_it_3.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0), ConstantExpr(True))])
+
+                unopt_context.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=tmp_it_3.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, (OldColOpExpr, NewColOpExpr)):
@@ -1119,6 +1143,8 @@ class Optimizer:
                 aggr_dict = op_body.aggr_dict
                 origin_dict = op_body.origin_dict
 
+                nunique_columns = []
+
                 tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
                 key_rec_list = []
@@ -1151,7 +1177,17 @@ class Optimizer:
                                                  ConstantExpr(0.0))
                             val_rec_list.append((k, check_count))
                     elif isinstance(v, AggrNunique):
-                        val_rec_list.append((k, ConstantExpr(1.0)))
+                        # nunique_expr = IfExpr(CompareExpr(CompareSymbol.NE,
+                        #                               RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                        #                                             v.field),
+                        #                               ConstantExpr(None)),
+                        #                   ConstantExpr(1.0),
+                        #                   ConstantExpr(0.0))
+                        nunique_expr = sr_dict({
+                            RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), v.field): ConstantExpr(True)
+                        })
+                        val_rec_list.append((k, nunique_expr))
+                        nunique_columns.append(k)
                     else:
                         val_rec_list.append((k, aggr_dict[k]))
 
@@ -1185,6 +1221,20 @@ class Optimizer:
                                                                         f'{j}_count_for_mean'))))
                         else:
                             rec_list_2.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 1), j)))
+
+                    tmp_it_2.iter_op = DicConsExpr([(RecConsExpr(rec_list_2),
+                                                     ConstantExpr(True))])
+                elif nunique_columns:
+                    rec_list_2 = []
+
+                    for i in groupby_cols:
+                        rec_list_2.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+
+                    for u in nunique_columns:
+                        rec_list_2.append((u, ExtFuncExpr(ExtFuncSymbol.DictSize,
+                                                          RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 1), u),
+                                                          ConstantExpr('Nothing!'),
+                                                          ConstantExpr('Nothing!'))))
 
                     tmp_it_2.iter_op = DicConsExpr([(RecConsExpr(rec_list_2),
                                                      ConstantExpr(True))])
