@@ -79,7 +79,11 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                 continue
 
             if verbose:
+                print('SDQL RESULTS START')
+                print(sep_line)
                 print(sdql_result)
+                print(sep_line)
+                print('SDQL RESULTS END')
 
             if enable_pandas_verification:
                 sdql_df = sdql_to_df(sdql_result)
@@ -109,7 +113,11 @@ def tpch_query(qindex=1, execution_mode=0, threads_count=1, verbose=True, optimi
                 pandas_df = pandas_df.reset_index(drop=True)
 
                 if verbose:
+                    print('PANDAS RESULTS START')
+                    print(sep_line)
                     print(pandas_result)
+                    print(sep_line)
+                    print('PANDAS RESULTS END')
 
                 if compare_dataframe(sdql_df, pandas_df, verbose):
                     check_dict[q] = '\033[32m Pass \033[0m'

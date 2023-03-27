@@ -152,8 +152,8 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             print(f'Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)')
             # return False
         else:
-            # return False
-            pass
+            if not for_duck:
+                return False
 
     for c in sdql_df.columns:
         if c.endswith('_NA'):
@@ -195,11 +195,12 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
                 continue
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
-                print(f'At row number {verified_count} / {sdql_df.shape[0]}')
-                print(f'Not found {xrow.to_dict()}')
-                print(f'Failed while looking for {k} == {xrow[k]}')
-                print(f'The answer is as following:')
-                print(answer_df)
+                if not for_duck:
+                    print(f'At row number {verified_count} / {sdql_df.shape[0]}')
+                    print(f'Not found {xrow.to_dict()}')
+                    print(f'Failed while looking for {k} == {xrow[k]}')
+                    print(f'The answer is as following:')
+                    print(answer_df)
                 # return False
 
                 row_success = False
@@ -221,9 +222,11 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
         if mismatch_count == 0:
             return True
         else:
-            print(f'number of mismatch records: {mismatch_count}')
-            return False
-        # return True
+            if not for_duck:
+                print(f'number of mismatch records: {mismatch_count}')
+                return False
+
+    return True
 
 def exists_duplicates(test_str: str):
     i = 0
