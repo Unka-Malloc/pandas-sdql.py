@@ -3,6 +3,7 @@ import re
 from pysdql.core.dtypes.ExtDateTime import ExtDatetime
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType, OptGoal
+from pysdql.core.dtypes.FreeStateVarDefExpr import FreeStateVar
 from pysdql.core.dtypes.IsNullExpr import IsNullExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.ExistExpr import ExistExpr
@@ -346,23 +347,22 @@ class ColEl(FlexIR):
 
             return tmp_cond
 
-        if type(vals) == ColEl:
-            isin_expr = IsInExpr(col_probe=self, col_part=vals)
+        if isinstance(vals, ColEl):
+            part_on = vals.relation.create_copy()
 
-            for k in vals.relation.context_constant:
+            isin_expr = IsInExpr(col_probe=self, col_part=part_on.get_col(vals.field))
+
+            for k in part_on.context_constant:
                 self.add_const(k)
 
-            for o in vals.relation.get_context_unopt():
-                self.relation.context_unopt.append(o)
-
             self.relation.push(OpExpr(op_obj=isin_expr,
-                                      op_on=self.R,
+                                      op_on=self.relation,
                                       op_iter=True,
                                       iter_on=None,
                                       ret_type=None))
 
-            vals.relation.push(OpExpr(op_obj=isin_expr,
-                                      op_on=self.R,
+            part_on.push(OpExpr(op_obj=isin_expr,
+                                      op_on=self.relation,
                                       op_iter=True,
                                       iter_on=None,
                                       ret_type=None))
@@ -535,13 +535,29 @@ class ColEl(FlexIR):
         #     print(re.match('^.*?[^\.\*\?].*?$', pattern).group())
 
     def __getitem__(self, item):
+        vname_suffix = f'{self.field}_el_{item}_'
+
         if item == 0:
             col_ins_list = self.relation.retriever.findall_col_insert_as_list()
 
             if self.field in col_ins_list.keys():
-                return col_ins_list[self.field][0]
+                target = col_ins_list[self.field][0]
+
+                free_state_var = FreeStateVar(f'{vname_suffix}{target.descriptor}',
+                                              target,
+                                              self.relation)
+
+                op_expr = OpExpr(op_obj=free_state_var,
+                                 op_on=self.relation,
+                                 op_iter=True,
+                                 iter_on=self.relation,
+                                 ret_type=OpRetType.FLOAT)
+
+                self.relation.push(op_expr)
+
+                return free_state_var
             else:
-                raise IndexError(f'Invalid index {self.field}')
+                raise IndexError(f'Invalid index {self.field} in {col_ins_list}')
         else:
             raise NotImplementedError
 

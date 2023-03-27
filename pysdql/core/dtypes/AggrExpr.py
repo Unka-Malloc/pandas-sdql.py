@@ -4,6 +4,7 @@ from pysdql.core.dtypes.EnumUtil import (
     AggrType, MathSymbol, LogicSymbol,
 )
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.Utils import input_fmt
 from pysdql.core.dtypes.sdql_ir import CompareSymbol
 
@@ -111,3 +112,17 @@ class AggrExpr(FlexIR):
 
     def show(self):
         self.aggr_on.show()
+
+    @property
+    def descriptor(self) -> str:
+        desc = ""
+
+        for k in self.origin_dict.keys():
+            if k == 'sum_agg':
+                # ColOpExpr AggrExpr
+                # first element in the tuple will be sdql_ir object
+                desc += SDQLInspector.find_a_descriptor(self.origin_dict[k][0])
+            else:
+                desc += f'{self.origin_dict[k][0]}_{self.origin_dict[k][1]}'
+
+        return desc

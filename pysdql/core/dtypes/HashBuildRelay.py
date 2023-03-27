@@ -5,6 +5,7 @@ from pysdql.core.util.df_retriever import Retriever
 class BuildEnd():
     def __init__(self, build_on):
         self.build_on = build_on
+
         self.base_join = self.retriever.find_merge('as_part')
 
     @property

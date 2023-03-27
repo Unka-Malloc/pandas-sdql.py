@@ -149,6 +149,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
 
         if sdql_df.shape[0] < pd_df.shape[0]:
             print(f'Warning: DF 1 (SDQL) is a subset of DF 2 (Pandas)')
+            # return False
         else:
             return False
             # pass
@@ -163,7 +164,7 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             if sdql_df[c].apply(lambda x: x < np.float64(1.0)).all():
                 sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)
             else:
-                sdql_df[c] = sdql_df[c].astype(int)
+                sdql_df[c] = sdql_df[c].round(1)
         if sdql_df[c].dtype == object:
             if sdql_df[c].apply(lambda x: is_date(x)).all():
                 sdql_df[c] = sdql_df[c].apply(lambda x: np.float64(x.replace('-', '')))
@@ -173,13 +174,15 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
             else:
-                pd_df[c] = pd_df[c].astype(int)
+                pd_df[c] = pd_df[c].round(1)
         if pd_df[c].dtype == object:
             if pd_df[c].apply(lambda x: is_date(x)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
-    for xi, xrow in sdql_df.iterrows():
+    verified_count = 0
+    mismatch_count = 0
 
+    for xi, xrow in sdql_df.iterrows():
         answer_df = pd_df
 
         for k in xrow.keys():
@@ -189,17 +192,28 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
                 continue
             subset_df = answer_df[answer_df[k] == xrow[k]]
             if subset_df.empty:
+                print(f'At row number {verified_count} / {sdql_df.shape[0]}')
                 print(f'Not found {xrow.to_dict()}')
                 print(f'Failed while looking for {k} == {xrow[k]}')
                 print(f'The answer is as following:')
                 print(answer_df)
-                return False
+                # return False
+
+                mismatch_count += 1
             else:
                 answer_df = subset_df
+                verified_count += 1
         else:
-            return True
+            if verbose:
+                # print(f'Success Verify {xrow.to_dict()}')
+                pass
     else:
-        return True
+        if mismatch_count == 0:
+            return True
+        else:
+            print(f'number of mismatch records: {mismatch_count}')
+            return False
+        # return True
 
 def exists_duplicates(test_str: str):
     i = 0

@@ -46,7 +46,6 @@ class CalcExpr(FlexIR):
             return CalcExpr(self, other, MathSymbol.DIV, self.on)
 
     def replace_aggr(self, target, to_which):
-
         for k in target.keys():
             if SDQLInspector.check_equal_expr(self.unit1.sdql_ir, target[k]):
                 self.unit1 = RecAccessExpr(to_which.var_expr, k)
@@ -143,3 +142,7 @@ class CalcExpr(FlexIR):
             return DivExpr(input_fmt(new_unit1), input_fmt(new_unit2))
         if self.op == MathSymbol.MUL:
             return MulExpr(input_fmt(new_unit1), input_fmt(new_unit2))
+
+    @property
+    def descriptor(self):
+        return SDQLInspector.find_a_descriptor(self.sdql_ir)

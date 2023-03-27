@@ -2,6 +2,12 @@ from typing import List, NoReturn, Tuple
 from enum import Enum
 from sdql_ir import *
 
+def check_int_float_type(type1, type2):
+    if type1 == IntType() and type2 == FloatType():
+        return FloatType()
+    elif type1 == FloatType() and type2 == IntType():
+        return FloatType()
+    return None
 
 def infer_type(AST: Expr, context: dict, cache: dict):
     inputType = type(AST)
@@ -13,6 +19,7 @@ def infer_type(AST: Expr, context: dict, cache: dict):
         elif type(AST.type) == FloatType:
             cache[AST.id] = FloatType()
             return cache[AST.id]
+    
         if type(AST.type) == BoolType:
             cache[AST.id] = BoolType()
             return cache[AST.id]
@@ -55,7 +62,12 @@ def infer_type(AST: Expr, context: dict, cache: dict):
         zeroCheck = return_non_zero_dic_and_rec(op1, op2)
         if zeroCheck != None:
             cache[AST.id] = zeroCheck
+            return cache[AST.id]     
+
+        if check_int_float_type(op1, op2) != None:
+            cache[AST.id] = check_int_float_type(op1, op2)
             return cache[AST.id]
+
         if op1 != op2:
             print("Error: add type cannot be deduced! | " + str(op1) + " + " + str(op2) + " | " + op1.name + " | " + op2.name)
             return
@@ -69,6 +81,11 @@ def infer_type(AST: Expr, context: dict, cache: dict):
         if zeroCheck != None:
             cache[AST.id] = zeroCheck
             return cache[AST.id]
+        
+        if check_int_float_type(op1, op2) != None:
+            cache[AST.id] = check_int_float_type(op1, op2)
+            return cache[AST.id]
+
         if op1 != op2:
             print("Error: sub type cannot be deduced! | " + str(op1) + " - " + str(op2) + " | " + op1.name + " | " + op2.name)
             return
@@ -82,8 +99,13 @@ def infer_type(AST: Expr, context: dict, cache: dict):
         if zeroCheck != None:
             cache[AST.id] = zeroCheck
             return cache[AST.id]
+        
+        if check_int_float_type(op1, op2) != None:
+            cache[AST.id] = check_int_float_type(op1, op2)
+            return cache[AST.id]
+
         if op1 != op2:
-            print("Error: mul type cannot be deduced! | " + str(op1) + " * " + str(op2) + " | " + op1.name + " | " + op2.name)
+            print("Error: mul type cannot be deduced! | " + str(op1) + " * " + str(op2) + str(AST.op1Expr.value))
             return
         cache[AST.id] = op1
         return cache[AST.id]
@@ -95,6 +117,11 @@ def infer_type(AST: Expr, context: dict, cache: dict):
         if zeroCheck != None:
             cache[AST.id] = zeroCheck
             return cache[AST.id]
+        
+        if check_int_float_type(op1, op2) != None:
+            cache[AST.id] = check_int_float_type(op1, op2)
+            return cache[AST.id]
+
         if op1 != op2:
             print("Error: div type cannot be deduced!")
             return

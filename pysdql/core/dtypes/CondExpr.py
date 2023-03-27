@@ -1,5 +1,8 @@
+from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.FreeStateExpr import FreeStateExpr
 from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
+from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.Utils import (
     input_fmt
 )
@@ -80,9 +83,15 @@ class CondExpr(FlexIR):
         new_unit2 = self.unit2
 
         if isinstance(self.unit1, FlexIR):
-            new_unit1 = self.unit1.replace(rec, inplace, mapper)
+            if isinstance(self.unit1, CalcExpr):
+                new_unit1 = SDQLInspector.replace_access(self.unit1.sdql_ir, rec, inplace)
+            else:
+                new_unit1 = self.unit1.replace(rec, inplace, mapper)
         if isinstance(self.unit2, FlexIR):
-            new_unit2 = self.unit2.replace(rec, inplace, mapper)
+            if isinstance(self.unit2, CalcExpr):
+                new_unit2 = SDQLInspector.replace_access(self.unit2.sdql_ir, rec, inplace)
+            else:
+                new_unit2 = self.unit2.replace(rec, inplace, mapper)
 
         if isinstance(self.op, CompareSymbol):
             return CompareExpr(self.op, input_fmt(new_unit1), input_fmt(new_unit2))
@@ -92,6 +101,13 @@ class CondExpr(FlexIR):
             return AddExpr(input_fmt(new_unit1), input_fmt(new_unit2))
         if self.op == LogicSymbol.NOT:
             return CompareExpr(CompareSymbol.EQ, input_fmt(new_unit1), ConstantExpr(False))
+
+    def findall_tmp_vars(self):
+        if isinstance(self.unit1, CalcExpr):
+            pass
+
+        if isinstance(self.unit2, CalcExpr):
+            pass
 
     @staticmethod
     def unit_fmt(value):
@@ -136,3 +152,5 @@ class CondExpr(FlexIR):
 
     def __repr__(self):
         return repr(self.sdql_ir)
+
+    

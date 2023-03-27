@@ -3,8 +3,10 @@ from datetime import datetime
 
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.IgnoreExpr import IgnoreExpr
+from pysdql.core.dtypes.FreeStateExpr import FreeStateExpr
 from pysdql.core.dtypes.sdql_ir import (
     Expr,
+    VarExpr,
     ConstantExpr,
 )
 
@@ -65,5 +67,7 @@ def input_fmt(data):
         return data.sdql_ir
     elif isinstance(data, IgnoreExpr):
         return ConstantExpr(True)
+    elif isinstance(data, FreeStateExpr):
+        return VarExpr(data.refer)
     else:
         raise TypeError(f'Unsupport type {type(data)}')
