@@ -2,6 +2,8 @@
 - Finished: [test_hyper_opt_py_01.ipynb](https://github.com/cxunka/pd2sd/blob/ffbdb134b81ef5b82bde395b04fa5beb8108595c/test_hyper_opt_py_01.ipynb)
 
 # Hyper - Opt - Compiler
+- Q15: missed supplier part issue
+- 
 - Fixed: remove redundant conditions (`?[x[0].probe_key]`)
 - Finished: 
   1. [test_hyper_opt](https://github.com/cxunka/pd2sd/blob/ffbdb134b81ef5b82bde395b04fa5beb8108595c/compiler_tests/test_hyper_opt.py)
