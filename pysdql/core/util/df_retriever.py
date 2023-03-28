@@ -1751,7 +1751,7 @@ class Retriever:
         units = [target.unit1, target.unit2]
 
         for u in units:
-            print(type(u), '\n')
+            # print(type(u), '\n')
             if isinstance(u, (bool, int, float, str)):
                 continue
 
@@ -1764,3 +1764,16 @@ class Retriever:
                     res[k] = sub_cond[k]
 
         return res
+
+    def find_possible_index_columns(self) -> list:
+        possible_index = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, GroupbyAggrExpr):
+                possible_index += op_body.groupby_cols
+
+        # print(f'possible index {possible_index}')
+
+        return possible_index

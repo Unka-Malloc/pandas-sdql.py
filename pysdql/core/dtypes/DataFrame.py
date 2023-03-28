@@ -26,6 +26,7 @@ from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.MergeExpr import MergeExpr
+from pysdql.core.dtypes.MergeIndicator import MergeIndicator
 from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
@@ -1105,7 +1106,13 @@ class DataFrame(FlexIR, Retrivable):
         return GroupbyAggrFrame(self).get_groupby_aggr_expr(next_op)
 
     def reset_index(self, level=0):
-        return self
+        next_df = self.create_copy(location='reset_index')
+
+        next_df.push(OpExpr(op_obj=AddColProj(self.retriever.find_possible_index_columns()),
+                             op_on=next_df,
+                             op_iter=False))
+
+        return next_df
 
     def unopt_to_sdqlir(self, indent='    '):
         optimizer = Optimizer(opt_on=self,
@@ -1556,3 +1563,7 @@ class DataFrame(FlexIR, Retrivable):
             next_df = self
 
         return next_df
+
+    @property
+    def _merge(self):
+        return MergeIndicator()

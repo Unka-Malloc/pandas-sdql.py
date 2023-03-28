@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
-    unopt_single = pysdql.tpch_query(8, verbose=True, optimize=False, mode='postgres')
+    unopt_single = pysdql.tpch_query(17, verbose=True, optimize=False, mode='postgres')
 
     # fix 22
 

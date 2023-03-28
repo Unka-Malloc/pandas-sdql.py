@@ -457,13 +457,9 @@ def tpch_q12(orders, lineitem):
         (lineitem.l_shipmode.isin(["MAIL", "SHIP"])) & (lineitem.l_commitdate < lineitem.l_receiptdate) & (
                 lineitem.l_shipdate < lineitem.l_commitdate) & (lineitem.l_receiptdate >= '1994-01-01 00:00:00') & (
                 lineitem.l_receiptdate < '1995-01-01 00:00:00')]
-    df_filter_2 = df_filter_2[['l_shipmode', 'l_orderkey']]
     df_sort_1 = df_filter_2.sort_values(by=['l_orderkey'], ascending=[True])
-    df_sort_1 = df_sort_1[['l_shipmode', 'l_orderkey']]
     df_merge_1 = df_filter_1.merge(df_sort_1, left_on=['o_orderkey'], right_on=['l_orderkey'], how="inner", sort=False)
-    df_merge_1 = df_merge_1[['l_shipmode', 'o_orderpriority']]
     df_sort_2 = df_merge_1.sort_values(by=['l_shipmode'], ascending=[True])
-    df_sort_2 = df_sort_2[['l_shipmode', 'o_orderpriority']]
     df_sort_2['case_a'] = df_sort_2.apply(
         lambda x: 1 if (x['o_orderpriority'] == '1-URGENT') | (x['o_orderpriority'] == '2-HIGH') else 0, axis=1)
     df_sort_2['case_b'] = df_sort_2.apply(
@@ -609,19 +605,13 @@ def tpch_q17(lineitem, part):
          'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
          'l_comment']]
     df_filter_2 = part[(part.p_brand == 'Brand#23') & (part.p_container == 'MED BOX')]
-    df_filter_2 = df_filter_2[['p_partkey']]
     df_merge_1 = df_filter_1.merge(df_filter_2, left_on=['l_partkey'], right_on=['p_partkey'], how="inner", sort=False)
-    df_merge_1 = df_merge_1[['l_extendedprice', 'p_partkey', 'l_quantity']]
     df_filter_3 = lineitem[
         ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
          'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
          'l_comment']]
     df_filter_4 = part[['p_partkey']]
     df_merge_2 = df_filter_3.merge(df_filter_4, left_on=['l_partkey'], right_on=['p_partkey'], how="inner", sort=False)
-    df_merge_2 = df_merge_2[
-        ['l_orderkey', 'l_partkey', 'l_suppkey', 'l_linenumber', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax',
-         'l_returnflag', 'l_linestatus', 'l_shipdate', 'l_commitdate', 'l_receiptdate', 'l_shipinstruct', 'l_shipmode',
-         'l_comment', 'p_partkey']]
     df_group_1 = df_merge_2 \
         .groupby(['p_partkey'], sort=False) \
         .agg(
@@ -632,7 +622,6 @@ def tpch_q17(lineitem, part):
     df_group_1 = df_group_1.reset_index(level=0)
     df_merge_3 = df_merge_1.merge(df_group_1, left_on=['p_partkey'], right_on=['p_partkey'], how="inner", sort=False)
     df_merge_3 = df_merge_3[(df_merge_3.l_quantity < df_merge_3.avgl_quantity)]
-    df_merge_3 = df_merge_3[['l_extendedprice']]
     df_aggr_1 = pd.DataFrame()
     df_aggr_1['avg_yearly'] = [((df_merge_3.l_extendedprice).sum() / 7.0)]
     df_aggr_1 = df_aggr_1[['avg_yearly']]

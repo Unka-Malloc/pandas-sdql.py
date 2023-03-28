@@ -708,10 +708,20 @@ class Optimizer:
                     )
                 else:
                     if allow_projection:
+                        if self.retriever.findall_col_insert_as_list():
+                            continue
+
                         tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
-                        rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in
-                                    op_body.proj_cols]
+                        final_cols = []
+
+                        for i in op_body.proj_cols:
+                            final_cols.append(i)
+
+                        for j in self.retriever.findall_additional_columns():
+                            final_cols.append(j)
+
+                        rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
 
                         proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
 
@@ -724,7 +734,8 @@ class Optimizer:
                                     valExpr=tmp_it.sdql_ir,
                                     bodyExpr=ConstantExpr(True))
                         )
-                    continue
+                    else:
+                        continue
             elif is_cond(op_body):
                 if isinstance(op_body, (CondExpr, ColExtExpr)):
                     if op_body.is_apply_cond:
@@ -1287,8 +1298,10 @@ class Optimizer:
                         else:
                             val_rec_list.append((k, aggr_dict[k].sdql_ir))
                     elif isinstance(v, RecAccessExpr):
-                        val_rec_list.append((k, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
-                                                              v.name)))
+                        # RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), v.name)
+                        agg_sum = RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), v.name)
+                        # agg_sum = MulExpr(agg_sum, PairAccessExpr(VarExpr(tmp_el_on), 1))
+                        val_rec_list.append((k, agg_sum))
                     elif isinstance(v, ConstantExpr):
                         if '_count_for_mean' in k:
                             val_rec_list.append((k, aggr_dict[k]))
@@ -1299,6 +1312,7 @@ class Optimizer:
                                                              ConstantExpr(None)),
                                                  aggr_dict[k],
                                                  ConstantExpr(0.0))
+                            # check_count = MulExpr(check_count, PairAccessExpr(VarExpr(tmp_el_on), 1))
                             val_rec_list.append((k, check_count))
                     elif isinstance(v, AggrNunique):
                         # nunique_expr = IfExpr(CompareExpr(CompareSymbol.NE,
@@ -1398,8 +1412,8 @@ class Optimizer:
                     multi_aggr_mapper[m] = RecAccessExpr(VarExpr(tmp_vn_nx), m)
                     calc_mapper[m] = sv.sdql_ir
 
-                print('single column', single_aggr_dict)
-                print('multiple columns', multi_aggr_dict)
+                # print('single column', single_aggr_dict)
+                # print('multiple columns', multi_aggr_dict)
 
                 tmp_it.iter_op = RecConsExpr(rec_list)
 
