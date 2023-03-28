@@ -334,6 +334,8 @@ def q6(li):
 
     results = {lineitem_2: True}
 
+    return results
+
 
 #######
 
