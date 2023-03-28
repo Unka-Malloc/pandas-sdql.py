@@ -8,10 +8,6 @@ def query(li):
     # Insert
     lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate <= 19980902) else (None))
     
-    lineitem_1 = lineitem_0.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus, "l_quantity": x[0].l_quantity, "l_extendedprice": x[0].l_extendedprice, "l_discount": x[0].l_discount, "l_tax": x[0].l_tax}): True})
-    
-    lineitem_1 = lineitem_0.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus, "l_quantity": x[0].l_quantity, "l_extendedprice": x[0].l_extendedprice, "l_discount": x[0].l_discount, "l_tax": x[0].l_tax}): True})
-    
     lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"before_1": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
     
     lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"before_2": ((((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))) * (((1) + (x[0].l_tax))))})): x[1]})
