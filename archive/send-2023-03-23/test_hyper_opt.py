@@ -191,7 +191,7 @@ def q5(li, cu, ord, re, na, su):
         {"c_nationkey": region_nation_customer[x_orders[0].o_custkey].c_nationkey,
          "n_name": region_nation_customer[x_orders[0].o_custkey].n_name})}) if (
                 region_nation_customer[x_orders[0].o_custkey] != None) else (None)) if (
-    ((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19961231))) else (None))
+    ((x_orders[0].o_orderdate >= 19940101) * (x_orders[0].o_orderdate < 19950101))) else (None))
 
     supplier_part = su.sum(lambda x_supplier: {
         record({"s_suppkey": x_supplier[0].s_suppkey, "s_nationkey": x_supplier[0].s_nationkey}): True})
@@ -328,7 +328,7 @@ def q8(pa, su, li, ord, cu, na, re):
 @sdql_compile({"li": lineitem_type, "ord": order_type, "na": nation_type, "su": supplier_type, "pa": part_type,
                "ps": partsupp_type})
 def q9(li, ord, na, su, pa, ps):
-    g = "g"
+    green = "green"
     nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
 
     nation_supplier = su.sum(lambda x_supplier: (
@@ -336,7 +336,7 @@ def q9(li, ord, na, su, pa, ps):
                 nation_part[x_supplier[0].s_nationkey] != None) else (None))
 
     part_part = pa.sum(
-        lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, g) != ((-1) * (1))) else (None))
+        lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
 
     nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({
         record({"ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey}): record(
@@ -546,7 +546,7 @@ def q15(li, su):
     results = lineitem_aggr.sum(lambda x_lineitem_aggr: (({record(
         {"s_suppkey": x_lineitem_aggr[0], "s_name": supplier_part[x_lineitem_aggr[0]].s_name,
          "s_address": supplier_part[x_lineitem_aggr[0]].s_address, "s_phone": supplier_part[x_lineitem_aggr[0]].s_phone,
-         "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 797313.3838) else (None)) if (
+         "total_revenue": x_lineitem_aggr[1]}): True}) if (x_lineitem_aggr[1] == 1772627.2087) else (None)) if (
                 supplier_part[x_lineitem_aggr[0]] != None) else (None))
 
     return results
@@ -610,19 +610,19 @@ def q16(ps, pa, su):
 
 @sdql_compile({"li": lineitem_type, "pa": part_type})
 def q17(li, pa):
-    brand11 = "Brand#11"
-    wrapcase = "WRAP CASE"
+    brand23 = "Brand#23"
+    medbox = "MED BOX"
     part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (
-    ((x_part[0].p_brand == brand11) * (x_part[0].p_container == wrapcase))) else (None))
+    ((x_part[0].p_brand == brand23) * (x_part[0].p_container == medbox))) else (None))
 
     part_l1 = li.sum(
         lambda x_l1: ({x_l1[0].l_partkey: record({"count_quant": 1.0, "sum_quant": x_l1[0].l_quantity})}) if (
                     part_part[x_l1[0].l_partkey] != None) else (None))
 
-    part_l1_lineitem = li.sum(lambda x_lineitem: record({"l_extendedprice": ((x_lineitem[0].l_extendedprice) if (
+    part_l1_lineitem = li.sum(lambda x_lineitem: (record({"price": ((x_lineitem[0].l_extendedprice) if (
                 x_lineitem[0].l_quantity < ((0.2) * (
         ((part_l1[x_lineitem[0].l_partkey].sum_quant) / (part_l1[x_lineitem[0].l_partkey].count_quant))))) else (
-        0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)}))
+        0.0)) if (part_l1[x_lineitem[0].l_partkey] != None) else (0.0)})) if (True) else (None))
 
     results = ((part_l1_lineitem.l_extendedprice) / (7.0))
 
