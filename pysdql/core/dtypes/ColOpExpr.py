@@ -44,7 +44,8 @@ class ColOpExpr(FlexIR):
                              aggr_op={f'sum_agg': self.sdql_ir},
                              aggr_else=ConstantExpr(0.0),
                              origin_dict={f'sum_agg': (self.sdql_ir, 'sum')},
-                             unique_columns=self.relation.retriever.find_cols(self))
+                             unique_columns=self.relation.retriever.find_cols(self),
+                             is_multi_col_op=True)
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self.relation,

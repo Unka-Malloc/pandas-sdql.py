@@ -6,7 +6,9 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, l1, pa):
 
     # Insert
-    results = df_aggr_2.sum(lambda x: {x[0].concat(record({"avg_yearly": ((x[0].suml_extendedprice) / (7.0))})): x[1]})
+    df_aggr_2_0 = df_aggr_2.sum(lambda x: {x[0].concat(record({"avg_yearly": ((x[0].suml_extendedprice) / (7.0))})): x[1]})
+    
+    results = df_aggr_2_0.sum(lambda x: {record({"avg_yearly": x[0].avg_yearly}): True})
     
     # Complete
 

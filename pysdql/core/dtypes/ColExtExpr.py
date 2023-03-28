@@ -26,7 +26,11 @@ class ColExtExpr(FlexIR):
         self.is_apply_cond = is_apply_cond
 
     def replace(self, rec, inplace=False, mapper=None):
-        return ColExtExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
+        if isinstance(self.col, FlexIR):
+            return ColExtExpr(self.col.replace(rec, inplace, mapper), self.func, self.args, self.isinvert)
+
+        raise NotImplementedError(f'Unexpected type {self.col}: {self.col}')
+
 
     def gen_cond_expr(self, operator, unit2):
         """

@@ -18,7 +18,11 @@ class AggrExpr(FlexIR):
                  aggr_else=None,
                  update_sum=False,
                  origin_dict=None,
-                 unique_columns=None):
+                 unique_columns=None,
+                 is_single_col_op=False,
+                 is_multi_col_op=False,
+                 is_dict_op=False,
+                 is_rec_op=False):
         if origin_dict is None:
             origin_dict = {}
         self.origin_dict = origin_dict
@@ -32,6 +36,15 @@ class AggrExpr(FlexIR):
         self.update_sum = update_sum
 
         self.unique_columns = unique_columns if unique_columns else []
+
+        # ColEl.sum()
+        self.is_single_col_op = is_single_col_op
+        # ColOpExpr.sum()
+        self.is_multi_col_op = is_multi_col_op
+        # Groupby Aggregation
+        self.is_dict_op = is_dict_op
+        # Aggregation
+        self.is_rec_op = is_rec_op
 
     @staticmethod
     def rename_aggr_key(aggr_dict, from_name, to_name):
@@ -90,13 +103,13 @@ class AggrExpr(FlexIR):
             raise ValueError()
 
     def __mul__(self, other):
-        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.MUL, self.aggr_on)
+        return CalcExpr(self, other, MathSymbol.MUL, self.aggr_on)
 
     def __rmul__(self, other):
-        return CalcExpr(input_fmt(other), input_fmt(self), MathSymbol.MUL, self.aggr_on)
+        return CalcExpr(other, self, MathSymbol.MUL, self.aggr_on)
 
     def __truediv__(self, other):
-        return CalcExpr(input_fmt(self), input_fmt(other), MathSymbol.DIV, self.aggr_on)
+        return CalcExpr(self, other, MathSymbol.DIV, self.aggr_on)
 
     def __gt__(self, other):
         return AggrFiltCond(self, other, CompareSymbol.GT)

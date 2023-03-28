@@ -10,19 +10,44 @@ def query(li, ord, na, su, pa, ps):
 
     # Insert
     green = "green"
-    nation_part = na.sum(lambda x_nation: {x_nation[0].n_nationkey: record({"n_name": x_nation[0].n_name})})
+    nation_supplier_build_nest_dict = na.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    nation_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n_name": nation_part[x_supplier[0].s_nationkey].n_name})}) if (nation_part[x_supplier[0].s_nationkey] != None) else (None))
+    nation_supplier_part_partsupp_build_pre_ops = su.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
     
-    part_part = pa.sum(lambda x_part: ({x_part[0].p_partkey: True}) if (firstIndex(x_part[0].p_name, green) != ((-1) * (1))) else (None))
+    part_partsupp_build_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (firstIndex(x[0].p_name, green) != ((-1) * (1))) else (None))
     
-    nation_supplier_part_partsupp = ps.sum(lambda x_partsupp: (({record({"ps_suppkey": x_partsupp[0].ps_suppkey, "ps_partkey": x_partsupp[0].ps_partkey}): record({"n_name": nation_supplier[x_partsupp[0].ps_suppkey].n_name, "ps_partkey": x_partsupp[0].ps_partkey, "ps_suppkey": x_partsupp[0].ps_suppkey, "ps_supplycost": x_partsupp[0].ps_supplycost})}) if (nation_supplier[x_partsupp[0].ps_suppkey] != None) else (None)) if (part_part[x_partsupp[0].ps_partkey] != None) else (None))
+    part_partsupp_build_nest_dict = part_partsupp_build_pre_ops.sum(lambda x: {x[0].p_partkey: sr_dict({x[0]: x[1]})})
     
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_orderkey: record({"o_orderdate": x_orders[0].o_orderdate})})
+    nation_supplier_part_partsupp_probe_pre_ops = ps.sum(lambda x: (part_partsupp_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (part_partsupp_build_nest_dict[x[0].ps_partkey] != None) else (None))
     
-    nation_supplier_part_partsupp_orders_lineitem = li.sum(lambda x_lineitem: (({record({"nation": nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].n_name, "o_year": extractYear(orders_part[x_lineitem[0].l_orderkey].o_orderdate)}): record({"sum_profit": ((((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))) - (((nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})].ps_supplycost) * (x_lineitem[0].l_quantity))))})}) if (nation_supplier_part_partsupp[record({"l_suppkey": x_lineitem[0].l_suppkey, "l_partkey": x_lineitem[0].l_partkey})] != None) else (None)) if (orders_part[x_lineitem[0].l_orderkey] != None) else (None))
+    nation_supplier_part_partsupp_build_nest_dict = nation_supplier_part_partsupp_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
     
-    results = nation_supplier_part_partsupp_orders_lineitem.sum(lambda x_nation_supplier_part_partsupp_orders_lineitem: {record({"nation": x_nation_supplier_part_partsupp_orders_lineitem[0].nation, "o_year": x_nation_supplier_part_partsupp_orders_lineitem[0].o_year, "sum_profit": x_nation_supplier_part_partsupp_orders_lineitem[1].sum_profit}): True})
+    nation_supplier_part_partsupp_orders_lineitem_build_pre_ops = nation_supplier_part_partsupp_probe_pre_ops.sum(lambda x: (nation_supplier_part_partsupp_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_supplier_part_partsupp_build_nest_dict[x[0].ps_suppkey] != None) else (None))
+    
+    orders_lineitem_build_nest_dict = ord.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+    
+    nation_supplier_part_partsupp_orders_lineitem_probe_pre_ops = li.sum(lambda x: (orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+    
+    nation_supplier_part_partsupp_orders_lineitem_build_nest_dict = nation_supplier_part_partsupp_orders_lineitem_build_pre_ops.sum(lambda x: {record({"ps_suppkey": x[0].ps_suppkey, "ps_partkey": x[0].ps_partkey}): sr_dict({x[0]: x[1]})})
+    
+    nation_supplier_part_partsupp_orders_lineitem_0 = nation_supplier_part_partsupp_orders_lineitem_probe_pre_ops.sum(lambda x: (nation_supplier_part_partsupp_orders_lineitem_build_nest_dict[record({"ps_suppkey": x[0].l_suppkey, "ps_partkey": x[0].l_partkey})].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (nation_supplier_part_partsupp_orders_lineitem_build_nest_dict[record({"ps_suppkey": x[0].l_suppkey, "ps_partkey": x[0].l_partkey})] != None) else (None))
+    
+    nation_supplier_part_partsupp_orders_lineitem_1 = nation_supplier_part_partsupp_orders_lineitem_0.sum(lambda x: {x[0].concat(record({"nation": x[0].n_name})): x[1]})
+    
+    nation_supplier_part_partsupp_orders_lineitem_2 = nation_supplier_part_partsupp_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"o_year": extractYear(x[0].o_orderdate)})): x[1]})
+    
+    nation_supplier_part_partsupp_orders_lineitem_3 = nation_supplier_part_partsupp_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"amount": ((((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))) - (((x[0].ps_supplycost) * (x[0].l_quantity))))})): x[1]})
+    
+    nation_supplier_part_partsupp_orders_lineitem_4 = nation_supplier_part_partsupp_orders_lineitem_3.sum(lambda x: {record({"nation": x[0].nation, "o_year": x[0].o_year, "amount": x[0].amount}): True})
+    
+    nation_supplier_part_partsupp_orders_lineitem_4 = nation_supplier_part_partsupp_orders_lineitem_3.sum(lambda x: {record({"nation": x[0].nation, "o_year": x[0].o_year}): record({"sum_profit": x[0].amount})})
+    
+    results = nation_supplier_part_partsupp_orders_lineitem_4.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 
