@@ -436,7 +436,8 @@ class ColEl(FlexIR):
                              aggr_on=self.relation,
                              aggr_op={self.field: self.sdql_ir},
                              aggr_else=ConstantExpr(0.0),
-                             origin_dict={self.field: (self.field, 'sum')})
+                             origin_dict={self.field: (self.field, 'sum')},
+                             is_single_col_op=True)
 
         op_expr = OpExpr(op_obj=aggr_expr,
                          op_on=self.relation,
@@ -449,18 +450,23 @@ class ColEl(FlexIR):
         return aggr_expr
 
     def count(self):
+        raise NotImplementedError
         pass
 
     def mean(self):
+        raise NotImplementedError
         pass
 
     def min(self):
+        raise NotImplementedError
         pass
 
     def max(self):
+        raise NotImplementedError
         pass
 
     def replace(self, rec, inplace=False, mapper=None):
+        # print(self.field, rec, inplace, mapper)
         if mapper:
             if isinstance(mapper, dict):
                 for k in mapper.keys():

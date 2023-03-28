@@ -113,6 +113,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
     else:
         print('>> Comparing SDQL with Pandas ... <<')
 
+    sdql_df = sdql_df.copy()
+    pd_df = pd_df.copy()
+
     if sdql_df is None:
         if pd_df is None:
             print('SDQL and Pandas results are both None!')
@@ -127,9 +130,15 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
 
     if sdql_df.shape[0] == 1:
         if pd_df.empty:
-            if sdql_df.columns == ['result']:
-                if sdql_df['result'].loc[0] is None:
-                    return True
+            if len(sdql_df.columns) == len(pd_df.columns):
+                return False
+            else:
+                try:
+                    if sdql_df.columns == ['result']:
+                        if sdql_df['result'].loc[0] is None:
+                            return True
+                except:
+                    return False
 
         if pd_df.shape[0] == 1:
             if sdql_df.squeeze() is None:
@@ -155,6 +164,11 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             if not for_duck:
                 return False
 
+    mul_float_factor = 1000
+    mul_float_list = []
+
+    round_float_list = []
+
     for c in sdql_df.columns:
         if c.endswith('_NA'):
             continue
@@ -163,20 +177,21 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
             continue
         if sdql_df[c].dtype == np.float64:
             if sdql_df[c].apply(lambda x: x < np.float64(1.0)).all():
-                sdql_df[c] = sdql_df[c].apply(lambda x: x * 1000).astype(int)
+                sdql_df[c] = sdql_df[c].apply(lambda x: x * mul_float_factor).astype(int)
+                mul_float_list.append(c)
             else:
                 sdql_df[c] = sdql_df[c].round(1)
-        if sdql_df[c].dtype == object:
+                round_float_list.append(c)
+        elif sdql_df[c].dtype == object:
             if sdql_df[c].apply(lambda x: is_date(x)).all():
                 sdql_df[c] = sdql_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 
     for c in pd_df.columns:
-        if pd_df[c].dtype == np.float64:
-            if pd_df[c].apply(lambda x: x < np.float64(1.0)).all():
-                pd_df[c] = pd_df[c].apply(lambda x: x * 1000).astype(int)
-            else:
-                pd_df[c] = pd_df[c].round(1)
-        if pd_df[c].dtype == object:
+        if c in mul_float_list:
+            pd_df[c] = pd_df[c].apply(lambda x: x * mul_float_factor).astype(int)
+        elif c in round_float_list:
+            pd_df[c] = pd_df[c].round(1)
+        elif pd_df[c].dtype == object:
             if pd_df[c].apply(lambda x: is_date(x)).all():
                 pd_df[c] = pd_df[c].apply(lambda x: np.float64(x.replace('-', '')))
 

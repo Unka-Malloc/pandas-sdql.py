@@ -62,8 +62,6 @@ def q1(execution_mode=0, threads_count=1, optimize=True):
 
     sdql_result = Q.query(lineitem_data)
 
-    print(sdql_result)
-
     query_end = time.time()
 
     print(f'\033[36m SDQL Execution Time: {query_end - query_start} s \033[0m')

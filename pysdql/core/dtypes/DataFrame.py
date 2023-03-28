@@ -5,6 +5,7 @@ import inspect
 import string
 import pathlib
 
+from pysdql.core.dtypes.AddColProj import AddColProj
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFrame import AggrFrame
@@ -29,6 +30,7 @@ from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
 from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.FlexIR import FlexIR
+from pysdql.core.dtypes.ColElAttach import ColElAttach
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
@@ -686,10 +688,22 @@ class DataFrame(FlexIR, Retrivable):
         raise NotImplementedError
 
     def insert_col_expr(self, key, value):
-        self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
-                                             col_expr=value),
-                         op_on=self,
-                         op_iter=False))
+        if isinstance(value, ColEl):
+            if not self.retriever.equal_expr(self, value.relation):
+                self.push(OpExpr(op_obj=ColElAttach(col_from=value,
+                                                    col_to=self.get_col(key)),
+                                 op_on=self,
+                                 op_iter=False))
+            else:
+                self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+                                                     col_expr=value),
+                                 op_on=self,
+                                 op_iter=False))
+        else:
+            self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+                                                 col_expr=value),
+                             op_on=self,
+                             op_iter=False))
 
     def groupby(self, cols, as_index=False, sort=False):
         next_df = self.create_copy(location='groupby')
@@ -1259,11 +1273,18 @@ class DataFrame(FlexIR, Retrivable):
                         else:
                             apply_op = op
 
-                        raise NotImplementedError
+                        return ColApplyExpr(
+                            apply_op=apply_op,
+                            apply_cond=apply_cond,
+                            apply_else=ConstantExpr(lamb_else),
+                            unopt_cond=unopt_cond,
+                        )
 
-                        return IfExpr(condExpr=apply_cond,
-                                      thenBodyExpr=apply_op,
-                                      elseBodyExpr=ConstantExpr(lamb_else))
+                        # raise NotImplementedError
+                        #
+                        # return IfExpr(condExpr=apply_cond,
+                        #               thenBodyExpr=apply_op,
+                        #               elseBodyExpr=ConstantExpr(lamb_else))
                     elif only_for == self.name:
                         cols_in_cond = self.retriever.findall_cols_in_cond(cond)
                         if len(cols_in_cond) == 0:
@@ -1454,11 +1475,16 @@ class DataFrame(FlexIR, Retrivable):
     def get_as_build_end(self):
         return BuildEnd(self)
 
-    def rename_axis(self, *args):
-        return self
+    def rename_axis(self, mapper):
+        next_df = self.create_copy(location='rename_axis')
+
+        next_df.push(OpExpr(op_obj=AddColProj(mapper),
+                             op_on=next_df,
+                             op_iter=False))
+
+        return next_df
 
     def get_context_unopt(self, rename_last=''):
-
         return Optimizer(self).get_unopt_context(rename_last)
 
     def create_copy(self, next_name="", location=None):

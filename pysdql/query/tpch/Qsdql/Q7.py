@@ -8,19 +8,56 @@ def query(su, li, ord, cu, na):
     # Insert
     france = "FRANCE"
     germany = "GERMANY"
-    n1_part = na.sum(lambda x_n1: ({x_n1[0].n_nationkey: record({"n_name": x_n1[0].n_name})}) if (((x_n1[0].n_name == france) + (x_n1[0].n_name == germany))) else (None))
+    n1_supplier_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
-    n1_supplier = su.sum(lambda x_supplier: ({x_supplier[0].s_suppkey: record({"n1_name": n1_part[x_supplier[0].s_nationkey].n_name})}) if (n1_part[x_supplier[0].s_nationkey] != None) else (None))
+    n1_supplier_build_nest_dict = n1_supplier_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    n2_part = na.sum(lambda x_n2: ({x_n2[0].n_nationkey: record({"n_name": x_n2[0].n_name})}) if (((x_n2[0].n_name == france) + (x_n2[0].n_name == germany))) else (None))
+    n1_supplier_0 = su.sum(lambda x: (n1_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (n1_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
     
-    n2_customer = cu.sum(lambda x_customer: ({x_customer[0].c_custkey: record({"n_name": n2_part[x_customer[0].c_nationkey].n_name})}) if (n2_part[x_customer[0].c_nationkey] != None) else (None))
+    n1_supplier_n2_customer_orders_lineitem_build_pre_ops = n1_supplier_0.sum(lambda x: {x[0].concat(record({"n1_name": x[0].n_name})): x[1]})
     
-    n2_customer_orders = ord.sum(lambda x_orders: ({x_orders[0].o_orderkey: record({"n2_name": n2_customer[x_orders[0].o_custkey].n_name})}) if (n2_customer[x_orders[0].o_custkey] != None) else (None))
+    n2_customer_build_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == france) + (x[0].n_name == germany))) else (None))
     
-    n1_supplier_n2_customer_orders_lineitem = li.sum(lambda x_lineitem: (((({record({"supp_nation": n1_supplier[x_lineitem[0].l_suppkey].n1_name, "cust_nation": n2_customer_orders[x_lineitem[0].l_orderkey].n2_name, "l_year": extractYear(x_lineitem[0].l_shipdate)}): record({"revenue": ((x_lineitem[0].l_extendedprice) * (((1.0) - (x_lineitem[0].l_discount))))})}) if (((((n1_supplier[x_lineitem[0].l_suppkey].n1_name == france) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == germany))) + (((n1_supplier[x_lineitem[0].l_suppkey].n1_name == germany) * (n2_customer_orders[x_lineitem[0].l_orderkey].n2_name == france))))) else (None)) if (n1_supplier[x_lineitem[0].l_suppkey] != None) else (None)) if (n2_customer_orders[x_lineitem[0].l_orderkey] != None) else (None)) if (((x_lineitem[0].l_shipdate >= 19950101) * (x_lineitem[0].l_shipdate <= 19961231))) else (None))
+    n2_customer_build_nest_dict = n2_customer_build_pre_ops.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    results = n1_supplier_n2_customer_orders_lineitem.sum(lambda x_n1_supplier_n2_customer_orders_lineitem: {record({"supp_nation": x_n1_supplier_n2_customer_orders_lineitem[0].supp_nation, "cust_nation": x_n1_supplier_n2_customer_orders_lineitem[0].cust_nation, "l_year": x_n1_supplier_n2_customer_orders_lineitem[0].l_year, "revenue": x_n1_supplier_n2_customer_orders_lineitem[1].revenue}): True})
+    n2_customer_orders_build_pre_ops = cu.sum(lambda x: (n2_customer_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (n2_customer_build_nest_dict[x[0].c_nationkey] != None) else (None))
+    
+    n2_customer_orders_build_nest_dict = n2_customer_orders_build_pre_ops.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
+    
+    n2_customer_orders_0 = ord.sum(lambda x: (n2_customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (n2_customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
+    
+    n2_customer_orders_lineitem_build_pre_ops = n2_customer_orders_0.sum(lambda x: {x[0].concat(record({"n2_name": x[0].n_name})): x[1]})
+    
+    n2_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950101) * (x[0].l_shipdate <= 19961231))) else (None))
+    
+    n2_customer_orders_lineitem_build_nest_dict = n2_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
+    
+    n1_supplier_n2_customer_orders_lineitem_probe_pre_ops = n2_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (n2_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (n2_customer_orders_lineitem_build_nest_dict[x[0].l_orderkey] != None) else (None))
+    
+    n1_supplier_n2_customer_orders_lineitem_build_nest_dict = n1_supplier_n2_customer_orders_lineitem_build_pre_ops.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
+    
+    n1_supplier_n2_customer_orders_lineitem_0 = n1_supplier_n2_customer_orders_lineitem_probe_pre_ops.sum(lambda x: (n1_supplier_n2_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ) if (n1_supplier_n2_customer_orders_lineitem_build_nest_dict[x[0].l_suppkey] != None) else (None))
+    
+    n1_supplier_n2_customer_orders_lineitem_1 = n1_supplier_n2_customer_orders_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].n1_name == france) * (x[0].n2_name == germany))) + (((x[0].n1_name == germany) * (x[0].n2_name == france))))) else (None))
+    
+    n1_supplier_n2_customer_orders_lineitem_2 = n1_supplier_n2_customer_orders_lineitem_1.sum(lambda x: {x[0].concat(record({"supp_nation": x[0].n1_name})): x[1]})
+    
+    n1_supplier_n2_customer_orders_lineitem_3 = n1_supplier_n2_customer_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"cust_nation": x[0].n2_name})): x[1]})
+    
+    n1_supplier_n2_customer_orders_lineitem_4 = n1_supplier_n2_customer_orders_lineitem_3.sum(lambda x: {x[0].concat(record({"l_year": extractYear(x[0].l_shipdate)})): x[1]})
+    
+    n1_supplier_n2_customer_orders_lineitem_5 = n1_supplier_n2_customer_orders_lineitem_4.sum(lambda x: {x[0].concat(record({"volume": ((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))})): x[1]})
+    
+    n1_supplier_n2_customer_orders_lineitem_6 = n1_supplier_n2_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year, "volume": x[0].volume}): True})
+    
+    n1_supplier_n2_customer_orders_lineitem_6 = n1_supplier_n2_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
+    
+    results = n1_supplier_n2_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 

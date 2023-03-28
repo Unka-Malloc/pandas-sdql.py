@@ -48,9 +48,9 @@ class CalcExpr(FlexIR):
     def replace_aggr(self, target, to_which):
         for k in target.keys():
             if SDQLInspector.check_equal_expr(self.unit1.sdql_ir, target[k]):
-                self.unit1 = RecAccessExpr(to_which.var_expr, k)
+                self.unit1 = RecAccessExpr(to_which, k)
             if SDQLInspector.check_equal_expr(self.unit2.sdql_ir, target[k]):
-                self.unit2 = RecAccessExpr(to_which.var_expr, k)
+                self.unit2 = RecAccessExpr(to_which, k)
 
         return self
 

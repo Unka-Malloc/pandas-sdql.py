@@ -1,3 +1,4 @@
+from pysdql.core.dtypes.AddColProj import AddColProj
 from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.FreeStateVarDefExpr import FreeStateVar
@@ -1553,9 +1554,11 @@ class Retriever:
         col_ops = []
 
         if isinstance(target.unit1, ConstantExpr):
+            print(f'Warning: Found a bug to be fixed')
             return col_ops
 
         if isinstance(target.unit2, ConstantExpr):
+            print(f'Warning: Found a bug to be fixed')
             return col_ops
 
         if isinstance(target.unit1, AggrExpr):
@@ -1684,3 +1687,80 @@ class Retriever:
             print(f'Warning: Unexpected Type {type(target)}')
 
         return free_vars
+
+    def findall_additional_columns(self):
+        additional_columns = []
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AddColProj):
+                if isinstance(op_body.add_col, list):
+                    additional_columns += op_body.add_col
+                else:
+                    raise NotImplementedError
+
+        return additional_columns
+
+    @staticmethod
+    def find_single_aggr_in_calc(target) -> dict:
+        single_aggrs = {}
+
+        units = [target.unit1, target.unit2]
+
+        for u in units:
+            if isinstance(u, (bool, int, float, str)):
+                continue
+
+            elif isinstance(u, AggrExpr):
+                if u.is_single_col_op:
+                    single_aggrs[u.descriptor] = u
+
+            elif isinstance(u, CalcExpr):
+                sub_calc = Retriever.find_single_aggr_in_calc(u)
+                for k in sub_calc.keys():
+                    single_aggrs[k] = sub_calc[k]
+
+        return single_aggrs
+
+    @staticmethod
+    def find_multi_aggr_in_calc(target) -> dict:
+        multi_aggrs = {}
+
+        units = [target.unit1, target.unit2]
+
+        for u in units:
+            if isinstance(u, (bool, int, float, str)):
+                continue
+
+            elif isinstance(u, AggrExpr):
+                if u.is_multi_col_op:
+                    multi_aggrs[u.descriptor] = u
+
+            elif isinstance(u, CalcExpr):
+                sub_calc = Retriever.find_multi_aggr_in_calc(u)
+                for k in sub_calc.keys():
+                    multi_aggrs[k] = sub_calc[k]
+
+        return multi_aggrs
+
+    @staticmethod
+    def find_calc_in_cond(target) -> dict:
+        res = {}
+
+        units = [target.unit1, target.unit2]
+
+        for u in units:
+            print(type(u), '\n')
+            if isinstance(u, (bool, int, float, str)):
+                continue
+
+            elif isinstance(u, CalcExpr):
+                res[u.descriptor] = u
+
+            elif isinstance(u, CondExpr):
+                sub_cond = Retriever.find_calc_in_cond(u)
+                for k in sub_cond.keys():
+                    res[k] = sub_cond[k]
+
+        return res

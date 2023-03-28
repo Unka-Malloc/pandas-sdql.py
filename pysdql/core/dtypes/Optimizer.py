@@ -5,6 +5,7 @@ from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.AggrNunique import AggrNunique
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
+from pysdql.core.dtypes.ColElAttach import ColElAttach
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
@@ -588,6 +589,7 @@ class Optimizer:
 
             # Q1
             # Q4
+            # Q22
             return GroupbyAggrFrame(self.opt_on).sdql_ir
         elif self.last_func == LastIterFunc.Joint:
             # Q15
@@ -615,13 +617,20 @@ class Optimizer:
     def get_unopt_context(self, rename_last=''):
         this_name = self.opt_on.current_name
 
-        unopt_context = []
+        # print(this_name)
+        # print(self.opt_on.operations)
 
+        allow_projection = True
+
+        unopt_context = []
         unopt_count = 0
 
         tmp_vn_on = map_name_to_dataset(self.opt_on.name)
         tmp_el_on = 'x'
         tmp_vn_nx = f'{this_name}_{unopt_count}'
+
+        col_attach_cache = {}
+        col_attach_name = f'default_attach_columns_to'
 
         for op_expr in self.opt_on.operations:
             if unopt_count != 0:
@@ -630,11 +639,20 @@ class Optimizer:
 
             op_body = op_expr.op
 
-            if isinstance(op_body, FreeStateVar):
-                print(op_body)
+            if isinstance(op_body, ColElAttach):
+                if not col_attach_cache:
+                    col_attach_name = f'{op_body.create_from.current_name}_attach_to_{op_body.attach_to.current_name}'
+
+                    unopt_context += op_body.create_from.get_context_unopt(rename_last=col_attach_name)
+
+                    col_attach_cache[op_body.col_to.field] = op_body
+                else:
+                    col_attach_cache[op_body.col_to.field] = op_body
 
                 continue
-
+            elif isinstance(op_body, FreeStateVar):
+                print(op_body)
+                continue
             elif isinstance(op_body, DropDupOpExpr):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
@@ -648,10 +666,34 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, ColProjExpr):
-                if self.retriever.check_last(op_body):
+                if col_attach_cache:
+                    tmp_it = IterForm(col_attach_name, tmp_el_on)
+
+                    rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in col_attach_cache.keys()]
+
+                    proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                    tmp_it.iter_op = proj_op
+
+                    # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+
+                    unopt_context.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
+                elif self.retriever.check_last(op_body):
                     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
-                    rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in op_body.proj_cols]
+                    final_cols = []
+
+                    for i in op_body.proj_cols:
+                        final_cols.append(i)
+
+                    for j in self.retriever.findall_additional_columns():
+                        final_cols.append(j)
+
+                    rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
 
                     proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
 
@@ -665,6 +707,23 @@ class Optimizer:
                                 bodyExpr=ConstantExpr(True))
                     )
                 else:
+                    if allow_projection:
+                        tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                        rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in
+                                    op_body.proj_cols]
+
+                        proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                        tmp_it.iter_op = proj_op
+
+                        # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+
+                        unopt_context.append(
+                            LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                    valExpr=tmp_it.sdql_ir,
+                                    bodyExpr=ConstantExpr(True))
+                        )
                     continue
             elif is_cond(op_body):
                 if isinstance(op_body, (CondExpr, ColExtExpr)):
@@ -679,48 +738,54 @@ class Optimizer:
                     for free_vname in free_vars.keys():
                         free_expr = free_vars[free_vname]
 
-                        print(free_expr.create_from.get_context_unopt())
+                        unopt_context += free_expr.create_from.get_context_unopt()
 
-                if any([(i not in self.opt_on.cols_out)
-                        & (i not in self.retriever.find_cols_used('groupby_aggr'))
-                        & (i not in self.retriever.findall_col_insert().keys())
-                        for i in self.retriever.find_cols(op_body)]):
+                if isinstance(op_body, CondExpr):
+                    print(self.retriever.find_calc_in_cond(op_body))
 
-                    col_mapper = {}
-                    col_relations = {}
+                # if any([(i not in self.opt_on.cols_out)
+                #         & (i not in self.retriever.find_cols_used('groupby_aggr'))
+                #         & (i not in self.retriever.findall_col_insert().keys())
+                #         for i in self.retriever.find_cols(op_body)]):
+                #
+                #     col_mapper = {}
+                #     col_relations = {}
+                #
+                #     prev_agg_name_for_all = ""
+                #
+                #     for i in self.retriever.find_cols(op_body, as_expr=True):
+                #         if i.field not in self.opt_on.columns:
+                #             if i.relation.name not in col_relations.keys():
+                #                 this_prev_agg_name = f'{i.relation.current_name}_{i.relation.unopt_count + 1}'
+                #                 col_mapper[i.field] = VarExpr(this_prev_agg_name)
+                #
+                #                 print(f'we are here {i.relation}')
+                #
+                #                 col_relations[i.relation.name] = i.relation.get_opt().get_unopt_sdqlir()
+                #                 prev_agg_name_for_all = this_prev_agg_name
+                #             else:
+                #                 col_mapper[i.field] = VarExpr(prev_agg_name_for_all)
+                #         else:
+                #             col_mapper[i.field] = PairAccessExpr(VarExpr(tmp_el_on), 0)
+                #
+                #     # print(col_mapper)
+                #
+                #     for k in col_relations.keys():
+                #         unopt_context.append(
+                #             SDQLInspector.rename_last_binding(col_relations[k],
+                #                                               prev_agg_name_for_all,
+                #                                               with_res=False,
+                #                                               keep_the=-3)
+                #         )
+                #
+                #     if isinstance(op_body, CondExpr):
+                #         tmp_it.iter_cond.append(op_body.replace(rec=None, inplace=False, mapper=col_mapper))
+                #     if isinstance(op_body, ColExtExpr):
+                #         tmp_it.iter_cond.append(op_body.replace(rec=None, inplace=False, mapper=col_mapper).sdql_ir)
+                # else:
+                #     tmp_it.iter_cond.append(op_body)
 
-                    prev_agg_name_for_all = ""
-
-                    for i in self.retriever.find_cols(op_body, as_expr=True):
-                        if i.field not in self.opt_on.columns:
-                            if i.relation.name not in col_relations.keys():
-                                this_prev_agg_name = f'{i.relation.current_name}_{i.relation.unopt_count + 1}'
-                                col_mapper[i.field] = VarExpr(this_prev_agg_name)
-
-                                print(f'we are here {i.relation}')
-
-                                col_relations[i.relation.name] = i.relation.get_opt().get_unopt_sdqlir()
-                                prev_agg_name_for_all = this_prev_agg_name
-                            else:
-                                col_mapper[i.field] = VarExpr(prev_agg_name_for_all)
-                        else:
-                            col_mapper[i.field] = PairAccessExpr(VarExpr(tmp_el_on), 0)
-
-                    # print(col_mapper)
-
-                    for k in col_relations.keys():
-                        unopt_context.append(
-                            SDQLInspector.rename_last_binding(col_relations[k],
-                                                              prev_agg_name_for_all,
-                                                              with_res=False,
-                                                              keep_the=-3)
-                        )
-
-                    tmp_it.iter_cond.append(op_body.replace(rec=None, inplace=False, mapper=col_mapper))
-                else:
-                    tmp_it.iter_cond.append(op_body)
-
-                # tmp_it.iter_cond.append(op_body)
+                tmp_it.iter_cond.append(op_body)
 
                 unopt_context.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -896,7 +961,9 @@ class Optimizer:
                         build_prev_count = 0
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
-                        for o in op_body.left.get_context_unopt(rename_last=build_prev_ops_name):
+                        left_unopt_context = op_body.left.get_context_unopt(rename_last=build_prev_ops_name)
+
+                        for o in left_unopt_context:
                             unopt_context.append(o)
                             build_prev_count += 1
 
@@ -907,7 +974,9 @@ class Optimizer:
                         probe_prev_count = 0
                         probe_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_probe_pre_ops'
 
-                        for o in op_body.right.get_context_unopt(rename_last=probe_prev_ops_name):
+                        right_unopt_context = op_body.right.get_context_unopt(rename_last=probe_prev_ops_name)
+
+                        for o in right_unopt_context:
                             unopt_context.append(o)
                             probe_prev_count += 1
 
@@ -1108,31 +1177,54 @@ class Optimizer:
                         continue
                 else:
                     print(f'Warning: Not implemented {op_body.how} join')
-            elif isinstance(op_body, (AggrExpr, NewColListExpr)):
-                if isinstance(op_body, AggrExpr):
-                    if len(list(op_body.aggr_op.keys())) == 1:
-                        if list(op_body.aggr_op.keys())[0] in self.retriever.findall_cols_for_calc():
-                            continue
+            elif isinstance(op_body, NewColListExpr):
+                if len(op_body.col_list) == 1:
+                    target_expr = op_body.col_list[0]
 
-                        if list(op_body.aggr_op.keys())[0] == 'sum_agg':
-                            if isinstance(self.retriever.find_last_iter(), AggrExpr):
+                    if isinstance(target_expr, CalcExpr):
+                        # tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
-                                tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
+                        target_expr.on.push(OpExpr(op_obj=target_expr,
+                                                   op_on=target_expr.on,
+                                                   op_iter=True))
 
-                                tmp_it_1.iter_op = SDQLInspector.replace_access(op_body.aggr_op['sum_agg'],
-                                                                                PairAccessExpr(VarExpr(tmp_el_on), 0))
+                        free_vname = target_expr.descriptor
 
-                                unopt_context.append(
-                                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                            valExpr=tmp_it_1.sdql_ir,
-                                            bodyExpr=ConstantExpr(True))
-                                )
+                        unopt_context += target_expr.on.get_context_unopt(
+                            rename_last=f'{op_body.col_var}_el_0_{free_vname}'
+                        )
 
-                            continue
+                        # unopt_context.append(
+                        #     LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                        #             valExpr=tmp_it_1.sdql_ir,
+                        #             bodyExpr=ConstantExpr(True))
+                        # )
 
-                    aggr_dict = op_body.aggr_op
-                else:
-                    raise NotImplementedError(f'{type(op_body)} -> {op_body}')
+                        continue
+                    else:
+                        raise NotImplementedError(f'{type(op_body)} -> {op_body}')
+
+            elif isinstance(op_body, AggrExpr):
+                if len(list(op_body.aggr_op.keys())) == 1:
+                    if list(op_body.aggr_op.keys())[0] in self.retriever.findall_cols_for_calc():
+                        continue
+
+                    if list(op_body.aggr_op.keys())[0] == 'sum_agg':
+                        if isinstance(self.retriever.find_last_iter(), AggrExpr):
+                            tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
+
+                            tmp_it_1.iter_op = SDQLInspector.replace_access(op_body.aggr_op['sum_agg'],
+                                                                            PairAccessExpr(VarExpr(tmp_el_on), 0))
+
+                            unopt_context.append(
+                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                        valExpr=tmp_it_1.sdql_ir,
+                                        bodyExpr=ConstantExpr(True))
+                            )
+
+                        continue
+
+                aggr_dict = op_body.aggr_op
 
                 tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
@@ -1285,21 +1377,29 @@ class Optimizer:
 
                 rec_list = []
 
-                for i in SDQLInspector.find_cols(op_body.sdql_ir):
-                    rec_list.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                single_aggr_dict = self.retriever.find_single_aggr_in_calc(op_body)
+                single_aggr_mapper = {}
 
-                tmp_aggr_cols = {}
+                for s in single_aggr_dict.keys():
+                    sv = single_aggr_dict[s]
+                    rec_list.append((s, SDQLInspector.replace_access(sv.sdql_ir, PairAccessExpr(VarExpr(tmp_el_on), 0))))
+                    if isinstance(sv.sdql_ir, RecAccessExpr):
+                        single_aggr_mapper[sv.sdql_ir.name] = RecAccessExpr(VarExpr(tmp_vn_nx), s)
+                    else:
+                        raise ValueError(f'Unexpected single ir object {sv.sdql_ir}')
 
-                for aggr_expr in self.retriever.split_aggr_in_calc():
-                    for aggr_key in aggr_expr.aggr_op.keys():
-                        target_expr = aggr_expr.aggr_op[aggr_key]
-                        if isinstance(aggr_expr.aggr_op[aggr_key], (AddExpr, MulExpr, SubExpr, DivExpr)):
-                            tmp_aggr_cols[f'{SDQLInspector.find_a_descriptor(target_expr)}'] = target_expr
+                multi_aggr_dict = self.retriever.find_multi_aggr_in_calc(op_body)
+                multi_aggr_mapper = {}
+                calc_mapper = {}
 
-                for k in tmp_aggr_cols.keys():
-                    col_op = SDQLInspector.replace_access(tmp_aggr_cols[k],
-                                                          PairAccessExpr(VarExpr(tmp_el_on), 0))
-                    rec_list.append((k, col_op))
+                for m in multi_aggr_dict.keys():
+                    sv = multi_aggr_dict[m]
+                    rec_list.append((m, SDQLInspector.replace_access(sv.sdql_ir, PairAccessExpr(VarExpr(tmp_el_on), 0))))
+                    multi_aggr_mapper[m] = RecAccessExpr(VarExpr(tmp_vn_nx), m)
+                    calc_mapper[m] = sv.sdql_ir
+
+                print('single column', single_aggr_dict)
+                print('multiple columns', multi_aggr_dict)
 
                 tmp_it.iter_op = RecConsExpr(rec_list)
 
@@ -1314,13 +1414,77 @@ class Optimizer:
                 tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
                 tmp_vn_nx = f'{this_name}_{unopt_count}'
 
-                calc_ir = op_body.replace_aggr(tmp_aggr_cols, self.opt_on).sdql_ir
+                final_mapper = {}
+
+                for k in single_aggr_mapper.keys():
+                    final_mapper[k] = single_aggr_mapper[k]
+
+                for k in multi_aggr_mapper.keys():
+                    final_mapper[k] = multi_aggr_mapper[k]
+
+                calc_ir = op_body.replace_aggr(calc_mapper, VarExpr(tmp_vn_on)).sdql_ir
+
+                calc_ir = SDQLInspector.replace_field(calc_ir, inplace=True, mapper=final_mapper)
 
                 unopt_context.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                            valExpr=SDQLInspector.replace_access(calc_ir, VarExpr(tmp_vn_on_2)),
+                            valExpr=calc_ir,
                             bodyExpr=ConstantExpr(True))
                 )
+
+                # Method 2
+                # tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+                #
+                # tmp_it.iter_op = SDQLInspector.replace_access(op_body.sdql_ir,
+                #                                           PairAccessExpr(VarExpr(tmp_el_on), 0))
+                #
+                # unopt_context.append(
+                #     LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                #             valExpr=tmp_it.sdql_ir,
+                #             bodyExpr=ConstantExpr(True))
+                # )
+
+                # Method 3
+                # tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+                #
+                # rec_list = []
+                #
+                # for i in SDQLInspector.find_cols(op_body.sdql_ir):
+                #     rec_list.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                #
+                # tmp_aggr_cols = {}
+                #
+                # for aggr_expr in self.retriever.split_aggr_in_calc():
+                #     for aggr_key in aggr_expr.aggr_op.keys():
+                #         target_expr = aggr_expr.aggr_op[aggr_key]
+                #         if isinstance(aggr_expr.aggr_op[aggr_key], (AddExpr, MulExpr, SubExpr, DivExpr)):
+                #             tmp_aggr_cols[f'{SDQLInspector.find_a_descriptor(target_expr)}'] = target_expr
+                #
+                # for k in tmp_aggr_cols.keys():
+                #     col_op = SDQLInspector.replace_access(tmp_aggr_cols[k],
+                #                                           PairAccessExpr(VarExpr(tmp_el_on), 0))
+                #     rec_list.append((k, col_op))
+                #
+                # tmp_it.iter_op = RecConsExpr(rec_list)
+                #
+                # unopt_context.append(
+                #     LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                #             valExpr=tmp_it.sdql_ir,
+                #             bodyExpr=ConstantExpr(True))
+                # )
+                #
+                # unopt_count += 1
+                #
+                # tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
+                # tmp_vn_nx = f'{this_name}_{unopt_count}'
+                #
+                # calc_ir = op_body.replace_aggr(tmp_aggr_cols, self.opt_on).sdql_ir
+                #
+                # unopt_context.append(
+                #     LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                #             valExpr=SDQLInspector.replace_access(calc_ir, VarExpr(tmp_vn_on_2)),
+                #             bodyExpr=ConstantExpr(True))
+                # )
             else:
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 

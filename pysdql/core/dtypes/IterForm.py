@@ -99,6 +99,7 @@ class IterForm:
                 if isinstance(cond, FlexIR):
                     if cond.replaceable:
                         if isinstance(cond, ColExtExpr):
+                            print(cond)
                             cond = cond.replace(self.iter_key).sdql_ir
                         else:
                             cond = cond.replace(self.iter_key)
