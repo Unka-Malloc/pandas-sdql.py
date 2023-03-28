@@ -1777,3 +1777,22 @@ class Retriever:
         # print(f'possible index {possible_index}')
 
         return possible_index
+
+    def check_as_merge_key(self, target):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, MergeExpr):
+                if isinstance(op_body.left_on, list):
+                    if target in op_body.left_on:
+                        return True
+                if isinstance(op_body.right_on, list):
+                    if target in op_body.right_on:
+                        return True
+
+                if isinstance(op_body.left_on, str):
+                    if target == op_body.left_on:
+                        return True
+                if isinstance(op_body.right_on, str):
+                    if target == op_body.right_on:
+                        return True

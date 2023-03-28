@@ -620,7 +620,7 @@ class Optimizer:
         # print(this_name)
         # print(self.opt_on.operations)
 
-        allow_projection = True
+        allow_projection = False
 
         unopt_context = []
         unopt_count = 0
@@ -682,7 +682,9 @@ class Optimizer:
                                 valExpr=tmp_it.sdql_ir,
                                 bodyExpr=ConstantExpr(True))
                     )
-                elif self.retriever.check_last(op_body):
+                elif self.retriever.check_last(op_body) \
+                        or (len(op_body.proj_cols) == 1
+                            and self.retriever.check_as_merge_key(op_body.proj_cols[0])):
                     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                     final_cols = []

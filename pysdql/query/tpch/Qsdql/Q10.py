@@ -16,10 +16,8 @@ def query(cu, ord, li, na):
     
     nation_customer_orders_build_nest_dict = na.sum(lambda x: {x[0].n_nationkey: sr_dict({x[0]: x[1]})})
     
-    nation_customer_orders_0 = nation_customer_orders_probe_pre_ops.sum(lambda x: (nation_customer_orders_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    nation_customer_orders_lineitem_build_pre_ops = nation_customer_orders_probe_pre_ops.sum(lambda x: (nation_customer_orders_build_nest_dict[x[0].c_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (nation_customer_orders_build_nest_dict[x[0].c_nationkey] != None) else (None))
-    
-    nation_customer_orders_lineitem_build_pre_ops = nation_customer_orders_0.sum(lambda x: {record({"o_orderkey": x[0].o_orderkey, "c_custkey": x[0].c_custkey, "c_name": x[0].c_name, "c_acctbal": x[0].c_acctbal, "c_phone": x[0].c_phone, "n_name": x[0].n_name, "c_address": x[0].c_address, "c_comment": x[0].c_comment}): True})
     
     nation_customer_orders_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_returnflag == r) else (None))
     

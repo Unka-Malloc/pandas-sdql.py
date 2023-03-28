@@ -613,7 +613,7 @@ def q22(execution_mode=0, threads_count=1, optimize=True):
     customer = pysdql.DataFrame()
     orders = pysdql.DataFrame()
 
-    # write_query(22, tpch_q22(customer, orders).to_sdqlir(optimize))
+    write_query(22, tpch_q22(customer, orders).to_sdqlir(optimize))
 
     customer_data = read_csv(rf'{DATAPATH}/customer.tbl', CUSTOMER_TYPE, "cu")
     orders_data = read_csv(rf'{DATAPATH}/orders.tbl', ORDERS_TYPE, "ord")

@@ -7,9 +7,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(ord, li):
 
     # Insert
-    lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None))
-    
-    lineitem_orders_isin_pre_ops = lineitem_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    lineitem_orders_isin_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None))
     
     lineitem_orders_isin_build_index = lineitem_orders_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
     
