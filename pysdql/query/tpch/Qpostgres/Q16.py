@@ -10,18 +10,28 @@ def query(ps, pa, su):
     complaints = "Complaints"
     brand45 = "Brand#45"
     mediumpolished = "MEDIUM POLISHED"
-    supplier_partsupp_isin_pre_ops = su.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x[0].s_comment, complaints) > ((firstIndex(x[0].s_comment, customer)) + (7))))) else (None))
+    supplier_0 = su.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].s_comment, customer) != ((-1) * (1))) * (firstIndex(x[0].s_comment, complaints) > ((firstIndex(x[0].s_comment, customer)) + (7))))) else (None))
+    
+    supplier_partsupp_isin_pre_ops = supplier_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey}): True})
     
     supplier_partsupp_isin_build_index = supplier_partsupp_isin_pre_ops.sum(lambda x: {x[0].s_suppkey: True})
     
-    partsupp_part_build_pre_ops = ps.sum(lambda x: ({x[0]: x[1]}) if (supplier_partsupp_isin_build_index[x[0].ps_suppkey] == None) else (None))
+    partsupp_0 = ps.sum(lambda x: ({x[0]: x[1]}) if (supplier_partsupp_isin_build_index[x[0].ps_suppkey] == None) else (None))
     
-    partsupp_part_probe_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].p_brand != brand45) * (startsWith(x[0].p_type, mediumpolished) == False))) * (((((((((((((((x[0].p_size == 9) + (x[0].p_size == 36))) + (x[0].p_size == 49))) + (x[0].p_size == 14))) + (x[0].p_size == 23))) + (x[0].p_size == 45))) + (x[0].p_size == 19))) + (x[0].p_size == 3))))) else (None))
+    partsupp_part_build_pre_ops = partsupp_0.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey, "ps_suppkey": x[0].ps_suppkey}): True})
+    
+    part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (((((x[0].p_brand != brand45) * (startsWith(x[0].p_type, mediumpolished) == False))) * (((((((((((((((x[0].p_size == 9) + (x[0].p_size == 36))) + (x[0].p_size == 49))) + (x[0].p_size == 14))) + (x[0].p_size == 23))) + (x[0].p_size == 45))) + (x[0].p_size == 19))) + (x[0].p_size == 3))))) else (None))
+    
+    partsupp_part_probe_pre_ops = part_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size, "p_partkey": x[0].p_partkey}): True})
     
     partsupp_part_build_nest_dict = partsupp_part_build_pre_ops.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
     
     partsupp_part_0 = partsupp_part_probe_pre_ops.sum(lambda x: (partsupp_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (partsupp_part_build_nest_dict[x[0].p_partkey] != None) else (None))
+    
+    partsupp_part_1 = partsupp_part_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size, "ps_suppkey": x[0].ps_suppkey}): True})
+    
+    partsupp_part_1 = partsupp_part_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size, "ps_suppkey": x[0].ps_suppkey}): True})
     
     partsupp_part_1 = partsupp_part_0.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size}): record({"supplier_cnt": sr_dict({x[0].ps_suppkey: True})})})
     

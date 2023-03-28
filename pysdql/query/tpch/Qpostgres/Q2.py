@@ -46,11 +46,11 @@ def query(pa, su, ps, ps1, na, re):
     
     supplier_0 = su.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_nationkey": x[0].s_nationkey, "s_phone": x[0].s_phone, "s_acctbal": x[0].s_acctbal, "s_comment": x[0].s_comment}): True})
     
-    supplier_partsupp_part_build_pre_ops = su.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_nationkey": x[0].s_nationkey, "s_phone": x[0].s_phone, "s_acctbal": x[0].s_acctbal, "s_comment": x[0].s_comment}): True})
+    supplier_partsupp_part_build_pre_ops = supplier_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_nationkey": x[0].s_nationkey, "s_phone": x[0].s_phone, "s_acctbal": x[0].s_acctbal, "s_comment": x[0].s_comment}): True})
     
     partsupp_0 = ps.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey, "ps_suppkey": x[0].ps_suppkey, "ps_availqty": x[0].ps_availqty, "ps_supplycost": x[0].ps_supplycost, "ps_comment": x[0].ps_comment}): True})
     
-    partsupp_part_build_pre_ops = ps.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "ps_suppkey": x[0].ps_suppkey, "ps_partkey": x[0].ps_partkey}): True})
+    partsupp_part_build_pre_ops = partsupp_0.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "ps_suppkey": x[0].ps_suppkey, "ps_partkey": x[0].ps_partkey}): True})
     
     partsupp_part_build_nest_dict = partsupp_part_build_pre_ops.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
     
@@ -68,7 +68,7 @@ def query(pa, su, ps, ps1, na, re):
     
     nation_0 = na.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name, "n_regionkey": x[0].n_regionkey, "n_comment": x[0].n_comment}): True})
     
-    nation_region_build_pre_ops = na.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name, "n_regionkey": x[0].n_regionkey, "n_comment": x[0].n_comment}): True})
+    nation_region_build_pre_ops = nation_0.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name, "n_regionkey": x[0].n_regionkey, "n_comment": x[0].n_comment}): True})
     
     region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
     
@@ -86,15 +86,17 @@ def query(pa, su, ps, ps1, na, re):
     supplier_partsupp_part_nation_region_0 = supplier_partsupp_part_nation_region_probe_pre_ops.sum(lambda x: (supplier_partsupp_part_nation_region_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_partsupp_part_nation_region_build_nest_dict[x[0].n_nationkey] != None) else (None))
     
-    supplier_partsupp_part_nation_region_1 = supplier_partsupp_part_nation_region_0.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "p_partkey": x[0].p_partkey}): True})
+    supplier_partsupp_part_nation_region_1 = supplier_partsupp_part_nation_region_0.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "p_partkey": x[0].p_partkey, "p_partkey": x[0].p_partkey}): True})
     
-    supplier_partsupp_part_nation_region_1 = supplier_partsupp_part_nation_region_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): record({"min_ps_supplycost": x[0].ps_supplycost})})
+    supplier_partsupp_part_nation_region_2 = supplier_partsupp_part_nation_region_1.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): record({"min_ps_supplycost": x[0].ps_supplycost})})
     
-    supplier_partsupp_part_nation_region_2 = supplier_partsupp_part_nation_region_1.sum(lambda x: {x[0].concat(x[1]): True})
+    supplier_partsupp_part_nation_region_3 = supplier_partsupp_part_nation_region_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    supplier_partsupp_part_nation_region_3 = supplier_partsupp_part_nation_region_2.sum(lambda x: {x[0].concat(record({"minps_supplycost": x[0].min_ps_supplycost})): x[1]})
+    supplier_partsupp_part_nation_region_4 = supplier_partsupp_part_nation_region_3.sum(lambda x: {x[0].concat(record({"minps_supplycost": x[0].min_ps_supplycost})): x[1]})
     
-    part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_probe_pre_ops = supplier_partsupp_part_nation_region_3.sum(lambda x: {record({"minps_supplycost": x[0].minps_supplycost}): True})
+    supplier_partsupp_part_nation_region_5 = supplier_partsupp_part_nation_region_4.sum(lambda x: {record({"minps_supplycost": x[0].minps_supplycost, "p_partkey": x[0].p_partkey}): True})
+    
+    part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_probe_pre_ops = supplier_partsupp_part_nation_region_5.sum(lambda x: {x[0]: x[1]})
     
     part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_nest_dict = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_pre_ops.sum(lambda x: {record({"ps_supplycost": x[0].ps_supplycost, "p_partkey": x[0].p_partkey}): sr_dict({x[0]: x[1]})})
     
