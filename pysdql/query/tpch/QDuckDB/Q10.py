@@ -6,9 +6,13 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(cu, ord, li, na):
 
     # Insert
-    lineitem_orders_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_returnflag == r) else (None))
+    lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_returnflag == r) else (None))
     
-    lineitem_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19931001) * (x[0].o_orderdate < 19940101))) else (None))
+    lineitem_orders_build_pre_ops = lineitem_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_returnflag": x[0].l_returnflag, "l_extendedprice": x[0].l_extendedprice, "l_discount": x[0].l_discount}): True})
+    
+    orders_0 = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19931001) * (x[0].o_orderdate < 19940101))) else (None))
+    
+    lineitem_orders_probe_pre_ops = orders_0.sum(lambda x: {record({"o_custkey": x[0].o_custkey, "o_orderkey": x[0].o_orderkey, "o_orderdate": x[0].o_orderdate}): True})
     
     lineitem_orders_build_nest_dict = lineitem_orders_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
     
@@ -31,7 +35,9 @@ def query(cu, ord, li, na):
     
     lineitem_orders_customer_nation_3 = lineitem_orders_customer_nation_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    lineitem_orders_customer_nation_attach_to_df_aggr_1 = lineitem_orders_customer_nation_3.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_orders_customer_nation_4 = lineitem_orders_customer_nation_3.sum(lambda x: {record({"revenue": x[0].revenue, "c_custkey": x[0].c_custkey, "c_name": x[0].c_name, "c_acctbal": x[0].c_acctbal, "c_phone": x[0].c_phone, "n_name": x[0].n_name, "c_address": x[0].c_address, "c_comment": x[0].c_comment}): True})
+    
+    lineitem_orders_customer_nation_attach_to_df_aggr_1 = lineitem_orders_customer_nation_4.sum(lambda x: {x[0]: x[1]})
     
     results = lineitem_orders_customer_nation_attach_to_df_aggr_1.sum(lambda x: {record({"c_custkey": x[0].c_custkey, "c_name": x[0].c_name, "revenue": x[0].revenue, "c_acctbal": x[0].c_acctbal, "n_name": x[0].n_name, "c_address": x[0].c_address, "c_phone": x[0].c_phone, "c_comment": x[0].c_comment}): True})
     
