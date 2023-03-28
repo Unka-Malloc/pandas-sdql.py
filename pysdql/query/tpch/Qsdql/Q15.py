@@ -15,7 +15,7 @@ def query(li, su):
     
     lineitem_3 = lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    supplier_lineitem_probe_pre_ops = lineitem_3.sum(lambda x: ({x[0]: x[1]}) if (x[0].total_revenue == 1772627.2087) else (None))
+    supplier_lineitem_probe_pre_ops = lineitem_3.sum(lambda x: ({x[0]: x[1]}) if (x[0].total_revenue == 1614410.2928) else (None))
     
     supplier_lineitem_build_nest_dict = su.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
     

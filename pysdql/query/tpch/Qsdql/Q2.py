@@ -47,9 +47,9 @@ def query(pa, su, ps, na, re):
     
     region_nation_supplier_ps1_1 = region_nation_supplier_ps1_0.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey, "ps_supplycost": x[0].ps_supplycost}): True})
     
-    region_nation_supplier_ps1_1 = region_nation_supplier_ps1_0.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"min_supplycost": x[0].ps_supplycost})})
+    region_nation_supplier_ps1_2 = region_nation_supplier_ps1_1.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey}): record({"min_supplycost": x[0].ps_supplycost})})
     
-    region_nation_supplier_ps1_part_partsupp_build_pre_ops = region_nation_supplier_ps1_1.sum(lambda x: {x[0].concat(x[1]): True})
+    region_nation_supplier_ps1_part_partsupp_build_pre_ops = region_nation_supplier_ps1_2.sum(lambda x: {x[0].concat(x[1]): True})
     
     part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (((endsWith(x[0].p_type, brass)) * (x[0].p_size == 15))) else (None))
     

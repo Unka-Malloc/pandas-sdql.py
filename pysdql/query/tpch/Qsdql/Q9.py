@@ -43,8 +43,6 @@ def query(li, ord, na, su, pa, ps):
     
     nation_supplier_part_partsupp_orders_lineitem_3 = nation_supplier_part_partsupp_orders_lineitem_2.sum(lambda x: {x[0].concat(record({"amount": ((((x[0].l_extendedprice) * (((1.0) - (x[0].l_discount))))) - (((x[0].ps_supplycost) * (x[0].l_quantity))))})): x[1]})
     
-    nation_supplier_part_partsupp_orders_lineitem_4 = nation_supplier_part_partsupp_orders_lineitem_3.sum(lambda x: {record({"nation": x[0].nation, "o_year": x[0].o_year, "amount": x[0].amount}): True})
-    
     nation_supplier_part_partsupp_orders_lineitem_4 = nation_supplier_part_partsupp_orders_lineitem_3.sum(lambda x: {record({"nation": x[0].nation, "o_year": x[0].o_year}): record({"sum_profit": x[0].amount})})
     
     results = nation_supplier_part_partsupp_orders_lineitem_4.sum(lambda x: {x[0].concat(x[1]): True})

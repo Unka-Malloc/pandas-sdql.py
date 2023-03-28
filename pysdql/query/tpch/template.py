@@ -14,8 +14,8 @@ tpch_vars = {1: ["1998-09-02",],
              13: ['special', 'requests'],
              14: ["1995-09-01", "1995-10-01"],
              # 15: ("1996-01-01", "1996-04-01", 1614410.2928000002),
-             # 15: ("1996-01-01", "1996-04-01", 1614410.2928),
-             15: ["1996-01-01", "1996-04-01", 1772627.2087],
+             15: ("1996-01-01", "1996-04-01", 1614410.2928),
+             # 15: ["1996-01-01", "1996-04-01", 1772627.2087],
              16: ["Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)],
              # 17: ("Brand#11", "WRAP CASE"),
              17: ["Brand#23", "MED BOX"],
@@ -346,9 +346,9 @@ def tpch_q9(lineitem, orders, nation, supplier, part, partsupp):
     all_join['o_year'] = all_join['o_orderdate'].dt.year
     all_join['amount'] = all_join['l_extendedprice'] * (1.0 - all_join['l_discount']) - all_join['ps_supplycost'] * all_join['l_quantity']
 
-    profit = all_join[['nation', 'o_year', 'amount']]
+    # profit = all_join[['nation', 'o_year', 'amount']]
 
-    result = profit.groupby(['nation', 'o_year'], as_index=False) \
+    result = all_join.groupby(['nation', 'o_year'], as_index=False) \
         .agg(sum_profit=('amount', 'sum'))
 
     return result
