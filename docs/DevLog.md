@@ -3,7 +3,7 @@
 
 # Hyper - Opt - Compiler
 - Q15: missed supplier part issue
-- 
+- Q17: missed 
 - Fixed: remove redundant conditions (`?[x[0].probe_key]`)
 - Finished: 
   1. [test_hyper_opt](https://github.com/cxunka/pd2sd/blob/ffbdb134b81ef5b82bde395b04fa5beb8108595c/compiler_tests/test_hyper_opt.py)
