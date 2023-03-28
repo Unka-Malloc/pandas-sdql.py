@@ -1,0 +1,35 @@
+Dear Hesam,
+
+General
+-	External Function `LastIndex` is Required For Q13. 
+In Q13, we used different conditions than Hyper, which gives wrong results.
+This is wrong condition (SDQL.py):
+((firstIndex(p[0].o_comment, special) != -1) and (firstIndex(p[0].o_comment, requests) > (firstIndex(p[0].o_comment, special)+6))) == False
+This is correct condition:
+((firstIndex(p[0].o_comment, special) != -1) and (lastIndex(p[0].o_comment, requests) > (firstIndex(p[0].o_comment, special)+6))) == False
+Using lastIndex, we will be able to filter the following case: “……requests …… special requests……”
+
+Hyper Optimized & Unoptimized Python
+
+SF 0.1 Python code and results are attached to this email.
+
+Hyper Optimized Compiler
+-	I checked the answer to my queries against Hyper, and they are correct.
+-	Mismatch answers of Q5, Q9, Q15 are caused by using incorrect constants, they are now fixed.
+-	Error in Q17 is due to compiler issue, even using the correct condition, it still returns 0.0 as the answer. The solution is mysterious. In short, if you add an extra useless condition if (True) else (None), and add extra useless brackets (somewhere), then the query will probably give correct results.
+
+Hyper Unoptimized Compiler
+-	Variable names are now unique.
+-	Q6 and Q19 are fixed, they construct a dictionary with the record rather than iteration.
+-	Error in Q22 is NOT due to iteration on record. It iterates on a dictionary and then access to the value of the record.
+
+PostgreSQL Unoptimized Python
+-	Finished: 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 19, 20
+-	Not Implemented: 7, 21, 22
+
+DuckDB Unoptimized Python
+-	Finished 1, 4, 5, 9, 12, 13, 16
+-	Not Implemented: 2, 3, 6, 7, 8, 9, 10, 11, 14, 15, 17, 18, 19, 20, 21, 22
+
+Bests,
+Yizhuo

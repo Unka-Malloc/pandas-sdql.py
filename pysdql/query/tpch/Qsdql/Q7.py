@@ -55,9 +55,9 @@ def query(su, li, ord, cu, na):
     
     n1_supplier_n2_customer_orders_lineitem_6 = n1_supplier_n2_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year, "volume": x[0].volume}): True})
     
-    n1_supplier_n2_customer_orders_lineitem_6 = n1_supplier_n2_customer_orders_lineitem_5.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
+    n1_supplier_n2_customer_orders_lineitem_7 = n1_supplier_n2_customer_orders_lineitem_6.sum(lambda x: {record({"supp_nation": x[0].supp_nation, "cust_nation": x[0].cust_nation, "l_year": x[0].l_year}): record({"revenue": x[0].volume})})
     
-    results = n1_supplier_n2_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(x[1]): True})
+    results = n1_supplier_n2_customer_orders_lineitem_7.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 

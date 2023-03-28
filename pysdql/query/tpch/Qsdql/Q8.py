@@ -77,15 +77,15 @@ def query(pa, su, li, ord, cu, na, re):
     
     n2_supplier_part_region_n1_customer_orders_lineitem_4 = n2_supplier_part_region_n1_customer_orders_lineitem_3.sum(lambda x: {record({"o_year": x[0].o_year, "volume": x[0].volume, "nation": x[0].nation}): True})
     
-    n2_supplier_part_region_n1_customer_orders_lineitem_4 = n2_supplier_part_region_n1_customer_orders_lineitem_3.sum(lambda x: {x[0].concat(record({"volume_A": (x[0].volume) if (x[0].nation == brazil) else (0.0)})): x[1]})
+    n2_supplier_part_region_n1_customer_orders_lineitem_5 = n2_supplier_part_region_n1_customer_orders_lineitem_4.sum(lambda x: {x[0].concat(record({"volume_A": (x[0].volume) if (x[0].nation == brazil) else (0.0)})): x[1]})
     
-    n2_supplier_part_region_n1_customer_orders_lineitem_5 = n2_supplier_part_region_n1_customer_orders_lineitem_4.sum(lambda x: {record({"o_year": x[0].o_year}): record({"A": x[0].volume_A, "B": x[0].volume})})
+    n2_supplier_part_region_n1_customer_orders_lineitem_6 = n2_supplier_part_region_n1_customer_orders_lineitem_5.sum(lambda x: {record({"o_year": x[0].o_year}): record({"A": x[0].volume_A, "B": x[0].volume})})
     
-    n2_supplier_part_region_n1_customer_orders_lineitem_6 = n2_supplier_part_region_n1_customer_orders_lineitem_5.sum(lambda x: {x[0].concat(x[1]): True})
+    n2_supplier_part_region_n1_customer_orders_lineitem_7 = n2_supplier_part_region_n1_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(x[1]): True})
     
-    n2_supplier_part_region_n1_customer_orders_lineitem_7 = n2_supplier_part_region_n1_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].A) / (x[0].B))})): x[1]})
+    n2_supplier_part_region_n1_customer_orders_lineitem_8 = n2_supplier_part_region_n1_customer_orders_lineitem_7.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].A) / (x[0].B))})): x[1]})
     
-    results = n2_supplier_part_region_n1_customer_orders_lineitem_7.sum(lambda x: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True})
+    results = n2_supplier_part_region_n1_customer_orders_lineitem_8.sum(lambda x: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True})
     
     # Complete
 

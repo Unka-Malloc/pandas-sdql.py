@@ -13,16 +13,37 @@ def query(cu, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1.0})) if (((x_cu1[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (startsWith(x_cu1[0].c_phone, v30)))) + (startsWith(x_cu1[0].c_phone, v18)))) + (startsWith(x_cu1[0].c_phone, v17)))))) else (None))
-    
-    count_acctbal = cu1_aggr.count_acctbal
-    sum_acctbal = cu1_aggr.sum_acctbal
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
-    
-    customer_aggr = cu.sum(lambda x_customer: (({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1.0, "totacctbal": x_customer[0].c_acctbal})}) if (orders_part[x_customer[0].c_custkey] == None) else (None)) if (((x_customer[0].c_acctbal > ((sum_acctbal) / (count_acctbal))) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
-    
-    results = customer_aggr.sum(lambda x_customer_aggr: {record({"cntrycode": x_customer_aggr[0], "numcust": x_customer_aggr[1].numcust, "totacctbal": x_customer_aggr[1].totacctbal}): True})
-    
+    cu1_0 = cu.sum(lambda x: ({x[0]: x[1]}) if (((x[0].c_acctbal > 0.0) * ((((((((((
+            (((startsWith(x[0].c_phone, v13)) + (startsWith(x[0].c_phone, v31)))) + (
+        startsWith(x[0].c_phone, v23)))) + (startsWith(x[0].c_phone, v29)))) + (startsWith(x[0].c_phone, v30)))) + (
+                                                                                  startsWith(x[0].c_phone, v18)))) + (
+                                                                                startsWith(x[0].c_phone,
+                                                                                           v17)))))) else (None))
+
+    cu1_1 = cu1_0.sum(lambda x: record({"sum_acctbal": x[0].c_acctbal, "count_acctbal": 1.0}))
+
+    customer_0 = cu.sum(lambda x: ({x[0]: x[1]}) if ((
+            (x[0].c_acctbal > ((cu1_1.sum_acctbal) / (cu1_1.count_acctbal))) * ((((((((((
+            (((startsWith(x[0].c_phone, v13)) + (startsWith(x[0].c_phone, v31)))) + (
+        startsWith(x[0].c_phone, v23)))) + (startsWith(x[0].c_phone, v29)))) + (startsWith(x[0].c_phone,
+                                                                                           v30)))) + (
+                                                                                       startsWith(x[0].c_phone,
+                                                                                                  v18)))) + (
+                                                                                     startsWith(x[0].c_phone,
+                                                                                                v17)))))) else (
+        None))
+
+    orders_customer_isin_build_index = ord.sum(lambda x: {x[0].o_custkey: True})
+
+    customer_1 = customer_0.sum(
+        lambda x: ({x[0]: x[1]}) if (orders_customer_isin_build_index[x[0].c_custkey] == None) else (None))
+
+    customer_2 = customer_1.sum(lambda x: {x[0].concat(record({"cntrycode": substr(x[0].c_phone, 0, 1)})): x[1]})
+
+    customer_3 = customer_2.sum(
+        lambda x: {record({"cntrycode": x[0].cntrycode}): record({"numcust": 1.0, "totacctbal": x[0].c_acctbal})})
+
+    results = customer_3.sum(lambda x: {x[0].concat(x[1]): True})
     # Complete
 
     return results

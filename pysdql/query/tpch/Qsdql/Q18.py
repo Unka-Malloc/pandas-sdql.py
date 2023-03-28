@@ -13,7 +13,9 @@ def query(li, cu, ord):
     
     lineitem_2 = lineitem_1.sum(lambda x: ({x[0]: x[1]}) if (x[0].sum_quantity > 300) else (None))
     
-    lineitem_orders_isin_pre_ops = lineitem_2.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    lineitem_3 = lineitem_2.sum(lambda x: {x[0]: x[1]})
+    
+    lineitem_orders_isin_pre_ops = lineitem_3.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})
     
     lineitem_orders_isin_build_index = lineitem_orders_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
     
