@@ -720,6 +720,9 @@ class DataFrame(FlexIR, Retrivable):
         return output
 
     def merge(self, right, how='inner', left_on=None, right_on=None, indicator=False, sort=False):
+        if isinstance(right, ColEl):
+            raise NotImplementedError
+
         if isinstance(left_on, str) and isinstance(right_on, str):
             pass
 

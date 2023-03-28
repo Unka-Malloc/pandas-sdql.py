@@ -1,30 +1,5 @@
 import pysdql as pd
 
-tpch_vars = {1: ("1998-09-02",),
-             2: (15, 'BRASS', 'EUROPE'),
-             3: ("BUILDING", "1995-03-15"),
-             4: ("1993-07-01", "1993-10-01"),
-             5: ("ASIA", "1994-01-01", "1996-12-31"),
-             6: ('1994-01-01', '1995-01-01', 0.05, 0.07, 24),
-             7: ('FRANCE', 'GERMANY'),
-             8: ('BRAZIL', 'AMERICA', 'ECONOMY ANODIZED STEEL'),
-             9: ('green'),
-             10: ("1993-10-01", "1994-01-01"),
-             11: ('GERMANY',),
-             12: ('MAIL', 'SHIP', '1994-01-01', '1995-01-01'),
-             13: ('special', 'requests'),
-             14: ("1995-09-01", "1995-10-01"),
-             15: ("1996-01-01", "1996-04-01", 797313.3838),
-             16: ("Brand#45", "MEDIUM POLISHED", (49, 14, 23, 45, 19, 3, 36, 9)),
-             17: ('Brand#11', 'WRAP CASE'),
-             18: (300,),
-             19: ("Brand#12", "Brand#23", "Brand#34", (1, 11), (10, 20), (20, 30)),
-             20: ('forest', '1994-01-01', '1995-01-01', 'CANADA'),
-             21: ("SAUDI ARABIA",),
-             22: ('13', '31', '23', '29', '30', '18', '17')
-             }
-
-
 def tpch_q1(lineitem):
     df_filter_1 = lineitem[(lineitem.l_shipdate<='1998-09-02') & (~lineitem.l_shipdate.isnull())]
     df_filter_1 = df_filter_1[['l_shipdate', 'l_returnflag', 'l_linestatus', 'l_quantity', 'l_extendedprice', 'l_discount', 'l_tax']]

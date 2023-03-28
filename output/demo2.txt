@@ -1,29 +1,31 @@
->> Query 21 (Q21) <<
+>> Query 6 (Q6) <<
 >> SDQL <<
-Warning: Cannot find column "l_suppkey_x" in lineitem_supplier_nation_lineitem: ['s_name', 'l_suppkey', 'l_orderkey', 'l_orderkey', 'l_suppkey']
-Warning: Cannot find column "l_suppkey_y" in lineitem_supplier_nation_lineitem: ['s_name', 'l_suppkey', 'l_orderkey', 'l_orderkey', 'l_suppkey']
-Traceback (most recent call last):
-  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
-    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
-  File "<string>", line 1, in <module>
-  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 591, in q21
-    write_query(21, tpch_q21(supplier, lineitem, orders, nation).to_sdqlir(optimize))
-  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 777, in tpch_q21
-    df_merge_3 = df_merge_2.merge(inner_cond, left_on=['l_orderkey'], right_on=['l_orderkey'], how="outer",
-  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 734, in merge
-    next_right_df = right.create_copy(location=f'merge(right)')
-AttributeError: 'ColEl' object has no attribute 'create_copy'
+>> Optimized Query <<
+============================================================
+df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"l_extendedpricel_discount": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]})
+
+df_aggr_1_1 = df_aggr_1_0.sum(lambda x: {record({"l_extendedpricel_discount": x[0].l_extendedpricel_discount}): True})
+
+df_aggr_1_2 = df_aggr_1_1.sum(lambda x: record({"l_extendedpricel_discount": x[0].l_extendedpricel_discount}))
+
+results = {df_aggr_1_2: True}
+============================================================
+Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
 ============================================================
 
     
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[    ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨[
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨^¨T¨T¨T¨T¨€¨€¨[¨€¨€¨€¨U
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a      ¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨U
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨a  ¨€¨€¨U
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨€¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨U
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a       ¨^¨T¨T¨T¨T¨T¨T¨a ¨^¨T¨a
-
+ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨€¨€¨€¨€¨[ 
+¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨X¨T¨T¨T¨T¨a 
+¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨€¨€¨€¨€¨€¨€¨€¨[ 
+¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨€¨€¨[
+¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨^¨€¨€¨€¨€¨€¨€¨X¨a
+ ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨T¨T¨T¨T¨a 
     
+Traceback (most recent call last):
+      File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 63, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.QDuckDB.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+
          ¨ˆ¨€¨€¨€¨€¨€  ¨€¨€?¨€¨€¨€   ¨€¨€?¨€¨€¨€   ?¨€¨€¨€¨€¨€   ¨€¨€?¨€¨€¨€  
          ¨ˆ¨€   ? ¨ˆ¨€¨€ ? ¨€¨€?¨ˆ¨€¨€ ? ¨€¨€??¨€¨€?  ¨€¨€?¨ˆ¨€¨€ ? ¨€¨€?
          ?¨€¨€¨€   ¨ˆ¨€¨€ ?¨{¨€ ?¨ˆ¨€¨€ ?¨{¨€ ??¨€¨€?  ¨€¨€?¨ˆ¨€¨€ ?¨{¨€ ?
@@ -33,22 +35,29 @@ AttributeError: 'ColEl' object has no attribute 'create_copy'
           ? ?  ?  ?? ? ??  ?? ? ??  ? ? ??   ?? ? ??
             ?     ??   ?   ??   ? ? ? ? ?    ??   ? 
             ?  ?   ?        ?         ? ?     ?                 
-    
+      File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckQ.py", line 199, in q6
+    sdql_result = Q.query(lineitem_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 409, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\Q6.py", line 9, in query
+    df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"l_extendedpricel_discount": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]})
+NameError: name 'df_aggr_1' is not defined
+
 ============================================================
->> Traceback Q21 <<
+>> Traceback Q6 <<
 
 Traceback (most recent call last):
-  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 60, in tpch_query
-    sdql_result = eval(f'pysdql.query.tpch.Qpostgres.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 63, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.QDuckDB.q{q}({execution_mode}, {threads_count}, {optimize})')
   File "<string>", line 1, in <module>
-  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresQ.py", line 591, in q21
-    write_query(21, tpch_q21(supplier, lineitem, orders, nation).to_sdqlir(optimize))
-  File "T:\pd2sd\pysdql\query\tpch\Qpostgres\postgresT.py", line 777, in tpch_q21
-    df_merge_3 = df_merge_2.merge(inner_cond, left_on=['l_orderkey'], right_on=['l_orderkey'], how="outer",
-  File "T:\pd2sd\pysdql\core\dtypes\DataFrame.py", line 734, in merge
-    next_right_df = right.create_copy(location=f'merge(right)')
-AttributeError: 'ColEl' object has no attribute 'create_copy'
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckQ.py", line 199, in q6
+    sdql_result = Q.query(lineitem_data)
+  File "T:\pd2sd\pysdql\extlib\sdqlpy\sdql_lib.py", line 409, in wrapper
+    return func(*args, **kwargs)
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\Q6.py", line 9, in query
+    df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"l_extendedpricel_discount": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]})
+NameError: name 'df_aggr_1' is not defined
 
 ============================================================
-21:  Error 
+6:  Error 
 ============================================================
