@@ -16,7 +16,9 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (x[0].p_type == economyanodizedsteel) else (None))
     
-    lineitem_part_probe_pre_ops = part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): True})
+    part_1 = part_0.sum(lambda x: {x[0]: {record({"p_partkey": x[0].p_partkey}): True}})
+    
+    lineitem_part_probe_pre_ops = part_1.sum(lambda x: x[1])
     
     lineitem_part_build_nest_dict = li.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
     
@@ -30,21 +32,27 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == america) else (None))
     
-    nation_region_probe_pre_ops = region_0.sum(lambda x: {record({"r_regionkey": x[0].r_regionkey}): True})
+    region_1 = region_0.sum(lambda x: {x[0]: {record({"r_regionkey": x[0].r_regionkey}): True}})
+    
+    nation_region_probe_pre_ops = region_1.sum(lambda x: x[1])
     
     nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
     
     nation_region_0 = nation_region_probe_pre_ops.sum(lambda x: (nation_region_build_nest_dict[x[0].r_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (nation_region_build_nest_dict[x[0].r_regionkey] != None) else (None))
     
-    customer_nation_region_probe_pre_ops = nation_region_0.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey}): True})
+    nation_region_1 = nation_region_0.sum(lambda x: {x[0]: {record({"n_nationkey": x[0].n_nationkey}): True}})
+    
+    customer_nation_region_probe_pre_ops = nation_region_1.sum(lambda x: x[1])
     
     customer_nation_region_build_nest_dict = cu.sum(lambda x: {x[0].c_nationkey: sr_dict({x[0]: x[1]})})
     
     customer_nation_region_0 = customer_nation_region_probe_pre_ops.sum(lambda x: (customer_nation_region_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (customer_nation_region_build_nest_dict[x[0].n_nationkey] != None) else (None))
     
-    orders_lineitem_part_customer_nation_region_probe_pre_ops = customer_nation_region_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey}): True})
+    customer_nation_region_1 = customer_nation_region_0.sum(lambda x: {x[0]: {record({"c_custkey": x[0].c_custkey}): True}})
+    
+    orders_lineitem_part_customer_nation_region_probe_pre_ops = customer_nation_region_1.sum(lambda x: x[1])
     
     orders_lineitem_part_customer_nation_region_build_nest_dict = orders_lineitem_part_customer_nation_region_build_pre_ops.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
     
@@ -73,9 +81,13 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     orders_lineitem_part_customer_nation_region_supplier_nation_6 = orders_lineitem_part_customer_nation_region_supplier_nation_5.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].sum_case_a) / (x[0].sum_volume))})): x[1]})
     
-    orders_lineitem_part_customer_nation_region_supplier_nation_7 = orders_lineitem_part_customer_nation_region_supplier_nation_6.sum(lambda x: {record({"mkt_share": x[0].mkt_share}): True})
+    orders_lineitem_part_customer_nation_region_supplier_nation_7 = orders_lineitem_part_customer_nation_region_supplier_nation_6.sum(lambda x: {x[0]: {record({"mkt_share": x[0].mkt_share}): True}})
     
-    results = orders_lineitem_part_customer_nation_region_supplier_nation_7.sum(lambda x: {record({"mkt_share": x[0].mkt_share}): True})
+    orders_lineitem_part_customer_nation_region_supplier_nation_8 = orders_lineitem_part_customer_nation_region_supplier_nation_7.sum(lambda x: x[1])
+    
+    orders_lineitem_part_customer_nation_region_supplier_nation_9 = orders_lineitem_part_customer_nation_region_supplier_nation_8.sum(lambda x: {x[0]: {record({"mkt_share": x[0].mkt_share}): True}})
+    
+    results = orders_lineitem_part_customer_nation_region_supplier_nation_9.sum(lambda x: x[1])
     
     # Complete
 

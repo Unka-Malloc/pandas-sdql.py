@@ -12,6 +12,7 @@ from pysdql.core.dtypes.AggrFrame import AggrFrame
 from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
 from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
+from pysdql.core.dtypes.ColProjRename import ColProjRename
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ApplyOpExpr import ApplyOpExpr
 from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
@@ -33,6 +34,7 @@ from pysdql.core.dtypes.Optimizer import Optimizer
 from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.ColElAttach import ColElAttach
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
+from pysdql.core.dtypes.SafeColProj import SafeColProjExpr
 from pysdql.core.dtypes.TransExpr import TransExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
@@ -104,8 +106,8 @@ class DataFrame(FlexIR, Retrivable):
         self.__index = index
         self.__dtype = dtype
         self.__name = name if name else varname()
-        self.__columns = columns if columns else self.preset_cols()
-        self.__columns_in = columns if columns else self.preset_cols()
+        self.__columns = copy.copy(columns) if columns else self.preset_cols()
+        self.__columns_in = copy.copy(columns) if columns else self.preset_cols()
         self.__operations = operations if operations else OpSeq()
         self.__retriever = Retriever(self)
         self.__previous_name = previous_name if previous_name else ""
@@ -336,7 +338,7 @@ class DataFrame(FlexIR, Retrivable):
                 else:
                     raise NotImplementedError(f'Unexpected type: {type(op_body.col_expr)}')
             elif isinstance(op_body, ColProjExpr):
-                tmp_cols = op_body.proj_cols.copy()
+                tmp_cols = copy.copy(op_body.proj_cols)
             elif isinstance(op_body, AggrExpr):
                 tmp_cols = [i for i in list(op_body.aggr_op.keys())]
             elif isinstance(op_body, GroupbyAggrExpr):
@@ -612,7 +614,20 @@ class DataFrame(FlexIR, Retrivable):
             else:
                 raise NotImplementedError(f'Unsupported external function {item.func}')
 
-        print(f'Unsupported item {item}')
+        if isinstance(item, MergeIndicator):
+            next_df = self.create_copy(location=f'__getitem__(_merge_indicator)')
+            self.operations.push(OpExpr(op_obj=item,
+                                        op_on=self,
+                                        op_iter=True))
+
+        print(f'Warning: Unsupported __getitem__ {item}')
+
+        next_df = self.create_copy(location=f'__getitem__({type(item)})')
+        # self.operations.push(OpExpr(op_obj=item,
+        #                             op_on=self,
+        #                             op_iter=True))
+
+        return next_df
 
     def __getattr__(self, item):
         if type(item) == str:
@@ -719,10 +734,34 @@ class DataFrame(FlexIR, Retrivable):
             output += op_expr.get_op_name_suffix()
         return output
 
-    def merge(self, right, how='inner', left_on=None, right_on=None, indicator=False, sort=False):
+    def merge(self, right, how='inner', left_on=None, right_on=None, sort=False, suffixes=('_x', '_y'), indicator=False, validate=None):
         if isinstance(right, ColEl):
-            raise NotImplementedError
+            right.relation.push(OpExpr(op_obj=SafeColProjExpr(proj_on=right.relation,
+                                                              proj_cols=[right.field]),
+                                       op_on=right.relation,
+                                       op_iter=False))
 
+            return self.merge_with_dataframe(right=right.relation,
+                                             how=how,
+                                             left_on=left_on,
+                                             right_on=right_on,
+                                             sort=sort,
+                                             suffixes=suffixes,
+                                             indicator=indicator,
+                                             validate=validate)
+
+        if isinstance(right, DataFrame):
+            return self.merge_with_dataframe(right=right,
+                                             how=how,
+                                             left_on=left_on,
+                                             right_on=right_on,
+                                             sort=sort,
+                                             suffixes=suffixes,
+                                             indicator=indicator,
+                                             validate=validate)
+
+
+    def merge_with_dataframe(self, right, how='inner', left_on=None, right_on=None, sort=False, suffixes=('_x', '_y'), indicator=False, validate=None):
         if isinstance(left_on, str) and isinstance(right_on, str):
             pass
 
@@ -767,6 +806,32 @@ class DataFrame(FlexIR, Retrivable):
                                right_on=right_on,
                                joint=tmp_df)
 
+        overlap_cols = list(set(next_left_df.cols_out).intersection(next_right_df.cols_out))
+
+        overlap_left_cols = [f'{i}_x' if i in overlap_cols else i for i in next_left_df.cols_out]
+        overlap_right_cols = [f'{i}_y' if i in overlap_cols else i for i in next_right_df.cols_out]
+
+        col_rename_proj_left = ColProjRename(base_merge=merge_expr,
+                                             from_left=copy.copy(next_left_df.cols_out),
+                                             to_left=overlap_left_cols,
+                                             from_right=copy.copy(next_right_df.cols_out),
+                                             to_right=overlap_right_cols,
+                                             is_left=True)
+
+        col_rename_proj_right = ColProjRename(base_merge=merge_expr,
+                                              from_left=copy.copy(next_left_df.cols_out),
+                                              to_left=overlap_left_cols,
+                                              from_right=copy.copy(next_right_df.cols_out),
+                                              to_right=overlap_right_cols,
+                                              is_right=True)
+
+        col_rename_proj_merge = ColProjRename(base_merge=merge_expr,
+                                              from_left=copy.copy(next_left_df.cols_out),
+                                              to_left=overlap_left_cols,
+                                              from_right=copy.copy(next_right_df.cols_out),
+                                              to_right=overlap_right_cols,
+                                              is_joint=True)
+
         next_left_df.push(OpExpr(op_obj=merge_expr,
                          op_on=[next_left_df, next_right_df],
                          op_iter=True))
@@ -776,6 +841,18 @@ class DataFrame(FlexIR, Retrivable):
                           op_iter=True))
 
         tmp_df.push(OpExpr(op_obj=merge_expr,
+                           op_on=[next_left_df, next_right_df],
+                           op_iter=True))
+
+        next_left_df.push(OpExpr(op_obj=col_rename_proj_left,
+                                 op_on=next_left_df,
+                                 op_iter=True))
+
+        next_right_df.push(OpExpr(op_obj=col_rename_proj_right,
+                                  op_on=next_right_df,
+                                  op_iter=True))
+
+        tmp_df.push(OpExpr(op_obj=col_rename_proj_merge,
                            op_on=[next_left_df, next_right_df],
                            op_iter=True))
 
@@ -1494,8 +1571,9 @@ class DataFrame(FlexIR, Retrivable):
 
         return next_df
 
-    def get_context_unopt(self, rename_last=''):
-        return Optimizer(self).get_unopt_context(rename_last)
+    def get_context_unopt(self, rename_last='', conflict_rename_indicator=False):
+        return Optimizer(self).get_unopt_context(rename_last=rename_last,
+                                                 conflict_rename_indicator=conflict_rename_indicator)
 
     def create_copy(self, next_name="", location=None):
         """

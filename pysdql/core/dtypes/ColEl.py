@@ -454,8 +454,22 @@ class ColEl(FlexIR):
         pass
 
     def mean(self):
-        raise NotImplementedError
-        pass
+        aggr_expr = AggrExpr(aggr_type=AggrType.Scalar,
+                             aggr_on=self.relation,
+                             aggr_op={self.field: self.sdql_ir},
+                             aggr_else=ConstantExpr(0.0),
+                             origin_dict={self.field: (self.field, 'mean')},
+                             is_single_col_op=True)
+
+        op_expr = OpExpr(op_obj=aggr_expr,
+                         op_on=self.relation,
+                         op_iter=True,
+                         iter_on=self.relation,
+                         ret_type=OpRetType.FLOAT)
+
+        self.relation.push(op_expr)
+
+        return aggr_expr
 
     def min(self):
         raise NotImplementedError

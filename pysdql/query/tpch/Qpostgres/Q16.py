@@ -27,9 +27,13 @@ def query(ps, pa, su):
     
     partsupp_part_2 = partsupp_part_1.sum(lambda x: {record({"p_brand": x[0].p_brand, "p_type": x[0].p_type, "p_size": x[0].p_size, "supplier_cnt": dictSize(x[1].supplier_cnt)}): True})
     
-    partsupp_part_3 = partsupp_part_2.sum(lambda x: {record({"supplier_cnt": x[0].supplier_cnt}): True})
+    partsupp_part_3 = partsupp_part_2.sum(lambda x: {x[0]: {record({"supplier_cnt": x[0].supplier_cnt}): True}})
     
-    results = partsupp_part_3.sum(lambda x: {record({"supplier_cnt": x[0].supplier_cnt}): True})
+    partsupp_part_4 = partsupp_part_3.sum(lambda x: x[1])
+    
+    partsupp_part_5 = partsupp_part_4.sum(lambda x: {x[0]: {record({"supplier_cnt": x[0].supplier_cnt}): True}})
+    
+    results = partsupp_part_5.sum(lambda x: x[1])
     
     # Complete
 

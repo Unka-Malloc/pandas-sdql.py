@@ -12,7 +12,9 @@ def query(li, ord, na, su, pa, ps):
     green = "green"
     part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (firstIndex(x[0].p_name, green) != ((-1) * (1))) else (None))
     
-    lineitem_part_probe_pre_ops = part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): True})
+    part_1 = part_0.sum(lambda x: {x[0]: {record({"p_partkey": x[0].p_partkey}): True}})
+    
+    lineitem_part_probe_pre_ops = part_1.sum(lambda x: x[1])
     
     lineitem_part_build_nest_dict = li.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
     
@@ -49,7 +51,9 @@ def query(li, ord, na, su, pa, ps):
     
     orders_lineitem_part_partsupp_supplier_nation_5 = orders_lineitem_part_partsupp_supplier_nation_4.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = orders_lineitem_part_partsupp_supplier_nation_5.sum(lambda x: {record({"sum_profit": x[0].sum_profit}): True})
+    orders_lineitem_part_partsupp_supplier_nation_6 = orders_lineitem_part_partsupp_supplier_nation_5.sum(lambda x: {x[0]: {record({"sum_profit": x[0].sum_profit}): True}})
+    
+    results = orders_lineitem_part_partsupp_supplier_nation_6.sum(lambda x: x[1])
     
     # Complete
 

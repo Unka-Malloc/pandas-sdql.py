@@ -36,9 +36,13 @@ def query(li, cu, ord):
     
     lineitem_orders_lineitem_customer_2 = lineitem_orders_lineitem_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
     
-    lineitem_orders_lineitem_customer_3 = lineitem_orders_lineitem_customer_2.sum(lambda x: {record({"c_name": x[0].c_name, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice, "suml_quantity": x[0].suml_quantity}): True})
+    lineitem_orders_lineitem_customer_3 = lineitem_orders_lineitem_customer_2.sum(lambda x: {x[0]: {record({"c_name": x[0].c_name, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice, "suml_quantity": x[0].suml_quantity}): True}})
     
-    results = lineitem_orders_lineitem_customer_3.sum(lambda x: {record({"c_name": x[0].c_name, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice, "suml_quantity": x[0].suml_quantity}): True})
+    lineitem_orders_lineitem_customer_4 = lineitem_orders_lineitem_customer_3.sum(lambda x: x[1])
+    
+    lineitem_orders_lineitem_customer_5 = lineitem_orders_lineitem_customer_4.sum(lambda x: {x[0]: {record({"c_name": x[0].c_name, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice, "suml_quantity": x[0].suml_quantity}): True}})
+    
+    results = lineitem_orders_lineitem_customer_5.sum(lambda x: x[1])
     
     # Complete
 

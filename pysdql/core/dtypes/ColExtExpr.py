@@ -2,6 +2,7 @@ from pysdql.core.dtypes.FlexIR import FlexIR
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColOpExpr import ColOpExpr
 from pysdql.core.dtypes.EnumUtil import MathSymbol, LogicSymbol
+from pysdql.core.dtypes.IsInExpr import IsInExpr
 
 from pysdql.core.dtypes.sdql_ir import *
 
@@ -203,3 +204,26 @@ class ColExtExpr(FlexIR):
 
     def __repr__(self):
         return str(self.sdql_ir)
+
+    def isin(self, vals):
+        if type(vals) == list or type(vals) == tuple:
+            if len(vals) == 0:
+                raise ValueError()
+            if len(vals) == 1:
+                return vals[0]
+
+            tmp_list = []
+            for i in vals:
+                tmp_list.append(self.gen_cond_expr(operator=CompareSymbol.EQ,
+                                                   unit2=i))
+
+            a = tmp_list.pop()
+            b = tmp_list.pop()
+
+            tmp_cond = a | b
+
+            if tmp_list:
+                for i in tmp_list:
+                    tmp_cond |= i
+
+            return tmp_cond

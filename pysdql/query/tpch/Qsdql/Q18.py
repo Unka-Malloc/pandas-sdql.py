@@ -13,9 +13,7 @@ def query(li, cu, ord):
     
     lineitem_2 = lineitem_1.sum(lambda x: ({x[0]: x[1]}) if (x[0].sum_quantity > 300) else (None))
     
-    lineitem_3 = lineitem_2.sum(lambda x: {x[0]: x[1]})
-    
-    lineitem_orders_isin_pre_ops = lineitem_3.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})
+    lineitem_orders_isin_pre_ops = lineitem_2.sum(lambda x: {x[0]: x[1]})
     
     lineitem_orders_isin_build_index = lineitem_orders_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
     
@@ -23,10 +21,8 @@ def query(li, cu, ord):
     
     customer_orders_build_nest_dict = cu.sum(lambda x: {x[0].c_custkey: sr_dict({x[0]: x[1]})})
     
-    customer_orders_0 = customer_orders_probe_pre_ops.sum(lambda x: (customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    customer_orders_l1_build_pre_ops = customer_orders_probe_pre_ops.sum(lambda x: (customer_orders_build_nest_dict[x[0].o_custkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (customer_orders_build_nest_dict[x[0].o_custkey] != None) else (None))
-    
-    customer_orders_l1_build_pre_ops = customer_orders_0.sum(lambda x: {record({"c_name": x[0].c_name, "c_custkey": x[0].c_custkey, "o_orderkey": x[0].o_orderkey, "o_orderdate": x[0].o_orderdate, "o_totalprice": x[0].o_totalprice}): True})
     
     customer_orders_l1_build_nest_dict = customer_orders_l1_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
     

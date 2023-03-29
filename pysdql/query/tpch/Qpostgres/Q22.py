@@ -13,13 +13,28 @@ def query(cu, cu1, ord):
     v30 = "30"
     v18 = "18"
     v17 = "17"
-    cu1_aggr = cu1.sum(lambda x_cu1: (record({"sum_acctbal": x_cu1[0].c_acctbal, "count_acctbal": 1})) if (((x_cu1[0].c_acctbal > 0.0) * (((((((((((((startsWith(x_cu1[0].c_phone, v13)) + (startsWith(x_cu1[0].c_phone, v31)))) + (startsWith(x_cu1[0].c_phone, v23)))) + (startsWith(x_cu1[0].c_phone, v29)))) + (startsWith(x_cu1[0].c_phone, v30)))) + (startsWith(x_cu1[0].c_phone, v18)))) + (startsWith(x_cu1[0].c_phone, v17)))))) else (None))
+    customer_0 = cu.sum(lambda x: ({x[0]: x[1]}) if (((x[0].c_acctbal > 0.0) * (((((((((((((substr(x[0].c_phone, 0, 1) == v17) + (substr(x[0].c_phone, 0, 1) == v18))) + (substr(x[0].c_phone, 0, 1) == v13))) + (substr(x[0].c_phone, 0, 1) == v31))) + (substr(x[0].c_phone, 0, 1) == v23))) + (substr(x[0].c_phone, 0, 1) == v29))) + (substr(x[0].c_phone, 0, 1) == v30))))) else (None))
     
-    orders_part = ord.sum(lambda x_orders: {x_orders[0].o_custkey: True})
+    customer_1 = customer_0.sum(lambda x: (record({"c_acctbal_sum_for_mean": x[0].c_acctbal, "c_acctbal_count_for_mean": 1.0})) if (x[0].c_acctbal != None) else (0.0))
     
-    customer_aggr = cu.sum(lambda x_customer: (({substr(x_customer[0].c_phone, 0, 1): record({"numcust": 1, "totacctbal": x_customer[0].c_acctbal})}) if (orders_part[x_customer[0].c_custkey] == None) else (None)) if (((x_customer[0].c_acctbal > ((cu1_aggr.sum_acctbal) / (cu1_aggr.count_acctbal))) * (((((((((((((startsWith(x_customer[0].c_phone, v13)) + (startsWith(x_customer[0].c_phone, v31)))) + (startsWith(x_customer[0].c_phone, v23)))) + (startsWith(x_customer[0].c_phone, v29)))) + (startsWith(x_customer[0].c_phone, v30)))) + (startsWith(x_customer[0].c_phone, v18)))) + (startsWith(x_customer[0].c_phone, v17)))))) else (None))
+    avgc_acctbal_el_0_c_acctbal_mean = ((customer_1.c_acctbal_sum_for_mean) / (customer_1.c_acctbal_count_for_mean))
+    orders_customer_probe_pre_ops = cu.sum(lambda x: ({x[0]: x[1]}) if (((x[0].c_acctbal > avgc_acctbal_el_0_c_acctbal_mean) * (((((((((((((substr(x[0].c_phone, 0, 1) == v17) + (substr(x[0].c_phone, 0, 1) == v18))) + (substr(x[0].c_phone, 0, 1) == v13))) + (substr(x[0].c_phone, 0, 1) == v31))) + (substr(x[0].c_phone, 0, 1) == v23))) + (substr(x[0].c_phone, 0, 1) == v29))) + (substr(x[0].c_phone, 0, 1) == v30))))) else (None))
     
-    results = customer_aggr.sum(lambda x_customer_aggr: {record({"cntrycode": x_customer_aggr[0], "numcust": x_customer_aggr[1].numcust, "totacctbal": x_customer_aggr[1].totacctbal}): True})
+    customer_orders_build_nest_dict = ord.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
+    
+    customer_orders_0 = orders_customer_probe_pre_ops.sum(lambda x: ({x[0]: True}) if (customer_orders_build_nest_dict[x[0].c_custkey] == None) else (None))
+    
+    customer_orders_1 = customer_orders_0.sum(lambda x: {x[0]: x[1]})
+    
+    customer_orders_2 = customer_orders_1.sum(lambda x: {x[0].concat(record({"cntrycode": substr(x[0].c_phone, 0, 1)})): x[1]})
+    
+    customer_orders_3 = customer_orders_2.sum(lambda x: {record({"cntrycode": x[0].cntrycode}): record({"numcust": (1.0) if (x[0].cntrycode != None) else (0.0), "totacctbal": x[0].c_acctbal})})
+    
+    customer_orders_4 = customer_orders_3.sum(lambda x: {x[0].concat(x[1]): True})
+    
+    customer_orders_5 = customer_orders_4.sum(lambda x: {x[0]: {record({"numcust": x[0].numcust, "totacctbal": x[0].totacctbal}): True}})
+    
+    results = customer_orders_5.sum(lambda x: x[1])
     
     # Complete
 

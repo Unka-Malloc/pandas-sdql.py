@@ -16,7 +16,9 @@ def query(li):
     
     lineitem_4 = lineitem_3.sum(lambda x: {record({"l_returnflag": x[0].l_returnflag, "l_linestatus": x[0].l_linestatus, "sum_qty": x[1].sum_qty, "sum_base_price": x[1].sum_base_price, "sum_disc_price": x[1].sum_disc_price, "sum_charge": x[1].sum_charge, "avg_qty": ((x[1].avg_qty_sum_for_mean) / (x[1].avg_qty_count_for_mean)), "avg_price": ((x[1].avg_price_sum_for_mean) / (x[1].avg_price_count_for_mean)), "avg_disc": ((x[1].avg_disc_sum_for_mean) / (x[1].avg_disc_count_for_mean)), "count_order": x[1].count_order}): True})
     
-    results = lineitem_4.sum(lambda x: {record({"sum_qty": x[0].sum_qty, "sum_base_price": x[0].sum_base_price, "sum_disc_price": x[0].sum_disc_price, "sum_charge": x[0].sum_charge, "avg_qty": x[0].avg_qty, "avg_price": x[0].avg_price, "avg_disc": x[0].avg_disc, "count_order": x[0].count_order}): True})
+    lineitem_5 = lineitem_4.sum(lambda x: {x[0]: {record({"sum_qty": x[0].sum_qty, "sum_base_price": x[0].sum_base_price, "sum_disc_price": x[0].sum_disc_price, "sum_charge": x[0].sum_charge, "avg_qty": x[0].avg_qty, "avg_price": x[0].avg_price, "avg_disc": x[0].avg_disc, "count_order": x[0].count_order}): True}})
+    
+    results = lineitem_5.sum(lambda x: x[1])
     
     # Complete
 

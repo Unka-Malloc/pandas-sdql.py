@@ -9,14 +9,18 @@ def query(ps, su, na):
     germany = "GERMANY"
     nation_0 = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == germany) else (None))
     
-    supplier_nation_probe_pre_ops = nation_0.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey}): True})
+    nation_1 = nation_0.sum(lambda x: {x[0]: {record({"n_nationkey": x[0].n_nationkey}): True}})
+    
+    supplier_nation_probe_pre_ops = nation_1.sum(lambda x: x[1])
     
     supplier_nation_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
     
     supplier_nation_0 = supplier_nation_probe_pre_ops.sum(lambda x: (supplier_nation_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_nation_build_nest_dict[x[0].n_nationkey] != None) else (None))
     
-    partsupp_supplier_nation_probe_pre_ops = supplier_nation_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey}): True})
+    supplier_nation_1 = supplier_nation_0.sum(lambda x: {x[0]: {record({"s_suppkey": x[0].s_suppkey}): True}})
+    
+    partsupp_supplier_nation_probe_pre_ops = supplier_nation_1.sum(lambda x: x[1])
     
     partsupp_supplier_nation_build_nest_dict = ps.sum(lambda x: {x[0].ps_suppkey: sr_dict({x[0]: x[1]})})
     
@@ -33,14 +37,18 @@ def query(ps, su, na):
     
     nation_0 = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == germany) else (None))
     
-    supplier_nation_probe_pre_ops = nation_0.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey}): True})
+    nation_1 = nation_0.sum(lambda x: {x[0]: {record({"n_nationkey": x[0].n_nationkey}): True}})
+    
+    supplier_nation_probe_pre_ops = nation_1.sum(lambda x: x[1])
     
     supplier_nation_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
     
     supplier_nation_0 = supplier_nation_probe_pre_ops.sum(lambda x: (supplier_nation_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_nation_build_nest_dict[x[0].n_nationkey] != None) else (None))
     
-    partsupp_supplier_nation_probe_pre_ops = supplier_nation_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey}): True})
+    supplier_nation_1 = supplier_nation_0.sum(lambda x: {x[0]: {record({"s_suppkey": x[0].s_suppkey}): True}})
+    
+    partsupp_supplier_nation_probe_pre_ops = supplier_nation_1.sum(lambda x: x[1])
     
     partsupp_supplier_nation_build_nest_dict = ps.sum(lambda x: {x[0].ps_suppkey: sr_dict({x[0]: x[1]})})
     
@@ -52,9 +60,13 @@ def query(ps, su, na):
     sumps_supplycostps_availqty00001_el_0_JQ_JQ_ps_supplycost_mul_ps_availqty_XZ_mul_00001_XZ = ((partsupp_supplier_nation_1.JQ_ps_supplycost_mul_ps_availqty_XZ) * (0.0001))
     partsupp_supplier_nation_5 = partsupp_supplier_nation_4.sum(lambda x: ({x[0]: x[1]}) if (x[0].sumps_supplycostps_availqty > sumps_supplycostps_availqty00001_el_0_JQ_JQ_ps_supplycost_mul_ps_availqty_XZ_mul_00001_XZ) else (None))
     
-    partsupp_supplier_nation_6 = partsupp_supplier_nation_5.sum(lambda x: {record({"value": x[0].value}): True})
+    partsupp_supplier_nation_6 = partsupp_supplier_nation_5.sum(lambda x: {x[0]: {record({"value": x[0].value}): True}})
     
-    results = partsupp_supplier_nation_6.sum(lambda x: {record({"value": x[0].value}): True})
+    partsupp_supplier_nation_7 = partsupp_supplier_nation_6.sum(lambda x: x[1])
+    
+    partsupp_supplier_nation_8 = partsupp_supplier_nation_7.sum(lambda x: {x[0]: {record({"value": x[0].value}): True}})
+    
+    results = partsupp_supplier_nation_8.sum(lambda x: x[1])
     
     # Complete
 

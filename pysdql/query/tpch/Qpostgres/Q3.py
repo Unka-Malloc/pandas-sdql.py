@@ -13,7 +13,9 @@ def query(li, cu, ord):
     
     customer_0 = cu.sum(lambda x: ({x[0]: x[1]}) if (x[0].c_mktsegment == building) else (None))
     
-    orders_customer_probe_pre_ops = customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey}): True})
+    customer_1 = customer_0.sum(lambda x: {x[0]: {record({"c_custkey": x[0].c_custkey}): True}})
+    
+    orders_customer_probe_pre_ops = customer_1.sum(lambda x: x[1])
     
     orders_customer_build_nest_dict = orders_customer_build_pre_ops.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
     
@@ -31,9 +33,13 @@ def query(li, cu, ord):
     
     lineitem_orders_customer_3 = lineitem_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    lineitem_orders_customer_4 = lineitem_orders_customer_3.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_orders_customer_4 = lineitem_orders_customer_3.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
     
-    results = lineitem_orders_customer_4.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_orders_customer_5 = lineitem_orders_customer_4.sum(lambda x: x[1])
+    
+    lineitem_orders_customer_6 = lineitem_orders_customer_5.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
+    
+    results = lineitem_orders_customer_6.sum(lambda x: x[1])
     
     # Complete
 
