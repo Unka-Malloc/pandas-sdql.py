@@ -106,9 +106,6 @@ import pysdql
 # test single query
 pysdql.tpch_query(1)
 
-# test single query
-pysdql.tpch_query(1)
-
 # test a range of queries
 pysdql.tpch_query(range(1, 11))
 
