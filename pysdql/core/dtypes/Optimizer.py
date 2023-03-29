@@ -682,7 +682,28 @@ class Optimizer:
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
-            elif isinstance(op_body, (ColProjExpr, SafeColProjExpr)):
+            elif isinstance(op_body, SafeColProjExpr):
+                tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+
+                final_cols = []
+
+                for i in op_body.proj_cols:
+                    final_cols.append(i)
+
+                rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
+
+                proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                tmp_it.iter_op = proj_op
+
+                # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+
+                unopt_context.append(
+                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                            valExpr=tmp_it.sdql_ir,
+                            bodyExpr=ConstantExpr(True))
+                )
+            elif isinstance(op_body, ColProjExpr):
                 if col_attach_cache:
                     tmp_it = IterForm(col_attach_name, tmp_el_on)
 
@@ -701,8 +722,11 @@ class Optimizer:
                     )
                 elif self.retriever.check_last(op_body) \
                         or (len(op_body.proj_cols) == 1
-                            and self.retriever.check_as_merge_key(op_body.proj_cols[0]))\
+                            and self.retriever.check_as_merge_key(op_body.proj_cols[0])) \
+                        or (False) \
                         or (allow_projection):
+
+                    # self.retriever.check_next(op_body, MergeExpr)
 
                     if self.retriever.findall_col_insert_as_list():
                         continue
@@ -784,14 +808,34 @@ class Optimizer:
 
                     if op_body.is_left:
                         # print(op_body.from_left)
-                        rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
-                                    for i, j in zip(op_body.from_left, op_body.to_left)]
+                        rec_list = []
+
+                        used = []
+
+                        for i, j in zip(op_body.from_left, op_body.to_left):
+                            if j == i:
+                                rec_list.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                            else:
+                                if j not in used:
+                                    rec_list.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                                    rec_list.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                                    used.append(j)
 
                         # print(f'rename for {self.opt_on.name}, to {op_body.to_left}')
                     elif op_body.is_right:
                         # print(op_body.from_right)
-                        rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
-                                    for i, j in zip(op_body.from_right, op_body.to_right)]
+                        rec_list = []
+
+                        used = []
+
+                        for i, j in zip(op_body.from_right, op_body.to_right):
+                            if j == i:
+                                rec_list.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                            else:
+                                if j not in used:
+                                    rec_list.append((j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                                    rec_list.append((i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)))
+                                    used.append(j)
 
                         # print(f'rename for {self.opt_on.name}, to {op_body.to_right}')
                     else:
@@ -842,8 +886,8 @@ class Optimizer:
 
                         unopt_context += free_expr.create_from.get_context_unopt()
 
-                if isinstance(op_body, CondExpr):
-                    print(self.retriever.find_calc_in_cond(op_body))
+                # if isinstance(op_body, CondExpr):
+                #     print(self.retriever.find_calc_in_cond(op_body))
 
                 # if any([(i not in self.opt_on.cols_out)
                 #         & (i not in self.retriever.find_cols_used('groupby_aggr'))

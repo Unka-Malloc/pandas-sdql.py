@@ -1809,3 +1809,20 @@ class Retriever:
                 return op_body
 
         return None
+
+    def check_next(self, given, expected):
+        ok_flag = False
+
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if ok_flag:
+                if isinstance(op_body, expected):
+                    return True
+                else:
+                    return False
+
+            if self.equals(op_body, given):
+                ok_flag = True
+
+        return False

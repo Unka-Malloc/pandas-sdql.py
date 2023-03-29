@@ -797,11 +797,11 @@ def tpch_q21(supplier, lineitem, orders, nation):
         .agg(
         numwait=("s_name", "count"),
     )
-    df_group_1 = df_group_1[['numwait']]
-    df_sort_3 = df_group_1.sort_values(by=['numwait', 's_name'], ascending=[False, True])
-    df_sort_3 = df_sort_3[['numwait']]
-    df_limit_1 = df_sort_3.head(100)
-    return df_limit_1
+    # df_group_1 = df_group_1[['numwait']]
+    # df_sort_3 = df_group_1.sort_values(by=['numwait', 's_name'], ascending=[False, True])
+    # df_sort_3 = df_sort_3[['numwait']]
+    # df_limit_1 = df_sort_3.head(100)
+    return df_group_1
 
 
 def tpch_q22(customer, orders):

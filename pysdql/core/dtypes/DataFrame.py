@@ -816,12 +816,18 @@ class DataFrame(FlexIR, Retrivable):
 
         overlap_cols = list(set(next_left_df.cols_out).intersection(next_right_df.cols_out))
 
-        if overlap_cols:
-            print(next_left_df, next_left_df.cols_out)
-            print(next_right_df, next_right_df.cols_out)
+        all_cols_used = self.retriever.findall_cols_used(as_owner=False,
+                                                         only_next=False)
 
-            overlap_left_cols = [f'{i}{suffixes[0]}' if i in overlap_cols else i for i in next_left_df.cols_out]
-            overlap_right_cols = [f'{i}{suffixes[1]}' if i in overlap_cols else i for i in next_right_df.cols_out]
+        used_overlap_cols = []
+
+        for i in overlap_cols:
+            if i in all_cols_used:
+                used_overlap_cols.append(i)
+
+        if used_overlap_cols:
+            overlap_left_cols = [f'{i}{suffixes[0]}' if i in used_overlap_cols else i for i in next_left_df.cols_out]
+            overlap_right_cols = [f'{i}{suffixes[1]}' if i in used_overlap_cols else i for i in next_right_df.cols_out]
 
             col_rename_proj_left = ColProjRename(base_merge=merge_expr,
                                                  from_left=copy.copy(next_left_df.cols_out),
