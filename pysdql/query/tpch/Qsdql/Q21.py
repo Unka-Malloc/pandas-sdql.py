@@ -22,15 +22,11 @@ def query(su, li, ord, na):
     
     l3_1 = l3_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"l3_size": (1.0) if (x[0].l_suppkey != None) else (0.0)})})
     
-    l3_2 = l3_1.sum(lambda x: {x[0].concat(x[1]): True})
-    
-    l3_l2_lineitem_build_pre_ops = l3_2.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l3_size": x[0].l3_size}): True})
+    l3_l2_lineitem_build_pre_ops = l3_1.sum(lambda x: {x[0].concat(x[1]): True})
     
     l2_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"l2_size": (1.0) if (x[0].l_suppkey != None) else (0.0)})})
     
-    l2_1 = l2_0.sum(lambda x: {x[0].concat(x[1]): True})
-    
-    l2_lineitem_build_pre_ops = l2_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l2_size": x[0].l2_size}): True})
+    l2_lineitem_build_pre_ops = l2_0.sum(lambda x: {x[0].concat(x[1]): True})
     
     l2_lineitem_probe_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     

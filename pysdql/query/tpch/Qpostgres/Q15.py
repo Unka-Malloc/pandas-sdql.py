@@ -32,7 +32,9 @@ def query(li, su):
     supplier_df_rename_1_0 = supplier_df_rename_1_probe_pre_ops.sum(lambda x: (supplier_df_rename_1_build_nest_dict[x[0].supplier_no].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_df_rename_1_build_nest_dict[x[0].supplier_no] != None) else (None))
     
-    results = supplier_df_rename_1_0.sum(lambda x: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "total_revenue": x[0].total_revenue}): True})
+    supplier_df_rename_1_1 = supplier_df_rename_1_0.sum(lambda x: {x[0]: {record({"s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "total_revenue": x[0].total_revenue}): True}})
+    
+    results = supplier_df_rename_1_1.sum(lambda x: x[1])
     
     # Complete
 

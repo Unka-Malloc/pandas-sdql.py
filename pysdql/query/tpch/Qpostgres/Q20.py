@@ -9,7 +9,11 @@ def query(su, na, ps, pa, li):
     # Insert
     canada = "CANADA"
     forest = "forest"
-    supplier_nation_probe_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == canada) else (None))
+    nation_0 = na.sum(lambda x: ({x[0]: x[1]}) if (x[0].n_name == canada) else (None))
+    
+    nation_1 = nation_0.sum(lambda x: {x[0]: {record({"n_nationkey": x[0].n_nationkey}): True}})
+    
+    supplier_nation_probe_pre_ops = nation_1.sum(lambda x: x[1])
     
     supplier_nation_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
     
@@ -49,9 +53,13 @@ def query(su, na, ps, pa, li):
     
     supplier_nation_1 = supplier_nation_0.sum(lambda x: ({x[0]: x[1]}) if (partsupp_lineitem_partsupp_part_supplier_nation_isin_build_index[x[0].s_suppkey] != None) else (None))
     
-    supplier_nation_2 = supplier_nation_1.sum(lambda x: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True})
+    supplier_nation_2 = supplier_nation_1.sum(lambda x: {x[0]: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True}})
     
-    results = supplier_nation_2.sum(lambda x: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True})
+    supplier_nation_3 = supplier_nation_2.sum(lambda x: x[1])
+    
+    supplier_nation_4 = supplier_nation_3.sum(lambda x: {x[0]: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True}})
+    
+    results = supplier_nation_4.sum(lambda x: x[1])
     
     # Complete
 

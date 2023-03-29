@@ -9,7 +9,9 @@ def query(li, cu, ord, re, na, su):
     asia = "ASIA"
     region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == asia) else (None))
     
-    nation_region_probe_pre_ops = region_0.sum(lambda x: {record({"r_regionkey": x[0].r_regionkey}): True})
+    region_1 = region_0.sum(lambda x: {x[0]: {record({"r_regionkey": x[0].r_regionkey}): True}})
+    
+    nation_region_probe_pre_ops = region_1.sum(lambda x: x[1])
     
     nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
     
@@ -44,9 +46,13 @@ def query(li, cu, ord, re, na, su):
     
     lineitem_supplier_nation_region_orders_customer_3 = lineitem_supplier_nation_region_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    lineitem_supplier_nation_region_orders_customer_4 = lineitem_supplier_nation_region_orders_customer_3.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_supplier_nation_region_orders_customer_4 = lineitem_supplier_nation_region_orders_customer_3.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
     
-    results = lineitem_supplier_nation_region_orders_customer_4.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_supplier_nation_region_orders_customer_5 = lineitem_supplier_nation_region_orders_customer_4.sum(lambda x: x[1])
+    
+    lineitem_supplier_nation_region_orders_customer_6 = lineitem_supplier_nation_region_orders_customer_5.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
+    
+    results = lineitem_supplier_nation_region_orders_customer_6.sum(lambda x: x[1])
     
     # Complete
 

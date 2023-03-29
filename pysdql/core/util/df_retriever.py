@@ -2,6 +2,7 @@ from pysdql.core.dtypes.AddColProj import AddColProj
 from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.FreeStateVarDefExpr import FreeStateVar
+from pysdql.core.dtypes.MergeIndicator import MergeIndicator
 from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
@@ -1796,3 +1797,12 @@ class Retriever:
                 if isinstance(op_body.right_on, str):
                     if target == op_body.right_on:
                         return True
+
+    def find_merge_indicator(self):
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, MergeIndicator):
+                return op_body
+
+        return None

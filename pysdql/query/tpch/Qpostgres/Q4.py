@@ -11,11 +11,13 @@ def query(ord, li):
     
     lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_commitdate < x[0].l_receiptdate) else (None))
     
-    lineitem_1 = lineitem_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    lineitem_1 = lineitem_0.sum(lambda x: {x[0]: {record({"l_orderkey": x[0].l_orderkey}): True}})
     
-    lineitem_2 = lineitem_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    lineitem_2 = lineitem_1.sum(lambda x: x[1])
     
-    orders_lineitem_probe_pre_ops = lineitem_2.sum(lambda x: {x[0]: x[1]})
+    lineitem_3 = lineitem_2.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    
+    orders_lineitem_probe_pre_ops = lineitem_3.sum(lambda x: {x[0]: x[1]})
     
     orders_lineitem_build_nest_dict = orders_lineitem_build_pre_ops.sum(lambda x: {x[0].o_orderkey: sr_dict({x[0]: x[1]})})
     
@@ -26,7 +28,9 @@ def query(ord, li):
     
     orders_lineitem_2 = orders_lineitem_1.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = orders_lineitem_2.sum(lambda x: {record({"order_count": x[0].order_count}): True})
+    orders_lineitem_3 = orders_lineitem_2.sum(lambda x: {x[0]: {record({"order_count": x[0].order_count}): True}})
+    
+    results = orders_lineitem_3.sum(lambda x: x[1])
     
     # Complete
 

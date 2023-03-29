@@ -13,19 +13,19 @@ if __name__ == '__main__':
 
     # opt_single = pysdql.tpch_query(5, verbose=True, optimize=True)
 
-    unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
+    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
     # unopt_single = pysdql.tpch_query(17, verbose=True, optimize=False, mode='postgres')
 
     # fix 22
 
-    # unopt_some = pysdql.tpch_query([7, 13, 20, 22], verbose=True, optimize=False)
+    # psql = pysdql.tpch_query(range(1, 23), verbose=True, optimize=True, mode='postgres')
 
-    # psql_verified = pysdql.tpch_query([1, 6, 12, 13, 14], verbose=True, optimize=True, mode='postgres')
+    psql_unopt = pysdql.tpch_query(18, verbose=True, optimize=False, mode='postgres')
 
-    # psql = pysdql.tpch_query(3, verbose=True, optimize=True, mode='postgres')
-
-    # psql_unopt = pysdql.tpch_query(11, verbose=True, optimize=False, mode='postgres')
+    # with column projection everywhere:
+    # fail: 1, 4, 9
+    # error: 18
 
     # psql_unopt_verified = pysdql.tpch_query([1, 3, 4, 5, 6, 10, 12, 13, 14, 16, 19], verbose=True, optimize=False, mode='postgres')
 

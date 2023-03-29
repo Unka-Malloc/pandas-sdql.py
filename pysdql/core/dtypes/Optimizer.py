@@ -1,3 +1,5 @@
+import copy
+
 from pysdql.core.dtypes import OldColOpExpr, ColOpExpr
 from pysdql.core.dtypes.AggrExpr import AggrExpr
 from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
@@ -7,6 +9,7 @@ from pysdql.core.dtypes.CalcExpr import CalcExpr
 from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
 from pysdql.core.dtypes.ColElAttach import ColElAttach
 from pysdql.core.dtypes.ColProjExpr import ColProjExpr
+from pysdql.core.dtypes.ColProjRename import ColProjRename
 from pysdql.core.dtypes.CondExpr import CondExpr
 from pysdql.core.dtypes.ColExtExpr import ColExtExpr
 from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
@@ -614,8 +617,10 @@ class Optimizer:
             print('Unknown Last Operation:', type(last_op), last_op)
             raise NotImplementedError
 
-    def get_unopt_context(self, rename_last=''):
+    def get_unopt_context(self, rename_last='', conflict_rename_indicator=False):
         this_name = self.opt_on.current_name
+
+        merge_rename_indicator = False
 
         # print(this_name)
         # print(self.opt_on.operations)
@@ -684,7 +689,12 @@ class Optimizer:
                     )
                 elif self.retriever.check_last(op_body) \
                         or (len(op_body.proj_cols) == 1
-                            and self.retriever.check_as_merge_key(op_body.proj_cols[0])):
+                            and self.retriever.check_as_merge_key(op_body.proj_cols[0]))\
+                        or (allow_projection):
+
+                    if self.retriever.findall_col_insert_as_list():
+                        continue
+
                     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                     final_cols = []
@@ -698,46 +708,109 @@ class Optimizer:
                     rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
 
                     proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+                    # proj_op = sr_dict(dict(proj_op.initialPairs))
 
-                    tmp_it.iter_op = proj_op
+                    # tmp_it.iter_op = proj_op
 
-                    # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+                    tmp_it.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                   proj_op)])
 
                     unopt_context.append(
                         LetExpr(varExpr=VarExpr(tmp_vn_nx),
                                 valExpr=tmp_it.sdql_ir,
                                 bodyExpr=ConstantExpr(True))
                     )
+
+                    unopt_count += 1
+
+                    tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
+                    tmp_vn_nx = f'{this_name}_{unopt_count}'
+
+                    tmp_it_2 = IterForm(tmp_vn_on_2, tmp_el_on)
+
+                    tmp_it_2.iter_op = PairAccessExpr(VarExpr(tmp_el_on), 1)
+
+                    unopt_context.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it_2.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
                 else:
-                    if allow_projection:
-                        if self.retriever.findall_col_insert_as_list():
-                            continue
+                    # if allow_projection:
+                    #     if self.retriever.findall_col_insert_as_list():
+                    #         continue
+                    #
+                    #     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+                    #
+                    #     final_cols = []
+                    #
+                    #     for i in op_body.proj_cols:
+                    #         final_cols.append(i)
+                    #
+                    #     for j in self.retriever.findall_additional_columns():
+                    #         final_cols.append(j)
+                    #
+                    #     rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
+                    #
+                    #     proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+                    #
+                    #     tmp_it.iter_op = proj_op
+                    #
+                    #     # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+                    #
+                    #     unopt_context.append(
+                    #         LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                    #                 valExpr=tmp_it.sdql_ir,
+                    #                 bodyExpr=ConstantExpr(True))
+                    #     )
+                    # else:
+                    continue
+            elif isinstance(op_body, ColProjRename):
+                if conflict_rename_indicator:
+                    tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
-                        tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+                    if op_body.is_left:
+                        rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
+                                    for i, j in zip(op_body.from_left, op_body.to_left)]
 
-                        final_cols = []
+                        print(f'rename for {self.opt_on.name}, to {op_body.to_left}')
+                    elif op_body.is_right:
+                        rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
+                                    for i, j in zip(op_body.from_right, op_body.to_right)]
 
-                        for i in op_body.proj_cols:
-                            final_cols.append(i)
-
-                        for j in self.retriever.findall_additional_columns():
-                            final_cols.append(j)
-
-                        rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
-
-                        proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
-
-                        tmp_it.iter_op = proj_op
-
-                        # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
-
-                        unopt_context.append(
-                            LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                    valExpr=tmp_it.sdql_ir,
-                                    bodyExpr=ConstantExpr(True))
-                        )
+                        print(f'rename for {self.opt_on.name}, to {op_body.to_right}')
                     else:
                         continue
+
+                    proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+
+                    tmp_it.iter_op = proj_op
+
+                    tmp_it.iter_op = DicConsExpr([(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                   sr_dict(dict(proj_op.initialPairs)))])
+
+                    unopt_context.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
+
+                    unopt_count += 1
+
+                    tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
+                    tmp_vn_nx = f'{this_name}_{unopt_count}'
+
+                    tmp_it_2 = IterForm(tmp_vn_on_2, tmp_el_on)
+
+                    tmp_it_2.iter_op = PairAccessExpr(VarExpr(tmp_el_on), 1)
+
+                    unopt_context.append(
+                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                valExpr=tmp_it_2.sdql_ir,
+                                bodyExpr=ConstantExpr(True))
+                    )
+                else:
+                    continue
             elif is_cond(op_body):
                 if isinstance(op_body, (CondExpr, ColExtExpr)):
                     if op_body.is_apply_cond:
@@ -969,12 +1042,31 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, MergeExpr):
+                overlap_cols = list(set(op_body.left.cols_out).intersection(op_body.right.cols_out))
+
+                # overlap_left_cols = [f'{i}_x' if i in overlap_cols else i for i in op_body.left.cols_out]
+                # overlap_right_cols = [f'{i}_y' if i in overlap_cols else i for i in op_body.right.cols_out]
+
+                if overlap_cols:
+                    # print(f'rename {overlap_cols}')
+                    # print(f'left rename: {overlap_left_cols}')
+                    # print(f'right rename: {overlap_right_cols}')
+
+                    all_cols_used = self.retriever.findall_cols_used(as_owner=False,
+                                                                     only_next=False)
+
+                    if any([(f'{i}_x' in all_cols_used) | (f'{i}_y' in all_cols_used) for i in overlap_cols]):
+                        merge_rename_indicator = True
+
                 if op_body.how == 'inner':
                     if self.opt_on.current_name == op_body.joint.current_name:
+                        # print(f'processing {self.opt_on.current_name} {op_body}')
+
                         build_prev_count = 0
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
-                        left_unopt_context = op_body.left.get_context_unopt(rename_last=build_prev_ops_name)
+                        left_unopt_context = op_body.left.get_context_unopt(rename_last=build_prev_ops_name,
+                                                                            conflict_rename_indicator=merge_rename_indicator)
 
                         for o in left_unopt_context:
                             unopt_context.append(o)
@@ -987,7 +1079,8 @@ class Optimizer:
                         probe_prev_count = 0
                         probe_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_probe_pre_ops'
 
-                        right_unopt_context = op_body.right.get_context_unopt(rename_last=probe_prev_ops_name)
+                        right_unopt_context = op_body.right.get_context_unopt(rename_last=probe_prev_ops_name,
+                                                                              conflict_rename_indicator=merge_rename_indicator)
 
                         for o in right_unopt_context:
                             unopt_context.append(o)
@@ -1188,8 +1281,126 @@ class Optimizer:
                         )
                     else:
                         continue
+                elif op_body.how == 'outer':
+                    if self.opt_on.name == op_body.joint.name:
+                        merge_indicator = self.retriever.find_merge_indicator()
+
+                        if merge_indicator:
+                            if merge_indicator.left_only:
+                                build_on = op_body.right
+                                probe_on = op_body.left
+                                build_key = op_body.right_on
+                                probe_key = op_body.left_on
+
+                                build_prev_count = 0
+                                build_prev_ops_name = f'{build_on.current_name}_{probe_on.current_name}_build_pre_ops'
+
+                                for o in build_on.get_context_unopt(rename_last=build_prev_ops_name):
+                                    unopt_context.append(o)
+                                    build_prev_count += 1
+
+                                build_prev_ops_name = map_name_to_dataset(
+                                    build_on.name) if build_prev_count == 0 else build_prev_ops_name
+
+                                build_side_name = build_prev_ops_name
+
+                                probe_prev_count = 0
+                                probe_prev_ops_name = f'{build_on.current_name}_{probe_on.current_name}_probe_pre_ops'
+
+                                for o in probe_on.get_context_unopt(rename_last=probe_prev_ops_name):
+                                    unopt_context.append(o)
+                                    probe_prev_count += 1
+
+                                probe_prev_ops_name = map_name_to_dataset(
+                                    probe_on.name) if probe_prev_count == 0 else probe_prev_ops_name
+
+                                probe_side_name = probe_prev_ops_name
+
+                                tmp_it = IterForm(build_side_name, tmp_el_on)
+
+                                if isinstance(build_key, str):
+                                    tmp_it.iter_op = DicConsExpr([(RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                                 str(build_key)),
+                                                                   sr_dict({PairAccessExpr(VarExpr(tmp_el_on), 0):
+                                                                                PairAccessExpr(VarExpr(tmp_el_on),
+                                                                                               1)}))])
+                                elif isinstance(build_key, list):
+                                    tmp_it.iter_op = DicConsExpr([(RecConsExpr([(c,
+                                                                                 RecAccessExpr(
+                                                                                     PairAccessExpr(VarExpr(tmp_el_on),
+                                                                                                    0),
+                                                                                     c))
+                                                                                for c in build_key]),
+                                                                   sr_dict({PairAccessExpr(VarExpr(tmp_el_on), 0):
+                                                                                PairAccessExpr(VarExpr(tmp_el_on),
+                                                                                               1)}))])
+
+                                tmp_build_side_name = f'{self.opt_on.name}_build_nest_dict'
+
+                                unopt_context.append(
+                                    LetExpr(varExpr=VarExpr(tmp_build_side_name),
+                                            valExpr=tmp_it.sdql_ir,
+                                            bodyExpr=ConstantExpr(True))
+                                )
+
+                                tmp_it = IterForm(probe_side_name, tmp_el_on)
+
+                                if isinstance(probe_key, str):
+                                    cond_expr = CompareExpr(CompareSymbol.EQ,
+                                                            DicLookupExpr(VarExpr(tmp_build_side_name),
+                                                                          RecAccessExpr(
+                                                                              PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                                                              probe_key)),
+                                                            ConstantExpr(None))
+
+                                    tmp_it.iter_cond.append(cond_expr)
+
+                                    tmp_it.iter_op = DicConsExpr(
+                                        [(PairAccessExpr(VarExpr(tmp_el_on), 0), ConstantExpr(True))])
+
+                                    tmp_it.iter_else = ConstantExpr(None)
+
+                                elif isinstance(op_body.right_on, list):
+                                    raise NotImplementedError
+                                    # tmp_it.iter_cond.append(CompareExpr(CompareSymbol.NE,
+                                    #                                     DicLookupExpr(VarExpr(tmp_build_side_name),
+                                    #                                                   RecConsExpr([(c,
+                                    #                                                                 RecAccessExpr(
+                                    #                                                                     PairAccessExpr(
+                                    #                                                                         VarExpr(tmp_el_on),
+                                    #                                                                         0),
+                                    #                                                                     c))
+                                    #                                                                for c in op_body.right_on])),
+                                    #                                     ConstantExpr(None)))
+                                    #
+                                    # tmp_it.iter_op = DicConsExpr([(SumExpr(VarExpr('y'), DicLookupExpr(VarExpr(tmp_build_side_name),
+                                    #                                                                    RecConsExpr([(c,
+                                    #                                                                                  RecAccessExpr(
+                                    #                                                                                      PairAccessExpr(
+                                    #                                                                                          VarExpr(
+                                    #                                                                                              tmp_el_on),
+                                    #                                                                                          0),
+                                    #                                                                                      c))
+                                    #                                                                                 for c in
+                                    #                                                                                 op_body.right_on])),
+                                    #                                        ConcatExpr(PairAccessExpr(VarExpr(tmp_el_on), 0),
+                                    #                                                   PairAccessExpr(VarExpr('y'), 0))
+                                    #                                        ),
+                                    #                                ConstantExpr(True))])
+
+                                unopt_context.append(
+                                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                            valExpr=tmp_it.sdql_ir,
+                                            bodyExpr=ConstantExpr(True))
+                                )
+                            elif merge_indicator.right_only:
+                                raise NotImplementedError
+                            else:
+                                raise NotImplementedError
                 else:
                     print(f'Warning: Not implemented {op_body.how} join')
+
+                    continue
             elif isinstance(op_body, NewColListExpr):
                 if len(op_body.col_list) == 1:
                     target_expr = op_body.col_list[0]
@@ -1214,6 +1425,18 @@ class Optimizer:
                         # )
 
                         continue
+                    elif isinstance(target_expr, AggrExpr):
+                        # target_expr.aggr_on.push(OpExpr(op_obj=target_expr,
+                        #                            op_on=target_expr.aggr_on,
+                        #                            op_iter=True))
+
+                        # print(target_expr.aggr_on.operations)
+
+                        free_vname = target_expr.descriptor
+
+                        unopt_context += target_expr.aggr_on.get_context_unopt(
+                            rename_last=f'{op_body.col_var}_el_0_{free_vname}'
+                        )
                     else:
                         raise NotImplementedError(f'{type(op_body)} -> {op_body}')
 
@@ -1236,6 +1459,75 @@ class Optimizer:
                             )
 
                         continue
+
+                    if op_body.is_single_col_op:
+                        the_tuple = list(op_body.origin_dict.items())[0]
+
+                        aggr_col = the_tuple[1][0]
+                        aggr_flag = the_tuple[1][1]
+
+                        tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
+
+                        if aggr_flag == 'sum':
+                            tmp_it_1.iter_op = RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col)
+
+                            unopt_context.append(
+                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                        valExpr=tmp_it_1.sdql_ir,
+                                        bodyExpr=ConstantExpr(True))
+                            )
+
+                            continue
+                        elif aggr_flag == 'count':
+                            tmp_it_1.iter_op = IfExpr(CompareExpr(CompareSymbol.NE,
+                                                                  RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col),
+                                                                  ConstantExpr(None)),
+                                                      ConstantExpr(1.0),
+                                                      ConstantExpr(0.0))
+
+                            unopt_context.append(
+                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                        valExpr=tmp_it_1.sdql_ir,
+                                        bodyExpr=ConstantExpr(True))
+                            )
+
+                            continue
+                        elif aggr_flag == 'mean':
+                            tmp_it_1.iter_op = IfExpr(
+                                CompareExpr(CompareSymbol.NE,
+                                            RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col),
+                                            ConstantExpr(None)),
+                                RecConsExpr([
+                                    (f'{aggr_col}_sum_for_mean',
+                                     RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col)),
+                                    (f'{aggr_col}_count_for_mean',
+                                     ConstantExpr(1.0))]),
+                                ConstantExpr(0.0)
+                            )
+
+                            unopt_context.append(
+                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                        valExpr=tmp_it_1.sdql_ir,
+                                        bodyExpr=ConstantExpr(True))
+                            )
+
+                            unopt_count += 1
+
+                            tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
+                            tmp_vn_nx = f'{this_name}_{unopt_count}'
+
+                            unopt_context.append(
+                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                        valExpr=DivExpr(RecAccessExpr(VarExpr(tmp_vn_on_2),
+                                                                      f'{aggr_col}_sum_for_mean'),
+                                                        RecAccessExpr(VarExpr(tmp_vn_on_2),
+                                                                      f'{aggr_col}_count_for_mean')),
+                                        bodyExpr=ConstantExpr(True))
+                            )
+
+                            continue
+
+
 
                 aggr_dict = op_body.aggr_op
 
