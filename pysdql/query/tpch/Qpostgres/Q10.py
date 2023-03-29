@@ -34,11 +34,7 @@ def query(cu, ord, li, na):
     
     customer_lineitem_orders_nation_4 = customer_lineitem_orders_nation_3.sum(lambda x: {x[0]: {record({"c_name": x[0].c_name, "revenue": x[0].revenue, "c_acctbal": x[0].c_acctbal, "c_address": x[0].c_address, "c_phone": x[0].c_phone, "c_comment": x[0].c_comment}): True}})
     
-    customer_lineitem_orders_nation_5 = customer_lineitem_orders_nation_4.sum(lambda x: x[1])
-    
-    customer_lineitem_orders_nation_6 = customer_lineitem_orders_nation_5.sum(lambda x: {x[0]: {record({"c_name": x[0].c_name, "revenue": x[0].revenue, "c_acctbal": x[0].c_acctbal, "c_address": x[0].c_address, "c_phone": x[0].c_phone, "c_comment": x[0].c_comment}): True}})
-    
-    results = customer_lineitem_orders_nation_6.sum(lambda x: x[1])
+    results = customer_lineitem_orders_nation_4.sum(lambda x: x[1])
     
     # Complete
 

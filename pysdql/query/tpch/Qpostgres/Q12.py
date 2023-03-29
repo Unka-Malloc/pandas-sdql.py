@@ -27,11 +27,7 @@ def query(ord, li):
     
     orders_lineitem_5 = orders_lineitem_4.sum(lambda x: {x[0]: {record({"high_line_count": x[0].high_line_count, "low_line_count": x[0].low_line_count}): True}})
     
-    orders_lineitem_6 = orders_lineitem_5.sum(lambda x: x[1])
-    
-    orders_lineitem_7 = orders_lineitem_6.sum(lambda x: {x[0]: {record({"high_line_count": x[0].high_line_count, "low_line_count": x[0].low_line_count}): True}})
-    
-    results = orders_lineitem_7.sum(lambda x: x[1])
+    results = orders_lineitem_5.sum(lambda x: x[1])
     
     # Complete
 

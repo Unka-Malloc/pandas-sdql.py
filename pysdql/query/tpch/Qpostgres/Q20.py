@@ -55,11 +55,7 @@ def query(su, na, ps, pa, li):
     
     supplier_nation_2 = supplier_nation_1.sum(lambda x: {x[0]: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True}})
     
-    supplier_nation_3 = supplier_nation_2.sum(lambda x: x[1])
-    
-    supplier_nation_4 = supplier_nation_3.sum(lambda x: {x[0]: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True}})
-    
-    results = supplier_nation_4.sum(lambda x: x[1])
+    results = supplier_nation_2.sum(lambda x: x[1])
     
     # Complete
 

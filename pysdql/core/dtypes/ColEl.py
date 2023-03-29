@@ -532,17 +532,17 @@ class ColEl(FlexIR):
             raise NotImplementedError
         elif num_of_substr == 1:
             if pattern.endswith('.*?$'):
-                print(f'{pattern} is startswith')
+                # print(f'{pattern} is startswith')
                 return self.startswith(pattern.replace('^', '').replace('.*?$', ''))
             if pattern.startswith('^.*?'):
-                print(f'{pattern} is endswith')
+                # print(f'{pattern} is endswith')
                 return self.endswith(pattern.replace('^.*?', '').replace('$', ''))
         elif num_of_substr == 2:
             if pattern.startswith('^.*?') and pattern.endswith('.*?$'):
-                print(f'{pattern} is contains')
+                # print(f'{pattern} is contains')
                 return self.contains(pattern.replace('^.*?', '').replace('.*?$', ''))
         else:
-            print(f'{pattern} is contains in order')
+            # print(f'{pattern} is contains in order')
             tmp_pattern = pattern.replace('^', '').replace('$', '')
             tmp_list = [i for i in re.split('\.\*\?', tmp_pattern) if i]
             tmp_cond = self.find(tmp_list[0]) != ConstantExpr(-1) * ConstantExpr(1)

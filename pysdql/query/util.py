@@ -147,8 +147,9 @@ def compare_dataframe(sdql_df: pandas.DataFrame, pd_df: pandas.DataFrame, verbos
                 if int(sdql_df.squeeze()) == int(pd_df.squeeze()):
                     return True
             except:
-                print(sdql_df)
-                print(pd_df)
+                print(f'Warning: squeeze failed')
+                # print(sdql_df)
+                # print(pd_df)
 
     if sdql_df.shape[0] == pd_df.shape[0]:
         if verbose:

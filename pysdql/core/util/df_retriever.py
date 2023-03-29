@@ -1512,9 +1512,12 @@ class Retriever:
             return None
 
     @staticmethod
-    def equal_expr(expr1: FlexIR, expr2: FlexIR) -> bool:
+    def equals(expr1: FlexIR, expr2: FlexIR) -> bool:
         if type(expr1) != type(expr2):
             return False
+
+        if expr1 is expr2:
+            return True
 
         return expr1.oid == expr2.oid
 
@@ -1650,7 +1653,7 @@ class Retriever:
         return count
 
     def check_last(self, target):
-        if self.equal_expr(self.history[-1].op, target):
+        if self.equals(self.history[-1].op, target):
             return True
 
         return False

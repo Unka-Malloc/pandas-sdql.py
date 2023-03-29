@@ -13,10 +13,10 @@ class ColProjRename:
     @property
     def oid(self):
         return hash((
-            self.from_left,
-            self.to_left,
-            self.from_right,
-            self.to_right
+            tuple(self.from_left),
+            tuple(self.to_left),
+            tuple(self.from_right),
+            tuple(self.to_right),
         ))
 
     @property

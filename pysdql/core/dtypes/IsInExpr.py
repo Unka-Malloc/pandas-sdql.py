@@ -150,7 +150,7 @@ class IsInExpr(IgnoreExpr):
         return self
 
     def __repr__(self):
-        return f'{self.probe_on.name}.{self.col_probe.field} is in {self.part_on.name}.{self.col_part.field}'
+        return f'|{self.part_on.name}| -> [{self.col_probe.field}] isin |{self.probe_on.name}| -> [{self.col_part.field}]'
 
     @property
     def op_name_suffix(self):
