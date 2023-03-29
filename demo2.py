@@ -2,7 +2,7 @@ import pysdql
 
 if __name__ == '__main__':
     # without reset cond psql fix: 7, 21, 22
-    pysdql.tpch_query(21, verbose=True, optimize=False, mode='postgres')
+    pysdql.tpch_query(11, verbose=False, optimize=False, mode='duckdb')
 
     # fix squeeze: Q22 - GroupbyAggrFrame Optimize & Unoptimize
     # valid: 1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15, 16, 18, 19
@@ -14,3 +14,6 @@ if __name__ == '__main__':
     # error: 2, 3, 6, 7, 8, 10, 11, 14, 15, 17, 18, 19, 20, 21, 22
 
     # unopt fail: 9, 15, 22
+
+    # unopt: pass except 22
+    # postgres: pass except 11

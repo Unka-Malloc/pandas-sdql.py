@@ -61,6 +61,7 @@ class OpExpr:
     @property
     def info(self):
         return {
+            'oid': self.op.oid if hasattr(self.op, "oid") else None,
             'iter': self.iter,
             'op_type': self.op_type,
             'op_on': self.op_on,

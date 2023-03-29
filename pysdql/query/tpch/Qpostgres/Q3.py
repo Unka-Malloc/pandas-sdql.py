@@ -35,11 +35,7 @@ def query(li, cu, ord):
     
     lineitem_orders_customer_4 = lineitem_orders_customer_3.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
     
-    lineitem_orders_customer_5 = lineitem_orders_customer_4.sum(lambda x: x[1])
-    
-    lineitem_orders_customer_6 = lineitem_orders_customer_5.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
-    
-    results = lineitem_orders_customer_6.sum(lambda x: x[1])
+    results = lineitem_orders_customer_4.sum(lambda x: x[1])
     
     # Complete
 

@@ -25,11 +25,7 @@ def query(cu, ord):
     
     orders_customer_5 = orders_customer_4.sum(lambda x: {x[0]: {record({"custdist": x[0].custdist}): True}})
     
-    orders_customer_6 = orders_customer_5.sum(lambda x: x[1])
-    
-    orders_customer_7 = orders_customer_6.sum(lambda x: {x[0]: {record({"custdist": x[0].custdist}): True}})
-    
-    results = orders_customer_7.sum(lambda x: x[1])
+    results = orders_customer_5.sum(lambda x: x[1])
     
     # Complete
 

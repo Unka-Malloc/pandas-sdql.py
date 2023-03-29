@@ -23,11 +23,13 @@ from pysdql.core.dtypes.JointFrame import JointFrame
 from pysdql.core.dtypes.JoinPartFrame import JoinPartFrame
 from pysdql.core.dtypes.JoinProbeFrame import JoinProbeFrame
 from pysdql.core.dtypes.MergeExpr import MergeExpr
+from pysdql.core.dtypes.MergeIndicator import MergeIndicator
 from pysdql.core.dtypes.NewColListExpr import NewColListExpr
 from pysdql.core.dtypes.OpExpr import OpExpr
 from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
 from pysdql.core.dtypes.IsInExpr import IsInExpr
 from pysdql.core.dtypes.SDQLInspector import SDQLInspector
+from pysdql.core.dtypes.SafeColProj import SafeColProjExpr
 from pysdql.core.dtypes.sdql_ir import *
 
 from pysdql.core.dtypes.EnumUtil import LastIterFunc, OptGoal, MergeType, OpRetType
@@ -617,10 +619,15 @@ class Optimizer:
             print('Unknown Last Operation:', type(last_op), last_op)
             raise NotImplementedError
 
-    def get_unopt_context(self, rename_last='', conflict_rename_indicator=False):
+    def get_unopt_context(self,
+                          rename_last='',
+                          conflict_rename_indicator=False,
+                          process_until=None,
+                          drop_duplicates=True,
+                          ):
         this_name = self.opt_on.current_name
 
-        merge_rename_indicator = False
+        rename_indicator = False
 
         # print(this_name)
         # print(self.opt_on.operations)
@@ -644,11 +651,16 @@ class Optimizer:
 
             op_body = op_expr.op
 
+            if process_until:
+                if self.retriever.equals(process_until, op_body):
+                    break
+
             if isinstance(op_body, ColElAttach):
                 if not col_attach_cache:
                     col_attach_name = f'{op_body.create_from.current_name}_attach_to_{op_body.attach_to.current_name}'
 
-                    unopt_context += op_body.create_from.get_context_unopt(rename_last=col_attach_name)
+                    unopt_context += op_body.create_from.get_context_unopt(rename_last=col_attach_name,
+                                                                           process_until=op_body)
 
                     col_attach_cache[op_body.col_to.field] = op_body
                 else:
@@ -656,7 +668,7 @@ class Optimizer:
 
                 continue
             elif isinstance(op_body, FreeStateVar):
-                print(op_body)
+                # print(op_body)
                 continue
             elif isinstance(op_body, DropDupOpExpr):
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
@@ -670,7 +682,7 @@ class Optimizer:
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
-            elif isinstance(op_body, ColProjExpr):
+            elif isinstance(op_body, (ColProjExpr, SafeColProjExpr)):
                 if col_attach_cache:
                     tmp_it = IterForm(col_attach_name, tmp_el_on)
 
@@ -703,7 +715,8 @@ class Optimizer:
                         final_cols.append(i)
 
                     for j in self.retriever.findall_additional_columns():
-                        final_cols.append(j)
+                        if j not in op_body.proj_cols:
+                            final_cols.append(j)
 
                     rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
 
@@ -770,16 +783,19 @@ class Optimizer:
                     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                     if op_body.is_left:
+                        # print(op_body.from_left)
                         rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
                                     for i, j in zip(op_body.from_left, op_body.to_left)]
 
-                        print(f'rename for {self.opt_on.name}, to {op_body.to_left}')
+                        # print(f'rename for {self.opt_on.name}, to {op_body.to_left}')
                     elif op_body.is_right:
+                        # print(op_body.from_right)
                         rec_list = [(j, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i))
                                     for i, j in zip(op_body.from_right, op_body.to_right)]
 
-                        print(f'rename for {self.opt_on.name}, to {op_body.to_right}')
+                        # print(f'rename for {self.opt_on.name}, to {op_body.to_right}')
                     else:
+                        # print(f'Unexpected column rename and projection: {op_body}')
                         continue
 
                     proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
@@ -975,13 +991,20 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, IsInExpr):
-                if op_expr.op_on.current_name != this_name:
+                # print(f'current dataframe: {this_name}')
+                #
+                # print(self.opt_on.operations)
+                #
+                # raise NotImplementedError
+
+                if op_body.probe_on.current_name != this_name:
                     continue
 
                 prev_isin_count = 0
                 prev_ops_name = f'{op_body.part_on.current_name}_{op_body.probe_on.current_name}_isin_pre_ops'
 
-                for o in op_body.part_on.get_context_unopt(rename_last=prev_ops_name):
+                for o in op_body.part_on.get_context_unopt(rename_last=prev_ops_name,
+                                                           process_until=op_body):
                     unopt_context.append(o)
                     prev_isin_count += 1
 
@@ -1044,19 +1067,18 @@ class Optimizer:
             elif isinstance(op_body, MergeExpr):
                 overlap_cols = list(set(op_body.left.cols_out).intersection(op_body.right.cols_out))
 
-                # overlap_left_cols = [f'{i}_x' if i in overlap_cols else i for i in op_body.left.cols_out]
-                # overlap_right_cols = [f'{i}_y' if i in overlap_cols else i for i in op_body.right.cols_out]
-
                 if overlap_cols:
-                    # print(f'rename {overlap_cols}')
-                    # print(f'left rename: {overlap_left_cols}')
-                    # print(f'right rename: {overlap_right_cols}')
-
                     all_cols_used = self.retriever.findall_cols_used(as_owner=False,
                                                                      only_next=False)
 
                     if any([(f'{i}_x' in all_cols_used) | (f'{i}_y' in all_cols_used) for i in overlap_cols]):
-                        merge_rename_indicator = True
+                        # print(f'{{\n'
+                        #       f'    rename {overlap_cols}\n'
+                        #       f'    {op_body.how} join\n'
+                        #       f'    for {this_name}\n'
+                        #       f'}}')
+
+                        rename_indicator = True
 
                 if op_body.how == 'inner':
                     if self.opt_on.current_name == op_body.joint.current_name:
@@ -1066,11 +1088,16 @@ class Optimizer:
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
                         left_unopt_context = op_body.left.get_context_unopt(rename_last=build_prev_ops_name,
-                                                                            conflict_rename_indicator=merge_rename_indicator)
+                                                                            conflict_rename_indicator=rename_indicator,
+                                                                            process_until=op_body)
 
                         for o in left_unopt_context:
                             unopt_context.append(o)
                             build_prev_count += 1
+
+                        # if rename_indicator:
+                        #     print(op_body.left.operations)
+                        #     raise NotImplementedError
 
                         build_prev_ops_name = map_name_to_dataset(op_body.left.name) if build_prev_count == 0 else build_prev_ops_name
 
@@ -1080,7 +1107,8 @@ class Optimizer:
                         probe_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_probe_pre_ops'
 
                         right_unopt_context = op_body.right.get_context_unopt(rename_last=probe_prev_ops_name,
-                                                                              conflict_rename_indicator=merge_rename_indicator)
+                                                                              conflict_rename_indicator=rename_indicator,
+                                                                              process_until=op_body)
 
                         for o in right_unopt_context:
                             unopt_context.append(o)
@@ -1172,7 +1200,8 @@ class Optimizer:
                         build_prev_count = 0
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
-                        for o in op_body.left.get_context_unopt(rename_last=build_prev_ops_name):
+                        for o in op_body.left.get_context_unopt(rename_last=build_prev_ops_name,
+                                                                process_until=op_body):
                             unopt_context.append(o)
                             build_prev_count += 1
 
@@ -1184,7 +1213,8 @@ class Optimizer:
                         probe_prev_count = 0
                         probe_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_probe_pre_ops'
 
-                        for o in op_body.right.get_context_unopt(rename_last=probe_prev_ops_name):
+                        for o in op_body.right.get_context_unopt(rename_last=probe_prev_ops_name,
+                                                                 process_until=op_body):
                             unopt_context.append(o)
                             probe_prev_count += 1
 
@@ -1295,7 +1325,9 @@ class Optimizer:
                                 build_prev_count = 0
                                 build_prev_ops_name = f'{build_on.current_name}_{probe_on.current_name}_build_pre_ops'
 
-                                for o in build_on.get_context_unopt(rename_last=build_prev_ops_name):
+                                for o in build_on.get_context_unopt(rename_last=build_prev_ops_name,
+                                                                    conflict_rename_indicator=rename_indicator,
+                                                                    process_until=op_body):
                                     unopt_context.append(o)
                                     build_prev_count += 1
 
@@ -1307,7 +1339,9 @@ class Optimizer:
                                 probe_prev_count = 0
                                 probe_prev_ops_name = f'{build_on.current_name}_{probe_on.current_name}_probe_pre_ops'
 
-                                for o in probe_on.get_context_unopt(rename_last=probe_prev_ops_name):
+                                for o in probe_on.get_context_unopt(rename_last=probe_prev_ops_name,
+                                                                    conflict_rename_indicator=rename_indicator,
+                                                                    process_until=op_body):
                                     unopt_context.append(o)
                                     probe_prev_count += 1
 
@@ -1415,7 +1449,8 @@ class Optimizer:
                         free_vname = target_expr.descriptor
 
                         unopt_context += target_expr.on.get_context_unopt(
-                            rename_last=f'{op_body.col_var}_el_0_{free_vname}'
+                            rename_last=f'{op_body.col_var}_el_0_{free_vname}',
+                            process_until=op_body
                         )
 
                         # unopt_context.append(
@@ -1435,7 +1470,8 @@ class Optimizer:
                         free_vname = target_expr.descriptor
 
                         unopt_context += target_expr.aggr_on.get_context_unopt(
-                            rename_last=f'{op_body.col_var}_el_0_{free_vname}'
+                            rename_last=f'{op_body.col_var}_el_0_{free_vname}',
+                            process_until=op_body
                         )
                     else:
                         raise NotImplementedError(f'{type(op_body)} -> {op_body}')
@@ -1466,33 +1502,33 @@ class Optimizer:
                         aggr_col = the_tuple[1][0]
                         aggr_flag = the_tuple[1][1]
 
-                        tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
+                        # if aggr_flag == 'sum':
+                        #     tmp_it_1.iter_op = RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col)
+                        #
+                        #     unopt_context.append(
+                        #         LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                        #                 valExpr=tmp_it_1.sdql_ir,
+                        #                 bodyExpr=ConstantExpr(True))
+                        #     )
+                        #
+                        #     continue
+                        # if aggr_flag == 'count':
+                        #     tmp_it_1.iter_op = IfExpr(CompareExpr(CompareSymbol.NE,
+                        #                                           RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col),
+                        #                                           ConstantExpr(None)),
+                        #                               ConstantExpr(1.0),
+                        #                               ConstantExpr(0.0))
+                        #
+                        #     unopt_context.append(
+                        #         LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                        #                 valExpr=tmp_it_1.sdql_ir,
+                        #                 bodyExpr=ConstantExpr(True))
+                        #     )
+                        #
+                        #     continue
+                        if aggr_flag == 'mean':
+                            tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
-                        if aggr_flag == 'sum':
-                            tmp_it_1.iter_op = RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col)
-
-                            unopt_context.append(
-                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                        valExpr=tmp_it_1.sdql_ir,
-                                        bodyExpr=ConstantExpr(True))
-                            )
-
-                            continue
-                        elif aggr_flag == 'count':
-                            tmp_it_1.iter_op = IfExpr(CompareExpr(CompareSymbol.NE,
-                                                                  RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col),
-                                                                  ConstantExpr(None)),
-                                                      ConstantExpr(1.0),
-                                                      ConstantExpr(0.0))
-
-                            unopt_context.append(
-                                LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                        valExpr=tmp_it_1.sdql_ir,
-                                        bodyExpr=ConstantExpr(True))
-                            )
-
-                            continue
-                        elif aggr_flag == 'mean':
                             tmp_it_1.iter_op = IfExpr(
                                 CompareExpr(CompareSymbol.NE,
                                             RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), aggr_col),
@@ -1526,8 +1562,6 @@ class Optimizer:
                             )
 
                             continue
-
-
 
                 aggr_dict = op_body.aggr_op
 
@@ -1681,6 +1715,8 @@ class Optimizer:
                             bodyExpr=ConstantExpr(True))
                 )
             elif isinstance(op_body, CalcExpr):
+                tmp_vn_on_calc_pre_ops = f'{op_body.descriptor}_pre_ops'
+
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                 rec_list = []
@@ -1692,7 +1728,7 @@ class Optimizer:
                     sv = single_aggr_dict[s]
                     rec_list.append((s, SDQLInspector.replace_access(sv.sdql_ir, PairAccessExpr(VarExpr(tmp_el_on), 0))))
                     if isinstance(sv.sdql_ir, RecAccessExpr):
-                        single_aggr_mapper[sv.sdql_ir.name] = RecAccessExpr(VarExpr(tmp_vn_nx), s)
+                        single_aggr_mapper[sv.sdql_ir.name] = RecAccessExpr(VarExpr(tmp_vn_on_calc_pre_ops), s)
                     else:
                         raise ValueError(f'Unexpected single ir object {sv.sdql_ir}')
 
@@ -1703,7 +1739,7 @@ class Optimizer:
                 for m in multi_aggr_dict.keys():
                     sv = multi_aggr_dict[m]
                     rec_list.append((m, SDQLInspector.replace_access(sv.sdql_ir, PairAccessExpr(VarExpr(tmp_el_on), 0))))
-                    multi_aggr_mapper[m] = RecAccessExpr(VarExpr(tmp_vn_nx), m)
+                    multi_aggr_mapper[m] = RecAccessExpr(VarExpr(tmp_vn_on_calc_pre_ops), m)
                     calc_mapper[m] = sv.sdql_ir
 
                 # print('single column', single_aggr_dict)
@@ -1712,14 +1748,13 @@ class Optimizer:
                 tmp_it.iter_op = RecConsExpr(rec_list)
 
                 unopt_context.append(
-                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                    LetExpr(varExpr=VarExpr(tmp_vn_on_calc_pre_ops),
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
 
                 unopt_count += 1
 
-                tmp_vn_on_2 = f'{this_name}_{unopt_count - 1}'
                 tmp_vn_nx = f'{this_name}_{unopt_count}'
 
                 final_mapper = {}
@@ -1730,7 +1765,7 @@ class Optimizer:
                 for k in multi_aggr_mapper.keys():
                     final_mapper[k] = multi_aggr_mapper[k]
 
-                calc_ir = op_body.replace_aggr(calc_mapper, VarExpr(tmp_vn_on)).sdql_ir
+                calc_ir = op_body.replace_aggr(calc_mapper, VarExpr(tmp_vn_on_calc_pre_ops)).sdql_ir
 
                 calc_ir = SDQLInspector.replace_field(calc_ir, inplace=True, mapper=final_mapper)
 
@@ -1793,6 +1828,8 @@ class Optimizer:
                 #             valExpr=SDQLInspector.replace_access(calc_ir, VarExpr(tmp_vn_on_2)),
                 #             bodyExpr=ConstantExpr(True))
                 # )
+            elif isinstance(op_body, MergeIndicator):
+                continue
             else:
                 tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
@@ -1827,4 +1864,4 @@ class Optimizer:
                                                                   rename_last,
                                                                   with_res=False)
 
-        return SDQLInspector.concat_bindings(all_unopt, drop_dup=False)
+        return SDQLInspector.concat_bindings(all_unopt, drop_duplicates=True)

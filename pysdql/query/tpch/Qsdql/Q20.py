@@ -43,7 +43,9 @@ def query(su, na, ps, pa, li):
     nation_supplier_0 = nation_supplier_probe_pre_ops.sum(lambda x: (nation_supplier_build_nest_dict[x[0].s_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (nation_supplier_build_nest_dict[x[0].s_nationkey] != None) else (None))
     
-    results = nation_supplier_0.sum(lambda x: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True})
+    nation_supplier_1 = nation_supplier_0.sum(lambda x: {x[0]: {record({"s_name": x[0].s_name, "s_address": x[0].s_address}): True}})
+    
+    results = nation_supplier_1.sum(lambda x: x[1])
     
     # Complete
 

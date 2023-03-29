@@ -46,14 +46,6 @@ def query(pa, su, ps, ps1, na, re):
     supplier_partsupp_part_nation_region_build_pre_ops = supplier_partsupp_part_probe_pre_ops.sum(lambda x: (supplier_partsupp_part_build_nest_dict[x[0].ps_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_partsupp_part_build_nest_dict[x[0].ps_suppkey] != None) else (None))
     
-    region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == europe) else (None))
-    
-    region_1 = region_0.sum(lambda x: {x[0]: {record({"r_regionkey": x[0].r_regionkey}): True}})
-    
-    nation_region_probe_pre_ops = region_1.sum(lambda x: x[1])
-    
-    nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
-    
     nation_region_0 = nation_region_probe_pre_ops.sum(lambda x: (nation_region_build_nest_dict[x[0].r_regionkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (nation_region_build_nest_dict[x[0].r_regionkey] != None) else (None))
     
@@ -85,11 +77,7 @@ def query(pa, su, ps, ps1, na, re):
     
     part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_1 = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_0.sum(lambda x: {x[0]: {record({"s_acctbal": x[0].s_acctbal, "s_name": x[0].s_name, "n_name": x[0].n_name, "p_partkey": x[0].p_partkey, "p_mfgr": x[0].p_mfgr, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "s_comment": x[0].s_comment}): True}})
     
-    part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_2 = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_1.sum(lambda x: x[1])
-    
-    part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_3 = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_2.sum(lambda x: {x[0]: {record({"s_acctbal": x[0].s_acctbal, "s_name": x[0].s_name, "n_name": x[0].n_name, "p_partkey": x[0].p_partkey, "p_mfgr": x[0].p_mfgr, "s_address": x[0].s_address, "s_phone": x[0].s_phone, "s_comment": x[0].s_comment}): True}})
-    
-    results = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_3.sum(lambda x: x[1])
+    results = part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_1.sum(lambda x: x[1])
     
     # Complete
 

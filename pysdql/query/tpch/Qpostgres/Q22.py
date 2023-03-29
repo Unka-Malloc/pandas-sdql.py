@@ -24,17 +24,15 @@ def query(cu, cu1, ord):
     
     customer_orders_0 = orders_customer_probe_pre_ops.sum(lambda x: ({x[0]: True}) if (customer_orders_build_nest_dict[x[0].c_custkey] == None) else (None))
     
-    customer_orders_1 = customer_orders_0.sum(lambda x: {x[0]: x[1]})
+    customer_orders_1 = customer_orders_0.sum(lambda x: {x[0].concat(record({"cntrycode": substr(x[0].c_phone, 0, 1)})): x[1]})
     
-    customer_orders_2 = customer_orders_1.sum(lambda x: {x[0].concat(record({"cntrycode": substr(x[0].c_phone, 0, 1)})): x[1]})
+    customer_orders_2 = customer_orders_1.sum(lambda x: {record({"cntrycode": x[0].cntrycode}): record({"numcust": (1.0) if (x[0].cntrycode != None) else (0.0), "totacctbal": x[0].c_acctbal})})
     
-    customer_orders_3 = customer_orders_2.sum(lambda x: {record({"cntrycode": x[0].cntrycode}): record({"numcust": (1.0) if (x[0].cntrycode != None) else (0.0), "totacctbal": x[0].c_acctbal})})
+    customer_orders_3 = customer_orders_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    customer_orders_4 = customer_orders_3.sum(lambda x: {x[0].concat(x[1]): True})
+    customer_orders_4 = customer_orders_3.sum(lambda x: {x[0]: {record({"numcust": x[0].numcust, "totacctbal": x[0].totacctbal}): True}})
     
-    customer_orders_5 = customer_orders_4.sum(lambda x: {x[0]: {record({"numcust": x[0].numcust, "totacctbal": x[0].totacctbal}): True}})
-    
-    results = customer_orders_5.sum(lambda x: x[1])
+    results = customer_orders_4.sum(lambda x: x[1])
     
     # Complete
 

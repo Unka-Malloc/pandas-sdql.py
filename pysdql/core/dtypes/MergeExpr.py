@@ -24,3 +24,13 @@ class MergeExpr:
     @property
     def op_name_suffix(self):
         return f'_merge'
+
+    @property
+    def oid(self):
+        return hash((
+            self.left.oid,
+            self.right.oid,
+            str(self.left_on),
+            str(self.right_on),
+            self.joint.oid,
+        ))

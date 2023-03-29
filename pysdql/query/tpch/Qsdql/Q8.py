@@ -83,7 +83,9 @@ def query(pa, su, li, ord, cu, na, re):
     
     n2_supplier_part_region_n1_customer_orders_lineitem_7 = n2_supplier_part_region_n1_customer_orders_lineitem_6.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].A) / (x[0].B))})): x[1]})
     
-    results = n2_supplier_part_region_n1_customer_orders_lineitem_7.sum(lambda x: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True})
+    n2_supplier_part_region_n1_customer_orders_lineitem_8 = n2_supplier_part_region_n1_customer_orders_lineitem_7.sum(lambda x: {x[0]: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True}})
+    
+    results = n2_supplier_part_region_n1_customer_orders_lineitem_8.sum(lambda x: x[1])
     
     # Complete
 

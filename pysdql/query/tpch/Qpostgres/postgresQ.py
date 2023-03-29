@@ -599,7 +599,7 @@ def q21(execution_mode=0, threads_count=1, optimize=True):
 
     query_start = time.time()
 
-    sdql_result = Q.query(supplier_data, lineitem_data, lineitem_data, lineitem_data, orders_data, nation_data)
+    sdql_result = Q.query(supplier_data, lineitem_data, orders_data, nation_data)
 
     query_end = time.time()
 

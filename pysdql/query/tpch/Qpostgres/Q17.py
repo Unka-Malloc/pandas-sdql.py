@@ -15,8 +15,6 @@ def query(li, l1, pa):
     lineitem_part_lineitem_part_build_pre_ops = lineitem_part_probe_pre_ops.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
     
-    lineitem_part_build_nest_dict = li.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
-    
     lineitem_part_0 = pa.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
     

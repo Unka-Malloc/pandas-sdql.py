@@ -353,6 +353,12 @@ class DataFrame(FlexIR, Retrivable):
                         tmp_cols[tmp_cols.index(k)] = rename_cols[k]
                     else:
                         raise IndexError(f'{k} not found in {self.name} columns {tmp_cols}')
+
+                non_dup_cols = []
+
+                # for i in tmp_cols:
+                #     if i not in non_dup_cols:
+                #         non_dup_cols.append(i)
                 return tmp_cols
             else:
                 return self.cols_in
@@ -620,6 +626,8 @@ class DataFrame(FlexIR, Retrivable):
                                         op_on=self,
                                         op_iter=True))
 
+            return next_df
+
         print(f'Warning: Unsupported __getitem__ {item}')
 
         next_df = self.create_copy(location=f'__getitem__({type(item)})')
@@ -649,7 +657,7 @@ class DataFrame(FlexIR, Retrivable):
         else:
             # print(self.operations)
             # return ColEl(self, col_name)
-            print(f'Warning: Cannot find column "{col_name}" in {self.name}: {self.columns}')
+            print(f'Warning: Cannot find column "{col_name}" in {{ {self.name} }} {self.columns}')
 
             return ColEl(self, col_name)
 
@@ -705,7 +713,7 @@ class DataFrame(FlexIR, Retrivable):
 
     def insert_col_expr(self, key, value):
         if isinstance(value, ColEl):
-            if not self.retriever.equal_expr(self, value.relation):
+            if not self.retriever.equals(self, value.relation):
                 self.push(OpExpr(op_obj=ColElAttach(col_from=value,
                                                     col_to=self.get_col(key)),
                                  op_on=self,
@@ -808,29 +816,45 @@ class DataFrame(FlexIR, Retrivable):
 
         overlap_cols = list(set(next_left_df.cols_out).intersection(next_right_df.cols_out))
 
-        overlap_left_cols = [f'{i}_x' if i in overlap_cols else i for i in next_left_df.cols_out]
-        overlap_right_cols = [f'{i}_y' if i in overlap_cols else i for i in next_right_df.cols_out]
+        if overlap_cols:
+            print(next_left_df, next_left_df.cols_out)
+            print(next_right_df, next_right_df.cols_out)
 
-        col_rename_proj_left = ColProjRename(base_merge=merge_expr,
-                                             from_left=copy.copy(next_left_df.cols_out),
-                                             to_left=overlap_left_cols,
-                                             from_right=copy.copy(next_right_df.cols_out),
-                                             to_right=overlap_right_cols,
-                                             is_left=True)
+            overlap_left_cols = [f'{i}{suffixes[0]}' if i in overlap_cols else i for i in next_left_df.cols_out]
+            overlap_right_cols = [f'{i}{suffixes[1]}' if i in overlap_cols else i for i in next_right_df.cols_out]
 
-        col_rename_proj_right = ColProjRename(base_merge=merge_expr,
-                                              from_left=copy.copy(next_left_df.cols_out),
-                                              to_left=overlap_left_cols,
-                                              from_right=copy.copy(next_right_df.cols_out),
-                                              to_right=overlap_right_cols,
-                                              is_right=True)
+            col_rename_proj_left = ColProjRename(base_merge=merge_expr,
+                                                 from_left=copy.copy(next_left_df.cols_out),
+                                                 to_left=overlap_left_cols,
+                                                 from_right=copy.copy(next_right_df.cols_out),
+                                                 to_right=overlap_right_cols,
+                                                 is_left=True)
 
-        col_rename_proj_merge = ColProjRename(base_merge=merge_expr,
-                                              from_left=copy.copy(next_left_df.cols_out),
-                                              to_left=overlap_left_cols,
-                                              from_right=copy.copy(next_right_df.cols_out),
-                                              to_right=overlap_right_cols,
-                                              is_joint=True)
+            next_left_df.push(OpExpr(op_obj=col_rename_proj_left,
+                                     op_on=next_left_df,
+                                     op_iter=True))
+
+            col_rename_proj_right = ColProjRename(base_merge=merge_expr,
+                                                  from_left=copy.copy(next_left_df.cols_out),
+                                                  to_left=overlap_left_cols,
+                                                  from_right=copy.copy(next_right_df.cols_out),
+                                                  to_right=overlap_right_cols,
+                                                  is_right=True)
+
+            next_right_df.push(OpExpr(op_obj=col_rename_proj_right,
+                                      op_on=next_right_df,
+                                      op_iter=True))
+
+            col_rename_proj_merge = ColProjRename(base_merge=merge_expr,
+                                                  from_left=copy.copy(next_left_df.cols_out),
+                                                  to_left=overlap_left_cols,
+                                                  from_right=copy.copy(next_right_df.cols_out),
+                                                  to_right=overlap_right_cols,
+                                                  is_joint=True)
+
+            tmp_df.push(OpExpr(op_obj=col_rename_proj_merge,
+                               op_on=[next_left_df, next_right_df],
+                               op_iter=True))
 
         next_left_df.push(OpExpr(op_obj=merge_expr,
                          op_on=[next_left_df, next_right_df],
@@ -841,18 +865,6 @@ class DataFrame(FlexIR, Retrivable):
                           op_iter=True))
 
         tmp_df.push(OpExpr(op_obj=merge_expr,
-                           op_on=[next_left_df, next_right_df],
-                           op_iter=True))
-
-        next_left_df.push(OpExpr(op_obj=col_rename_proj_left,
-                                 op_on=next_left_df,
-                                 op_iter=True))
-
-        next_right_df.push(OpExpr(op_obj=col_rename_proj_right,
-                                  op_on=next_right_df,
-                                  op_iter=True))
-
-        tmp_df.push(OpExpr(op_obj=col_rename_proj_merge,
                            op_on=[next_left_df, next_right_df],
                            op_iter=True))
 
@@ -1571,9 +1583,17 @@ class DataFrame(FlexIR, Retrivable):
 
         return next_df
 
-    def get_context_unopt(self, rename_last='', conflict_rename_indicator=False):
+    def get_context_unopt(self,
+                          rename_last='',
+                          conflict_rename_indicator=False,
+                          process_until=None,
+                          drop_duplicates=True,
+                          ):
         return Optimizer(self).get_unopt_context(rename_last=rename_last,
-                                                 conflict_rename_indicator=conflict_rename_indicator)
+                                                 conflict_rename_indicator=conflict_rename_indicator,
+                                                 process_until=process_until,
+                                                 drop_duplicates=drop_duplicates,
+                                                 )
 
     def create_copy(self, next_name="", location=None):
         """

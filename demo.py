@@ -13,15 +13,15 @@ if __name__ == '__main__':
 
     # opt_single = pysdql.tpch_query(5, verbose=True, optimize=True)
 
-    # unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
+    unoptimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
-    # unopt_single = pysdql.tpch_query(17, verbose=True, optimize=False, mode='postgres')
+    # unopt_single = pysdql.tpch_query(21, verbose=True, optimize=False)
 
-    # fix 22
+    # fix 11
 
-    # psql = pysdql.tpch_query(range(1, 23), verbose=True, optimize=True, mode='postgres')
+    # psql = pysdql.tpch_query(list(range(1, 20)) + [22], verbose=True, optimize=False, mode='postgres')
 
-    psql_unopt = pysdql.tpch_query(18, verbose=True, optimize=False, mode='postgres')
+    # psql_unopt = pysdql.tpch_query(18, verbose=True, optimize=False, mode='postgres')
 
     # with column projection everywhere:
     # fail: 1, 4, 9

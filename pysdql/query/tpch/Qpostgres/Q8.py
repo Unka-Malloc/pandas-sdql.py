@@ -83,11 +83,7 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     orders_lineitem_part_customer_nation_region_supplier_nation_7 = orders_lineitem_part_customer_nation_region_supplier_nation_6.sum(lambda x: {x[0]: {record({"mkt_share": x[0].mkt_share}): True}})
     
-    orders_lineitem_part_customer_nation_region_supplier_nation_8 = orders_lineitem_part_customer_nation_region_supplier_nation_7.sum(lambda x: x[1])
-    
-    orders_lineitem_part_customer_nation_region_supplier_nation_9 = orders_lineitem_part_customer_nation_region_supplier_nation_8.sum(lambda x: {x[0]: {record({"mkt_share": x[0].mkt_share}): True}})
-    
-    results = orders_lineitem_part_customer_nation_region_supplier_nation_9.sum(lambda x: x[1])
+    results = orders_lineitem_part_customer_nation_region_supplier_nation_7.sum(lambda x: x[1])
     
     # Complete
 
