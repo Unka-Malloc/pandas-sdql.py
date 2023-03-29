@@ -1,8 +1,13 @@
+import time
+
 import pysdql
 
 if __name__ == '__main__':
+    start_time = time.time()
+
     # without reset cond psql fix: 7, 21, 22
-    pysdql.tpch_query(11, verbose=False, optimize=False, mode='duckdb')
+
+    pysdql.tpch_query(21, verbose=True, optimize=False, mode='postgres')
 
     # fix squeeze: Q22 - GroupbyAggrFrame Optimize & Unoptimize
     # valid: 1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15, 16, 18, 19
@@ -17,3 +22,10 @@ if __name__ == '__main__':
 
     # unopt: pass except 22
     # postgres: pass except 11
+
+    # orders_lineitem_supplier_nation_lineitem_supplier_nation_lineitem_probe_pre_ops None
+    # lineitem_supplier_nation_lineitem_lineitem_supplier_nation_probe_pre_ops
+
+    end_time = time.time()
+
+    print((end_time - start_time) / 60)

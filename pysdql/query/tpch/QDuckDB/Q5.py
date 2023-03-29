@@ -7,9 +7,7 @@ def query(li, cu, ord, re, na, su):
 
     # Insert
     asia = "ASIA"
-    region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == asia) else (None))
-    
-    nation_region_probe_pre_ops = region_0.sum(lambda x: {record({"r_regionkey": x[0].r_regionkey, "r_name": x[0].r_name}): True})
+    nation_region_probe_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == asia) else (None))
     
     nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
     
@@ -26,9 +24,7 @@ def query(li, cu, ord, re, na, su):
     lineitem_supplier_nation_region_orders_build_pre_ops = lineitem_supplier_nation_region_probe_pre_ops.sum(lambda x: (lineitem_supplier_nation_region_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_supplier_nation_region_build_nest_dict[x[0].s_suppkey] != None) else (None))
     
-    orders_0 = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19940101) * (x[0].o_orderdate < 19950101))) else (None))
-    
-    lineitem_supplier_nation_region_orders_probe_pre_ops = orders_0.sum(lambda x: {record({"o_custkey": x[0].o_custkey, "o_orderkey": x[0].o_orderkey, "o_orderdate": x[0].o_orderdate}): True})
+    lineitem_supplier_nation_region_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19940101) * (x[0].o_orderdate < 19950101))) else (None))
     
     lineitem_supplier_nation_region_orders_build_nest_dict = lineitem_supplier_nation_region_orders_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
     
@@ -46,7 +42,9 @@ def query(li, cu, ord, re, na, su):
     
     lineitem_supplier_nation_region_orders_customer_3 = lineitem_supplier_nation_region_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = lineitem_supplier_nation_region_orders_customer_3.sum(lambda x: {record({"revenue": x[0].revenue}): True})
+    lineitem_supplier_nation_region_orders_customer_4 = lineitem_supplier_nation_region_orders_customer_3.sum(lambda x: {x[0]: {record({"revenue": x[0].revenue}): True}})
+    
+    results = lineitem_supplier_nation_region_orders_customer_4.sum(lambda x: x[1])
     
     # Complete
 
