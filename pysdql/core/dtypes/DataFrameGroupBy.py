@@ -1,14 +1,10 @@
-import inspect
-import re
-
-from pysdql.core.dtypes import AggrExpr, ColEl
-from pysdql.core.dtypes.AggrFiltCond import AggrFiltCond
-from pysdql.core.dtypes.AggrLambdaExpr import AggrLambda
-from pysdql.core.dtypes.DropDupOpExpr import DropDupOpExpr
-from pysdql.core.dtypes.EnumUtil import AggrType, OpRetType
-from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
-from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.sdql_ir import ConstantExpr
+from pysdql.core.exprs.advanced.AggrOpExprs import AggrOpFilter
+from pysdql.core.exprs.advanced.AggrFuncExprs import AggrLambda
+from pysdql.core.exprs.basic import ColEl
+from pysdql.core.exprs.carrier.PandasFuncExpr import DropDuplFunc
+from pysdql.core.exprs.complex.GroupbyAggrExpr import GroupbyAggrExpr
+from pysdql.core.exprs.carrier.OpExpr import OpExpr
+from pysdql.core.prototype.basic.sdql_ir import ConstantExpr
 
 
 class DataFrameGroupBy:
@@ -112,7 +108,7 @@ class DataFrameGroupBy:
     def filter(self, func):
         cond = func(self)
 
-        if isinstance(cond, AggrFiltCond):
+        if isinstance(cond, AggrOpFilter):
             cond.groupby_cols = self.groupby_cols
 
         op_expr = OpExpr(op_obj=cond,
@@ -125,7 +121,7 @@ class DataFrameGroupBy:
         return self.groupby_from
 
     def last(self):
-        op_expr = OpExpr(op_obj=DropDupOpExpr(self.groupby_cols),
+        op_expr = OpExpr(op_obj=DropDuplFunc(self.groupby_cols),
                          op_on=self.groupby_from,
                          op_iter=True,
                          iter_on=self.groupby_from)

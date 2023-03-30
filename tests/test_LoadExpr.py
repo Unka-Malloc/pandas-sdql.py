@@ -1,6 +1,6 @@
 import unittest
 
-from pysdql.core.dtypes.LoadExpr import LoadExpr
+from pysdql.core.exprs.carrier.LoadExpr import LoadExpr
 
 
 class MyTestCase(unittest.TestCase):

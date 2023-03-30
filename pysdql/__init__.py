@@ -1,26 +1,3 @@
-from pysdql.core.api import (
-    # dtypes
-    DataFrame,
-
-    IterStmt,
-    CondStmt,
-    DictEl,
-    RecEl,
-    VarExpr,
-    OpExpr,
-    ConcatExpr,
-
-    # data_loader
-    read_csv,
-    # read_tbl,
-    # read_table,
-    tune_tbl,
-    # load_tbl,
-
-    # data_parser
-    get_tbl_type,
-    get_load,
-)
 from pysdql.const import (
     PART_COLS,
     SUPPLIER_COLS,
@@ -30,25 +7,17 @@ from pysdql.const import (
     LINEITEM_COLS,
     NATION_COLS,
     REGION_COLS,
-
-    PART_LOAD,
-    SUPPLIER_LOAD,
-    PARTSUPP_LOAD,
-    CUSTOMER_LOAD,
-    ORDERS_LOAD,
-    LINEITEM_LOAD,
-    NATION_LOAD,
-    REGION_LOAD,
 )
-from pysdql.core.dtypes.ExtDateTime import ExtDatetime
-from pysdql.core.dtypes.ColExtExpr import ColExtExpr
-from pysdql.core.dtypes.sdql_ir import ExtFuncExpr, ExtFuncSymbol, RecAccessExpr, PairAccessExpr, ConstantExpr
 
-from pysdql.query import tpch
+from pysdql.core.api import (
+    read_csv,
+)
 
-from pysdql.query.tpch import tpch_query
+from pysdql.core.dtypes.DataFrame import DataFrame
 
 from pysdql.core.SDQLWrapper import tosdql
+
+from pysdql.query.tpch import tpch_query
 
 from pysdql.config import (
     set_verify,
@@ -58,31 +27,8 @@ from pysdql.config import (
     is_duckdb_available,
 )
 
-
 def merge(left, right, how='inner', left_on=None, right_on=None):
     return left.merge(right, how=how, left_on=left_on, right_on=right_on)
-
-
-def concat(keys: list) -> str:
-    keys.reverse()
-    k1 = keys.pop()
-    k2 = keys.pop()
-    ce = ConcatExpr(rec1=k1, rec2=k2)
-    keys.reverse()
-    for k in keys:
-        ce = ce.concat(k)
-    return str(ce)
-
-
-def concat_cols(keys: list, cols: list):
-    cols_dict = dict(zip(keys, cols))
-    tmp_dict = {}
-
-    for k in cols_dict.keys():
-        for c in cols_dict[k]:
-            tmp_dict[f'{c}'] = f'{k}.{c}'
-
-    return RecEl(tmp_dict)
 
 
 def month(date: str, m: int):
@@ -102,4 +48,6 @@ def set_option(*args):
 
 
 def DatetimeIndex(col):
-    return ExtDatetime(col)
+    from pysdql.core.exprs.carrier.api import DateTimeProperty
+
+    return DateTimeProperty(col)

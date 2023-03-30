@@ -9,13 +9,9 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(pa, su, li, ord, cu, na, n1, n2, re):
 
     # Insert
-    orders_0 = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19950101) * (x[0].o_orderdate <= 19961231))) else (None))
+    orders_customer_nation_region_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19950101) * (x[0].o_orderdate <= 19961231))) else (None))
     
-    orders_customer_nation_region_build_pre_ops = orders_0.sum(lambda x: {record({"o_orderkey": x[0].o_orderkey, "o_custkey": x[0].o_custkey, "o_orderdate": x[0].o_orderdate}): True})
-    
-    region_0 = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == america) else (None))
-    
-    nation_region_probe_pre_ops = region_0.sum(lambda x: {record({"r_regionkey": x[0].r_regionkey, "r_name": x[0].r_name}): True})
+    nation_region_probe_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == america) else (None))
     
     nation_region_build_nest_dict = na.sum(lambda x: {x[0].n_regionkey: sr_dict({x[0]: x[1]})})
     
@@ -37,13 +33,9 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     lineitem_orders_customer_nation_region_supplier_nation_build_pre_ops = lineitem_orders_customer_nation_region_probe_pre_ops.sum(lambda x: (lineitem_orders_customer_nation_region_build_nest_dict[x[0].o_orderkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_orders_customer_nation_region_build_nest_dict[x[0].o_orderkey] != None) else (None))
     
-    nation_0 = na.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey, "n_regionkey": x[0].n_regionkey}): True})
-    
-    supplier_nation_probe_pre_ops = nation_0.sum(lambda x: {record({"n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name}): True})
-    
     supplier_nation_build_nest_dict = su.sum(lambda x: {x[0].s_nationkey: sr_dict({x[0]: x[1]})})
     
-    lineitem_orders_customer_nation_region_supplier_nation_probe_pre_ops = supplier_nation_probe_pre_ops.sum(lambda x: (supplier_nation_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
+    lineitem_orders_customer_nation_region_supplier_nation_probe_pre_ops = na.sum(lambda x: (supplier_nation_build_nest_dict[x[0].n_nationkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (supplier_nation_build_nest_dict[x[0].n_nationkey] != None) else (None))
     
     lineitem_orders_customer_nation_region_supplier_nation_build_nest_dict = lineitem_orders_customer_nation_region_supplier_nation_build_pre_ops.sum(lambda x: {x[0].l_suppkey: sr_dict({x[0]: x[1]})})
@@ -51,9 +43,7 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     lineitem_orders_customer_nation_region_supplier_nation_part_build_pre_ops = lineitem_orders_customer_nation_region_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_orders_customer_nation_region_supplier_nation_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_orders_customer_nation_region_supplier_nation_build_nest_dict[x[0].s_suppkey] != None) else (None))
     
-    part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (x[0].p_type == economyanodizedsteel) else (None))
-    
-    lineitem_orders_customer_nation_region_supplier_nation_part_probe_pre_ops = part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey, "p_type": x[0].p_type}): True})
+    lineitem_orders_customer_nation_region_supplier_nation_part_probe_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (x[0].p_type == economyanodizedsteel) else (None))
     
     lineitem_orders_customer_nation_region_supplier_nation_part_build_nest_dict = lineitem_orders_customer_nation_region_supplier_nation_part_build_pre_ops.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
     
@@ -74,9 +64,7 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     lineitem_orders_customer_nation_region_supplier_nation_part_7 = lineitem_orders_customer_nation_region_supplier_nation_part_6.sum(lambda x: {x[0].concat(record({"suml_extendedprice1l_discount": x[0].sum_volume})): x[1]})
     
-    lineitem_orders_customer_nation_region_supplier_nation_part_8 = lineitem_orders_customer_nation_region_supplier_nation_part_7.sum(lambda x: {record({"sumcase_a": x[0].sumcase_a, "suml_extendedprice1l_discount": x[0].suml_extendedprice1l_discount, "o_year": x[0].o_year}): True})
-    
-    lineitem_orders_customer_nation_region_supplier_nation_part_attach_to_df_aggr_1 = lineitem_orders_customer_nation_region_supplier_nation_part_8.sum(lambda x: {x[0]: x[1]})
+    lineitem_orders_customer_nation_region_supplier_nation_part_attach_to_df_aggr_1 = lineitem_orders_customer_nation_region_supplier_nation_part_7.sum(lambda x: {x[0]: x[1]})
     
     df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].sumcase_a) / (x[0].suml_extendedprice1l_discount))})): x[1]})
     

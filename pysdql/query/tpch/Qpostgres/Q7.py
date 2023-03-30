@@ -19,12 +19,8 @@ def query(su, li, ord, cu, na):
     
     lineitem_supplier_nation_build_nest_dict = lineitem_supplier_nation_build_pre_ops.sum(lambda x: {x[0].l_suppkey: sr_dict({x[0]: x[1]})})
     
-    lineitem_supplier_nation_0 = lineitem_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_supplier_nation_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
+    lineitem_supplier_nation_orders_customer_nation_build_pre_ops = lineitem_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_supplier_nation_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_supplier_nation_build_nest_dict[x[0].s_suppkey] != None) else (None))
-    
-    lineitem_supplier_nation_1 = lineitem_supplier_nation_0.sum(lambda x: {x[0]: sr_dict({record({"l_shipdate": x[0].l_shipdate, "l_extendedprice": x[0].l_extendedprice, "l_discount": x[0].l_discount, "l_orderkey": x[0].l_orderkey, "n_name_x": x[0].n_name}): True})})
-    
-    lineitem_supplier_nation_orders_customer_nation_build_pre_ops = lineitem_supplier_nation_1.sum(lambda x: x[1])
     
     customer_nation_probe_pre_ops = na.sum(lambda x: ({x[0]: x[1]}) if (((x[0].n_name == germany) + (x[0].n_name == france))) else (None))
     
@@ -35,12 +31,8 @@ def query(su, li, ord, cu, na):
     
     orders_customer_nation_build_nest_dict = ord.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
     
-    orders_customer_nation_0 = orders_customer_nation_probe_pre_ops.sum(lambda x: (orders_customer_nation_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    lineitem_supplier_nation_orders_customer_nation_probe_pre_ops = orders_customer_nation_probe_pre_ops.sum(lambda x: (orders_customer_nation_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (orders_customer_nation_build_nest_dict[x[0].c_custkey] != None) else (None))
-    
-    orders_customer_nation_1 = orders_customer_nation_0.sum(lambda x: {x[0]: sr_dict({record({"o_orderkey": x[0].o_orderkey, "n_name_y": x[0].n_name}): True})})
-    
-    lineitem_supplier_nation_orders_customer_nation_probe_pre_ops = orders_customer_nation_1.sum(lambda x: x[1])
     
     lineitem_supplier_nation_orders_customer_nation_build_nest_dict = lineitem_supplier_nation_orders_customer_nation_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
     

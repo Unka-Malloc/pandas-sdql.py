@@ -5,7 +5,7 @@ import pandas
 
 from pysdql.extlib.sdqlpy.sdql_lib import (sr_dict, record)
 
-from pysdql.core.util.type_checker import is_date
+from pysdql.core.utils.type_checker import is_date
 
 
 def pandas_to_df(result):

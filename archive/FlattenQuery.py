@@ -1,6 +1,4 @@
-from pysdql.core.dtypes.sdql_ir import *
-
-from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
+from pysdql.core.prototype.basic.sdql_ir import *
 
 
 def q1():

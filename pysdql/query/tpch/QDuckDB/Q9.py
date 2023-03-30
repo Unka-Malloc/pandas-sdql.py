@@ -30,9 +30,7 @@ def query(li, ord, na, su, pa, ps):
     lineitem_partsupp_orders_supplier_nation_part_build_pre_ops = lineitem_partsupp_orders_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_partsupp_orders_supplier_nation_build_nest_dict[record({"ps_suppkey": x[0].s_suppkey, "l_suppkey": x[0].s_suppkey})].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_partsupp_orders_supplier_nation_build_nest_dict[record({"ps_suppkey": x[0].s_suppkey, "l_suppkey": x[0].s_suppkey})] != None) else (None))
     
-    part_0 = pa.sum(lambda x: ({x[0]: x[1]}) if (firstIndex(x[0].p_name, green) != ((-1) * (1))) else (None))
-    
-    lineitem_partsupp_orders_supplier_nation_part_probe_pre_ops = part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey, "p_name": x[0].p_name}): True})
+    lineitem_partsupp_orders_supplier_nation_part_probe_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (firstIndex(x[0].p_name, green) != ((-1) * (1))) else (None))
     
     lineitem_partsupp_orders_supplier_nation_part_build_nest_dict = lineitem_partsupp_orders_supplier_nation_part_build_pre_ops.sum(lambda x: {record({"ps_partkey": x[0].ps_partkey, "l_partkey": x[0].l_partkey}): sr_dict({x[0]: x[1]})})
     
@@ -49,7 +47,9 @@ def query(li, ord, na, su, pa, ps):
     
     lineitem_partsupp_orders_supplier_nation_part_5 = lineitem_partsupp_orders_supplier_nation_part_4.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = lineitem_partsupp_orders_supplier_nation_part_5.sum(lambda x: {record({"sum_profit": x[0].sum_profit}): True})
+    lineitem_partsupp_orders_supplier_nation_part_6 = lineitem_partsupp_orders_supplier_nation_part_5.sum(lambda x: {x[0]: {record({"sum_profit": x[0].sum_profit}): True}})
+    
+    results = lineitem_partsupp_orders_supplier_nation_part_6.sum(lambda x: x[1])
     
     # Complete
 

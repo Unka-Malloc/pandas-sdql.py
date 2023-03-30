@@ -17,21 +17,15 @@ def query(li, cu, ord):
     lineitem_orders_customer_0 = cu.sum(lambda x: (lineitem_orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_orders_customer_build_nest_dict[x[0].c_custkey] != None) else (None))
     
-    lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_quantity": x[0].l_quantity, "l_orderkey": x[0].l_orderkey}): True})
+    lineitem_0 = li.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
     
-    lineitem_1 = lineitem_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_quantity": x[0].l_quantity, "l_orderkey": x[0].l_orderkey}): True})
+    lineitem_1 = lineitem_0.sum(lambda x: {x[0].concat(x[1]): True})
     
-    lineitem_2 = lineitem_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): record({"sum_l_quantity": x[0].l_quantity})})
+    lineitem_2 = lineitem_1.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
     
-    lineitem_3 = lineitem_2.sum(lambda x: {x[0].concat(x[1]): True})
+    lineitem_3 = lineitem_2.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300.0) else (None))
     
-    lineitem_4 = lineitem_3.sum(lambda x: {x[0].concat(record({"suml_quantity": x[0].sum_l_quantity})): x[1]})
-    
-    lineitem_5 = lineitem_4.sum(lambda x: ({x[0]: x[1]}) if (x[0].suml_quantity > 300.0) else (None))
-    
-    lineitem_6 = lineitem_5.sum(lambda x: {record({"suml_quantity": x[0].suml_quantity, "l_orderkey": x[0].l_orderkey}): True})
-    
-    lineitem_lineitem_orders_customer_isin_pre_ops = lineitem_6.sum(lambda x: {x[0]: x[1]})
+    lineitem_lineitem_orders_customer_isin_pre_ops = lineitem_3.sum(lambda x: {x[0]: x[1]})
     
     lineitem_lineitem_orders_customer_isin_build_index = lineitem_lineitem_orders_customer_isin_pre_ops.sum(lambda x: {x[0].l_orderkey: True})
     
@@ -41,7 +35,9 @@ def query(li, cu, ord):
     
     lineitem_orders_customer_3 = lineitem_orders_customer_2.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = lineitem_orders_customer_3.sum(lambda x: {record({"suml_quantity": x[0].suml_quantity}): True})
+    lineitem_orders_customer_4 = lineitem_orders_customer_3.sum(lambda x: {x[0]: {record({"suml_quantity": x[0].suml_quantity}): True}})
+    
+    results = lineitem_orders_customer_4.sum(lambda x: x[1])
     
     # Complete
 

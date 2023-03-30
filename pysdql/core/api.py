@@ -1,21 +1,4 @@
-from pysdql.core.dtypes.api import (
-    DataFrame,
-
-    RecEl,
-    DictEl,
-    CondExpr,
-    CondStmt,
-    IterStmt,
-    VarExpr,
-    OpExpr,
-
-    ConcatExpr,
-    CaseExpr,
-
-    sdict,
-    srecord
-)
-from pysdql.core.util.api import (
+from pysdql.core.utils.api import (
     # data_loader
     read_csv,
     # read_tbl,

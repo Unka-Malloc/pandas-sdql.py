@@ -1,6 +1,6 @@
 import unittest
 
-from pysdql.core.util.data_str import (
+from pysdql.core.utils.data_str import (
     remove_prefix,
     remove_suffix,
     remove_sides,
