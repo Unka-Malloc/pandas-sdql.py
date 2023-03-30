@@ -9,6 +9,9 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(pa, su, li, ord, cu, na, n1, n2, re):
 
     # Insert
+    america = "AMERICA"
+    economyanodizedsteel = "ECONOMY ANODIZED STEEL"
+    brazil = "BRAZIL"
     orders_customer_nation_region_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((x[0].o_orderdate >= 19950101) * (x[0].o_orderdate <= 19961231))) else (None))
     
     nation_region_probe_pre_ops = re.sum(lambda x: ({x[0]: x[1]}) if (x[0].r_name == america) else (None))

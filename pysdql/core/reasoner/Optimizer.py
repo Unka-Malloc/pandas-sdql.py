@@ -645,7 +645,7 @@ class Optimizer:
                           rename_last='',
                           conflict_rename_indicator=False,
                           process_until=None,
-                          drop_duplicates=True,
+                          def_const=False,
                           ):
         this_name = self.opt_on.current_name
 
@@ -665,6 +665,12 @@ class Optimizer:
 
         col_attach_cache = {}
         col_attach_name = f'default_attach_columns_to'
+        
+        if def_const:
+            for k in self.opt_on.context_constant.keys():
+                unopt_context.append(LetExpr(varExpr=self.opt_on.get_const_var(k),
+                                             valExpr=ConstantExpr(k),
+                                             bodyExpr=ConstantExpr(True)))
 
         for op_expr in self.opt_on.operations:
             if unopt_count != 0:
@@ -682,7 +688,9 @@ class Optimizer:
                     col_attach_name = f'{op_body.create_from.current_name}_attach_to_{op_body.attach_to.current_name}'
 
                     unopt_context += op_body.create_from.get_context_unopt(rename_last=col_attach_name,
-                                                                           process_until=op_body)
+                                                                           process_until=op_body,
+                                                                           def_const=True,
+                                                                           )
 
                     col_attach_cache[op_body.col_to.field] = op_body
                 else:
@@ -699,7 +707,9 @@ class Optimizer:
                                                     op_iter=False))
 
                     unopt_context += op_body.create_from.get_context_unopt(rename_last=col_attach_name,
-                                                                           process_until=op_body)
+                                                                           process_until=op_body,
+                                                                           def_const=True,
+                                                                           )
 
                     col_attach_cache[op_body.col_to.field] = op_body
                 else:
@@ -923,7 +933,9 @@ class Optimizer:
                     for free_vname in free_vars.keys():
                         free_expr = free_vars[free_vname]
 
-                        unopt_context += free_expr.create_from.get_context_unopt()
+                        unopt_context += free_expr.create_from.get_context_unopt(
+                            def_const=True,
+                        )
 
                 # if isinstance(op_body, CondExpr):
                 #     print(self.retriever.find_calc_in_cond(op_body))
@@ -1087,7 +1099,8 @@ class Optimizer:
                 prev_ops_name = f'{op_body.part_on.current_name}_{op_body.probe_on.current_name}_isin_pre_ops'
 
                 for o in op_body.part_on.get_context_unopt(rename_last=prev_ops_name,
-                                                           process_until=op_body):
+                                                           process_until=op_body,
+                                                           def_const=True,):
                     unopt_context.append(o)
                     prev_isin_count += 1
 
@@ -1172,7 +1185,8 @@ class Optimizer:
 
                         left_unopt_context = op_body.left.get_context_unopt(rename_last=build_prev_ops_name,
                                                                             conflict_rename_indicator=rename_indicator,
-                                                                            process_until=op_body)
+                                                                            process_until=op_body,
+                                                                            def_const=True,)
 
                         for o in left_unopt_context:
                             unopt_context.append(o)
@@ -1191,7 +1205,8 @@ class Optimizer:
 
                         right_unopt_context = op_body.right.get_context_unopt(rename_last=probe_prev_ops_name,
                                                                               conflict_rename_indicator=rename_indicator,
-                                                                              process_until=op_body)
+                                                                              process_until=op_body,
+                                                                              def_const=True,)
 
                         for o in right_unopt_context:
                             unopt_context.append(o)
@@ -1284,7 +1299,8 @@ class Optimizer:
                         build_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_build_pre_ops'
 
                         for o in op_body.left.get_context_unopt(rename_last=build_prev_ops_name,
-                                                                process_until=op_body):
+                                                                process_until=op_body,
+                                                                def_const=True,):
                             unopt_context.append(o)
                             build_prev_count += 1
 
@@ -1297,7 +1313,8 @@ class Optimizer:
                         probe_prev_ops_name = f'{op_body.left.current_name}_{op_body.right.current_name}_probe_pre_ops'
 
                         for o in op_body.right.get_context_unopt(rename_last=probe_prev_ops_name,
-                                                                 process_until=op_body):
+                                                                 process_until=op_body,
+                                                                 def_const=True,):
                             unopt_context.append(o)
                             probe_prev_count += 1
 
@@ -1410,7 +1427,8 @@ class Optimizer:
 
                                 for o in build_on.get_context_unopt(rename_last=build_prev_ops_name,
                                                                     conflict_rename_indicator=rename_indicator,
-                                                                    process_until=op_body):
+                                                                    process_until=op_body,
+                                                                    def_const=True,):
                                     unopt_context.append(o)
                                     build_prev_count += 1
 
@@ -1424,7 +1442,8 @@ class Optimizer:
 
                                 for o in probe_on.get_context_unopt(rename_last=probe_prev_ops_name,
                                                                     conflict_rename_indicator=rename_indicator,
-                                                                    process_until=op_body):
+                                                                    process_until=op_body,
+                                                                    def_const=True,):
                                     unopt_context.append(o)
                                     probe_prev_count += 1
 
@@ -1523,6 +1542,7 @@ class Optimizer:
                     target_expr = op_body.col_list[0]
 
                     if isinstance(target_expr, AggrBinOp):
+
                         # tmp_it_1 = IterForm(tmp_vn_on, tmp_el_on)
 
                         target_expr.on.push(OpExpr(op_obj=target_expr,
@@ -1533,7 +1553,8 @@ class Optimizer:
 
                         unopt_context += target_expr.on.get_context_unopt(
                             rename_last=f'{op_body.col_var}_el_0_{free_vname}',
-                            process_until=op_body
+                            process_until=op_body,
+                            def_const=True,
                         )
 
                         # unopt_context.append(
@@ -1548,7 +1569,8 @@ class Optimizer:
 
                         unopt_context += target_expr.aggr_on.get_context_unopt(
                             rename_last=f'{op_body.col_var}_el_0_{free_vname}',
-                            process_until=op_body
+                            process_until=op_body,
+                            def_const=True,
                         )
 
                         # unopt_count += 1
@@ -1724,9 +1746,12 @@ class Optimizer:
                                 bodyExpr=ConstantExpr(True))
                     )
                 else:
+                    final_op = DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))])
+                    final_op = sr_dict(dict(final_op.initialPairs))
+
                     unopt_context.append(
                         LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                valExpr=DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))]),
+                                valExpr=final_op,
                                 bodyExpr=ConstantExpr(True))
                     )
             elif isinstance(op_body, AggrOpRename):

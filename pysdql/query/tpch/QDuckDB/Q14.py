@@ -6,6 +6,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 @sdql_compile({"li": LINEITEM_TYPE, "pa": PART_TYPE})
 def query(li, pa):
     # Insert
+    promo = "PROMO"
     lineitem_part_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipdate >= 19950901) * (x[0].l_shipdate < 19951001))) else (None))
     
     lineitem_part_build_nest_dict = lineitem_part_build_pre_ops.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
@@ -17,7 +18,7 @@ def query(li, pa):
     
     lineitem_part_2 = lineitem_part_1.sum(lambda x: record({"case_a": x[0].case_a}))
     
-    lineitem_part_3 = {lineitem_part_2: True}
+    lineitem_part_3 = sr_dict({lineitem_part_2: True})
     sumcase_a_el_0_case_a_sum = lineitem_part_3.sum(lambda x: ((x[0].l_extendedprice) * (((1) - (x[0].l_discount)))))
     
     suml_extendedprice1l_discount_el_0_JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ = lineitem_part_3.sum(lambda x: ((x[0].l_extendedprice) * (((1) - (x[0].l_discount)))))

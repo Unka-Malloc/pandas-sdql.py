@@ -6,6 +6,7 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 @sdql_compile({"li": LINEITEM_TYPE, "cu": CUSTOMER_TYPE, "ord": ORDERS_TYPE})
 def query(li, cu, ord):
     # Insert
+    building = "BUILDING"
     lineitem_orders_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_shipdate > 19950315) else (None))
     
     lineitem_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderdate < 19950315) else (None))

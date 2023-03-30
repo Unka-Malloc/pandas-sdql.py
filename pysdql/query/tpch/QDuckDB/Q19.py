@@ -6,6 +6,24 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, pa):
 
     # Insert
+    deliverinperson = "DELIVER IN PERSON"
+    air = "AIR"
+    airreg = "AIR REG"
+    brand12 = "Brand#12"
+    smcase = "SM CASE"
+    smbox = "SM BOX"
+    smpack = "SM PACK"
+    smpkg = "SM PKG"
+    brand23 = "Brand#23"
+    medbag = "MED BAG"
+    medbox = "MED BOX"
+    medpkg = "MED PKG"
+    medpack = "MED PACK"
+    brand34 = "Brand#34"
+    lgcase = "LG CASE"
+    lgbox = "LG BOX"
+    lgpack = "LG PACK"
+    lgpkg = "LG PKG"
     lineitem_part_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((x[0].l_shipinstruct == deliverinperson) * (((x[0].l_shipmode == airreg) + (x[0].l_shipmode == air))))) else (None))
     
     lineitem_part_build_nest_dict = lineitem_part_build_pre_ops.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
