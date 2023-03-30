@@ -1,6 +1,5 @@
 import unittest
 from pysdql import relation
-from pysdql.core.dtypes.ColEl import ColEl
 
 
 class MyTestCase(unittest.TestCase):

@@ -10,9 +10,7 @@ def query(ord, li):
     ship = "SHIP"
     urgent1 = "1-URGENT"
     high2 = "2-HIGH"
-    lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((((((x[0].l_shipdate < 19950101) * (x[0].l_receiptdate >= 19940101))) * (x[0].l_receiptdate < 19950101))) * (x[0].l_commitdate < 19950101))) * (x[0].l_commitdate < x[0].l_receiptdate))) * (x[0].l_shipdate < x[0].l_commitdate))) * (((x[0].l_shipmode == ship) + (x[0].l_shipmode == mail))))) else (None))
-    
-    lineitem_orders_build_pre_ops = lineitem_0.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey, "l_shipmode": x[0].l_shipmode, "l_commitdate": x[0].l_commitdate, "l_receiptdate": x[0].l_receiptdate, "l_shipdate": x[0].l_shipdate}): True})
+    lineitem_orders_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((((((x[0].l_shipdate < 19950101) * (x[0].l_receiptdate >= 19940101))) * (x[0].l_receiptdate < 19950101))) * (x[0].l_commitdate < 19950101))) * (x[0].l_commitdate < x[0].l_receiptdate))) * (x[0].l_shipdate < x[0].l_commitdate))) * (((x[0].l_shipmode == ship) + (x[0].l_shipmode == mail))))) else (None))
     
     lineitem_orders_build_nest_dict = lineitem_orders_build_pre_ops.sum(lambda x: {x[0].l_orderkey: sr_dict({x[0]: x[1]})})
     
@@ -27,7 +25,9 @@ def query(ord, li):
     
     lineitem_orders_4 = lineitem_orders_3.sum(lambda x: {x[0].concat(x[1]): True})
     
-    results = lineitem_orders_4.sum(lambda x: {record({"high_line_count": x[0].high_line_count, "low_line_count": x[0].low_line_count}): True})
+    lineitem_orders_5 = lineitem_orders_4.sum(lambda x: {x[0]: {record({"high_line_count": x[0].high_line_count, "low_line_count": x[0].low_line_count}): True}})
+    
+    results = lineitem_orders_5.sum(lambda x: x[1])
     
     # Complete
 

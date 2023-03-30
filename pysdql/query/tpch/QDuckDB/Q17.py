@@ -8,7 +8,9 @@ def query(li, l1, pa):
     # Insert
     df_aggr_2_0 = df_aggr_2.sum(lambda x: {x[0].concat(record({"avg_yearly": ((x[0].suml_extendedprice) / (7.0))})): x[1]})
     
-    results = df_aggr_2_0.sum(lambda x: {record({"avg_yearly": x[0].avg_yearly}): True})
+    df_aggr_2_1 = df_aggr_2_0.sum(lambda x: {x[0]: {record({"avg_yearly": x[0].avg_yearly}): True}})
+    
+    results = df_aggr_2_1.sum(lambda x: x[1])
     
     # Complete
 

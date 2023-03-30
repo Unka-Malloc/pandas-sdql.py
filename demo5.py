@@ -1,5 +1,4 @@
-from pysdql.core.dtypes.sdql_ir import *
-from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
+from pysdql.core.prototype.basic.sdql_ir import *
 
 from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
 

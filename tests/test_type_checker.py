@@ -1,6 +1,6 @@
 import unittest
 
-from pysdql.core.util.type_checker import (
+from pysdql.core.utils.type_checker import (
     is_int,
     is_float,
     is_date,

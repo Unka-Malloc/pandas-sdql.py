@@ -1,5 +1,4 @@
-from pysdql.core.dtypes.SDQL_IR_EXTERNAL import UniqueExpr
-from pysdql.core.dtypes.sdql_ir import *
+from pysdql.core.prototype.basic.sdql_ir import *
 from pysdql.extlib.sdqlpy.sdql_lib import sr_dict
 
 names = {

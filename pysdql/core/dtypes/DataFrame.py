@@ -1,72 +1,11 @@
 import copy
-import os
-import re
 import inspect
-import string
+import os
 import pathlib
-
-from pysdql.core.dtypes.AddColProj import AddColProj
-from pysdql.core.dtypes.ColApplyExpr import ColApplyExpr
-from pysdql.core.dtypes.AggrExpr import AggrExpr
-from pysdql.core.dtypes.AggrFrame import AggrFrame
-from pysdql.core.dtypes.ApplyOpExprUnopt import ApplyOpExprUnopt
-from pysdql.core.dtypes.CalcExpr import CalcExpr
-from pysdql.core.dtypes.ColProjExpr import ColProjExpr
-from pysdql.core.dtypes.ColProjRename import ColProjRename
-from pysdql.core.dtypes.CondExpr import CondExpr
-from pysdql.core.dtypes.ApplyOpExpr import ApplyOpExpr
-from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
-from pysdql.core.dtypes.FlexChain import OpChain
-from pysdql.core.dtypes.GroupbyAggrExpr import GroupbyAggrExpr
-from pysdql.core.dtypes.GroupbyAggrFrame import GroupbyAggrFrame
-from pysdql.core.dtypes.HashBuildRelay import BuildEnd
-from pysdql.core.dtypes.IterEl import IterEl
-from pysdql.core.dtypes.CaseExpr import CaseExpr
-from pysdql.core.dtypes.ColEl import ColEl
-from pysdql.core.dtypes.ColOpExpr import ColOpExpr
-from pysdql.core.dtypes.DataFrameStruct import DataFrameStruct
-from pysdql.core.dtypes.ColExtExpr import ColExtExpr
-from pysdql.core.dtypes.MergeExpr import MergeExpr
-from pysdql.core.dtypes.MergeIndicator import MergeIndicator
-from pysdql.core.dtypes.NewColListExpr import NewColListExpr
-from pysdql.core.dtypes.OldColOpExpr import OldColOpExpr
-from pysdql.core.dtypes.Optimizer import Optimizer
-from pysdql.core.dtypes.FlexIR import FlexIR
-from pysdql.core.dtypes.ColElAttach import ColElAttach
-from pysdql.core.dtypes.SDQLInspector import SDQLInspector
-from pysdql.core.dtypes.SafeColProj import SafeColProjExpr
-from pysdql.core.dtypes.TransExpr import TransExpr
-from pysdql.core.dtypes.NewColOpExpr import NewColOpExpr
-from pysdql.core.dtypes.OpExpr import OpExpr
-from pysdql.core.dtypes.OpSeq import OpSeq
-from pysdql.core.dtypes.RecEl import RecEl
-from pysdql.core.dtypes.DictEl import DictEl
-from pysdql.core.dtypes.IsInExpr import IsInExpr
-from pysdql.core.dtypes.VarBindExpr import VarBindExpr
-from pysdql.core.dtypes.VarBindSeq import VarBindSeq
-from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
-
-from pysdql.core.dtypes.sdql_ir import *
-
-from pysdql.core.util.type_checker import (
-    is_int,
-    is_float,
-    is_date,
-    is_str
-)
-
-from pysdql.core.util.df_retriever import Retriever
+import re
+import string
 
 from varname import varname
-
-from pysdql.core.dtypes.EnumUtil import (
-    LogicSymbol,
-    OptGoal,
-    SumIterType,
-    AggrType,
-    OpRetType,
-    PandasRetType,
-)
 
 from pysdql.const import (
     CUSTOMER_COLS,
@@ -79,12 +18,72 @@ from pysdql.const import (
     PARTSUPP_COLS
 )
 
-from pysdql.core.interfaces import (
-    Retrivable
+from pysdql.core.interfaces.api import (
+    Replaceable,
+    Retrivable,
 )
 
+from pysdql.core.enums.EnumUtil import (
+    LogicSymbol,
+    OptGoal,
+    AggrType,
+    OpRetType,
+    PandasRetType,
+)
 
-class DataFrame(FlexIR, Retrivable):
+from pysdql.core.dtypes.DataFrameGroupBy import DataFrameGroupBy
+
+from pysdql.core.exprs.basic.ColEl import ColEl
+from pysdql.core.exprs.basic.IterEl import IterEl
+
+from pysdql.core.exprs.advanced.MergeExprs import (
+    MergeExpr,
+    MergeIndicator,
+)
+from pysdql.core.exprs.advanced.ColAlterExprs import (
+    OldColRename,
+    NewColInsert,
+    NewColListInsert,
+)
+from pysdql.core.exprs.advanced.ColOpExprs import (
+    ColOpBinary,
+    ColOpApply,
+    ColOpExternal,
+)
+from pysdql.core.exprs.advanced.ColProjExprs import (
+    ColProjUnique,
+    ColProjExtra,
+    ColProjRename,
+    ColProj
+)
+from pysdql.core.exprs.advanced.ColOpIsinExpr import ColOpIsin
+from pysdql.core.exprs.advanced.ColBridgeExprs import ColElBridge
+from pysdql.core.exprs.advanced.BinCondExpr import BinCondExpr
+
+from pysdql.core.exprs.complex.AggrExpr import AggrExpr
+from pysdql.core.exprs.complex.GroupbyAggrExpr import GroupbyAggrExpr
+from pysdql.core.exprs.complex.FlexChain import OpChain
+
+from pysdql.core.exprs.carrier.StructExpr import DataFrameStruct
+from pysdql.core.exprs.carrier.OpExpr import OpExpr
+from pysdql.core.exprs.carrier.TransExpr import TransExpr
+from pysdql.core.exprs.carrier.VarBindExpr import VarBindExpr
+
+from pysdql.core.exprs.collection.OpSeq import OpSeq
+from pysdql.core.exprs.collection.VarBindSeq import VarBindSeq
+
+from pysdql.core.reasoner.AggrFrame import AggrFrame
+from pysdql.core.reasoner.GroupbyAggrFrame import GroupbyAggrFrame
+from pysdql.core.reasoner.HashBuildRelay import BuildEnd
+from pysdql.core.reasoner.Optimizer import Optimizer
+
+from pysdql.core.killer.Retriever import Retriever
+
+from pysdql.core.prototype.basic.sdql_ir import *
+
+from pysdql.extlib.sdqlir_to_sdqlpy import GenerateSDQLPYCode
+
+class DataFrame(Replaceable, Retrivable):
     def __init__(self,
                  data=None,
                  index=None,
@@ -328,16 +327,16 @@ class DataFrame(FlexIR, Retrivable):
         for op_expr in self.operations:
             op_body = op_expr.op
 
-            if isinstance(op_body, NewColOpExpr):
+            if isinstance(op_body, NewColInsert):
                 tmp_cols.append(op_body.col_var)
-            elif isinstance(op_body, OldColOpExpr):
+            elif isinstance(op_body, OldColRename):
                 if isinstance(op_body.col_expr, str):
                     rename_cols[op_body.col_var] = op_body.col_expr
-                elif isinstance(op_body.col_expr, ColApplyExpr):
+                elif isinstance(op_body.col_expr, ColOpApply):
                     pass
                 else:
                     raise NotImplementedError(f'Unexpected type: {type(op_body.col_expr)}')
-            elif isinstance(op_body, ColProjExpr):
+            elif isinstance(op_body, ColProj):
                 tmp_cols = copy.copy(op_body.proj_cols)
             elif isinstance(op_body, AggrExpr):
                 tmp_cols = [i for i in list(op_body.aggr_op.keys())]
@@ -354,8 +353,7 @@ class DataFrame(FlexIR, Retrivable):
                     else:
                         raise IndexError(f'{k} not found in {self.name} columns {tmp_cols}')
 
-                non_dup_cols = []
-
+                # non_dup_cols = []
                 # for i in tmp_cols:
                 #     if i not in non_dup_cols:
                 #         non_dup_cols.append(i)
@@ -572,19 +570,19 @@ class DataFrame(FlexIR, Retrivable):
             return self.get_col(col_name=item)
 
         if type(item) == CompareExpr:
-            return self[CondExpr(unit1=item.leftExpr,
-                                 operator=item.compareType,
-                                 unit2=item.rightExpr)]
+            return self[BinCondExpr(unit1=item.leftExpr,
+                                    operator=item.compareType,
+                                    unit2=item.rightExpr)]
         if type(item) == MulExpr:
-            return self[CondExpr(unit1=item.op1Expr,
-                                 operator=LogicSymbol.AND,
-                                 unit2=item.op2Expr)]
+            return self[BinCondExpr(unit1=item.op1Expr,
+                                    operator=LogicSymbol.AND,
+                                    unit2=item.op2Expr)]
         if type(item) == AddExpr:
-            return self[CondExpr(unit1=item.op1Expr,
-                                 operator=LogicSymbol.OR,
-                                 unit2=item.op2Expr)]
+            return self[BinCondExpr(unit1=item.op1Expr,
+                                    operator=LogicSymbol.OR,
+                                    unit2=item.op2Expr)]
 
-        if type(item) == CondExpr:
+        if type(item) == BinCondExpr:
             next_df = self.create_copy(location='__getitem__(filter)')
 
             next_df.push(OpExpr(op_obj=item,
@@ -594,13 +592,13 @@ class DataFrame(FlexIR, Retrivable):
 
         if type(item) == list:
             next_df = self.create_copy(location='__getitem__(projection)')
-            self.push(OpExpr(op_obj=ColProjExpr(next_df, item),
+            self.push(OpExpr(op_obj=ColProj(next_df, item),
                              op_on=next_df,
                              op_iter=False))
 
             return next_df
 
-        if type(item) == IsInExpr:
+        if type(item) == ColOpIsin:
             next_df = self.create_copy(location='__getitem__(isin)')
             # self.operations.push(OpExpr(op_obj=item,
             #                             op_on=self,
@@ -608,7 +606,7 @@ class DataFrame(FlexIR, Retrivable):
 
             return next_df
 
-        if isinstance(item, ColExtExpr):
+        if isinstance(item, ColOpExternal):
             if item.func in [ExtFuncSymbol.StringContains,
                              ExtFuncSymbol.StartsWith,
                              ExtFuncSymbol.EndsWith]:
@@ -667,20 +665,20 @@ class DataFrame(FlexIR, Retrivable):
         if key in self.columns:
             if type(value) in (bool, int, float, str):
                 return self.rename_col_scalar(key, value)
-            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr, ColApplyExpr):
+            if type(value) in (ColEl, ColOpBinary, ColOpExternal, ColOpApply):
                 return self.rename_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.rename_col_expr(key, value)
         else:
             if type(value) in (bool, int, float, str):
                 return self.insert_col_scalar(key, value)
-            if type(value) in (ColEl, ColOpExpr, CaseExpr, ColExtExpr, ColApplyExpr):
+            if type(value) in (ColEl, ColOpBinary, ColOpExternal, ColOpApply):
                 return self.insert_col_expr(key, value)
             if type(value) in (IfExpr,):
                 return self.insert_col_expr(key, value)
             if type(value) in (list,):
-                self.push(OpExpr(op_obj=NewColListExpr(col_var=key,
-                                                       col_list=value),
+                self.push(OpExpr(op_obj=NewColListInsert(col_var=key,
+                                                         col_list=value),
                                  op_on=self,
                                  op_iter=True))
                 return self
@@ -692,7 +690,7 @@ class DataFrame(FlexIR, Retrivable):
             else:
                 raise IndexError(f'Cannot find the column {key} in {self.name}')
 
-            self.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+            self.push(OpExpr(op_obj=OldColRename(col_var=key,
                                                  col_expr=mapper[key]),
                              op_on=self,
                              op_iter=False))
@@ -703,7 +701,7 @@ class DataFrame(FlexIR, Retrivable):
         raise NotImplementedError
 
     def rename_col_expr(self, key, value):
-        self.push(OpExpr(op_obj=OldColOpExpr(col_var=key,
+        self.push(OpExpr(op_obj=OldColRename(col_var=key,
                                              col_expr=value),
                          op_on=self,
                          op_iter=False))
@@ -714,17 +712,17 @@ class DataFrame(FlexIR, Retrivable):
     def insert_col_expr(self, key, value):
         if isinstance(value, ColEl):
             if not self.retriever.equals(self, value.relation):
-                self.push(OpExpr(op_obj=ColElAttach(col_from=value,
+                self.push(OpExpr(op_obj=ColElBridge(col_from=value,
                                                     col_to=self.get_col(key)),
                                  op_on=self,
                                  op_iter=False))
             else:
-                self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+                self.push(OpExpr(op_obj=NewColInsert(col_var=key,
                                                      col_expr=value),
                                  op_on=self,
                                  op_iter=False))
         else:
-            self.push(OpExpr(op_obj=NewColOpExpr(col_var=key,
+            self.push(OpExpr(op_obj=NewColInsert(col_var=key,
                                                  col_expr=value),
                              op_on=self,
                              op_iter=False))
@@ -744,8 +742,8 @@ class DataFrame(FlexIR, Retrivable):
 
     def merge(self, right, how='inner', left_on=None, right_on=None, sort=False, suffixes=('_x', '_y'), indicator=False, validate=None):
         if isinstance(right, ColEl):
-            right.relation.push(OpExpr(op_obj=SafeColProjExpr(proj_on=right.relation,
-                                                              proj_cols=[right.field]),
+            right.relation.push(OpExpr(op_obj=ColProjUnique(proj_on=right.relation,
+                                                            proj_cols=[right.field]),
                                        op_on=right.relation,
                                        op_iter=False))
 
@@ -1090,7 +1088,7 @@ class DataFrame(FlexIR, Retrivable):
     def find_cond(self):
         tmp_list = []
         for op_expr in self.operations:
-            if op_expr.op_type == CondExpr:
+            if op_expr.op_type == BinCondExpr:
                 tmp_list.append(op_expr)
         if tmp_list:
             return tmp_list
@@ -1099,7 +1097,7 @@ class DataFrame(FlexIR, Retrivable):
     def find_col_ins(self):
         tmp_list = []
         for op_expr in self.operations:
-            if op_expr.op_type == NewColOpExpr:
+            if op_expr.op_type == NewColInsert:
                 tmp_list.append(op_expr)
         if tmp_list:
             return tmp_list
@@ -1108,7 +1106,7 @@ class DataFrame(FlexIR, Retrivable):
     def find_col_proj(self):
         tmp_list = []
         for op_expr in self.operations:
-            if op_expr.op_type == ColProjExpr:
+            if op_expr.op_type == ColProj:
                 tmp_list.append(op_expr)
         if tmp_list:
             return tmp_list
@@ -1206,9 +1204,9 @@ class DataFrame(FlexIR, Retrivable):
     def reset_index(self, level=0):
         next_df = self.create_copy(location='reset_index')
 
-        next_df.push(OpExpr(op_obj=AddColProj(self.retriever.find_possible_index_columns()),
-                             op_on=next_df,
-                             op_iter=False))
+        next_df.push(OpExpr(op_obj=ColProjExtra(self.retriever.find_possible_index_columns()),
+                            op_on=next_df,
+                            op_iter=False))
 
         return next_df
 
@@ -1283,7 +1281,7 @@ class DataFrame(FlexIR, Retrivable):
         unopt_cond = cond if isinstance(cond, Expr) else cond.sdql_ir
 
         if self.is_joint:
-            if isinstance(cond, ColExtExpr):
+            if isinstance(cond, ColOpExternal):
                 col_name = cond.col.field
                 if col_name in self.partition_side.columns:
                     cond.is_apply_cond = True
@@ -1298,7 +1296,7 @@ class DataFrame(FlexIR, Retrivable):
 
                     apply_op = op.sdql_ir
 
-                    return ColApplyExpr(
+                    return ColOpApply(
                         apply_op=apply_op,
                         apply_cond=apply_cond,
                         apply_else=ConstantExpr(lamb_else),
@@ -1318,7 +1316,7 @@ class DataFrame(FlexIR, Retrivable):
 
                     cond.is_apply_cond = True
 
-                    return ColApplyExpr(
+                    return ColOpApply(
                         apply_op=if_expr,
                         apply_cond=cond.sdql_ir,
                         apply_else=ConstantExpr(lamb_else),
@@ -1335,7 +1333,7 @@ class DataFrame(FlexIR, Retrivable):
                     raise NotImplementedError
                 else:
                     raise IndexError(f'Cannot find column {col_name}')
-            elif isinstance(cond, CondExpr):
+            elif isinstance(cond, BinCondExpr):
                 cond.is_apply_cond = True
 
                 cond_on = self.retriever.find_cond_on(cond,
@@ -1354,12 +1352,12 @@ class DataFrame(FlexIR, Retrivable):
                                                                     self.joint_frame.probe_frame.probe_key_sdql_ir),
                                                   inplace=False)
 
-                        if isinstance(op, FlexIR):
+                        if isinstance(op, Replaceable):
                             apply_op = op.sdql_ir
                         else:
                             apply_op = op
 
-                        return ColApplyExpr(
+                        return ColOpApply(
                             apply_op=apply_op,
                             apply_cond=apply_cond,
                             apply_else=ConstantExpr(lamb_else),
@@ -1373,12 +1371,12 @@ class DataFrame(FlexIR, Retrivable):
                         apply_cond = cond.replace(rec=self.probe_side.iter_el.key,
                                                   inplace=False)
 
-                        if isinstance(op, FlexIR):
+                        if isinstance(op, Replaceable):
                             apply_op = op.sdql_ir
                         else:
                             apply_op = op
 
-                        return ColApplyExpr(
+                        return ColOpApply(
                             apply_op=apply_op,
                             apply_cond=apply_cond,
                             apply_else=ConstantExpr(lamb_else),
@@ -1418,7 +1416,7 @@ class DataFrame(FlexIR, Retrivable):
                                 if cols_inserted:
                                     new_col_op = cols_inserted[op.field]
 
-                                    if isinstance(new_col_op, FlexIR):
+                                    if isinstance(new_col_op, Replaceable):
                                         apply_op = op.replace(
                                             rec=new_col_op.sdql_ir,
                                             inplace=True)
@@ -1429,7 +1427,7 @@ class DataFrame(FlexIR, Retrivable):
                             else:
                                 raise NotImplementedError
 
-                            return ColApplyExpr(
+                            return ColOpApply(
                                 apply_op=apply_op,
                                 apply_cond=apply_cond,
                                 apply_else=ConstantExpr(lamb_else),
@@ -1449,12 +1447,12 @@ class DataFrame(FlexIR, Retrivable):
 
                     apply_cond = cond.replace(rec=None, inplace=False, mapper=cond_mapper)
 
-                    if isinstance(op, FlexIR):
+                    if isinstance(op, Replaceable):
                         apply_op = op.sdql_ir
                     else:
                         apply_op = op
 
-                    return ColApplyExpr(
+                    return ColOpApply(
                         apply_op=apply_op,
                         apply_cond=apply_cond,
                         apply_else=ConstantExpr(lamb_else),
@@ -1563,7 +1561,7 @@ class DataFrame(FlexIR, Retrivable):
             last_op = self.retriever.find_last_op()
             col_ins_as_list = self.retriever.findall_col_insert_as_list()
 
-            if isinstance(last_op, ColProjExpr):
+            if isinstance(last_op, ColProj):
                 if len(last_op.proj_cols) == 1:
                     target_col = last_op.proj_cols[0]
 
@@ -1583,9 +1581,9 @@ class DataFrame(FlexIR, Retrivable):
     def rename_axis(self, mapper):
         next_df = self.create_copy(location='rename_axis')
 
-        next_df.push(OpExpr(op_obj=AddColProj(mapper),
-                             op_on=next_df,
-                             op_iter=False))
+        next_df.push(OpExpr(op_obj=ColProjExtra(mapper),
+                            op_on=next_df,
+                            op_iter=False))
 
         return next_df
 

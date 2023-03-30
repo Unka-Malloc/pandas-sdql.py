@@ -33,9 +33,9 @@ def query(li, l1, pa):
     
     lineitem_part_lineitem_part_1 = lineitem_part_lineitem_part_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_quantity < x[0].avgl_quantity) else (None))
     
-    lineitem_part_lineitem_part_2 = lineitem_part_lineitem_part_1.sum(lambda x: record({"l_extendedprice_sum": x[0].l_extendedprice}))
+    JQ_l_extendedprice_div_70_XZ_pre_ops = lineitem_part_lineitem_part_1.sum(lambda x: record({"l_extendedprice_sum": x[0].l_extendedprice}))
     
-    results = ((lineitem_part_lineitem_part_2.l_extendedprice_sum) / (7.0))
+    results = ((JQ_l_extendedprice_div_70_XZ_pre_ops.l_extendedprice_sum) / (7.0))
     # Complete
 
     return results

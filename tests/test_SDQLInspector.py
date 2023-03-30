@@ -1,7 +1,6 @@
-import pprint
 import unittest
 
-from pysdql.core.dtypes.SDQLInspector import SDQLInspector
+from pysdql.core.killer.SDQLInspector import SDQLInspector
 
 from pysdql.query.tpch import tpch
 

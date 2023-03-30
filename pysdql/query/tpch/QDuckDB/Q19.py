@@ -8,11 +8,9 @@ def query(li, pa):
     # Insert
     df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"l_extendedprice1l_discount": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))})): x[1]})
     
-    df_aggr_1_1 = df_aggr_1_0.sum(lambda x: {record({"l_extendedprice1l_discount": x[0].l_extendedprice1l_discount}): True})
+    df_aggr_1_1 = df_aggr_1_0.sum(lambda x: record({"l_extendedprice1l_discount": x[0].l_extendedprice1l_discount}))
     
-    df_aggr_1_2 = df_aggr_1_1.sum(lambda x: record({"l_extendedprice1l_discount": x[0].l_extendedprice1l_discount}))
-    
-    results = {df_aggr_1_2: True}
+    results = {df_aggr_1_1: True}
     # Complete
 
     return results

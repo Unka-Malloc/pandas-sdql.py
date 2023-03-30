@@ -16,9 +16,9 @@ def query(li, pa):
     
     lineitem_part_1 = lineitem_part_0.sum(lambda x: {x[0].concat(record({"case_a": ((((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))) if (True) else (0)) if (startsWith(x[0].p_type, promo)) else (0)})): x[1]})
     
-    lineitem_part_2 = lineitem_part_1.sum(lambda x: record({"case_a_sum": x[0].case_a, "JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))}))
+    JQ_JQ_1000_mul_case_a_XZ_div_JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ_XZ_pre_ops = lineitem_part_1.sum(lambda x: record({"case_a_sum": x[0].case_a, "JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ": ((x[0].l_extendedprice) * (((1) - (x[0].l_discount))))}))
     
-    results = ((((100.0) * (lineitem_part_2.case_a_sum))) / (lineitem_part_2.JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ))
+    results = ((((100.0) * (JQ_JQ_1000_mul_case_a_XZ_div_JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ_XZ_pre_ops.case_a_sum))) / (JQ_JQ_1000_mul_case_a_XZ_div_JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ_XZ_pre_ops.JQ_l_extendedprice_mul_JQ_1_sub_l_discount_XZ_XZ))
     # Complete
 
     return results
