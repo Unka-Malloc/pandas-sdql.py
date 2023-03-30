@@ -66,9 +66,7 @@ def query(pa, su, li, ord, cu, na, n1, n2, re):
     
     lineitem_orders_customer_nation_region_supplier_nation_part_attach_to_df_aggr_1 = lineitem_orders_customer_nation_region_supplier_nation_part_7.sum(lambda x: {x[0]: x[1]})
     
-    df_aggr_1_0 = df_aggr_1.sum(lambda x: {x[0].concat(record({"mkt_share": ((x[0].sumcase_a) / (x[0].suml_extendedprice1l_discount))})): x[1]})
-    
-    results = lineitem_orders_customer_nation_region_supplier_nation_part_attach_to_df_aggr_1.sum(lambda x: {record({"o_year": x[0].o_year}): True})
+    results = lineitem_orders_customer_nation_region_supplier_nation_part_attach_to_df_aggr_1.sum(lambda x: {record({"o_year": x[0].o_year, "mkt_share": x[0].mkt_share}): True})
     
     # Complete
 
