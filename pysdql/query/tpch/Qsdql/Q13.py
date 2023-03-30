@@ -8,11 +8,20 @@ def query(cu, ord):
     # Insert
     special = "special"
     requests = "requests"
-    orders_part = ord.sum(lambda x_orders: ({x_orders[0].o_custkey: record({"c_count": 1.0})}) if (((firstIndex(x_orders[0].o_comment, special) != -1) * (firstIndex(x_orders[0].o_comment, requests) > ((firstIndex(x_orders[0].o_comment, special)) + (6)))) == False) else (None))
+    orders_customer_build_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (((firstIndex(x[0].o_comment, special) != -1) * (firstIndex(x[0].o_comment, requests) > ((firstIndex(x[0].o_comment, special)) + (6)))) == False) else (None))
     
-    customer_aggr = cu.sum(lambda x_customer: {record({"c_count": (orders_part[x_customer[0].c_custkey].c_count) if (orders_part[x_customer[0].c_custkey] != None) else (0.0)}): 1.0})
+    orders_customer_build_nest_dict = orders_customer_build_pre_ops.sum(lambda x: {x[0].o_custkey: sr_dict({x[0]: x[1]})})
     
-    results = customer_aggr.sum(lambda x_customer_aggr: {record({"c_count": x_customer_aggr[0].c_count, "custdist": x_customer_aggr[1]}): True})
+    orders_customer_0 = cu.sum(lambda x: ({x[0]: True}) if (orders_customer_build_nest_dict[x[0].c_custkey] == None) else (orders_customer_build_nest_dict[x[0].c_custkey].sum(lambda y: {x[0].concat(y[0]): True})
+    ))
+    
+    orders_customer_1 = orders_customer_0.sum(lambda x: {record({"c_custkey": x[0].c_custkey}): record({"c_count": (1.0) if (x[0].o_orderkey != None) else (0.0)})})
+    
+    orders_customer_2 = orders_customer_1.sum(lambda x: {x[0].concat(x[1]): True})
+    
+    orders_customer_3 = orders_customer_2.sum(lambda x: {record({"c_count": x[0].c_count}): record({"custdist": (1.0) if (x[0].c_count != None) else (0.0)})})
+    
+    results = orders_customer_3.sum(lambda x: {x[0].concat(x[1]): True})
     
     # Complete
 

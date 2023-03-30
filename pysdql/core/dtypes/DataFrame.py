@@ -655,7 +655,7 @@ class DataFrame(Replaceable, Retrivable):
         else:
             # print(self.operations)
             # return ColEl(self, col_name)
-            print(f'Warning: Cannot find column "{col_name}" in {{ {self.name} }} {self.columns}')
+            print(f'Warning: Cannot find column "{col_name}" in {{ {self.name} }} -> {self.columns}')
 
             return ColEl(self, col_name)
 
@@ -815,7 +815,8 @@ class DataFrame(Replaceable, Retrivable):
         overlap_cols = list(set(next_left_df.cols_out).intersection(next_right_df.cols_out))
 
         all_cols_used = self.retriever.findall_cols_used(as_owner=False,
-                                                         only_next=False)
+                                                         only_next=False,
+                                                         exclude=None)
 
         used_overlap_cols = []
 
