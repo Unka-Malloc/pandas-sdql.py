@@ -34,4 +34,3 @@ TODO: Results, SF 0.1, text file
 
 # Hyper-Unopt-Compiler
 - Fixed: Q6, Q19, Q22 from iteration on a record
-- 
