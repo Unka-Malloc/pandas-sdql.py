@@ -17,6 +17,7 @@ from pysdql.const import (
     SUPPLIER_COLS,
     PARTSUPP_COLS
 )
+from pysdql.core.exprs.advanced.AggrOpExprs import AggrOpRename
 
 from pysdql.core.interfaces.api import (
     Replaceable,
@@ -57,7 +58,10 @@ from pysdql.core.exprs.advanced.ColProjExprs import (
     ColProj
 )
 from pysdql.core.exprs.advanced.ColOpIsinExpr import ColOpIsin
-from pysdql.core.exprs.advanced.ColBridgeExprs import ColElBridge
+from pysdql.core.exprs.advanced.ColBridgeExprs import (
+    ColElBridge,
+    ColOpBridge,
+)
 from pysdql.core.exprs.advanced.BinCondExpr import BinCondExpr
 
 from pysdql.core.exprs.complex.AggrExpr import AggrExpr
@@ -713,6 +717,17 @@ class DataFrame(Replaceable, Retrivable):
         if isinstance(value, ColEl):
             if not self.retriever.equals(self, value.relation):
                 self.push(OpExpr(op_obj=ColElBridge(col_from=value,
+                                                    col_to=self.get_col(key)),
+                                 op_on=self,
+                                 op_iter=False))
+            else:
+                self.push(OpExpr(op_obj=NewColInsert(col_var=key,
+                                                     col_expr=value),
+                                 op_on=self,
+                                 op_iter=False))
+        elif isinstance(value, ColOpBinary):
+            if not self.retriever.equals(self, value.relation):
+                self.push(OpExpr(op_obj=ColOpBridge(col_from=value,
                                                     col_to=self.get_col(key)),
                                  op_on=self,
                                  op_iter=False))
@@ -1571,6 +1586,14 @@ class DataFrame(Replaceable, Retrivable):
 
                         if len(target_list) == 1:
                             target_expr = target_list[0]
+
+                            if isinstance(target_expr, AggrExpr):
+                                target_expr.aggr_on.push(
+                                    OpExpr(op_obj=AggrOpRename(aggr_expr=target_expr,
+                                                               rename_to=target_col,
+                                                               rename_from=f'{list(target_expr.origin_dict.items())[0][0]}'),
+                                           op_on=target_expr.aggr_on,
+                                           op_iter=True))
 
                             return target_expr
 

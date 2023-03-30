@@ -1,7 +1,10 @@
+from typing import Union
+
 from pysdql.core.enums.EnumUtil import (
     LastIterFunc,
     OpRetType
 )
+from pysdql.core.exprs.advanced.AggrOpExprs import AggrOpRename
 
 from pysdql.core.interfaces.api import (
     Retrivable,
@@ -1863,3 +1866,12 @@ class Retriever:
                 ok_flag = True
 
         return False
+
+    def find_aggr_rename(self) -> Union[None, AggrOpRename]:
+        for op_expr in self.history:
+            op_body = op_expr.op
+
+            if isinstance(op_body, AggrOpRename):
+                return op_body
+
+        return None

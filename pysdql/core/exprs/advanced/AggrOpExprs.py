@@ -21,8 +21,10 @@ from pysdql.core.prototype.basic.sdql_ir import (
 from pysdql.core.utils.format_utils import input_fmt
 
 """
+AggrUniOp -> AggrExpr -> A.sum()
 AggrBinOp -> A.sum() * B.sum()
 AggrOpFilter -> DataFrame.filter()
+AggrOpRename -> df['B'] = df[df['A'].sum()]
 """
 
 class AggrBinOp(Replaceable):
@@ -199,3 +201,13 @@ class AggrOpFilter:
 
     def __repr__(self):
         return f'{self.aggr_unit1}\n{self.cond_op}\n{self.aggr_unit2}'
+
+class AggrOpRename:
+    def __init__(self, aggr_expr, rename_to, rename_from):
+        self.aggr_expr = aggr_expr
+        self.rename_to = rename_to
+        self.rename_from = rename_from
+
+    @property
+    def op_name_suffix(self):
+        return '_aggr_rename'

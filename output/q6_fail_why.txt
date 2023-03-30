@@ -15,15 +15,15 @@ df_aggr_1_1 = df_aggr_1_0.sum(lambda x: record({"l_extendedpricel_discount": x[0
 results = {record({"revenue": df_aggr_1_1.l_extendedpricel_discount}): True}
 ============================================================
 Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
- SDQL Execution Time: 11.497459173202515 s 
+ SDQL Execution Time: 11.7367844581604 s 
 SDQL RESULTS START
 ============================================================
 {[('revenue', 11346352.527700035)]: True}
 ============================================================
 SDQL RESULTS END
 >> Pandas <<
-Pandas Execution Time: 0.06738424301147461 s 
-DuckDB Execution Time: 0.015625715255737305 s 
+Pandas Execution Time: 0.06640815734863281 s 
+DuckDB Execution Time: 0.0146484375 s 
 ============================================================
 >> Comparing Pandas with Duck ... <<
 ============================================================
@@ -68,4 +68,4 @@ number of mismatch records: 1
 ============================================================
 6:  Fail 
 ============================================================
-0.33997828563054405
+0.3411490400632223
