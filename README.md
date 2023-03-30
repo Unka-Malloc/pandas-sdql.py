@@ -14,7 +14,7 @@ python3 setup.py install
 
 ## Dev Branch (Experimental)
 ```shell
-git clone --branch PostgresPlan https://github.com/cxunka/pd2sd.git
+git clone --branch DuckPlan https://github.com/cxunka/pd2sd.git
 ```
 
 ## Dependency
