@@ -29,13 +29,13 @@ def query(su, li, ord, na):
     lineitem_supplier_nation_0 = lineitem_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_supplier_nation_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_supplier_nation_build_nest_dict[x[0].s_suppkey] != None) else (None))
     
-    lineitem_supplier_nation_1 = lineitem_supplier_nation_0.sum(lambda x: {x[0]: sr_dict({record({"s_name": x[0].s_name, "l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey": x[0].l_orderkey}): True})})
+    lineitem_supplier_nation_1 = lineitem_supplier_nation_0.sum(lambda x: {x[0]: sr_dict({record({"s_name": x[0].s_name, "l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey_x": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})})
     
     lineitem_supplier_nation_lineitem_build_pre_ops = lineitem_supplier_nation_1.sum(lambda x: x[1])
     
     lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     
-    lineitem_1 = lineitem_0.sum(lambda x: {x[0]: sr_dict({record({"l_orderkey": x[0].l_orderkey, "l_suppkey_y": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey}): True})})
+    lineitem_1 = lineitem_0.sum(lambda x: {x[0]: sr_dict({record({"l_orderkey_y": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey, "l_suppkey_y": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey}): True})})
     
     lineitem_supplier_nation_lineitem_probe_pre_ops = lineitem_1.sum(lambda x: x[1])
     
@@ -46,15 +46,17 @@ def query(su, li, ord, na):
     
     lineitem_supplier_nation_lineitem_1 = lineitem_supplier_nation_lineitem_0.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_suppkey_x != x[0].l_suppkey_y) else (None))
     
-    lineitem_supplier_nation_lineitem_2 = lineitem_supplier_nation_lineitem_1.sum(lambda x: {record({"l_orderkey": x[0].l_orderkey}): True})
+    lineitem_supplier_nation_lineitem_2 = lineitem_supplier_nation_lineitem_1.sum(lambda x: {x[0]: {record({"l_orderkey": x[0].l_orderkey}): True}})
     
-    lineitem_supplier_nation_lineitem_3 = lineitem_supplier_nation_lineitem_2.sum(lambda x: {x[0]: sr_dict({record({"s_name": x[0].s_name, "l_suppkey_y": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey_y": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})})
+    lineitem_supplier_nation_lineitem_3 = lineitem_supplier_nation_lineitem_2.sum(lambda x: x[1])
     
-    lineitem_supplier_nation_lineitem_lineitem_supplier_nation_build_pre_ops = lineitem_supplier_nation_lineitem_3.sum(lambda x: x[1])
+    lineitem_supplier_nation_lineitem_4 = lineitem_supplier_nation_lineitem_3.sum(lambda x: {x[0]: sr_dict({record({"s_name_y": x[0].s_name, "s_name": x[0].s_name, "l_suppkey_y": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey_y": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})})
+    
+    lineitem_supplier_nation_lineitem_lineitem_supplier_nation_build_pre_ops = lineitem_supplier_nation_lineitem_4.sum(lambda x: x[1])
     
     lineitem_supplier_nation_2 = lineitem_supplier_nation_1.sum(lambda x: x[1])
     
-    lineitem_supplier_nation_3 = lineitem_supplier_nation_2.sum(lambda x: {x[0]: sr_dict({record({"s_name": x[0].s_name, "l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey_x": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})})
+    lineitem_supplier_nation_3 = lineitem_supplier_nation_2.sum(lambda x: {x[0]: sr_dict({record({"s_name_x": x[0].s_name, "s_name": x[0].s_name, "l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey_x": x[0].l_orderkey, "l_orderkey": x[0].l_orderkey}): True})})
     
     lineitem_supplier_nation_lineitem_lineitem_supplier_nation_probe_pre_ops = lineitem_supplier_nation_3.sum(lambda x: x[1])
     

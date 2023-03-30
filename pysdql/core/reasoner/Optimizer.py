@@ -673,28 +673,28 @@ class Optimizer:
                             valExpr=tmp_it.sdql_ir,
                             bodyExpr=ConstantExpr(True))
                 )
-            elif isinstance(op_body, ColProjUnique):
-                tmp_it = IterForm(tmp_vn_on, tmp_el_on)
-
-                final_cols = []
-
-                for i in op_body.proj_cols:
-                    final_cols.append(i)
-
-                rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
-
-                proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
-
-                tmp_it.iter_op = proj_op
-
-                # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
-
-                unopt_context.append(
-                    LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                            valExpr=tmp_it.sdql_ir,
-                            bodyExpr=ConstantExpr(True))
-                )
-            elif isinstance(op_body, ColProj):
+            # elif isinstance(op_body, ColProjUnique):
+            #     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
+            #
+            #     final_cols = []
+            #
+            #     for i in op_body.proj_cols:
+            #         final_cols.append(i)
+            #
+            #     rec_list = [(i, RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), i)) for i in final_cols]
+            #
+            #     proj_op = DicConsExpr([(RecConsExpr(rec_list), ConstantExpr(True))])
+            #
+            #     tmp_it.iter_op = proj_op
+            #
+            #     # tmp_it.iter_op = sr_dict(dict(proj_op.initialPairs))
+            #
+            #     unopt_context.append(
+            #         LetExpr(varExpr=VarExpr(tmp_vn_nx),
+            #                 valExpr=tmp_it.sdql_ir,
+            #                 bodyExpr=ConstantExpr(True))
+            #     )
+            elif isinstance(op_body, (ColProj, ColProjUnique)):
                 if col_attach_cache:
                     tmp_it = IterForm(col_attach_name, tmp_el_on)
 

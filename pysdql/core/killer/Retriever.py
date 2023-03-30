@@ -282,9 +282,11 @@ class Retriever:
         else:
             return cleaned_cols_used
 
-    def findall_cols_used(self, as_owner=True, only_next=False) -> list:
+    def findall_cols_used(self, as_owner=True, only_next=False, exclude='infer') -> list:
         """
 
+        :param exclude:
+            ignore
         :param only_next:
             True -> only find the columns that are used in the other joints rather than as the [left, right] side
             False -> fina all usages including the joint that construct itself
@@ -293,6 +295,11 @@ class Retriever:
             True -> only find columns that the current dataframe has
         :return:
         """
+        if exclude == 'infer':
+            exclude = tuple([ColProj])
+        else:
+            exclude = ()
+
         cols_used = []
         cols_own = []
 
@@ -300,6 +307,10 @@ class Retriever:
 
         for op_expr in self.history:
             op_body = op_expr.op
+
+            if exclude:
+                if isinstance(op_body, exclude):
+                    continue
 
             # CondExpr
             if isinstance(op_body, BinCondExpr):
@@ -388,6 +399,10 @@ class Retriever:
             if isinstance(op_body, ColOpIsin):
                 cols_used.append(op_body.col_part.col_name)
                 cols_used.append(op_body.col_probe.col_name)
+
+            # ColProj
+            if isinstance(op_body, ColProj):
+                cols_used += op_body.proj_cols
 
         # Remove Duplications
         cleaned_cols_used = []
