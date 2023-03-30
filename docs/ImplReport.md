@@ -54,12 +54,50 @@ results = {record({"revenue": df_aggr_1_1.l_extendedpricel_discount}): True}
 `[]`
 
 # DuckDB
+
+## Incorrect Query: Q15
+```
+df_group_2 = df_filter_3 \
+        .groupby(['supplier_no'], sort=False) \
+        .agg(
+        total_revenue=("before_1", "sum"),
+    )
+    df_group_2 = df_group_2[['total_revenue']]
+    df_group_2 = df_group_2.reset_index()
+    df_aggr_1 = pd.DataFrame()
+    df_aggr_1['maxtotal_revenue'] = [(df_group_2.total_revenue).max()]
+    df_aggr_1 = df_aggr_1[['maxtotal_revenue']]
+    df_limit_1 = df_aggr_1.head(1)
+    df_merge_2 = df_merge_1.merge(df_limit_1, left_on=['total_revenue'], right_on=['maxtotal_revenue'], how="inner",
+                                  sort=False)
+```
+
 ## Unoptimized
 ### Pass
-`[1, 4, 5, 9, 12, 13, 16, ]`
+`[1, 3, 4, 5, 9, 10, 12, 13, 16, 19]`
 
 ### Fail
-`[6, 18, ]`
+`[6, 8, 18, ]`
 
 ### Error
-`[2, 3, 7, 8, 10, 11, 14, 15, 17, 19, 20, 21, 22]`
+`[2, 7, 11, 14, 15, 17, 20, 21]`
+
+## Plan
+### Aggr & AggrBinOp -> Rename
+`[14, 17]`
+
+### head(1) -> Get As DataFrame
+`[11, 15, 22]`
+
+### how='cross' -> Full Outer Join
+`[11, 22]`
+
+### TypeError: unsupported operand type(s) for &: 'ColOpIsNull' and 'ColOpExternal'
+`[20]`
+
+### Unkown Issues 
+- Q2: `AttributeError: 'NoneType' object has no attribute 'sum'`
+- Q7: `AttributeError: 'NoneType' object has no attribute 'sum'`
+- Q21: `AttributeError: 'NoneType' object has no attribute 'sum'`
+
+### Q21 itself represent issues, always do this last

@@ -9,6 +9,8 @@ def query(su, li, l2, l3, ord, na):
     # Insert
     f = "F"
     saudiarabia = "SAUDI ARABIA"
+    f = "F"
+    saudiarabia = "SAUDI ARABIA"
     lineitem_orders_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     
     lineitem_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderstatus == f) else (None))

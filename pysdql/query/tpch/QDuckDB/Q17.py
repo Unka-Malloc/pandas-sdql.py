@@ -6,6 +6,8 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(li, l1, pa):
 
     # Insert
+    brand23 = "Brand#23"
+    medbox = "MED BOX"
     lineitem_part_probe_pre_ops = pa.sum(lambda x: ({x[0]: x[1]}) if (((x[0].p_brand == brand23) * (x[0].p_container == medbox))) else (None))
     
     lineitem_part_build_nest_dict = li.sum(lambda x: {x[0].l_partkey: sr_dict({x[0]: x[1]})})
@@ -30,7 +32,7 @@ def query(li, l1, pa):
     
     lineitem_part_lineitem_2 = lineitem_part_lineitem_1.sum(lambda x: record({"l_extendedprice": x[0].l_extendedprice}))
     
-    suml_extendedprice_el_0_l_extendedprice_sum = {lineitem_part_lineitem_2: True}
+    suml_extendedprice_el_0_l_extendedprice_sum = sr_dict({lineitem_part_lineitem_2: True})
     df_aggr_1_attach_to_df_aggr_2 = df_aggr_1_0.sum(lambda x: {x[0].concat(record({"avg_yearly": ((x[0].suml_extendedprice) / (7.0))})): x[1]})
     
     results = df_aggr_1_attach_to_df_aggr_2.sum(lambda x: {record({"avg_yearly": x[0].avg_yearly}): True})

@@ -6,6 +6,8 @@ from pysdql.extlib.sdqlpy.sdql_lib import *
 def query(pa, su, ps, ps1, na, re):
 
     # Insert
+    europe = "EUROPE"
+    brass = "BRASS"
     partsupp_supplier_build_nest_dict = ps.sum(lambda x: {x[0].ps_suppkey: sr_dict({x[0]: x[1]})})
     
     partsupp_supplier_nation_region_build_pre_ops = su.sum(lambda x: (partsupp_supplier_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})

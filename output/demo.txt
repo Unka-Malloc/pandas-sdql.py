@@ -1,71 +1,49 @@
->> Query 6 (Q6) <<
+>> Query 20 (Q20) <<
 >> SDQL <<
-Warning: Cannot find column "l_extendedpricel_discount" in { df_aggr_1 } -> []
-Warning: Cannot find column "l_extendedpricel_discount" in { df_aggr_1 } -> []
->> Optimized Query <<
-============================================================
-lineitem_0 = li.sum(lambda x: ({x[0]: x[1]}) if (((((((((x[0].l_shipdate >= 19940101) * (x[0].l_shipdate < 19950101))) * (x[0].l_discount >= 0.05))) * (x[0].l_discount <= 0.07))) * (x[0].l_quantity < 24))) else (None))
-
-lineitem_attach_to_df_aggr_1 = lineitem_0.sum(lambda x: {x[0].concat(record({"l_extendedpricel_discount": ((x[0].l_extendedprice) * (x[0].l_discount))})): x[1]})
-
-df_aggr_1_0 = lineitem_attach_to_df_aggr_1.sum(lambda x: {record({"l_extendedpricel_discount": x[0].l_extendedpricel_discount}): True})
-
-df_aggr_1_1 = df_aggr_1_0.sum(lambda x: record({"l_extendedpricel_discount": x[0].l_extendedpricel_discount}))
-
-results = {record({"revenue": df_aggr_1_1.l_extendedpricel_discount}): True}
-============================================================
-Reading T:/tpch_dataset/100M/lineitem.tbl Finished.
- SDQL Execution Time: 11.497459173202515 s 
-SDQL RESULTS START
-============================================================
-{[('revenue', 11346352.527700035)]: True}
-============================================================
-SDQL RESULTS END
->> Pandas <<
-Pandas Execution Time: 0.06738424301147461 s 
-DuckDB Execution Time: 0.015625715255737305 s 
-============================================================
->> Comparing Pandas with Duck ... <<
-============================================================
- Check Pandas with DuckDB: Pass 
-============================================================
-PANDAS RESULTS START
-============================================================
-        revenue
-0  1.180342e+07
-============================================================
-PANDAS RESULTS END
-============================================================
->> Comparing SDQL with Pandas ... <<
-Shape Check Passed: 1 rows x 1 columns
-At row number 0 / 1
-Not found {'revenue': 11346352.5}
-Failed while looking for revenue == 11346352.5
-The answer is as following:
-      revenue
-0  11803420.3
-number of mismatch records: 1
 ============================================================
 
     
- ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[     ¨€¨€¨€¨€¨€¨€¨[ 
-¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨€¨€¨X¨T¨T¨T¨T¨a 
-¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a     ¨€¨€¨€¨€¨€¨€¨€¨[ 
-¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨€¨€¨[
-¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨^¨€¨€¨€¨€¨€¨€¨X¨a
- ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a        ¨^¨T¨T¨T¨T¨T¨a 
+ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[    ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨[ 
+¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨^¨T¨T¨T¨T¨€¨€¨[¨€¨€¨X¨T¨€¨€¨€¨€¨[
+¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a      ¨€¨€¨€¨€¨€¨X¨a¨€¨€¨U¨€¨€¨X¨€¨€¨U
+¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨a ¨€¨€¨€¨€¨X¨a¨€¨€¨U
+¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨€¨€¨€¨€¨€¨€¨€¨[¨^¨€¨€¨€¨€¨€¨€¨X¨a
+ ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a       ¨^¨T¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨a 
+
     
-             ¨€¨€¨€¨€¨€? ¨{¨{¨{       ¨€¨€¨ˆ ¨€¨€¨ˆ    
-           ¨ˆ¨€¨€   ? ?¨€¨€¨€¨€¨{    ¨ˆ¨€¨€?¨ˆ¨€¨€?    
-           ?¨€¨€¨€¨€ ? ?¨€¨€  ?¨€¨{  ?¨€¨€??¨€¨€?    
-           ?¨ˆ¨€?  ? ?¨€¨€¨{¨{¨{¨{¨€¨€ ?¨€¨€??¨€¨€?    
-           ??¨€?     ¨ˆ¨€   ¨ˆ¨€¨€??¨€¨€??¨€¨€¨€¨€¨€¨€?
-            ? ?     ??   ¨ˆ?¨€??¨ˆ  ? ??¨ˆ  ?
-            ?        ?   ?? ? ? ?? ? ?  ?
-            ? ?      ?   ?    ? ?  ? ?   
-                         ?  ? ?      ?  ?
+         ¨ˆ¨€¨€¨€¨€¨€  ¨€¨€?¨€¨€¨€   ¨€¨€?¨€¨€¨€   ?¨€¨€¨€¨€¨€   ¨€¨€?¨€¨€¨€  
+         ¨ˆ¨€   ? ¨ˆ¨€¨€ ? ¨€¨€?¨ˆ¨€¨€ ? ¨€¨€??¨€¨€?  ¨€¨€?¨ˆ¨€¨€ ? ¨€¨€?
+         ?¨€¨€¨€   ¨ˆ¨€¨€ ?¨{¨€ ?¨ˆ¨€¨€ ?¨{¨€ ??¨€¨€?  ¨€¨€?¨ˆ¨€¨€ ?¨{¨€ ?
+         ?¨ˆ¨€  ¨{ ?¨€¨€??¨€¨{  ?¨€¨€??¨€¨{  ?¨€¨€   ¨€¨€??¨€¨€??¨€¨{  
+         ??¨€¨€¨€¨€??¨€¨€¨ˆ ?¨€¨€??¨€¨€¨ˆ ?¨€¨€?? ¨€¨€¨€¨€¨ˆ???¨€¨€¨ˆ ?¨€¨€?
+         ?? ?? ?? ?¨ˆ ??¨ˆ?? ?¨ˆ ??¨ˆ?? ?????? ? ?¨ˆ ??¨ˆ?
+          ? ?  ?  ?? ? ??  ?? ? ??  ? ? ??   ?? ? ??
+            ?     ??   ?   ??   ? ? ? ? ?    ??   ? 
+            ?  ?   ?        ?         ? ?     ?                 
     
 ============================================================
-6:  Fail 
+>> Traceback Q20 <<
+
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 63, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.QDuckDB.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckQ.py", line 564, in q20
+    write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckT.py", line 575, in tpch_q20
+    df_filter_4 = part[(~part.p_name.isnull()) & (part.p_name.str.contains("^forest.*?$", regex=True))]
+TypeError: unsupported operand type(s) for &: 'ColOpIsNull' and 'ColOpExternal'
+
 ============================================================
-0.33997828563054405
+20:  Error 
+============================================================
+0.010351836681365967
+Traceback (most recent call last):
+  File "T:\pd2sd\pysdql\query\tpch\__init__.py", line 63, in tpch_query
+    sdql_result = eval(f'pysdql.query.tpch.QDuckDB.q{q}({execution_mode}, {threads_count}, {optimize})')
+  File "<string>", line 1, in <module>
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckQ.py", line 564, in q20
+    write_query(20, tpch_q20(supplier, nation, partsupp, part, lineitem).to_sdqlir(optimize))
+  File "T:\pd2sd\pysdql\query\tpch\QDuckDB\DuckT.py", line 575, in tpch_q20
+    df_filter_4 = part[(~part.p_name.isnull()) & (part.p_name.str.contains("^forest.*?$", regex=True))]
+TypeError: unsupported operand type(s) for &: 'ColOpIsNull' and 'ColOpExternal'

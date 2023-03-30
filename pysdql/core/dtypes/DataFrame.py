@@ -17,7 +17,7 @@ from pysdql.const import (
     SUPPLIER_COLS,
     PARTSUPP_COLS
 )
-from pysdql.core.exprs.advanced.AggrOpExprs import AggrOpRename
+from pysdql.core.exprs.advanced.AggrOpExprs import AggrOpRename, AggrBinOp
 
 from pysdql.core.interfaces.api import (
     Replaceable,
@@ -1595,6 +1595,16 @@ class DataFrame(Replaceable, Retrivable):
                                            op_on=target_expr.aggr_on,
                                            op_iter=True))
 
+                            elif isinstance(target_expr, AggrBinOp):
+                                target_expr.on.push(
+                                    OpExpr(op_obj=AggrOpRename(aggr_expr=target_expr,
+                                                               rename_to=target_col,
+                                                               rename_from=target_expr.descriptor),
+                                           op_on=target_expr.on,
+                                           op_iter=True))
+                            else:
+                                print(f'Warning: No rename for {target_expr}')
+
                             return target_expr
 
         return self
@@ -1615,12 +1625,12 @@ class DataFrame(Replaceable, Retrivable):
                           rename_last='',
                           conflict_rename_indicator=False,
                           process_until=None,
-                          drop_duplicates=True,
+                          def_const=False,
                           ):
         return Optimizer(self).get_unopt_context(rename_last=rename_last,
                                                  conflict_rename_indicator=conflict_rename_indicator,
                                                  process_until=process_until,
-                                                 drop_duplicates=drop_duplicates,
+                                                 def_const=def_const,
                                                  )
 
     def create_copy(self, next_name="", location=None):
