@@ -39,7 +39,7 @@ def query(li, pa):
     
     part_lineitem_3 = part_lineitem_2.sum(lambda x: record({"revenue": x[0].revenue}))
     
-    results = {part_lineitem_3: True}
+    results = sr_dict({part_lineitem_3: True})
     # Complete
 
     return results

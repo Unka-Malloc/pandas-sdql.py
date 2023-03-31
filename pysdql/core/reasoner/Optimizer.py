@@ -6,12 +6,12 @@ from pysdql.core.utils.flex_check import (
 from pysdql.core.enums.EnumUtil import (
     LastIterFunc,
     MergeType,
-    OpRetType,
+    OpRetType, DropIt,
 )
 
 from pysdql.core.interfaces.availability.Replaceable import Replaceable
 
-from pysdql.core.exprs.advanced.ColOpExprs import ColOpExternal
+from pysdql.core.exprs.advanced.ColOpExprs import ColOpExternal, ColOpBinary
 from pysdql.core.exprs.advanced.AggrOpExprs import (
     AggrBinOp,
     AggrOpFilter,
@@ -643,9 +643,10 @@ class Optimizer:
 
     def get_unopt_context(self,
                           rename_last='',
-                          conflict_rename_indicator=False,
+                          attr_rename_indicator=False,
                           process_until=None,
                           def_const=False,
+                          drop_them=None,
                           ):
         this_name = self.opt_on.current_name
 
@@ -852,7 +853,7 @@ class Optimizer:
                     # else:
                     continue
             elif isinstance(op_body, ColProjRename):
-                if conflict_rename_indicator:
+                if attr_rename_indicator:
                     tmp_it = IterForm(tmp_vn_on, tmp_el_on)
 
                     if op_body.is_left:
@@ -937,8 +938,25 @@ class Optimizer:
                             def_const=True,
                         )
 
-                # if isinstance(op_body, CondExpr):
-                #     print(self.retriever.find_calc_in_cond(op_body))
+                col_mapper = {}
+
+                if isinstance(op_body, BinCondExpr):
+                    col_ops = self.retriever.find_colop_in_cond(op_body)
+
+                    for k in col_ops.keys():
+                        if all([i not in self.opt_on.columns for i in self.retriever.find_cols(col_ops[k])]):
+                            unopt_context += col_ops[k].relation.get_context_unopt(
+                                rename_last=f'{k}_pre_ops',
+                                def_const=True,
+                                drop_them=DropIt.AggrFormSingletonDict,
+                            )
+
+                            for e in self.retriever.find_cols(col_ops[k]):
+                                col_mapper[e] = RecAccessExpr(VarExpr(f'{k}_pre_ops'), e)
+
+                            for r in self.retriever.find_cols(op_body):
+                                if r not in col_mapper.keys():
+                                    col_mapper[r] = RecAccessExpr(PairAccessExpr(VarExpr(tmp_el_on), 0), r)
 
                 # if any([(i not in self.opt_on.cols_out)
                 #         & (i not in self.retriever.find_cols_used('groupby_aggr'))
@@ -982,7 +1000,13 @@ class Optimizer:
                 # else:
                 #     tmp_it.iter_cond.append(op_body)
 
-                tmp_it.iter_cond.append(op_body)
+                if col_mapper:
+                    if isinstance(op_body, BinCondExpr):
+                            tmp_it.iter_cond.append(op_body.replace(rec=None, inplace=True, mapper=col_mapper))
+                    if isinstance(op_body, ColOpExternal):
+                        tmp_it.iter_cond.append(op_body.replace(rec=None, inplace=True, mapper=col_mapper).sdql_ir)
+                else:
+                    tmp_it.iter_cond.append(op_body)
 
                 unopt_context.append(
                     LetExpr(varExpr=VarExpr(tmp_vn_nx),
@@ -1746,14 +1770,15 @@ class Optimizer:
                                 bodyExpr=ConstantExpr(True))
                     )
                 else:
-                    final_op = DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))])
-                    final_op = sr_dict(dict(final_op.initialPairs))
+                    if drop_them != DropIt.AggrFormSingletonDict:
+                        final_op = DicConsExpr([(VarExpr(tmp_vn_on_2), ConstantExpr(True))])
+                        final_op = sr_dict(dict(final_op.initialPairs))
 
-                    unopt_context.append(
-                        LetExpr(varExpr=VarExpr(tmp_vn_nx),
-                                valExpr=final_op,
-                                bodyExpr=ConstantExpr(True))
-                    )
+                        unopt_context.append(
+                            LetExpr(varExpr=VarExpr(tmp_vn_nx),
+                                    valExpr=final_op,
+                                    bodyExpr=ConstantExpr(True))
+                        )
             elif isinstance(op_body, AggrOpRename):
                 continue
             elif isinstance(op_body, GroupbyAggrExpr):
@@ -2010,8 +2035,8 @@ class Optimizer:
 
         return unopt_context
 
-    def get_unopt_sdqlir(self, rename_last='', as_result=True):
-        all_unopt = self.get_unopt_context()
+    def get_unopt_sdqlir(self, rename_last='', as_result=True, def_const=True):
+        all_unopt = self.get_unopt_context(def_const=def_const)
 
         if as_result:
             all_unopt[-1] = SDQLInspector.rename_last_binding(all_unopt[-1],

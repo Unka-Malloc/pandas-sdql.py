@@ -1523,7 +1523,7 @@ class Retriever:
         else:
             return False
 
-    def find_col_proj(self, body_only=True) -> ColProj:
+    def find_col_proj(self, body_only=True) -> Union[ColProj, None]:
         for op_expr in self.history:
             op_body = op_expr.op
 
@@ -1789,7 +1789,7 @@ class Retriever:
         return multi_aggrs
 
     @staticmethod
-    def find_calc_in_cond(target) -> dict:
+    def find_colop_in_cond(target) -> dict:
         res = {}
 
         units = [target.unit1, target.unit2]
@@ -1799,11 +1799,11 @@ class Retriever:
             if isinstance(u, (bool, int, float, str)):
                 continue
 
-            elif isinstance(u, AggrBinOp):
+            elif isinstance(u, ColOpBinary):
                 res[u.descriptor] = u
 
             elif isinstance(u, BinCondExpr):
-                sub_cond = Retriever.find_calc_in_cond(u)
+                sub_cond = Retriever.find_colop_in_cond(u)
                 for k in sub_cond.keys():
                     res[k] = sub_cond[k]
 

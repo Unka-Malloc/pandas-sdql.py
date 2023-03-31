@@ -596,7 +596,7 @@ class DataFrame(Replaceable, Retrivable):
 
         if type(item) == list:
             next_df = self.create_copy(location='__getitem__(projection)')
-            self.push(OpExpr(op_obj=ColProj(next_df, item),
+            next_df.push(OpExpr(op_obj=ColProj(next_df, item),
                              op_on=next_df,
                              op_iter=False))
 
@@ -1232,7 +1232,7 @@ class DataFrame(Replaceable, Retrivable):
 
         query_obj = optimizer.get_unopt_sdqlir()
 
-        query_str = GenerateSDQLPYCode(self.define_constants().get_sdql_ir(query_obj), {})
+        query_str = GenerateSDQLPYCode(query_obj, {})
 
         query_list = query_str.split('\n')
 
@@ -1626,11 +1626,13 @@ class DataFrame(Replaceable, Retrivable):
                           conflict_rename_indicator=False,
                           process_until=None,
                           def_const=False,
+                          drop_them=None,
                           ):
         return Optimizer(self).get_unopt_context(rename_last=rename_last,
-                                                 conflict_rename_indicator=conflict_rename_indicator,
+                                                 attr_rename_indicator=conflict_rename_indicator,
                                                  process_until=process_until,
                                                  def_const=def_const,
+                                                 drop_them=drop_them,
                                                  )
 
     def create_copy(self, next_name="", location=None):

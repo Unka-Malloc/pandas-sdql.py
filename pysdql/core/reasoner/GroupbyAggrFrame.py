@@ -170,9 +170,10 @@ class GroupbyAggrFrame:
                             prev_agg.append(c.col_of.get_aggr(as_part=True))
 
                     cond_mapper[c.field] = VarExpr(c.field)
+
                     interm_variables[c.field] = RecAccessExpr(c.col_of.var_aggr, c.field)
 
-            print(cond_mapper)
+            # print(cond_mapper)
 
             if need_mapper:
                 aggr_body = IfExpr(condExpr=cond.replace(rec=None, inplace=True, mapper=cond_mapper),

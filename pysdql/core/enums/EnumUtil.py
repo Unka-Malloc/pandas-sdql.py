@@ -85,3 +85,10 @@ class StructType(Enum):
     SCALAR = 1
     REC = 2
     DICT = 3
+
+@unique
+class DropIt(Enum):
+    UNKNOWN = -1
+
+    AggrFormSingletonDict = 1
+    AggrBinOpFormSingletonDict = 2
