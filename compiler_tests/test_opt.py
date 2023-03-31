@@ -16,7 +16,7 @@ dataset_path = os.getenv('TPCH_DATASET')
 
 ## Shows the number of returned results, average and stdev of run time, and the results (if the next parameter is also set to True)
 verbose = True
-show_results = False
+show_results = True
 
 ## Number of iterations for benchmarking each query (must be >=2)
 iterations = 2
