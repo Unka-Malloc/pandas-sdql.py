@@ -1,0 +1,40 @@
+>>>>>> Processing Function: q13
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_compiler.py", line 815, in <module>
+    main()
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_compiler.py", line 582, in main
+    mod = SourceFileLoader(f_name, os.path.dirname(os.path.abspath(file_name)) + "/" + f_name + ".py").load_module()
+  File "<frozen importlib._bootstrap_external>", line 522, in _check_name_wrapper
+  File "<frozen importlib._bootstrap_external>", line 1027, in load_module
+  File "<frozen importlib._bootstrap_external>", line 852, in load_module
+  File "<frozen importlib._bootstrap>", line 265, in _load_module_shim
+  File "<frozen importlib._bootstrap>", line 702, in _load
+  File "<frozen importlib._bootstrap>", line 671, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 848, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/home/cxunka/CodeSpace/q13.py", line 28, in <module>
+    infer_type(q13, {"db->cu_dataset": DictionaryType(RecordType([("c_custkey", IntType()), ("c_name", StringType(25)), ("c_address", StringType(40)), ("c_nationkey", IntType()), ("c_phone", StringType(15)), ("c_acctbal", FloatType()), ("c_mktsegment", StringType(10)), ("c_comment", StringType(117)), ("c_NA", StringType(1))]), BoolType()), "db->ord_dataset": DictionaryType(RecordType([("o_orderkey", IntType()), ("o_custkey", IntType()), ("o_orderstatus", StringType(1)), ("o_totalprice", FloatType()), ("o_orderdate", IntType()), ("o_orderpriority", StringType(15)), ("o_clerk", StringType(15)), ("o_shippriority", IntType()), ("o_comment", StringType(79)), ("o_NA", StringType(1))]), BoolType())}, q13_typecache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 111, in infer_type
+    cache[AST.id] = infer_type(AST.bodyExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 111, in infer_type
+    cache[AST.id] = infer_type(AST.bodyExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 111, in infer_type
+    cache[AST.id] = infer_type(AST.bodyExpr, context, cache)
+  [Previous line repeated 2 more times]
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 110, in infer_type
+    context[AST.varExpr.name] = infer_type(AST.valExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 169, in infer_type
+    cache[AST.id] = infer_type(LetExpr(AST.varExpr, (dictType.fromType, dictType.toType), AST.bodyExpr), context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 111, in infer_type
+    cache[AST.id] = infer_type(AST.bodyExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 25, in infer_type
+    infer_type(e, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 179, in infer_type
+    tmpList.append((k, infer_type(v, context, cache)))
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 38, in infer_type
+    infer_type(AST.condExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 125, in infer_type
+    cache[AST.leftExpr.id] = infer_type(AST.leftExpr, context, cache)
+  File "/usr/local/lib/python3.8/dist-packages/sdqlpy-1.0.0-py3.8.egg/sdqlpy/lib/sdql_ir_type_inference.py", line 34, in infer_type
+    cache[AST.id] = infer_type(AST.recExpr, context, cache).typesDict[AST.name]
+KeyError: 'o_orderkey'
