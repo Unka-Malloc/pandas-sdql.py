@@ -9,8 +9,6 @@ def query(su, li, l2, l3, ord, na):
     # Insert
     f = "F"
     saudiarabia = "SAUDI ARABIA"
-    f = "F"
-    saudiarabia = "SAUDI ARABIA"
     lineitem_orders_build_pre_ops = li.sum(lambda x: ({x[0]: x[1]}) if (x[0].l_receiptdate > x[0].l_commitdate) else (None))
     
     lineitem_orders_probe_pre_ops = ord.sum(lambda x: ({x[0]: x[1]}) if (x[0].o_orderstatus == f) else (None))
@@ -32,7 +30,7 @@ def query(su, li, l2, l3, ord, na):
     lineitem_orders_supplier_nation_0 = lineitem_orders_supplier_nation_probe_pre_ops.sum(lambda x: (lineitem_orders_supplier_nation_build_nest_dict[x[0].s_suppkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_orders_supplier_nation_build_nest_dict[x[0].s_suppkey] != None) else (None))
     
-    lineitem_orders_supplier_nation_1 = lineitem_orders_supplier_nation_0.sum(lambda x: {x[0]: sr_dict({record({"l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey": x[0].l_orderkey, "l_receiptdate": x[0].l_receiptdate, "l_commitdate": x[0].l_commitdate, "o_orderkey": x[0].o_orderkey, "o_orderstatus": x[0].o_orderstatus, "s_suppkey": x[0].s_suppkey, "s_name": x[0].s_name, "s_address": x[0].s_address, "s_nationkey": x[0].s_nationkey, "s_phone": x[0].s_phone, "s_acctbal": x[0].s_acctbal, "s_comment": x[0].s_comment, "n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name}): True})})
+    lineitem_orders_supplier_nation_1 = lineitem_orders_supplier_nation_0.sum(lambda x: {x[0]: sr_dict({record({"l_suppkey_x": x[0].l_suppkey, "l_suppkey": x[0].l_suppkey, "l_orderkey": x[0].l_orderkey, "l_receiptdate": x[0].l_receiptdate, "l_commitdate": x[0].l_commitdate, "o_orderkey": x[0].o_orderkey, "o_orderstatus": x[0].o_orderstatus, "s_suppkey": x[0].s_suppkey, "s_nationkey": x[0].s_nationkey, "s_name": x[0].s_name, "n_nationkey": x[0].n_nationkey, "n_name": x[0].n_name}): True})})
     
     lineitem_orders_supplier_nation_lineitem_build_pre_ops = lineitem_orders_supplier_nation_1.sum(lambda x: x[1])
     
