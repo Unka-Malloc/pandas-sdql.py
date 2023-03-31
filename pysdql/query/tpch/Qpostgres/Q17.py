@@ -15,7 +15,9 @@ def query(li, l1, pa):
     lineitem_part_lineitem_part_build_pre_ops = lineitem_part_probe_pre_ops.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
     
-    lineitem_part_0 = pa.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+    part_0 = pa.sum(lambda x: {x[0]: {record({"p_partkey": x[0].p_partkey}): True}})
+    
+    lineitem_part_0 = lineitem_part_probe_pre_ops.sum(lambda x: (lineitem_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (lineitem_part_build_nest_dict[x[0].p_partkey] != None) else (None))
     
     lineitem_part_1 = lineitem_part_0.sum(lambda x: {record({"p_partkey": x[0].p_partkey}): record({"mean_l_quantity_sum_for_mean": x[0].l_quantity, "mean_l_quantity_count_for_mean": 1.0})})
