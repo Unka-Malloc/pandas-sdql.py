@@ -35,8 +35,9 @@ def query(li, pa):
     
     lineitem_part_1 = lineitem_part_0.sum(lambda x: ({x[0]: x[1]}) if (((((((((((((x[0].p_brand == brand12) * (((((((x[0].p_container == smpkg) + (x[0].p_container == smpack))) + (x[0].p_container == smcase))) + (x[0].p_container == smbox))))) * (x[0].l_quantity >= 1))) * (x[0].l_quantity <= 11))) * (x[0].p_size <= 5))) + (((((((((x[0].p_brand == brand23) * (((((((x[0].p_container == medpack) + (x[0].p_container == medpkg))) + (x[0].p_container == medbag))) + (x[0].p_container == medbox))))) * (x[0].l_quantity >= 10))) * (x[0].l_quantity <= 20))) * (x[0].p_size <= 10))))) + (((((((((x[0].p_brand == brand34) * (((((((x[0].p_container == lgpkg) + (x[0].p_container == lgpack))) + (x[0].p_container == lgcase))) + (x[0].p_container == lgbox))))) * (x[0].l_quantity >= 20))) * (x[0].l_quantity <= 30))) * (x[0].p_size <= 15))))) else (None))
     
-    results = lineitem_part_1.sum(lambda x: ((x[0].l_extendedprice) * (((1) - (x[0].l_discount)))))
+    lineitem_part_2 = lineitem_part_1.sum(lambda x: ((x[0].l_extendedprice) * (((1) - (x[0].l_discount)))))
     
+    results = {record({"revenue": lineitem_part_2}): True}
     # Complete
 
     return results

@@ -5,7 +5,7 @@ import pysdql
 if __name__ == '__main__':
     start_time = time.time()
 
-    pysdql.tpch_query(range(1, 23), verbose=True, optimize=True)
+    pysdql.tpch_query(range(1, 23), verbose=True, optimize=False, mode='postgres')
 
     # optimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=True)
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     # fix 11
 
-    # psql = pysdql.tpch_query(list(range(1, 20)) + [22], verbose=True, optimize=False, mode='postgres')
+    # psql = pysdql.tpch_query(list(range(1, 21)) + [22], verbose=True, optimize=False, mode='postgres')
 
     # psql_unopt = pysdql.tpch_query(18, verbose=True, optimize=False, mode='postgres')
 

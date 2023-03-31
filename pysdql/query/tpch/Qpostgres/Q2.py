@@ -36,9 +36,13 @@ def query(pa, su, ps, ps1, na, re):
     part_partsupp_supplier_nation_region_supplier_partsupp_part_nation_region_build_pre_ops = part_partsupp_supplier_nation_region_probe_pre_ops.sum(lambda x: (part_partsupp_supplier_nation_region_build_nest_dict[x[0].ps_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (part_partsupp_supplier_nation_region_build_nest_dict[x[0].ps_partkey] != None) else (None))
     
+    part_0 = pa.sum(lambda x: {x[0]: {record({"p_partkey": x[0].p_partkey}): True}})
+    
+    partsupp_part_probe_pre_ops = part_0.sum(lambda x: x[1])
+    
     partsupp_part_build_nest_dict = ps.sum(lambda x: {x[0].ps_partkey: sr_dict({x[0]: x[1]})})
     
-    supplier_partsupp_part_probe_pre_ops = pa.sum(lambda x: (partsupp_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
+    supplier_partsupp_part_probe_pre_ops = partsupp_part_probe_pre_ops.sum(lambda x: (partsupp_part_build_nest_dict[x[0].p_partkey].sum(lambda y: {x[0].concat(y[0]): True})
     ) if (partsupp_part_build_nest_dict[x[0].p_partkey] != None) else (None))
     
     supplier_partsupp_part_build_nest_dict = su.sum(lambda x: {x[0].s_suppkey: sr_dict({x[0]: x[1]})})
