@@ -5,7 +5,7 @@ import pysdql
 if __name__ == '__main__':
     start_time = time.time()
 
-    pysdql.tpch_query(range(1, 23), verbose=True, optimize=False, mode='postgres')
+    pysdql.tpch_query(range(1, 23), verbose=True, optimize=False, mode='duckdb')
 
     # optimized = pysdql.tpch_query(range(1, 23), verbose=True, optimize=True)
 
