@@ -217,11 +217,6 @@ def GenerateSDQLPYCode(AST: Expr, cache):
         code = code[:-2]
         code += "})"
         return code
-    elif inputType == UniqueExpr:
-        code += "unique("
-        code += GenerateSDQLPYCode(AST.col_expr, cache)
-        code += ")"
-        return code
     else:
         print("Error: Unknown AST: " + str(type(AST)))
         print(AST)

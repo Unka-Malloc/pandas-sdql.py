@@ -1,0 +1,58 @@
+>> Query 21 (Q21) <<
+>> SDQL <<
+Reading T:/tpch_dataset/10M/supplier.tbl Finished.
+Reading T:/tpch_dataset/10M/lineitem.tbl Finished.
+Reading T:/tpch_dataset/10M/orders.tbl Finished.
+Reading T:/tpch_dataset/10M/nation.tbl Finished.
+ SDQL Execution Time: 925.3112633228302 s 
+SDQL RESULTS START
+============================================================
+{ { "s_name_x": "Supplier#000000074", "l_suppkey_x": None, "l_orderkey_x": None }: 393 }
+============================================================
+SDQL RESULTS END
+>> Pandas <<
+Pandas Execution Time: 0.1412062644958496 s 
+DuckDB Execution Time: 0.07800960540771484 s 
+============================================================
+>> Comparing Pandas with Duck ... <<
+Warning: squeeze failed
+============================================================
+ Check Pandas with DuckDB: Pass 
+============================================================
+PANDAS RESULTS START
+============================================================
+               s_name  numwait
+0  Supplier#000000074        9
+============================================================
+PANDAS RESULTS END
+============================================================
+>> Comparing SDQL with Pandas ... <<
+Warning: squeeze failed
+Shape Check Passed: 1 rows x 3 columns
+Warning: Column s_name_x not found!
+Warning: Column l_suppkey_x not found!
+Warning: Column l_orderkey_x not found!
+number of mismatch records: 1
+============================================================
+
+    
+ ¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨[   ¨€¨€¨[    ¨€¨€¨€¨€¨€¨€¨[  ¨€¨€¨[
+¨€¨€¨X¨T¨T¨T¨€¨€¨[¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨T¨T¨a¨€¨€¨X¨T¨T¨€¨€¨[¨^¨€¨€¨[ ¨€¨€¨X¨a    ¨^¨T¨T¨T¨T¨€¨€¨[¨€¨€¨€¨U
+¨€¨€¨U   ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨€¨€¨€¨[  ¨€¨€¨€¨€¨€¨€¨X¨a ¨^¨€¨€¨€¨€¨X¨a      ¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨U
+¨€¨€¨U¨{¨{ ¨€¨€¨U¨€¨€¨U   ¨€¨€¨U¨€¨€¨X¨T¨T¨a  ¨€¨€¨X¨T¨T¨€¨€¨[  ¨^¨€¨€¨X¨a      ¨€¨€¨X¨T¨T¨T¨a  ¨€¨€¨U
+¨^¨€¨€¨€¨€¨€¨€¨X¨a¨^¨€¨€¨€¨€¨€¨€¨X¨a¨€¨€¨€¨€¨€¨€¨€¨[¨€¨€¨U  ¨€¨€¨U   ¨€¨€¨U       ¨€¨€¨€¨€¨€¨€¨€¨[ ¨€¨€¨U
+ ¨^¨T¨T??¨T¨a  ¨^¨T¨T¨T¨T¨T¨a ¨^¨T¨T¨T¨T¨T¨T¨a¨^¨T¨a  ¨^¨T¨a   ¨^¨T¨a       ¨^¨T¨T¨T¨T¨T¨T¨a ¨^¨T¨a
+
+             ¨€¨€¨€¨€¨€? ¨{¨{¨{       ¨€¨€¨ˆ ¨€¨€¨ˆ    
+           ¨ˆ¨€¨€   ? ?¨€¨€¨€¨€¨{    ¨ˆ¨€¨€?¨ˆ¨€¨€?    
+           ?¨€¨€¨€¨€ ? ?¨€¨€  ?¨€¨{  ?¨€¨€??¨€¨€?    
+           ?¨ˆ¨€?  ? ?¨€¨€¨{¨{¨{¨{¨€¨€ ?¨€¨€??¨€¨€?    
+           ??¨€?     ¨ˆ¨€   ¨ˆ¨€¨€??¨€¨€??¨€¨€¨€¨€¨€¨€?
+            ? ?     ??   ¨ˆ?¨€??¨ˆ  ? ??¨ˆ  ?
+            ?        ?   ?? ? ? ?? ? ?  ?
+            ? ?      ?   ?    ? ?  ? ?   
+                         ?  ? ?      ?  ?
+    
+============================================================
+21:  Fail 
+============================================================

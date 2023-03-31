@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     # psql fix: 7, 21
 
-    pysdql.tpch_query(21, verbose=True, optimize=False, mode='duckdb')
+    pysdql.tpch_query(range(1, 23), verbose=True, optimize=False)
 
     # fix squeeze: Q22 - GroupbyAggrFrame Optimize & Unoptimize
     # valid: 1, 3, 4, 5, 6, 8, 9, 10, 13, 14, 15, 16, 18, 19

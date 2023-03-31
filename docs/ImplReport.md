@@ -3,6 +3,8 @@
 ### Slow Column Projection - Unoptimized (Keep or Remove)
 A slow column projection often takes two steps for unoptimized version.
 
+### Q5
+
 ### Unreasonable Incorrect Result - Unoptimized
 ```
 # PostgreSQL
