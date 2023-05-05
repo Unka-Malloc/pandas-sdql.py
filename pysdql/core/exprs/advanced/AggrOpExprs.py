@@ -134,7 +134,7 @@ class AggrBinOp(Replaceable):
 
         return self.on.optimize()
 
-    def to_sdqlir(self, optimize=True, indent='    '):
+    def to_sdqlir(self, optimize=True, indent='    ', verbose=True):
         op_expr = OpExpr(op_obj=self,
                          op_on=self.on,
                          op_iter=True,
@@ -143,7 +143,7 @@ class AggrBinOp(Replaceable):
 
         self.on.push(op_expr)
 
-        return self.on.to_sdqlir(optimize=optimize, indent=indent)
+        return self.on.to_sdqlir(optimize=optimize, indent=indent, verbose=verbose)
 
     @property
     def op_name_suffix(self):

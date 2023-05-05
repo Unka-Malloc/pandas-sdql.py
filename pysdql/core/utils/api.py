@@ -1,11 +1,12 @@
 from pysdql.core.utils.data_loader import (
     read_csv,
+    read_table,
 
     # read_tbl,
     tune_tbl,
     # load_tbl,
     #
-    # read_table,
+
 )
 from pysdql.core.utils.data_parser import (
     get_tbl_type,

@@ -2,6 +2,12 @@ from typing import List
 
 from pysdql.core.prototype.basic.sdql_ir import RecConsExpr
 
+"""
+ColProj -> 
+ColProjUnique -> 
+ColProjExtra -> 
+ColProjRename -> 
+"""
 
 class ColProj:
     def __init__(self, proj_on, proj_cols: List[str]):

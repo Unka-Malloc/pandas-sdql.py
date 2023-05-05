@@ -125,8 +125,8 @@ class AggrExpr(Replaceable):
     def optimize(self):
         return self.aggr_on.optimize()
 
-    def to_sdqlir(self, optimize=True, indent='    '):
-        return self.aggr_on.to_sdqlir(optimize=optimize, indent=indent)
+    def to_sdqlir(self, optimize=True, indent='    ', verbose=True):
+        return self.aggr_on.to_sdqlir(optimize=optimize, indent=indent, verbose=verbose)
 
     def show(self):
         self.aggr_on.show()

@@ -2,7 +2,9 @@ import re
 
 from pysdql.core.exprs.advanced.ColOpExprs import (
     ColOpExternal,
-    ColOpBinary, ColOpIsNull, )
+    ColOpBinary,
+    ColOpIsNull,
+)
 from pysdql.core.exprs.advanced.ColOpIsinExpr import ColOpIsin
 from pysdql.core.exprs.complex.AggrExpr import AggrExpr
 from pysdql.core.exprs.advanced.BinCondExpr import BinCondExpr

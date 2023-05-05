@@ -2,13 +2,10 @@ import unittest
 
 import pysdql
 
-class MyTestCase(unittest.TestCase):
-    def test_something(self):
+class TestVarName(unittest.TestCase):
+    def test_name(self):
         df = pysdql.DataFrame()
-        print(df.sdql_expr)
-
-
-
+        self.assertEqual(df.name, 'df')
 
 if __name__ == '__main__':
     unittest.main()

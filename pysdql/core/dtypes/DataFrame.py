@@ -103,6 +103,9 @@ class DataFrame(Replaceable, Retrivable):
                  previous_name=None,
                  dataset_name=None):
         super().__init__()
+
+        # data=None, index=None, columns=None, dtype=None, copy=None
+
         self.loader = loader
         self.__default_name = 'R'
         self.__data = data
@@ -500,7 +503,7 @@ class DataFrame(Replaceable, Retrivable):
 
         return '\n'.join(last_list)
 
-    def opt_to_sdqlir(self, indent='    ') -> str:
+    def opt_to_sdqlir(self, indent='    ', verbose=True) -> str:
         opt = Optimizer(opt_on=self,
                         opt_goal=OptGoal.Infer)
         for op_expr in self.operations:
@@ -513,13 +516,14 @@ class DataFrame(Replaceable, Retrivable):
 
         query_list = query_list[:query_list.index('True')]
 
-        print('>> Optimized Query <<')
+        if verbose:
+            print('>> Optimized Query <<')
 
-        print(f'{"=" * 60}')
+            print(f'{"=" * 60}')
 
-        print('\n'.join(query_list))
+            print('\n'.join(query_list))
 
-        print(f'{"=" * 60}')
+            print(f'{"=" * 60}')
 
         query_list = [f'{indent}{i}' for i in query_list]
 
@@ -1226,7 +1230,7 @@ class DataFrame(Replaceable, Retrivable):
 
         return next_df
 
-    def unopt_to_sdqlir(self, indent='    '):
+    def unopt_to_sdqlir(self, indent='    ', verbose=True):
         optimizer = Optimizer(opt_on=self,
                               opt_goal=OptGoal.UnOptimized)
 
@@ -1238,13 +1242,14 @@ class DataFrame(Replaceable, Retrivable):
 
         query_list = query_list[:query_list.index('True')]
 
-        print('>> Optimized Query <<')
+        if verbose:
+            print('>> Unoptimized Query <<')
 
-        print(f'{"=" * 60}')
+            print(f'{"=" * 60}')
 
-        print('\n'.join(query_list))
+            print('\n'.join(query_list))
 
-        print(f'{"=" * 60}')
+            print(f'{"=" * 60}')
 
         query_list = [f'{indent}{i}' for i in query_list]
 
@@ -1509,11 +1514,11 @@ class DataFrame(Replaceable, Retrivable):
     def squeeze(self):
         return self
 
-    def to_sdqlir(self, optimize=True, indent='    '):
+    def to_sdqlir(self, optimize=True, indent='    ', verbose=True):
         if optimize:
-            return self.opt_to_sdqlir(indent=indent)
+            return self.opt_to_sdqlir(indent=indent, verbose=verbose)
         else:
-            return self.unopt_to_sdqlir(indent=indent)
+            return self.unopt_to_sdqlir(indent=indent, verbose=verbose)
 
     def dtypes_as_str(self):
         if self.loader:

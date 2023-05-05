@@ -178,7 +178,7 @@ class JoinPartFrame:
         return self.__group_key
 
     def get_part_expr(self, next_probe_op=None):
-        print(self.part_on.get_as_build_end())
+        # print(self.part_on.get_as_build_end())
 
         if not next_probe_op:
             if self.next_probe:
@@ -402,3 +402,4 @@ class JoinPartFrame:
                 'var': self.__var_partition
             }
         )
+    

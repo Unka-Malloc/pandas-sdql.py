@@ -2,7 +2,7 @@ import unittest
 from pysdql.core.exprs.basic.IterEl import IterEl
 
 
-class MyTestCase(unittest.TestCase):
+class TestIterEl(unittest.TestCase):
     @property
     def element(self):
         return IterEl(data='x')

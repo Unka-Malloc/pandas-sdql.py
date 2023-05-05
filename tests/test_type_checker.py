@@ -7,7 +7,7 @@ from pysdql.core.utils.type_checker import (
     is_str,
 )
 
-class MyTestCase(unittest.TestCase):
+class TestTypeChecker(unittest.TestCase):
     def test_is_float(self):
         self.assertEqual(True, is_float('100.0'))
 

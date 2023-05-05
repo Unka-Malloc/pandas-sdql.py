@@ -11,6 +11,7 @@ from pysdql.const import (
 
 from pysdql.core.api import (
     read_csv,
+    read_table,
 )
 
 from pysdql.core.dtypes.DataFrame import DataFrame
